@@ -139,7 +139,8 @@ function loadHabits(): Habit[] {
   }
 }
 
-function getStreak(habit: Habit[], today: string) {
+// CORREÇÃO: recebe um único hábito, não uma lista de hábitos.
+function getStreak(habit: Habit, today: string) {
   const completed = new Set(habit.completedDates);
 
   let currentDate = completed.has(today) ? today : addDays(today, -1);
@@ -1281,19 +1282,6 @@ export default function HabitosPage() {
           min-height: 75px;
           padding: 11px;
           resize: vertical;
-        }
-
-        .form-field input:focus,
-        .form-field select:focus,
-        .form-field textarea:focus,
-        .select-filters select:focus,
-        .search-container input:focus {
-          border-color: #727e8c;
-        }
-
-        .form-field input::-webkit-calendar-picker-indicator {
-          filter: invert(0.8);
-          cursor: pointer;
         }
 
         .form-actions {
