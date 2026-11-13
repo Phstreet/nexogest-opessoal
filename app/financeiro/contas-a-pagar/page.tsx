@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Transaction = {
   id: number;
@@ -22,21 +23,14 @@ type Transaction = {
   institution?: string;
 };
 
-type FilterType = "Todas" | "Em aberto" | "Pagas" | "Atrasadas" | "Canceladas";
+type FilterType =
+  | "Todas"
+  | "Em aberto"
+  | "Pagas"
+  | "Atrasadas"
+  | "Canceladas";
 
 const STORAGE_KEY = "nexo_transactions";
-
-const financeNavigation = [
-  { label: "Visão geral", href: "/financeiro", icon: "⌂" },
-  { label: "Contas", href: "/financeiro/contas", icon: "▣" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↓" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↑" },
-  { label: "Histórico financeiro", href: "/financeiro/historico", icon: "↻" },
-  { label: "Investimentos", href: "/financeiro/investimentos", icon: "◈" },
-  { label: "Reserva financeira", href: "/financeiro/reservas", icon: "▣" },
-  { label: "Planejamento", href: "/financeiro/planejamento", icon: "▤" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
-];
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -53,6 +47,14 @@ function formatDate(value?: string) {
   if (Number.isNaN(date.getTime())) return "Sem data";
 
   return date.toLocaleDateString("pt-BR");
+}
+
+function formatLongDate() {
+  return new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function getToday() {
@@ -127,29 +129,47 @@ export default function ContasAPagarPage() {
     };
   }, [loadTransactions]);
 
-  const expenses = useMemo(() => {
-    return transactions.filter((item) => item.type === "Despesa");
-  }, [transactions]);
-
-  const activeExpenses = expenses.filter(
-    (item) => !isCancelled(item.status)
+  const expenses = useMemo(
+    () => transactions.filter((item) => item.type === "Despesa"),
+    [transactions]
   );
 
-  const totalOpen = activeExpenses
-    .filter((item) => !isPaid(item.status))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const activeExpenses = useMemo(
+    () => expenses.filter((item) => !isCancelled(item.status)),
+    [expenses]
+  );
 
-  const totalPaid = activeExpenses
-    .filter((item) => isPaid(item.status))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalOpen = useMemo(
+    () =>
+      activeExpenses
+        .filter((item) => !isPaid(item.status))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeExpenses]
+  );
 
-  const totalOverdue = activeExpenses
-    .filter((item) => isOverdue(item))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalPaid = useMemo(
+    () =>
+      activeExpenses
+        .filter((item) => isPaid(item.status))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeExpenses]
+  );
 
-  const totalCancelled = expenses
-    .filter((item) => isCancelled(item.status))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalOverdue = useMemo(
+    () =>
+      activeExpenses
+        .filter((item) => isOverdue(item))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeExpenses]
+  );
+
+  const totalCancelled = useMemo(
+    () =>
+      expenses
+        .filter((item) => isCancelled(item.status))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [expenses]
+  );
 
   const filteredExpenses = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
@@ -210,415 +230,445 @@ export default function ContasAPagarPage() {
   }
 
   return (
-    <main className="payable-page">
-      <header className="payable-header">
-        <div>
-          <div className="breadcrumb">
-            <Link href="/">Início</Link>
-            <span>/</span>
-            <Link href="/financeiro">Financeiro</Link>
-            <span>/</span>
-            <span>Contas a pagar</span>
+    <main className="app-shell">
+      <MainNavigation />
+
+      <section className="main-area">
+        <header className="topbar">
+          <div className="payable-topbar-left">
+            <div className="payable-breadcrumb">
+              <Link href="/">NEXO</Link>
+              <span>/</span>
+              <Link href="/financeiro">FINANCEIRO</Link>
+              <span>/</span>
+              <span>CONTAS A PAGAR</span>
+            </div>
+
+            <h1>Contas a pagar</h1>
+            <p>Acompanhe suas despesas, vencimentos e pagamentos.</p>
           </div>
 
-          <h1>Contas a pagar</h1>
-          <p>
-            Acompanhe suas despesas, vencimentos e pagamentos em um só lugar.
-          </p>
-        </div>
+          <div className="payable-topbar-right">
+            <span className="payable-date">{formatLongDate()}</span>
+            <div className="payable-avatar">N</div>
+          </div>
+        </header>
 
-        <Link href="/financeiro" className="back-button">
-          <span>←</span> Voltar ao financeiro
-        </Link>
-      </header>
+        <div className="content payable-content-page">
+          <section className="payable-intro">
+            <div>
+              <span className="payable-eyebrow">
+                CONTROLE DE DESPESAS
+              </span>
+              <h2>Gestão de pagamentos</h2>
+              <p>
+                Consulte os compromissos financeiros e acompanhe o que
+                ainda precisa ser pago.
+              </p>
+            </div>
 
-      <nav className="finance-navigation">
-        {financeNavigation.map((item) => {
-          const active = item.href === "/financeiro/contas-a-pagar";
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`navigation-button ${active ? "selected" : ""}`}
-              aria-current={active ? "page" : undefined}
-            >
-              <span>{item.icon}</span>
-              {item.label}
+            <Link href="/financeiro" className="payable-new-button">
+              <span>+</span>
+              Nova despesa
             </Link>
-          );
-        })}
-      </nav>
+          </section>
 
-      <section className="payable-summary">
-        <article className="summary-card">
-          <div className="summary-top">
-            <span>Contas em aberto</span>
-            <span className="summary-icon">◷</span>
-          </div>
-          <strong>{formatCurrency(totalOpen)}</strong>
-          <small>Valores ainda não pagos</small>
-        </article>
+          <section className="payable-summary">
+            <article className="payable-summary-card">
+              <div className="payable-summary-top">
+                <span>Contas em aberto</span>
+                <span className="payable-summary-icon">◷</span>
+              </div>
+              <strong>{formatCurrency(totalOpen)}</strong>
+              <small>Valores ainda não pagos</small>
+            </article>
 
-        <article className="summary-card">
-          <div className="summary-top">
-            <span>Total pago</span>
-            <span className="summary-icon">✓</span>
-          </div>
-          <strong>{formatCurrency(totalPaid)}</strong>
-          <small>Despesas já quitadas</small>
-        </article>
+            <article className="payable-summary-card">
+              <div className="payable-summary-top">
+                <span>Total pago</span>
+                <span className="payable-summary-icon">✓</span>
+              </div>
+              <strong>{formatCurrency(totalPaid)}</strong>
+              <small>Despesas já quitadas</small>
+            </article>
 
-        <article className="summary-card overdue-card">
-          <div className="summary-top">
-            <span>Contas atrasadas</span>
-            <span className="summary-icon">!</span>
-          </div>
-          <strong>{formatCurrency(totalOverdue)}</strong>
-          <small>Despesas com vencimento vencido</small>
-        </article>
+            <article className="payable-summary-card overdue">
+              <div className="payable-summary-top">
+                <span>Contas atrasadas</span>
+                <span className="payable-summary-icon">!</span>
+              </div>
+              <strong>{formatCurrency(totalOverdue)}</strong>
+              <small>Despesas com vencimento vencido</small>
+            </article>
 
-        <article className="summary-card">
-          <div className="summary-top">
-            <span>Contas canceladas</span>
-            <span className="summary-icon">×</span>
-          </div>
-          <strong>{formatCurrency(totalCancelled)}</strong>
-          <small>Despesas canceladas</small>
-        </article>
-      </section>
+            <article className="payable-summary-card">
+              <div className="payable-summary-top">
+                <span>Contas canceladas</span>
+                <span className="payable-summary-icon">×</span>
+              </div>
+              <strong>{formatCurrency(totalCancelled)}</strong>
+              <small>Despesas canceladas</small>
+            </article>
+          </section>
 
-      <section className="payable-content">
-        <div className="content-heading">
-          <div>
-            <h2>Histórico de contas</h2>
-            <p>Consulte e acompanhe todas as despesas cadastradas.</p>
-          </div>
+          <section className="payable-panel">
+            <div className="payable-section-heading">
+              <div>
+                <span className="payable-eyebrow">ACOMPANHAMENTO</span>
+                <h2>Histórico de contas</h2>
+                <p>
+                  Consulte e acompanhe todas as despesas cadastradas.
+                </p>
+              </div>
 
-          <Link href="/financeiro" className="new-expense-button">
-            + Nova despesa
-          </Link>
-        </div>
+              <span className="payable-count">
+                {filteredExpenses.length}{" "}
+                {filteredExpenses.length === 1 ? "despesa" : "despesas"}
+              </span>
+            </div>
 
-        <div className="payable-filters">
-          <div className="search-box">
-            <span>⌕</span>
-            <input
-              type="text"
-              placeholder="Buscar por descrição ou categoria..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
+            <div className="payable-filters">
+              <div className="payable-search">
+                <span>⌕</span>
+                <input
+                  type="text"
+                  placeholder="Buscar por descrição ou categoria..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  aria-label="Buscar despesas"
+                />
+              </div>
 
-          <select
-            value={filter}
-            onChange={(event) =>
-              setFilter(event.target.value as FilterType)
-            }
-          >
-            <option value="Todas">Todas as contas</option>
-            <option value="Em aberto">Em aberto</option>
-            <option value="Pagas">Pagas</option>
-            <option value="Atrasadas">Atrasadas</option>
-            <option value="Canceladas">Canceladas</option>
-          </select>
-        </div>
+              <div className="payable-filter-field">
+                <label htmlFor="payable-filter">Situação</label>
+                <select
+                  id="payable-filter"
+                  value={filter}
+                  onChange={(event) =>
+                    setFilter(event.target.value as FilterType)
+                  }
+                >
+                  <option value="Todas">Todas as contas</option>
+                  <option value="Em aberto">Em aberto</option>
+                  <option value="Pagas">Pagas</option>
+                  <option value="Atrasadas">Atrasadas</option>
+                  <option value="Canceladas">Canceladas</option>
+                </select>
+              </div>
+            </div>
 
-        <div className="payable-table-wrapper">
-          <table className="payable-table">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Vencimento</th>
-                <th>Conta</th>
-                <th>Valor</th>
-                <th>Status</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
+            <div className="payable-table-wrapper">
+              <table className="payable-table">
+                <thead>
+                  <tr>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Vencimento</th>
+                    <th>Conta</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="empty-state">
-                    Carregando contas...
-                  </td>
-                </tr>
-              ) : filteredExpenses.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="empty-state">
-                    <div className="empty-icon">▤</div>
-                    <strong>Nenhuma conta encontrada</strong>
-                    <span>
-                      Cadastre uma despesa na página Financeiro para
-                      visualizar aqui.
-                    </span>
-                  </td>
-                </tr>
-              ) : (
-                filteredExpenses.map((item) => {
-                  const status = getStatus(item);
-
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        <div className="expense-description">
-                          <strong>{item.description}</strong>
-                          <small>
-                            {item.subcategory || "Sem subcategoria"}
-                          </small>
-                        </div>
-                      </td>
-
-                      <td>{item.category || "Não informada"}</td>
-
-                      <td>
-                        <span
-                          className={
-                            isOverdue(item)
-                              ? "date-value date-overdue"
-                              : "date-value"
-                          }
-                        >
-                          {formatDate(item.date)}
-                        </span>
-                      </td>
-
-                      <td>{item.account || "Não informada"}</td>
-
-                      <td className="amount-value">
-                        {formatCurrency(Number(item.amount || 0))}
-                      </td>
-
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            status === "Pago"
-                              ? "status-paid"
-                              : status === "Atrasada"
-                              ? "status-overdue"
-                              : status === "Cancelada"
-                              ? "status-cancelled"
-                              : "status-pending"
-                          }`}
-                        >
-                          {status}
-                        </span>
-                      </td>
-
-                      <td>
-                        {!isPaid(item.status) &&
-                        !isCancelled(item.status) ? (
-                          <button
-                            className="pay-button"
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                `Confirma o pagamento de "${item.description}" no valor de ${formatCurrency(
-                                  Number(item.amount || 0)
-                                )}?`
-                              );
-
-                              if (confirmed) {
-                                updateStatus(item.id, "Pago");
-                              }
-                            }}
-                          >
-                            Marcar como pago
-                          </button>
-                        ) : isPaid(item.status) ? (
-                          <button
-                            className="undo-button"
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                "Deseja voltar esta conta para Pendente?"
-                              );
-
-                              if (confirmed) {
-                                updateStatus(item.id, "Pendente");
-                              }
-                            }}
-                          >
-                            Reabrir
-                          </button>
-                        ) : (
-                          <span className="no-action">—</span>
-                        )}
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="payable-empty-state">
+                        Carregando contas...
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : filteredExpenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="payable-empty-state">
+                        <div className="payable-empty-icon">▤</div>
+                        <strong>Nenhuma conta encontrada</strong>
+                        <span>
+                          Cadastre uma despesa na página Financeiro para
+                          visualizar aqui.
+                        </span>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredExpenses.map((item) => {
+                      const status = getStatus(item);
 
-        <div className="table-footer">
-          <span>
-            Exibindo <strong>{filteredExpenses.length}</strong> de{" "}
-            <strong>{expenses.length}</strong> despesas
-          </span>
-          <span>
-            Total listado:{" "}
-            <strong>
-              {formatCurrency(
-                filteredExpenses.reduce(
-                  (total, item) => total + Number(item.amount || 0),
-                  0
-                )
-              )}
-            </strong>
-          </span>
+                      return (
+                        <tr key={item.id}>
+                          <td>
+                            <div className="payable-description">
+                              <strong>{item.description}</strong>
+                              <small>
+                                {item.subcategory || "Sem subcategoria"}
+                              </small>
+                            </div>
+                          </td>
+
+                          <td>{item.category || "Não informada"}</td>
+
+                          <td>
+                            <span
+                              className={
+                                isOverdue(item)
+                                  ? "payable-date-value overdue"
+                                  : "payable-date-value"
+                              }
+                            >
+                              {formatDate(item.date)}
+                            </span>
+                          </td>
+
+                          <td>{item.account || "Não informada"}</td>
+
+                          <td className="payable-amount">
+                            {formatCurrency(Number(item.amount || 0))}
+                          </td>
+
+                          <td>
+                            <span
+                              className={`payable-status ${
+                                status === "Pago"
+                                  ? "paid"
+                                  : status === "Atrasada"
+                                  ? "overdue"
+                                  : status === "Cancelada"
+                                  ? "cancelled"
+                                  : "pending"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+
+                          <td>
+                            {!isPaid(item.status) &&
+                            !isCancelled(item.status) ? (
+                              <button
+                                type="button"
+                                className="payable-action-button"
+                                onClick={() => {
+                                  const confirmed = window.confirm(
+                                    `Confirma o pagamento de "${item.description}" no valor de ${formatCurrency(
+                                      Number(item.amount || 0)
+                                    )}?`
+                                  );
+
+                                  if (confirmed) {
+                                    updateStatus(item.id, "Pago");
+                                  }
+                                }}
+                              >
+                                Marcar como pago
+                              </button>
+                            ) : isPaid(item.status) ? (
+                              <button
+                                type="button"
+                                className="payable-undo-button"
+                                onClick={() => {
+                                  const confirmed = window.confirm(
+                                    "Deseja voltar esta conta para Pendente?"
+                                  );
+
+                                  if (confirmed) {
+                                    updateStatus(item.id, "Pendente");
+                                  }
+                                }}
+                              >
+                                Reabrir
+                              </button>
+                            ) : (
+                              <span className="payable-no-action">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="payable-table-footer">
+              <span>
+                Exibindo <strong>{filteredExpenses.length}</strong> de{" "}
+                <strong>{expenses.length}</strong> despesas
+              </span>
+              <span>
+                Total listado:{" "}
+                <strong>
+                  {formatCurrency(
+                    filteredExpenses.reduce(
+                      (total, item) =>
+                        total + Number(item.amount || 0),
+                      0
+                    )
+                  )}
+                </strong>
+              </span>
+            </div>
+          </section>
+
+          <footer className="payable-footer">
+            NEXO · Planeje. Organize. Conquiste.
+          </footer>
         </div>
       </section>
 
       <style jsx global>{`
-        .payable-page {
-          min-height: 100vh;
-          padding: 32px;
-          color: #f5f5f6;
-          background: #0a0a0b;
-          font-family: "DM Sans", sans-serif;
-        }
-
-        .payable-header {
+        .payable-content-page {
           display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
+          flex-direction: column;
           gap: 20px;
-          margin-bottom: 20px;
+          min-width: 0;
         }
 
-        .breadcrumb {
+        .payable-topbar-left {
+          min-width: 0;
+        }
+
+        .payable-breadcrumb {
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
           gap: 9px;
-          margin-bottom: 13px;
-          color: #89898f;
-          font-size: 12px;
+          margin-bottom: 8px;
+          color: #85858d;
+          font-size: 10px;
+          letter-spacing: 0.7px;
         }
 
-        .breadcrumb a {
-          color: #c3c7ce;
+        .payable-breadcrumb a {
+          color: #bdbdc5;
           text-decoration: none;
         }
 
-        .breadcrumb a:hover {
+        .payable-breadcrumb a:hover {
           color: #fff;
         }
 
-        .payable-header h1 {
+        .payable-topbar-left h1 {
           margin: 0;
+          color: #f5f5f6;
           font-family: "Manrope", sans-serif;
-          font-size: 29px;
+          font-size: 25px;
           font-weight: 700;
-          letter-spacing: -1px;
+          letter-spacing: -0.8px;
         }
 
-        .payable-header p {
-          margin: 8px 0 0;
-          color: #89898f;
-          font-size: 13px;
-        }
-
-        .back-button,
-        .new-expense-button {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          min-height: 40px;
-          padding: 0 15px;
-          border: 1px solid #303034;
-          border-radius: 9px;
-          color: #e5e5e7;
-          background: #151517;
+        .payable-topbar-left p {
+          margin: 5px 0 0;
+          color: #898991;
           font-size: 12px;
-          font-weight: 600;
-          text-decoration: none;
-          transition: 0.2s;
+        }
+
+        .payable-topbar-right {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          flex-shrink: 0;
+        }
+
+        .payable-date {
+          color: #9999a2;
+          font-size: 11px;
           white-space: nowrap;
         }
 
-        .back-button:hover,
-        .new-expense-button:hover {
-          border-color: #777d87;
-          background: #1b1b1e;
-        }
-
-        .finance-navigation {
+        .payable-avatar {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 10px;
-          margin-bottom: 23px;
-          overflow-x: auto;
-          border: 1px solid #29292e;
-          border-radius: 9px;
-          background: #151517;
-          scrollbar-width: thin;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border: 1px solid #414148;
+          border-radius: 50%;
+          color: #f5f5f6;
+          background: #252529;
+          font-size: 13px;
+          font-weight: 700;
         }
 
-        .navigation-button {
+        .payable-intro {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 18px;
+        }
+
+        .payable-eyebrow {
+          display: block;
+          color: #888891;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+        }
+
+        .payable-intro h2 {
+          margin: 6px 0 0;
+          color: #f5f5f6;
+          font-family: "Manrope", sans-serif;
+          font-size: 19px;
+          font-weight: 700;
+          letter-spacing: -0.5px;
+        }
+
+        .payable-intro p {
+          margin: 6px 0 0;
+          color: #89898f;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .payable-new-button {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 7px;
+          gap: 8px;
+          min-height: 37px;
+          padding: 0 14px;
           flex-shrink: 0;
-          min-height: 36px;
-          padding: 0 12px;
-          border: 1px solid #34343a;
-          border-radius: 6px;
-          color: #bdbdc5;
-          background: #202024;
+          border: 1px solid #77777f;
+          border-radius: 8px;
+          color: #fff;
+          background: #303035;
           font-size: 11px;
+          font-weight: 700;
           text-decoration: none;
           transition: 0.2s;
         }
 
-        .navigation-button:hover {
-          color: #fff;
-          border-color: #77777f;
-          background: #303035;
+        .payable-new-button:hover {
+          background: #414147;
         }
 
-        .navigation-button.selected {
-          color: #fff;
-          border-color: #77777f;
-          background: #38383e;
-          font-weight: 700;
-        }
-
-        .navigation-button span {
-          font-size: 15px;
+        .payable-new-button span {
+          font-size: 16px;
         }
 
         .payable-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 15px;
-          margin-bottom: 25px;
+          gap: 14px;
         }
 
-        .summary-card {
+        .payable-summary-card {
           min-width: 0;
-          padding: 20px;
+          padding: 19px;
           border: 1px solid #29292d;
-          border-radius: 13px;
+          border-radius: 12px;
           background: #151517;
         }
 
-        .summary-top {
+        .payable-summary-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 10px;
           color: #99999f;
-          font-size: 12px;
+          font-size: 11px;
         }
 
-        .summary-icon {
+        .payable-summary-icon {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -628,121 +678,146 @@ export default function ContasAPagarPage() {
           border-radius: 8px;
           color: #c3c7ce;
           background: #1b1b1e;
-          font-size: 15px;
+          font-size: 14px;
         }
 
-        .summary-card > strong {
+        .payable-summary-card > strong {
           display: block;
-          margin-top: 17px;
+          margin-top: 16px;
           color: #f5f5f6;
           font-family: "Manrope", sans-serif;
-          font-size: 23px;
+          font-size: 21px;
           font-weight: 700;
           letter-spacing: -0.7px;
           overflow-wrap: anywhere;
         }
 
-        .summary-card > small {
+        .payable-summary-card > small {
           display: block;
           margin-top: 7px;
           color: #77777e;
-          font-size: 11px;
+          font-size: 10px;
+          line-height: 1.5;
         }
 
-        .overdue-card {
+        .payable-summary-card.overdue {
           border-color: #493033;
         }
 
-        .overdue-card .summary-icon {
+        .payable-summary-card.overdue .payable-summary-icon {
           border-color: #493033;
           color: #d18c8c;
         }
 
-        .overdue-card > strong {
+        .payable-summary-card.overdue > strong {
           color: #d18c8c;
         }
 
-        .payable-content {
+        .payable-panel {
+          min-width: 0;
           overflow: hidden;
           border: 1px solid #29292d;
-          border-radius: 13px;
+          border-radius: 12px;
           background: #111113;
         }
 
-        .content-heading {
+        .payable-section-heading {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 15px;
-          padding: 22px 23px;
+          padding: 21px 22px;
           border-bottom: 1px solid #29292d;
         }
 
-        .content-heading h2 {
-          margin: 0;
+        .payable-section-heading h2 {
+          margin: 5px 0 0;
           color: #f5f5f6;
           font-family: "Manrope", sans-serif;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 700;
         }
 
-        .content-heading p {
+        .payable-section-heading p {
           margin: 6px 0 0;
           color: #85858b;
-          font-size: 12px;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .payable-count {
+          padding: 6px 10px;
+          border: 1px solid #343438;
+          border-radius: 20px;
+          color: #bdbdc5;
+          background: #1b1b1e;
+          font-size: 10px;
+          white-space: nowrap;
         }
 
         .payable-filters {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 17px 23px;
+          padding: 16px 22px;
           border-bottom: 1px solid #29292d;
         }
 
-        .search-box {
+        .payable-search {
           display: flex;
           align-items: center;
           flex: 1;
           gap: 10px;
           min-width: 180px;
-          height: 40px;
+          height: 39px;
           padding: 0 12px;
           border: 1px solid #303034;
           border-radius: 8px;
           background: #151517;
         }
 
-        .search-box > span {
+        .payable-search > span {
           color: #85858b;
-          font-size: 21px;
+          font-size: 20px;
         }
 
-        .search-box input {
+        .payable-search input {
           width: 100%;
           border: 0;
           outline: none;
           color: #f5f5f6;
           background: transparent;
           font: inherit;
-          font-size: 12px;
+          font-size: 11px;
         }
 
-        .search-box input::placeholder {
+        .payable-search input::placeholder {
           color: #707077;
         }
 
-        .payable-filters select {
-          height: 40px;
-          min-width: 155px;
-          padding: 0 12px;
+        .payable-filter-field {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .payable-filter-field label {
+          color: #85858b;
+          font-size: 10px;
+        }
+
+        .payable-filter-field select {
+          height: 39px;
+          min-width: 150px;
+          padding: 0 11px;
           border: 1px solid #303034;
           border-radius: 8px;
           outline: none;
           color: #e5e5e7;
           background: #151517;
           font: inherit;
-          font-size: 12px;
+          font-size: 11px;
         }
 
         .payable-table-wrapper {
@@ -758,11 +833,11 @@ export default function ContasAPagarPage() {
         }
 
         .payable-table th {
-          padding: 14px 16px;
+          padding: 13px 15px;
           border-bottom: 1px solid #29292d;
           color: #85858b;
           background: #151517;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
           letter-spacing: 0.5px;
           text-transform: uppercase;
@@ -770,14 +845,14 @@ export default function ContasAPagarPage() {
 
         .payable-table th:first-child,
         .payable-table td:first-child {
-          padding-left: 23px;
+          padding-left: 22px;
         }
 
         .payable-table td {
-          padding: 15px 16px;
+          padding: 14px 15px;
           border-bottom: 1px solid #242427;
           color: #c6c6ca;
-          font-size: 12px;
+          font-size: 11px;
         }
 
         .payable-table tbody tr:last-child td {
@@ -788,7 +863,7 @@ export default function ContasAPagarPage() {
           background: #171719;
         }
 
-        .expense-description {
+        .payable-description {
           display: flex;
           flex-direction: column;
           gap: 5px;
@@ -796,31 +871,31 @@ export default function ContasAPagarPage() {
           white-space: normal;
         }
 
-        .expense-description strong {
+        .payable-description strong {
           color: #ededee;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 600;
         }
 
-        .expense-description small {
+        .payable-description small {
           color: #77777e;
-          font-size: 10px;
+          font-size: 9px;
         }
 
-        .date-value {
+        .payable-date-value {
           color: #c6c6ca;
         }
 
-        .date-overdue {
+        .payable-date-value.overdue {
           color: #d18c8c;
         }
 
-        .amount-value {
+        .payable-amount {
           color: #f0f0f1 !important;
           font-weight: 700;
         }
 
-        .status-badge {
+        .payable-status {
           display: inline-flex;
           align-items: center;
           padding: 5px 9px;
@@ -828,138 +903,151 @@ export default function ContasAPagarPage() {
           border-radius: 20px;
           color: #c3c7ce;
           background: #1b1b1e;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
         }
 
-        .status-paid {
+        .payable-status.paid {
           border-color: #35443b;
           color: #a8c7b3;
           background: #18201b;
         }
 
-        .status-overdue {
+        .payable-status.overdue {
           border-color: #543437;
           color: #d18c8c;
           background: #241719;
         }
 
-        .status-cancelled {
+        .payable-status.cancelled {
           border-color: #39393d;
           color: #85858b;
           background: #1b1b1e;
         }
 
-        .status-pending {
+        .payable-status.pending {
           border-color: #49433a;
           color: #c5b99e;
           background: #211e19;
         }
 
-        .pay-button,
-        .undo-button {
-          padding: 7px 10px;
+        .payable-action-button,
+        .payable-undo-button {
+          min-height: 29px;
+          padding: 0 9px;
           border: 1px solid #414148;
           border-radius: 7px;
           color: #e5e5e7;
           background: #202023;
           font: inherit;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
           cursor: pointer;
           transition: 0.2s;
         }
 
-        .pay-button:hover {
+        .payable-action-button:hover {
           border-color: #78917e;
           color: #b8d4c0;
           background: #1b2520;
         }
 
-        .undo-button:hover {
+        .payable-undo-button:hover {
           border-color: #777d87;
           background: #29292d;
         }
 
-        .no-action {
+        .payable-no-action {
           color: #66666c;
         }
 
-        .empty-state {
-          height: 190px;
+        .payable-empty-state {
+          height: 180px;
           text-align: center !important;
           white-space: normal;
         }
 
-        .empty-state > strong,
-        .empty-state > span {
+        .payable-empty-state > strong,
+        .payable-empty-state > span {
           display: block;
         }
 
-        .empty-state > strong {
+        .payable-empty-state > strong {
           margin: 8px 0 5px;
           color: #dedee0;
-          font-size: 13px;
+          font-size: 12px;
         }
 
-        .empty-state > span {
+        .payable-empty-state > span {
           color: #85858b;
-          font-size: 11px;
+          font-size: 10px;
+          line-height: 1.5;
         }
 
-        .empty-icon {
+        .payable-empty-icon {
           color: #777d87;
-          font-size: 25px;
+          font-size: 24px;
         }
 
-        .table-footer {
+        .payable-table-footer {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          padding: 16px 23px;
+          padding: 15px 22px;
           border-top: 1px solid #29292d;
           color: #85858b;
-          font-size: 11px;
+          font-size: 10px;
         }
 
-        .table-footer strong {
+        .payable-table-footer strong {
           color: #dedee0;
         }
 
-        @media (max-width: 1050px) {
+        .payable-footer {
+          padding: 8px;
+          color: #77777f;
+          text-align: center;
+          font-size: 9px;
+        }
+
+        @media (max-width: 1100px) {
           .payable-summary {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 700px) {
-          .payable-page {
-            padding: 20px 14px;
+          .payable-topbar-left h1 {
+            font-size: 21px;
           }
 
-          .payable-header {
+          .payable-topbar-right {
+            gap: 9px;
+          }
+
+          .payable-date {
+            font-size: 10px;
+          }
+
+          .payable-intro {
             align-items: flex-start;
             flex-direction: column;
-          }
-
-          .payable-header h1 {
-            font-size: 25px;
           }
 
           .payable-summary {
             gap: 10px;
           }
 
-          .summary-card {
+          .payable-summary-card {
             padding: 15px;
           }
 
-          .summary-card > strong {
-            font-size: 19px;
+          .payable-summary-card > strong {
+            font-size: 18px;
           }
 
-          .content-heading {
+          .payable-section-heading {
             align-items: flex-start;
             flex-direction: column;
             padding: 18px;
@@ -971,18 +1059,23 @@ export default function ContasAPagarPage() {
             padding: 15px;
           }
 
-          .payable-filters select {
-            width: 100%;
+          .payable-filter-field {
+            align-items: center;
+            justify-content: space-between;
           }
 
-          .table-footer {
+          .payable-filter-field select {
+            flex: 1;
+          }
+
+          .payable-table-footer {
             align-items: flex-start;
             flex-direction: column;
             padding: 15px;
           }
         }
 
-        @media (max-width: 380px) {
+        @media (max-width: 420px) {
           .payable-summary {
             grid-template-columns: 1fr;
           }

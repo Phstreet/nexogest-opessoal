@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type MovementType =
   | "Receita"
@@ -56,18 +57,6 @@ type MonthData = {
 const TRANSACTIONS_KEY = "nexo_transactions";
 const ACCOUNTS_KEY = "nexo_accounts";
 
-const financeNavigation = [
-  { label: "Visão geral", href: "/financeiro", icon: "⌂" },
-  { label: "Contas", href: "/financeiro/contas", icon: "▣" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↓" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↑" },
-  { label: "Histórico financeiro", href: "/financeiro/historico", icon: "↻" },
-  { label: "Investimentos", href: "/financeiro/investimentos", icon: "◈" },
-  { label: "Reserva financeira", href: "/financeiro/reservas", icon: "▣" },
-  { label: "Planejamento", href: "/financeiro/planejamento", icon: "▤" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
-];
-
 function money(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -78,14 +67,6 @@ function money(value: number) {
 function parseAmount(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function getLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
 }
 
 function getMonthKey(date: Date) {
@@ -123,45 +104,8 @@ function isConfirmedRevenue(transaction: Transaction) {
   return transaction.status?.toLowerCase() === "recebida";
 }
 
-function isOutgoing(transaction: Transaction) {
-  return (
-    transaction.type === "Despesa" ||
-    transaction.type === "Investimento" ||
-    transaction.type === "Aplicação" ||
-    transaction.type === "Reserva"
-  );
-}
-
-function getStatusLabel(status?: string) {
-  if (!status) return "Não informado";
-
-  const normalized = status.toLowerCase();
-
-  if (normalized === "pago" || normalized === "recebida") {
-    return "Confirmado";
-  }
-
-  if (normalized.includes("parcialmente")) {
-    return "Parcial";
-  }
-
-  if (normalized === "atrasada") {
-    return "Atrasado";
-  }
-
-  if (normalized === "cancelada") {
-    return "Cancelado";
-  }
-
-  return "Pendente";
-}
-
 function getMonthStart(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function getMonthEnd(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
 
 export default function FinancialDashboardPage() {
@@ -276,7 +220,8 @@ export default function FinancialDashboardPage() {
     return Math.max(0, currentExpenses - currentConfirmedExpenses);
   }, [currentExpenses, currentConfirmedExpenses]);
 
-  const currentBalance = currentRevenue - currentExpenses - currentInvestments - currentReserves;
+  const currentBalance =
+    currentRevenue - currentExpenses - currentInvestments - currentReserves;
 
   const previousRevenue = useMemo(() => {
     return previousMonthTransactions
@@ -416,11 +361,7 @@ export default function FinancialDashboardPage() {
         ...month,
         revenue,
         expenses,
-        balance:
-          revenue -
-          expenses -
-          month.investments -
-          month.reserves,
+        balance: revenue - expenses - month.investments - month.reserves,
         projected: true,
         estimated: !hasRegisteredData,
       };
@@ -485,25 +426,14 @@ export default function FinancialDashboardPage() {
 
   const monthlySavingsTarget = useMemo(() => {
     if (averageRevenue <= 0) return 0;
-
     return averageRevenue * 0.1;
   }, [averageRevenue]);
 
   const recommendedSpendingLimit = useMemo(() => {
     const projectedRevenue = averageRevenue || currentRevenue;
-    const projectedExpenses = averageExpenses || currentExpenses;
 
-    return Math.max(
-      0,
-      projectedRevenue - monthlySavingsTarget
-    );
-  }, [
-    averageRevenue,
-    currentRevenue,
-    averageExpenses,
-    currentExpenses,
-    monthlySavingsTarget,
-  ]);
+    return Math.max(0, projectedRevenue - monthlySavingsTarget);
+  }, [averageRevenue, currentRevenue, monthlySavingsTarget]);
 
   const availableToSpend = Math.max(
     0,
@@ -629,9 +559,14 @@ export default function FinancialDashboardPage() {
 
   if (!loaded) {
     return (
-      <main className="dashboard-loading">
-        <div className="loading-indicator" />
-        <p>Carregando dashboard financeiro...</p>
+      <main className="app-shell">
+        <MainNavigation />
+        <section className="main-area">
+          <div className="dashboard-loading">
+            <div className="loading-indicator" />
+            <p>Carregando dashboard financeiro...</p>
+          </div>
+        </section>
 
         <style jsx>{`
           .dashboard-loading {
@@ -666,542 +601,519 @@ export default function FinancialDashboardPage() {
   }
 
   return (
-    <main className="dashboard-page">
-      <div className="dashboard-container">
-        <header className="page-header">
-          <div className="header-content">
-            <span className="eyebrow">NEXO / GESTÃO FINANCEIRA</span>
+    <main className="app-shell">
+      <MainNavigation />
+
+      <section className="main-area">
+        <header className="topbar">
+          <div className="topbar-left">
+            <div className="breadcrumb">
+              NEXO / FINANCEIRO / DASHBOARD
+            </div>
             <h1>Dashboard financeiro</h1>
-            <p>
-              Acompanhe sua saúde financeira, identifique excessos e planeje
-              seus próximos meses.
-            </p>
           </div>
 
-          <div className="header-actions">
-            <div className="header-date">
+          <div className="topbar-right">
+            <div className="topbar-date">
               {today.toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
               })}
             </div>
-
-            <Link href="/financeiro" className="back-link">
-              <span>←</span>
-              Voltar ao financeiro
-            </Link>
+            <div className="topbar-avatar">N</div>
           </div>
         </header>
 
-        <nav className="finance-navigation">
-          {financeNavigation.map((item) => {
-            const active = item.href === "/financeiro/dashboard";
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`navigation-button ${active ? "selected" : ""}`}
-                aria-current={active ? "page" : undefined}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <section className="welcome-section">
-          <div>
-            <span className="section-eyebrow">ANÁLISE FINANCEIRA</span>
-            <h2>
-              Seu panorama de <strong>{currentMonthName}</strong>
-            </h2>
-            <p>
-              Uma visão geral para ajudar você a tomar decisões melhores com
-              seu dinheiro.
-            </p>
-          </div>
-
-          <div className={`situation-badge ${financialSituation}`}>
-            <span className="situation-dot" />
-            {financialSituation === "negative"
-              ? "Resultado negativo"
-              : financialSituation === "positive"
-                ? "Resultado positivo"
-                : "Resultado equilibrado"}
-          </div>
-        </section>
-
-        <section className="summary-grid">
-          <article className="summary-card">
-            <div className="card-top">
-              <span className="card-label">Receitas do mês</span>
-              <span className="card-icon income">↑</span>
-            </div>
-            <strong className="card-value income-text">
-              {money(currentRevenue)}
-            </strong>
-            <span className="card-description">
-              {money(currentConfirmedRevenue)} com status recebido
-            </span>
-          </article>
-
-          <article className="summary-card">
-            <div className="card-top">
-              <span className="card-label">Despesas do mês</span>
-              <span className="card-icon expense">↓</span>
-            </div>
-            <strong className="card-value">
-              {money(currentExpenses)}
-            </strong>
-            <span className="card-description">
-              {money(currentConfirmedExpenses)} com status pago
-            </span>
-          </article>
-
-          <article className="summary-card">
-            <div className="card-top">
-              <span className="card-label">Resultado do mês</span>
-              <span className="card-icon result">∑</span>
-            </div>
-            <strong
-              className={`card-value ${
-                currentBalance < 0 ? "negative-text" : "positive-text"
-              }`}
-            >
-              {money(currentBalance)}
-            </strong>
-            <span className="card-description">
-              Receitas menos despesas, investimentos e reservas
-            </span>
-          </article>
-
-          <article className="summary-card">
-            <div className="card-top">
-              <span className="card-label">Limite recomendado</span>
-              <span className="card-icon limit">◎</span>
-            </div>
-            <strong className="card-value">
-              {money(availableToSpend)}
-            </strong>
-            <span className="card-description">
-              Estimativa disponível para novas despesas neste mês
-            </span>
-          </article>
-        </section>
-
-        <section className="main-grid">
-          <article className="panel chart-panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">DESEMPENHO</span>
-                <h3>Receitas x despesas</h3>
-                <p>Comparativo dos últimos meses e do período atual.</p>
-              </div>
-              <div className="chart-legend">
-                <span><i className="legend-income" /> Receitas</span>
-                <span><i className="legend-expense" /> Despesas</span>
-              </div>
-            </div>
-
-            <div className="bar-chart">
-              {monthlyData.map((month) => (
-                <div className="bar-group" key={month.key}>
-                  <div className="bars">
-                    <div
-                      className="bar income-bar"
-                      style={{
-                        height: `${Math.max(
-                          3,
-                          (month.revenue / maxChartValue) * 150
-                        )}px`,
-                      }}
-                      title={`Receitas: ${money(month.revenue)}`}
-                    />
-                    <div
-                      className="bar expense-bar"
-                      style={{
-                        height: `${Math.max(
-                          3,
-                          (month.expenses / maxChartValue) * 150
-                        )}px`,
-                      }}
-                      title={`Despesas: ${money(month.expenses)}`}
-                    />
-                  </div>
-                  <span className="bar-label">{month.label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="chart-footer">
-              <span>
-                <strong>{money(currentRevenue)}</strong> em receitas
-              </span>
-              <span>
-                <strong>{money(currentExpenses)}</strong> em despesas
-              </span>
-            </div>
-          </article>
-
-          <article className="panel result-panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">SEU RESULTADO</span>
-                <h3>Distribuição do dinheiro</h3>
-                <p>Composição dos lançamentos do mês atual.</p>
-              </div>
-            </div>
-
-            <div className="result-main">
-              <span>Saldo do mês</span>
-              <strong
-                className={
-                  currentBalance < 0 ? "negative-text" : "positive-text"
-                }
-              >
-                {money(currentBalance)}
-              </strong>
-            </div>
-
-            <div className="result-line">
-              <span>Receitas registradas</span>
-              <strong className="income-text">{money(currentRevenue)}</strong>
-            </div>
-
-            <div className="result-line">
-              <span>Despesas registradas</span>
-              <strong>{money(currentExpenses)}</strong>
-            </div>
-
-            <div className="result-line">
-              <span>Investimentos e aplicações</span>
-              <strong>{money(currentInvestments)}</strong>
-            </div>
-
-            <div className="result-line">
-              <span>Reservas</span>
-              <strong>{money(currentReserves)}</strong>
-            </div>
-
-            <div className="result-line total-line">
-              <span>Margem sobre receitas</span>
-              <strong className={savingsRate < 0 ? "negative-text" : ""}>
-                {savingsRate.toFixed(1)}%
-              </strong>
-            </div>
-          </article>
-        </section>
-
-        <section className="main-grid category-grid">
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">CONTROLE DE GASTOS</span>
-                <h3>Onde você está gastando</h3>
-                <p>Despesas agrupadas por categoria neste mês.</p>
-              </div>
-            </div>
-
-            {categoryExpenses.length > 0 ? (
-              <div className="category-list">
-                {categoryExpenses.slice(0, 7).map((item) => {
-                  const percentage =
-                    totalCategoryExpenses > 0
-                      ? (item.amount / totalCategoryExpenses) * 100
-                      : 0;
-
-                  return (
-                    <div className="category-item" key={item.category}>
-                      <div className="category-info">
-                        <span>{item.category}</span>
-                        <strong>{money(item.amount)}</strong>
-                      </div>
-                      <div className="progress-track">
-                        <div
-                          className="progress-fill"
-                          style={{
-                            width: `${(item.amount / maxCategoryValue) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="category-percentage">
-                        {percentage.toFixed(1)}% das despesas
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-state">
-                <span>◈</span>
-                <strong>Nenhuma despesa registrada</strong>
-                <p>Quando você cadastrar despesas, elas aparecerão aqui.</p>
-              </div>
-            )}
-          </article>
-
-          <article className="panel economy-panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">META DE ECONOMIA</span>
-                <h3>Quanto guardar</h3>
-                <p>Referência de economia mensal de 10% da receita média.</p>
-              </div>
-            </div>
-
-            <div className="economy-highlight">
-              <span>Meta mensal sugerida</span>
-              <strong>{money(monthlySavingsTarget)}</strong>
-              <small>Baseada na receita média disponível no histórico.</small>
-            </div>
-
-            <div className="economy-row">
-              <span>Investimentos e aplicações</span>
-              <strong>{money(currentInvestments)}</strong>
-            </div>
-
-            <div className="economy-row">
-              <span>Valores destinados a reservas</span>
-              <strong>{money(currentReserves)}</strong>
-            </div>
-
-            <div className="economy-row">
-              <span>Margem atual do mês</span>
-              <strong
-                className={currentBalance < 0 ? "negative-text" : "positive-text"}
-              >
-                {money(currentBalance)}
-              </strong>
-            </div>
-
-            <div className="economy-note">
-              <span>!</span>
-              A meta de 10% é uma referência inicial. Ajuste sua economia de
-              acordo com suas despesas essenciais e compromissos.
-            </div>
-          </article>
-        </section>
-
-        <section className="panel forecast-panel">
-          <div className="panel-header forecast-header">
+        <div className="content dashboard-content">
+          <section className="welcome-section">
             <div>
-              <span className="section-eyebrow">VISÃO DE FUTURO</span>
-              <h3>Projeção dos próximos meses</h3>
+              <span className="section-eyebrow">ANÁLISE FINANCEIRA</span>
+              <h2>
+                Seu panorama de <strong>{currentMonthName}</strong>
+              </h2>
               <p>
-                Acompanhe o que está previsto e identifique períodos que exigem
-                atenção.
+                Uma visão geral para ajudar você a tomar decisões melhores com
+                seu dinheiro.
               </p>
             </div>
 
-            <select
-              value={period}
-              onChange={(event) =>
-                setPeriod(event.target.value as "3" | "6")
-              }
-              className="period-select"
-            >
-              <option value="3">Próximos 3 meses</option>
-              <option value="6">Próximos 6 meses</option>
-            </select>
-          </div>
-
-          <div className="forecast-table-wrapper">
-            <table className="forecast-table">
-              <thead>
-                <tr>
-                  <th>Mês</th>
-                  <th>Receitas estimadas</th>
-                  <th>Despesas estimadas</th>
-                  <th>Resultado projetado</th>
-                  <th>Situação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleForecast.map((month) => (
-                  <tr key={month.key}>
-                    <td>
-                      <strong>{month.label}</strong>
-                      {"estimated" in month && month.estimated && (
-                        <small className="estimate-label">Estimativa</small>
-                      )}
-                    </td>
-                    <td className="income-text">{money(month.revenue)}</td>
-                    <td>{money(month.expenses)}</td>
-                    <td
-                      className={
-                        month.balance < 0 ? "negative-text" : "positive-text"
-                      }
-                    >
-                      {money(month.balance)}
-                    </td>
-                    <td>
-                      <span
-                        className={`forecast-status ${
-                          month.balance < 0 ? "danger" : "safe"
-                        }`}
-                      >
-                        {month.balance < 0 ? "Atenção" : "Positivo"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-
-                {visibleForecast.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="empty-table">
-                      Não há dados suficientes para a projeção.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="forecast-summary">
-            <div>
-              <span>Receitas do período</span>
-              <strong className="income-text">{money(totalFutureRevenue)}</strong>
+            <div className={`situation-badge ${financialSituation}`}>
+              <span className="situation-dot" />
+              {financialSituation === "negative"
+                ? "Resultado negativo"
+                : financialSituation === "positive"
+                  ? "Resultado positivo"
+                  : "Resultado equilibrado"}
             </div>
-            <div>
-              <span>Despesas do período</span>
-              <strong>{money(totalFutureExpenses)}</strong>
-            </div>
-            <div>
-              <span>Resultado médio mensal</span>
-              <strong
-                className={
-                  averageFutureBalance < 0 ? "negative-text" : "positive-text"
-                }
-              >
-                {money(averageFutureBalance)}
+          </section>
+
+          <section className="summary-grid">
+            <article className="summary-card">
+              <div className="card-top">
+                <span className="card-label">Receitas do mês</span>
+                <span className="card-icon income">↑</span>
+              </div>
+              <strong className="card-value income-text">
+                {money(currentRevenue)}
               </strong>
-            </div>
-          </div>
+              <span className="card-description">
+                {money(currentConfirmedRevenue)} com status recebido
+              </span>
+            </article>
 
-          <p className="forecast-disclaimer">
-            As projeções utilizam lançamentos futuros cadastrados. Quando não
-            existem lançamentos para determinado mês, o painel utiliza a média
-            dos meses anteriores como estimativa. Não representa garantia de
-            receita ou despesa futura.
-          </p>
-        </section>
-
-        <section className="main-grid bottom-grid">
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">PLANO DE AÇÃO</span>
-                <h3>Como melhorar sua situação financeira</h3>
-                <p>Recomendações automáticas com base nos seus lançamentos.</p>
+            <article className="summary-card">
+              <div className="card-top">
+                <span className="card-label">Despesas do mês</span>
+                <span className="card-icon expense">↓</span>
               </div>
-            </div>
+              <strong className="card-value">
+                {money(currentExpenses)}
+              </strong>
+              <span className="card-description">
+                {money(currentConfirmedExpenses)} com status pago
+              </span>
+            </article>
 
-            <div className="recommendation-list">
-              {recommendations.map((item, index) => (
-                <div
-                  className={`recommendation-item ${item.type}`}
-                  key={`${item.title}-${index}`}
-                >
-                  <span className="recommendation-icon">
-                    {item.type === "warning"
-                      ? "!"
-                      : item.type === "success"
-                        ? "✓"
-                        : "i"}
-                  </span>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.description}</p>
-                  </div>
+            <article className="summary-card">
+              <div className="card-top">
+                <span className="card-label">Resultado do mês</span>
+                <span className="card-icon result">∑</span>
+              </div>
+              <strong
+                className={`card-value ${
+                  currentBalance < 0 ? "negative-text" : "positive-text"
+                }`}
+              >
+                {money(currentBalance)}
+              </strong>
+              <span className="card-description">
+                Receitas menos despesas, investimentos e reservas
+              </span>
+            </article>
+
+            <article className="summary-card">
+              <div className="card-top">
+                <span className="card-label">Limite recomendado</span>
+                <span className="card-icon limit">◎</span>
+              </div>
+              <strong className="card-value">
+                {money(availableToSpend)}
+              </strong>
+              <span className="card-description">
+                Estimativa disponível para novas despesas neste mês
+              </span>
+            </article>
+          </section>
+
+          <section className="main-grid">
+            <article className="panel chart-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">DESEMPENHO</span>
+                  <h3>Receitas x despesas</h3>
+                  <p>Comparativo dos últimos meses e do período atual.</p>
                 </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="panel account-panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">CONTAS FINANCEIRAS</span>
-                <h3>Contas cadastradas</h3>
-                <p>Resumo dos saldos iniciais informados.</p>
+                <div className="chart-legend">
+                  <span><i className="legend-income" /> Receitas</span>
+                  <span><i className="legend-expense" /> Despesas</span>
+                </div>
               </div>
-              <Link href="/financeiro/contas" className="panel-link">
-                Ver contas →
-              </Link>
-            </div>
 
-            <div className="account-total">
-              <span>Total de saldos iniciais</span>
-              <strong>{money(accountBalance)}</strong>
-            </div>
-
-            {accounts.filter((account) => account.active).length > 0 ? (
-              <div className="account-list">
-                {accounts
-                  .filter((account) => account.active)
-                  .slice(0, 5)
-                  .map((account) => (
-                    <div className="account-item" key={account.id}>
-                      <div className="account-symbol">▣</div>
-                      <div className="account-info">
-                        <strong>{account.name}</strong>
-                        <span>{account.institution || account.type}</span>
-                      </div>
-                      <strong className="account-value">
-                        {money(parseAmount(account.initialBalance))}
-                      </strong>
+              <div className="bar-chart">
+                {monthlyData.map((month) => (
+                  <div className="bar-group" key={month.key}>
+                    <div className="bars">
+                      <div
+                        className="bar income-bar"
+                        style={{
+                          height: `${Math.max(
+                            3,
+                            (month.revenue / maxChartValue) * 150
+                          )}px`,
+                        }}
+                        title={`Receitas: ${money(month.revenue)}`}
+                      />
+                      <div
+                        className="bar expense-bar"
+                        style={{
+                          height: `${Math.max(
+                            3,
+                            (month.expenses / maxChartValue) * 150
+                          )}px`,
+                        }}
+                        title={`Despesas: ${money(month.expenses)}`}
+                      />
                     </div>
+                    <span className="bar-label">{month.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="chart-footer">
+                <span>
+                  <strong>{money(currentRevenue)}</strong> em receitas
+                </span>
+                <span>
+                  <strong>{money(currentExpenses)}</strong> em despesas
+                </span>
+              </div>
+            </article>
+
+            <article className="panel result-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">SEU RESULTADO</span>
+                  <h3>Distribuição do dinheiro</h3>
+                  <p>Composição dos lançamentos do mês atual.</p>
+                </div>
+              </div>
+
+              <div className="result-main">
+                <span>Saldo do mês</span>
+                <strong
+                  className={
+                    currentBalance < 0 ? "negative-text" : "positive-text"
+                  }
+                >
+                  {money(currentBalance)}
+                </strong>
+              </div>
+
+              <div className="result-line">
+                <span>Receitas registradas</span>
+                <strong className="income-text">{money(currentRevenue)}</strong>
+              </div>
+
+              <div className="result-line">
+                <span>Despesas registradas</span>
+                <strong>{money(currentExpenses)}</strong>
+              </div>
+
+              <div className="result-line">
+                <span>Investimentos e aplicações</span>
+                <strong>{money(currentInvestments)}</strong>
+              </div>
+
+              <div className="result-line">
+                <span>Reservas</span>
+                <strong>{money(currentReserves)}</strong>
+              </div>
+
+              <div className="result-line total-line">
+                <span>Margem sobre receitas</span>
+                <strong className={savingsRate < 0 ? "negative-text" : ""}>
+                  {savingsRate.toFixed(1)}%
+                </strong>
+              </div>
+            </article>
+          </section>
+
+          <section className="main-grid category-grid">
+            <article className="panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">CONTROLE DE GASTOS</span>
+                  <h3>Onde você está gastando</h3>
+                  <p>Despesas agrupadas por categoria neste mês.</p>
+                </div>
+              </div>
+
+              {categoryExpenses.length > 0 ? (
+                <div className="category-list">
+                  {categoryExpenses.slice(0, 7).map((item) => {
+                    const percentage =
+                      totalCategoryExpenses > 0
+                        ? (item.amount / totalCategoryExpenses) * 100
+                        : 0;
+
+                    return (
+                      <div className="category-item" key={item.category}>
+                        <div className="category-info">
+                          <span>{item.category}</span>
+                          <strong>{money(item.amount)}</strong>
+                        </div>
+                        <div className="progress-track">
+                          <div
+                            className="progress-fill"
+                            style={{
+                              width: `${(item.amount / maxCategoryValue) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="category-percentage">
+                          {percentage.toFixed(1)}% das despesas
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <span>◈</span>
+                  <strong>Nenhuma despesa registrada</strong>
+                  <p>Quando você cadastrar despesas, elas aparecerão aqui.</p>
+                </div>
+              )}
+            </article>
+
+            <article className="panel economy-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">META DE ECONOMIA</span>
+                  <h3>Quanto guardar</h3>
+                  <p>Referência de economia mensal de 10% da receita média.</p>
+                </div>
+              </div>
+
+              <div className="economy-highlight">
+                <span>Meta mensal sugerida</span>
+                <strong>{money(monthlySavingsTarget)}</strong>
+                <small>Baseada na receita média disponível no histórico.</small>
+              </div>
+
+              <div className="economy-row">
+                <span>Investimentos e aplicações</span>
+                <strong>{money(currentInvestments)}</strong>
+              </div>
+
+              <div className="economy-row">
+                <span>Valores destinados a reservas</span>
+                <strong>{money(currentReserves)}</strong>
+              </div>
+
+              <div className="economy-row">
+                <span>Margem atual do mês</span>
+                <strong
+                  className={currentBalance < 0 ? "negative-text" : "positive-text"}
+                >
+                  {money(currentBalance)}
+                </strong>
+              </div>
+
+              <div className="economy-note">
+                <span>!</span>
+                A meta de 10% é uma referência inicial. Ajuste sua economia de
+                acordo com suas despesas essenciais e compromissos.
+              </div>
+            </article>
+          </section>
+
+          <section className="panel forecast-panel">
+            <div className="panel-header forecast-header">
+              <div>
+                <span className="section-eyebrow">VISÃO DE FUTURO</span>
+                <h3>Projeção dos próximos meses</h3>
+                <p>
+                  Acompanhe o que está previsto e identifique períodos que exigem
+                  atenção.
+                </p>
+              </div>
+
+              <select
+                value={period}
+                onChange={(event) =>
+                  setPeriod(event.target.value as "3" | "6")
+                }
+                className="period-select"
+              >
+                <option value="3">Próximos 3 meses</option>
+                <option value="6">Próximos 6 meses</option>
+              </select>
+            </div>
+
+            <div className="forecast-table-wrapper">
+              <table className="forecast-table">
+                <thead>
+                  <tr>
+                    <th>Mês</th>
+                    <th>Receitas estimadas</th>
+                    <th>Despesas estimadas</th>
+                    <th>Resultado projetado</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleForecast.map((month) => (
+                    <tr key={month.key}>
+                      <td>
+                        <strong>{month.label}</strong>
+                        {"estimated" in month && month.estimated && (
+                          <small className="estimate-label">Estimativa</small>
+                        )}
+                      </td>
+                      <td className="income-text">{money(month.revenue)}</td>
+                      <td>{money(month.expenses)}</td>
+                      <td
+                        className={
+                          month.balance < 0 ? "negative-text" : "positive-text"
+                        }
+                      >
+                        {money(month.balance)}
+                      </td>
+                      <td>
+                        <span
+                          className={`forecast-status ${
+                            month.balance < 0 ? "danger" : "safe"
+                          }`}
+                        >
+                          {month.balance < 0 ? "Atenção" : "Positivo"}
+                        </span>
+                      </td>
+                    </tr>
                   ))}
+
+                  {visibleForecast.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="empty-table">
+                        Não há dados suficientes para a projeção.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="forecast-summary">
+              <div>
+                <span>Receitas do período</span>
+                <strong className="income-text">{money(totalFutureRevenue)}</strong>
               </div>
-            ) : (
-              <div className="empty-state compact">
-                <strong>Nenhuma conta cadastrada</strong>
-                <p>Cadastre suas contas para visualizar os saldos iniciais.</p>
+              <div>
+                <span>Despesas do período</span>
+                <strong>{money(totalFutureExpenses)}</strong>
               </div>
-            )}
-          </article>
-        </section>
+              <div>
+                <span>Resultado médio mensal</span>
+                <strong
+                  className={
+                    averageFutureBalance < 0 ? "negative-text" : "positive-text"
+                  }
+                >
+                  {money(averageFutureBalance)}
+                </strong>
+              </div>
+            </div>
 
-        <section className="disclaimer">
-          <span>ⓘ</span>
-          <p>
-            <strong>Sobre os indicadores:</strong> os valores são calculados
-            com base nos lançamentos cadastrados no NEXO. O valor total do
-            lançamento é utilizado nos cálculos, pois o cadastro atual não
-            armazena o valor efetivamente liquidado em pagamentos parciais.
-            O saldo inicial das contas é exibido separadamente e não representa
-            o saldo bancário atualizado.
-          </p>
-        </section>
-      </div>
+            <p className="forecast-disclaimer">
+              As projeções utilizam lançamentos futuros cadastrados. Quando não
+              existem lançamentos para determinado mês, o painel utiliza a média
+              dos meses anteriores como estimativa. Não representa garantia de
+              receita ou despesa futura.
+            </p>
+          </section>
 
-      <style jsx>{`
-        .dashboard-page {
-          min-height: 100vh;
-          padding: 30px;
-          background: #101012;
-          color: #f4f4f5;
-        }
+          <section className="main-grid bottom-grid">
+            <article className="panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">PLANO DE AÇÃO</span>
+                  <h3>Como melhorar sua situação financeira</h3>
+                  <p>Recomendações automáticas com base nos seus lançamentos.</p>
+                </div>
+              </div>
 
-        .dashboard-container {
-          width: 100%;
-          max-width: 1500px;
-          margin: 0 auto;
-        }
+              <div className="recommendation-list">
+                {recommendations.map((item, index) => (
+                  <div
+                    className={`recommendation-item ${item.type}`}
+                    key={`${item.title}-${index}`}
+                  >
+                    <span className="recommendation-icon">
+                      {item.type === "warning"
+                        ? "!"
+                        : item.type === "success"
+                          ? "✓"
+                          : "i"}
+                    </span>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
 
-        .page-header {
+            <article className="panel account-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">CONTAS FINANCEIRAS</span>
+                  <h3>Contas cadastradas</h3>
+                  <p>Resumo dos saldos iniciais informados.</p>
+                </div>
+                <Link href="/financeiro/contas" className="panel-link">
+                  Ver contas →
+                </Link>
+              </div>
+
+              <div className="account-total">
+                <span>Total de saldos iniciais</span>
+                <strong>{money(accountBalance)}</strong>
+              </div>
+
+              {accounts.filter((account) => account.active).length > 0 ? (
+                <div className="account-list">
+                  {accounts
+                    .filter((account) => account.active)
+                    .slice(0, 5)
+                    .map((account) => (
+                      <div className="account-item" key={account.id}>
+                        <div className="account-symbol">▣</div>
+                        <div className="account-info">
+                          <strong>{account.name}</strong>
+                          <span>{account.institution || account.type}</span>
+                        </div>
+                        <strong className="account-value">
+                          {money(parseAmount(account.initialBalance))}
+                        </strong>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="empty-state compact">
+                  <strong>Nenhuma conta cadastrada</strong>
+                  <p>Cadastre suas contas para visualizar os saldos iniciais.</p>
+                </div>
+              )}
+            </article>
+          </section>
+
+          <section className="disclaimer">
+            <span>ⓘ</span>
+            <p>
+              <strong>Sobre os indicadores:</strong> os valores são calculados
+              com base nos lançamentos cadastrados no NEXO. O valor total do
+              lançamento é utilizado nos cálculos, pois o cadastro atual não
+              armazena o valor efetivamente liquidado em pagamentos parciais.
+              O saldo inicial das contas é exibido separadamente e não representa
+              o saldo bancário atualizado.
+            </p>
+          </section>
+
+          <footer className="routine-footer">
+            NEXO · Planeje. Organize. Conquiste.
+          </footer>
+        </div>
+      </section>
+
+      <style jsx global>{`
+        .dashboard-content {
           display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 24px;
-          margin-bottom: 25px;
+          flex-direction: column;
+          gap: 18px;
+          min-width: 0;
         }
 
-        .eyebrow,
-        .section-eyebrow {
+        .dashboard-content .welcome-section {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 0;
+        }
+
+        .dashboard-content .section-eyebrow {
           display: block;
           color: #85858f;
           font-size: 10px;
@@ -1209,123 +1121,25 @@ export default function FinancialDashboardPage() {
           letter-spacing: 1.5px;
         }
 
-        .page-header h1 {
-          margin: 9px 0 7px;
-          font-size: 29px;
-          font-weight: 700;
-          letter-spacing: -1px;
+        .dashboard-content .welcome-section h2 {
+          margin: 8px 0 6px;
+          font-size: 21px;
+          font-weight: 600;
         }
 
-        .page-header p,
-        .welcome-section p {
+        .dashboard-content .welcome-section h2 strong {
+          color: #fff;
+          text-transform: capitalize;
+        }
+
+        .dashboard-content .welcome-section p {
           margin: 0;
           color: #92929c;
           font-size: 13px;
           line-height: 1.6;
         }
 
-        .header-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 10px;
-        }
-
-        .header-date {
-          color: #85858f;
-          font-size: 11px;
-          text-transform: capitalize;
-        }
-
-        :global(.back-link) {
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          gap: 7px !important;
-          min-height: 36px !important;
-          height: 36px !important;
-          padding: 0 12px !important;
-          color: #bdbdc5 !important;
-          background: #202024 !important;
-          border: 1px solid #34343a !important;
-          border-radius: 6px !important;
-          font-size: 11px !important;
-          text-decoration: none !important;
-          white-space: nowrap !important;
-          box-sizing: border-box !important;
-        }
-
-        :global(.finance-navigation) {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px;
-          margin-bottom: 26px;
-          overflow-x: auto;
-          border: 1px solid #29292e;
-          border-radius: 9px;
-          background: #151517;
-          scrollbar-width: thin;
-          box-sizing: border-box;
-        }
-
-        :global(.finance-navigation .navigation-button) {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          flex-shrink: 0;
-          min-height: 36px;
-          padding: 0 12px;
-          border: 1px solid #34343a;
-          border-radius: 6px;
-          color: #bdbdc5;
-          background: #202024;
-          font-size: 11px;
-          text-decoration: none;
-          white-space: nowrap;
-          transition: 0.2s;
-          box-sizing: border-box;
-        }
-
-        :global(.finance-navigation .navigation-button:hover) {
-          color: #fff;
-          border-color: #77777f;
-          background: #303035;
-        }
-
-        :global(.finance-navigation .navigation-button.selected) {
-          color: #fff;
-          border-color: #77777f;
-          background: #38383e;
-          font-weight: 700;
-        }
-
-        :global(.finance-navigation .navigation-button span) {
-          font-size: 15px;
-          line-height: 1;
-        }
-
-        .welcome-section {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 20px;
-        }
-
-        .welcome-section h2 {
-          margin: 8px 0 6px;
-          font-size: 21px;
-          font-weight: 600;
-        }
-
-        .welcome-section h2 strong {
-          color: #fff;
-          text-transform: capitalize;
-        }
-
-        .situation-badge {
+        .dashboard-content .situation-badge {
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -1338,30 +1152,29 @@ export default function FinancialDashboardPage() {
           font-size: 11px;
         }
 
-        .situation-dot {
+        .dashboard-content .situation-dot {
           width: 7px;
           height: 7px;
           border-radius: 50%;
           background: #aaa;
         }
 
-        .situation-badge.positive .situation-dot {
+        .dashboard-content .situation-badge.positive .situation-dot {
           background: #70bd91;
         }
 
-        .situation-badge.negative .situation-dot {
+        .dashboard-content .situation-badge.negative .situation-dot {
           background: #e17a7a;
         }
 
-        .summary-grid {
+        .dashboard-content .summary-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 14px;
-          margin-bottom: 18px;
         }
 
-        .summary-card,
-        .panel {
+        .dashboard-content .summary-card,
+        .dashboard-content .panel {
           min-width: 0;
           padding: 20px;
           border: 1px solid #29292e;
@@ -1369,7 +1182,7 @@ export default function FinancialDashboardPage() {
           background: #171719;
         }
 
-        .card-top {
+        .dashboard-content .card-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1377,12 +1190,12 @@ export default function FinancialDashboardPage() {
           margin-bottom: 17px;
         }
 
-        .card-label {
+        .dashboard-content .card-label {
           color: #a4a4ad;
           font-size: 12px;
         }
 
-        .card-icon {
+        .dashboard-content .card-icon {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1395,15 +1208,15 @@ export default function FinancialDashboardPage() {
           font-size: 16px;
         }
 
-        .card-icon.income {
+        .dashboard-content .card-icon.income {
           color: #80c69c;
         }
 
-        .card-icon.expense {
+        .dashboard-content .card-icon.expense {
           color: #e18a8a;
         }
 
-        .card-value {
+        .dashboard-content .card-value {
           display: block;
           overflow-wrap: anywhere;
           font-size: clamp(19px, 2vw, 25px);
@@ -1411,7 +1224,7 @@ export default function FinancialDashboardPage() {
           letter-spacing: -0.7px;
         }
 
-        .card-description {
+        .dashboard-content .card-description {
           display: block;
           margin-top: 9px;
           color: #85858f;
@@ -1419,26 +1232,26 @@ export default function FinancialDashboardPage() {
           line-height: 1.5;
         }
 
-        .income-text {
+        .dashboard-content .income-text {
           color: #83c99e !important;
         }
 
-        .negative-text {
+        .dashboard-content .negative-text {
           color: #e58a8a !important;
         }
 
-        .positive-text {
+        .dashboard-content .positive-text {
           color: #83c99e !important;
         }
 
-        .main-grid {
+        .dashboard-content .main-grid {
           display: grid;
           grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
           gap: 18px;
-          margin-bottom: 18px;
+          min-width: 0;
         }
 
-        .panel-header {
+        .dashboard-content .panel-header {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
@@ -1446,20 +1259,20 @@ export default function FinancialDashboardPage() {
           margin-bottom: 22px;
         }
 
-        .panel-header h3 {
+        .dashboard-content .panel-header h3 {
           margin: 7px 0 5px;
           font-size: 16px;
           font-weight: 650;
         }
 
-        .panel-header p {
+        .dashboard-content .panel-header p {
           margin: 0;
           color: #85858f;
           font-size: 11px;
           line-height: 1.5;
         }
 
-        .chart-legend {
+        .dashboard-content .chart-legend {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
@@ -1467,28 +1280,28 @@ export default function FinancialDashboardPage() {
           font-size: 10px;
         }
 
-        .chart-legend span {
+        .dashboard-content .chart-legend span {
           display: flex;
           align-items: center;
           gap: 6px;
           white-space: nowrap;
         }
 
-        .chart-legend i {
+        .dashboard-content .chart-legend i {
           width: 8px;
           height: 8px;
           border-radius: 2px;
         }
 
-        .legend-income {
+        .dashboard-content .legend-income {
           background: #82bd98;
         }
 
-        .legend-expense {
+        .dashboard-content .legend-expense {
           background: #a0a0aa;
         }
 
-        .bar-chart {
+        .dashboard-content .bar-chart {
           display: flex;
           align-items: flex-end;
           justify-content: space-around;
@@ -1498,7 +1311,7 @@ export default function FinancialDashboardPage() {
           border-bottom: 1px solid #303036;
         }
 
-        .bar-group {
+        .dashboard-content .bar-group {
           display: flex;
           flex: 1;
           min-width: 0;
@@ -1507,7 +1320,7 @@ export default function FinancialDashboardPage() {
           gap: 10px;
         }
 
-        .bars {
+        .dashboard-content .bars {
           display: flex;
           align-items: flex-end;
           justify-content: center;
@@ -1516,22 +1329,22 @@ export default function FinancialDashboardPage() {
           width: 100%;
         }
 
-        .bar {
+        .dashboard-content .bar {
           width: min(25px, 40%);
           min-height: 3px;
           border-radius: 4px 4px 0 0;
           transition: height 0.3s;
         }
 
-        .income-bar {
+        .dashboard-content .income-bar {
           background: #82bd98;
         }
 
-        .expense-bar {
+        .dashboard-content .expense-bar {
           background: #777781;
         }
 
-        .bar-label {
+        .dashboard-content .bar-label {
           max-width: 100%;
           color: #898993;
           font-size: 9px;
@@ -1539,7 +1352,7 @@ export default function FinancialDashboardPage() {
           white-space: nowrap;
         }
 
-        .chart-footer {
+        .dashboard-content .chart-footer {
           display: flex;
           justify-content: space-between;
           gap: 12px;
@@ -1548,11 +1361,11 @@ export default function FinancialDashboardPage() {
           font-size: 10px;
         }
 
-        .chart-footer strong {
+        .dashboard-content .chart-footer strong {
           color: #e5e5e9;
         }
 
-        .result-main {
+        .dashboard-content .result-main {
           display: flex;
           flex-direction: column;
           gap: 7px;
@@ -1563,17 +1376,17 @@ export default function FinancialDashboardPage() {
           background: #202024;
         }
 
-        .result-main span {
+        .dashboard-content .result-main span {
           color: #9a9aa4;
           font-size: 11px;
         }
 
-        .result-main strong {
+        .dashboard-content .result-main strong {
           font-size: 25px;
           letter-spacing: -0.7px;
         }
 
-        .result-line {
+        .dashboard-content .result-line {
           display: flex;
           justify-content: space-between;
           gap: 12px;
@@ -1583,28 +1396,28 @@ export default function FinancialDashboardPage() {
           font-size: 11px;
         }
 
-        .result-line strong {
+        .dashboard-content .result-line strong {
           color: #e5e5e9;
           text-align: right;
         }
 
-        .total-line {
+        .dashboard-content .total-line {
           margin-top: 3px;
           border-bottom: 0;
           color: #ddd;
         }
 
-        .category-grid {
+        .dashboard-content .category-grid {
           grid-template-columns: minmax(0, 1.3fr) minmax(300px, 1fr);
         }
 
-        .category-list {
+        .dashboard-content .category-list {
           display: flex;
           flex-direction: column;
           gap: 19px;
         }
 
-        .category-info {
+        .dashboard-content .category-info {
           display: flex;
           justify-content: space-between;
           gap: 12px;
@@ -1613,11 +1426,11 @@ export default function FinancialDashboardPage() {
           font-size: 11px;
         }
 
-        .category-info strong {
+        .dashboard-content .category-info strong {
           color: #f0f0f2;
         }
 
-        .progress-track {
+        .dashboard-content .progress-track {
           width: 100%;
           height: 6px;
           overflow: hidden;
@@ -1625,20 +1438,20 @@ export default function FinancialDashboardPage() {
           background: #303036;
         }
 
-        .progress-fill {
+        .dashboard-content .progress-fill {
           height: 100%;
           border-radius: 10px;
           background: #96969f;
         }
 
-        .category-percentage {
+        .dashboard-content .category-percentage {
           display: block;
           margin-top: 6px;
           color: #85858f;
           font-size: 9px;
         }
 
-        .economy-highlight {
+        .dashboard-content .economy-highlight {
           display: flex;
           flex-direction: column;
           gap: 8px;
@@ -1649,22 +1462,22 @@ export default function FinancialDashboardPage() {
           background: #202024;
         }
 
-        .economy-highlight span {
+        .dashboard-content .economy-highlight span {
           color: #a1a1aa;
           font-size: 11px;
         }
 
-        .economy-highlight strong {
+        .dashboard-content .economy-highlight strong {
           font-size: 25px;
         }
 
-        .economy-highlight small {
+        .dashboard-content .economy-highlight small {
           color: #85858f;
           font-size: 10px;
           line-height: 1.5;
         }
 
-        .economy-row {
+        .dashboard-content .economy-row {
           display: flex;
           justify-content: space-between;
           gap: 10px;
@@ -1674,12 +1487,12 @@ export default function FinancialDashboardPage() {
           font-size: 10px;
         }
 
-        .economy-row strong {
+        .dashboard-content .economy-row strong {
           color: #e5e5e9;
           text-align: right;
         }
 
-        .economy-note {
+        .dashboard-content .economy-note {
           display: flex;
           align-items: flex-start;
           gap: 9px;
@@ -1693,7 +1506,7 @@ export default function FinancialDashboardPage() {
           line-height: 1.5;
         }
 
-        .economy-note span {
+        .dashboard-content .economy-note span {
           display: flex;
           flex-shrink: 0;
           align-items: center;
@@ -1706,15 +1519,15 @@ export default function FinancialDashboardPage() {
           font-weight: 700;
         }
 
-        .forecast-panel {
-          margin-bottom: 18px;
+        .dashboard-content .forecast-panel {
+          margin-bottom: 0;
         }
 
-        .forecast-header {
+        .dashboard-content .forecast-header {
           align-items: center;
         }
 
-        .period-select {
+        .dashboard-content .period-select {
           min-height: 36px;
           padding: 0 12px;
           border: 1px solid #38383e;
@@ -1725,18 +1538,18 @@ export default function FinancialDashboardPage() {
           font-size: 11px;
         }
 
-        .forecast-table-wrapper {
+        .dashboard-content .forecast-table-wrapper {
           width: 100%;
           overflow-x: auto;
         }
 
-        .forecast-table {
+        .dashboard-content .forecast-table {
           width: 100%;
           border-collapse: collapse;
           white-space: nowrap;
         }
 
-        .forecast-table th {
+        .dashboard-content .forecast-table th {
           padding: 12px 10px;
           border-bottom: 1px solid #34343a;
           color: #85858f;
@@ -1745,25 +1558,25 @@ export default function FinancialDashboardPage() {
           text-align: left;
         }
 
-        .forecast-table td {
+        .dashboard-content .forecast-table td {
           padding: 14px 10px;
           border-bottom: 1px solid #29292e;
           color: #d5d5da;
           font-size: 11px;
         }
 
-        .forecast-table td strong {
+        .dashboard-content .forecast-table td strong {
           font-weight: 600;
         }
 
-        .estimate-label {
+        .dashboard-content .estimate-label {
           display: block;
           margin-top: 4px;
           color: #85858f;
           font-size: 9px;
         }
 
-        .forecast-status {
+        .dashboard-content .forecast-status {
           display: inline-flex;
           align-items: center;
           padding: 5px 8px;
@@ -1772,58 +1585,58 @@ export default function FinancialDashboardPage() {
           font-size: 9px;
         }
 
-        .forecast-status.safe {
+        .dashboard-content .forecast-status.safe {
           color: #9bc9a9;
           background: #1b2920;
           border-color: #304a38;
         }
 
-        .forecast-status.danger {
+        .dashboard-content .forecast-status.danger {
           color: #e59a9a;
           background: #2b1d1d;
           border-color: #533333;
         }
 
-        .forecast-summary {
+        .dashboard-content .forecast-summary {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 12px;
           padding: 16px 0 4px;
         }
 
-        .forecast-summary div {
+        .dashboard-content .forecast-summary div {
           display: flex;
           flex-direction: column;
           gap: 7px;
         }
 
-        .forecast-summary span {
+        .dashboard-content .forecast-summary span {
           color: #85858f;
           font-size: 10px;
         }
 
-        .forecast-summary strong {
+        .dashboard-content .forecast-summary strong {
           font-size: 15px;
         }
 
-        .forecast-disclaimer {
+        .dashboard-content .forecast-disclaimer {
           margin: 15px 0 0;
           color: #777781;
           font-size: 10px;
           line-height: 1.6;
         }
 
-        .bottom-grid {
+        .dashboard-content .bottom-grid {
           grid-template-columns: minmax(0, 1.3fr) minmax(300px, 1fr);
         }
 
-        .recommendation-list {
+        .dashboard-content .recommendation-list {
           display: flex;
           flex-direction: column;
           gap: 12px;
         }
 
-        .recommendation-item {
+        .dashboard-content .recommendation-item {
           display: flex;
           align-items: flex-start;
           gap: 12px;
@@ -1833,7 +1646,7 @@ export default function FinancialDashboardPage() {
           background: #202024;
         }
 
-        .recommendation-icon {
+        .dashboard-content .recommendation-icon {
           display: flex;
           flex-shrink: 0;
           align-items: center;
@@ -1847,36 +1660,36 @@ export default function FinancialDashboardPage() {
           font-weight: 700;
         }
 
-        .recommendation-item.warning .recommendation-icon {
+        .dashboard-content .recommendation-item.warning .recommendation-icon {
           color: #e8a1a1;
         }
 
-        .recommendation-item.success .recommendation-icon {
+        .dashboard-content .recommendation-item.success .recommendation-icon {
           color: #9bc9a9;
         }
 
-        .recommendation-item strong {
+        .dashboard-content .recommendation-item strong {
           display: block;
           margin-bottom: 5px;
           color: #e7e7eb;
           font-size: 11px;
         }
 
-        .recommendation-item p {
+        .dashboard-content .recommendation-item p {
           margin: 0;
           color: #9999a3;
           font-size: 10px;
           line-height: 1.6;
         }
 
-        .panel-link {
+        .dashboard-content .panel-link {
           flex-shrink: 0;
           color: #c3c3cb;
           font-size: 10px;
           text-decoration: none;
         }
 
-        .account-total {
+        .dashboard-content .account-total {
           display: flex;
           flex-direction: column;
           gap: 7px;
@@ -1887,21 +1700,21 @@ export default function FinancialDashboardPage() {
           background: #202024;
         }
 
-        .account-total span {
+        .dashboard-content .account-total span {
           color: #9999a3;
           font-size: 10px;
         }
 
-        .account-total strong {
+        .dashboard-content .account-total strong {
           font-size: 22px;
         }
 
-        .account-list {
+        .dashboard-content .account-list {
           display: flex;
           flex-direction: column;
         }
 
-        .account-item {
+        .dashboard-content .account-item {
           display: flex;
           align-items: center;
           gap: 10px;
@@ -1909,7 +1722,7 @@ export default function FinancialDashboardPage() {
           border-bottom: 1px solid #29292e;
         }
 
-        .account-symbol {
+        .dashboard-content .account-symbol {
           display: flex;
           flex-shrink: 0;
           align-items: center;
@@ -1922,7 +1735,7 @@ export default function FinancialDashboardPage() {
           color: #c5c5cd;
         }
 
-        .account-info {
+        .dashboard-content .account-info {
           display: flex;
           min-width: 0;
           flex: 1;
@@ -1930,7 +1743,7 @@ export default function FinancialDashboardPage() {
           gap: 4px;
         }
 
-        .account-info strong {
+        .dashboard-content .account-info strong {
           overflow: hidden;
           color: #e5e5e9;
           font-size: 10px;
@@ -1938,18 +1751,18 @@ export default function FinancialDashboardPage() {
           white-space: nowrap;
         }
 
-        .account-info span {
+        .dashboard-content .account-info span {
           color: #85858f;
           font-size: 9px;
         }
 
-        .account-value {
+        .dashboard-content .account-value {
           color: #e1e1e6;
           font-size: 10px;
           white-space: nowrap;
         }
 
-        .empty-state {
+        .dashboard-content .empty-state {
           display: flex;
           min-height: 150px;
           flex-direction: column;
@@ -1960,33 +1773,33 @@ export default function FinancialDashboardPage() {
           text-align: center;
         }
 
-        .empty-state > span {
+        .dashboard-content .empty-state > span {
           font-size: 25px;
         }
 
-        .empty-state strong {
+        .dashboard-content .empty-state strong {
           color: #d5d5da;
           font-size: 12px;
         }
 
-        .empty-state p {
+        .dashboard-content .empty-state p {
           max-width: 260px;
           margin: 0;
           font-size: 10px;
           line-height: 1.5;
         }
 
-        .empty-state.compact {
+        .dashboard-content .empty-state.compact {
           min-height: 100px;
         }
 
-        .empty-table {
+        .dashboard-content .empty-table {
           padding: 25px !important;
           color: #85858f !important;
           text-align: center;
         }
 
-        .disclaimer {
+        .dashboard-content .disclaimer {
           display: flex;
           align-items: flex-start;
           gap: 12px;
@@ -1996,7 +1809,7 @@ export default function FinancialDashboardPage() {
           background: #19191c;
         }
 
-        .disclaimer > span {
+        .dashboard-content .disclaimer > span {
           display: flex;
           flex-shrink: 0;
           align-items: center;
@@ -2009,124 +1822,99 @@ export default function FinancialDashboardPage() {
           font-size: 12px;
         }
 
-        .disclaimer p {
+        .dashboard-content .disclaimer p {
           margin: 0;
           color: #9696a0;
           font-size: 10px;
           line-height: 1.7;
         }
 
-        .disclaimer strong {
+        .dashboard-content .disclaimer strong {
           color: #d7d7dc;
         }
 
         @media (max-width: 1100px) {
-          .summary-grid {
+          .dashboard-content .summary-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .main-grid,
-          .category-grid,
-          .bottom-grid {
+          .dashboard-content .main-grid,
+          .dashboard-content .category-grid,
+          .dashboard-content .bottom-grid {
             grid-template-columns: 1fr;
           }
         }
 
         @media (max-width: 700px) {
-          .dashboard-page {
-            padding: 18px 13px;
-          }
-
-          .page-header {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 14px;
-          }
-
-          .header-actions {
-            width: 100%;
-            align-items: flex-start;
-            flex-direction: row;
-            justify-content: space-between;
-          }
-
-          .page-header h1 {
-            font-size: 24px;
-          }
-
-          .welcome-section {
+          .dashboard-content .welcome-section {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .welcome-section h2 {
+          .dashboard-content .welcome-section h2 {
             font-size: 18px;
           }
 
-          .summary-grid {
+          .dashboard-content .summary-grid {
             gap: 9px;
           }
 
-          .summary-card {
+          .dashboard-content .summary-card {
             padding: 14px;
           }
 
-          .card-value {
+          .dashboard-content .card-value {
             font-size: 19px;
           }
 
-          .card-description {
+          .dashboard-content .card-description {
             font-size: 9px;
           }
 
-          .panel {
+          .dashboard-content .panel {
             padding: 15px;
           }
 
-          .panel-header {
+          .dashboard-content .panel-header {
             flex-direction: column;
           }
 
-          .chart-legend {
+          .dashboard-content .chart-legend {
             margin-top: -10px;
           }
 
-          .bar-chart {
+          .dashboard-content .bar-chart {
             gap: 4px;
           }
 
-          .bar-label {
+          .dashboard-content .bar-label {
             font-size: 8px;
           }
 
-          .chart-footer {
+          .dashboard-content .chart-footer {
             flex-direction: column;
           }
 
-          .forecast-header {
+          .dashboard-content .forecast-header {
             align-items: flex-start;
           }
 
-          .forecast-summary {
+          .dashboard-content .forecast-summary {
             grid-template-columns: 1fr;
           }
 
-          .forecast-summary div {
+          .dashboard-content .forecast-summary div {
             padding: 9px 0;
             border-bottom: 1px solid #29292e;
           }
 
-          .forecast-table {
+          .dashboard-content .forecast-table {
             min-width: 650px;
-          }
-
-          .header-date {
-            align-self: center;
           }
         }
 
         @media (max-width: 380px) {
-          .summary-grid {
+          .dashboard-content .summary-grid {
             grid-template-columns: 1fr;
           }
         }

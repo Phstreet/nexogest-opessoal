@@ -1,27 +1,31 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type MovementType =
   | "Receita"
   | "Despesa"
   | "Transferência"
+  | "Investimento"
   | "Aplicação"
   | "Reserva";
 
 type Transaction = {
-  id: string;
+  id: string | number;
   description: string;
   type: MovementType;
   amount: number;
-  date: string;
+  date?: string;
   category?: string;
   subcategory?: string;
   account?: string;
   destination?: string;
+  destinationAccount?: string;
   method?: string;
+  paymentMethod?: string;
   status?: string;
   recurrence?: string;
   reserveType?: string;
@@ -32,33 +36,29 @@ type Transaction = {
 
 const STORAGE_KEY = "nexo_transactions";
 
-const financeNavigation = [
-  { label: "Visão geral", href: "/financeiro", icon: "⌂" },
-  { label: "Contas", href: "/financeiro/contas", icon: "▣" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↓" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↑" },
-  { label: "Histórico financeiro", href: "/financeiro/historico", icon: "↻" },
-  { label: "Investimentos", href: "/financeiro/investimentos", icon: "◈" },
-  { label: "Reserva financeira", href: "/financeiro/reservas", icon: "▣" },
-  { label: "Planejamento", href: "/financeiro/planejamento", icon: "▤" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
-];
-
 const currency = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(value);
 
-const formatDate = (date: string) => {
+const formatDate = (date?: string) => {
   if (!date) return "—";
 
-  const parsed = new Date(`${date}T00:00:00`);
+  const parsed = new Date(`${date}T12:00:00`);
 
   if (Number.isNaN(parsed.getTime())) return date;
 
   return parsed.toLocaleDateString("pt-BR");
 };
+
+const formatLongDate = (date = new Date()) =>
+  date.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
 const isCancelled = (status?: string) =>
   (status || "").toLowerCase().includes("cancel");
@@ -71,6 +71,7 @@ const getTypeClass = (type: MovementType) => {
       return "expense";
     case "Transferência":
       return "transfer";
+    case "Investimento":
     case "Aplicação":
       return "investment";
     case "Reserva":
@@ -86,6 +87,22 @@ const getAmountClass = (type: MovementType) => {
   return "amount-neutral";
 };
 
+const getStatusClass = (status?: string) => {
+  const normalized = (status || "Pendente").toLowerCase();
+
+  if (normalized.includes("cancel")) return "cancelled";
+
+  if (
+    normalized.includes("pago") ||
+    normalized.includes("recebid") ||
+    normalized.includes("aplicado")
+  ) {
+    return "completed";
+  }
+
+  return "pending";
+};
+
 export default function HistoricoFinanceiroPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
@@ -93,8 +110,9 @@ export default function HistoricoFinanceiroPage() {
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [periodFilter, setPeriodFilter] = useState("Todos");
   const [sortOrder, setSortOrder] = useState("recentes");
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<string | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<
+    string | null
+  >(null);
 
   const loadTransactions = useCallback(() => {
     try {
@@ -105,7 +123,7 @@ export default function HistoricoFinanceiroPage() {
         return;
       }
 
-      const parsed = JSON.parse(saved);
+      const parsed: unknown = JSON.parse(saved);
 
       setTransactions(Array.isArray(parsed) ? parsed : []);
     } catch (error) {
@@ -129,13 +147,21 @@ export default function HistoricoFinanceiroPage() {
     [transactions]
   );
 
-  const totalReceitas = activeTransactions
-    .filter((item) => item.type === "Receita")
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalReceitas = useMemo(
+    () =>
+      activeTransactions
+        .filter((item) => item.type === "Receita")
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeTransactions]
+  );
 
-  const totalDespesas = activeTransactions
-    .filter((item) => item.type === "Despesa")
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalDespesas = useMemo(
+    () =>
+      activeTransactions
+        .filter((item) => item.type === "Despesa")
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeTransactions]
+  );
 
   const resultado = totalReceitas - totalDespesas;
 
@@ -143,7 +169,7 @@ export default function HistoricoFinanceiroPage() {
     let result = [...transactions];
 
     if (search.trim()) {
-      const term = search.toLowerCase();
+      const term = search.trim().toLowerCase();
 
       result = result.filter((item) =>
         [
@@ -152,6 +178,9 @@ export default function HistoricoFinanceiroPage() {
           item.subcategory,
           item.account,
           item.destination,
+          item.destinationAccount,
+          item.method,
+          item.paymentMethod,
           item.institution,
           item.investment,
           item.id,
@@ -185,7 +214,7 @@ export default function HistoricoFinanceiroPage() {
       result = result.filter((item) => {
         if (!item.date) return false;
 
-        const date = new Date(`${item.date}T00:00:00`);
+        const date = new Date(`${item.date}T12:00:00`);
 
         if (Number.isNaN(date.getTime())) return false;
 
@@ -218,8 +247,13 @@ export default function HistoricoFinanceiroPage() {
     }
 
     result.sort((a, b) => {
-      const dateA = new Date(`${a.date || "2000-01-01"}T00:00:00`).getTime();
-      const dateB = new Date(`${b.date || "2000-01-01"}T00:00:00`).getTime();
+      const dateA = a.date
+        ? new Date(`${a.date}T12:00:00`).getTime()
+        : 0;
+
+      const dateB = b.date
+        ? new Date(`${b.date}T12:00:00`).getTime()
+        : 0;
 
       return sortOrder === "recentes" ? dateB - dateA : dateA - dateB;
     });
@@ -242,514 +276,485 @@ export default function HistoricoFinanceiroPage() {
     setSortOrder("recentes");
   };
 
-  return (
-    <main className="history-page">
-      <div className="history-container">
-        <header className="history-header">
-          <div>
-            <div className="history-breadcrumb">
-              <Link href="/">Início</Link>
-              <span>/</span>
-              <Link href="/financeiro">Financeiro</Link>
-              <span>/</span>
-              <strong>Histórico financeiro</strong>
-            </div>
+  const getTransactionKey = (item: Transaction) => String(item.id);
 
-            <span className="history-eyebrow">CONTROLE FINANCEIRO</span>
+  return (
+    <main className="app-shell">
+      <MainNavigation />
+
+      <section className="main-area">
+        <header className="topbar">
+          <div>
+            <div className="breadcrumb">
+              NEXO / FINANCEIRO / HISTÓRICO FINANCEIRO
+            </div>
             <h1>Histórico financeiro</h1>
-            <p>
-              Consulte e acompanhe todas as movimentações financeiras
-              cadastradas no NEXO.
-            </p>
           </div>
 
-          <Link href="/financeiro" className="history-back-button">
-            <span>←</span> Voltar ao financeiro
-          </Link>
+          <div className="topbar-right">
+            <div className="date-display">
+              <span className="date-icon">◷</span>
+              {formatLongDate()}
+            </div>
+
+            <div className="profile-avatar">N</div>
+          </div>
         </header>
 
-        <nav className="finance-navigation">
-          {financeNavigation.map((item) => {
-            const active = item.href === "/financeiro/historico";
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`navigation-button ${active ? "selected" : ""}`}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <section className="history-summary">
-          <article className="history-card">
-            <div className="history-card-top">
-              <span>Receitas</span>
-              <span className="history-icon income-icon">↗</span>
-            </div>
-            <strong className="positive">
-              {currency(totalReceitas)}
-            </strong>
-            <small>Total de receitas não canceladas</small>
-          </article>
-
-          <article className="history-card">
-            <div className="history-card-top">
-              <span>Despesas</span>
-              <span className="history-icon expense-icon">↙</span>
-            </div>
-            <strong className="negative">
-              {currency(totalDespesas)}
-            </strong>
-            <small>Total de despesas não canceladas</small>
-          </article>
-
-          <article className="history-card">
-            <div className="history-card-top">
-              <span>Resultado</span>
-              <span className="history-icon neutral-icon">＝</span>
-            </div>
-            <strong className={resultado >= 0 ? "positive" : "negative"}>
-              {currency(resultado)}
-            </strong>
-            <small>Receitas menos despesas</small>
-          </article>
-
-          <article className="history-card">
-            <div className="history-card-top">
-              <span>Movimentações</span>
-              <span className="history-icon neutral-icon">▤</span>
-            </div>
-            <strong>{transactions.length}</strong>
-            <small>Registros no histórico completo</small>
-          </article>
-        </section>
-
-        <section className="history-panel">
-          <div className="history-panel-heading">
+        <div className="content history-content">
+          <section className="history-intro">
             <div>
-              <span className="history-eyebrow">CONSULTA</span>
-              <h2>Todas as movimentações</h2>
+              <span className="history-eyebrow">
+                CONTROLE E ACOMPANHAMENTO
+              </span>
+
+              <h2>Histórico de movimentações.</h2>
+
               <p>
-                Pesquise, filtre e consulte os lançamentos financeiros.
+                Consulte, pesquise e acompanhe todas as movimentações
+                financeiras cadastradas no NEXO.
               </p>
             </div>
 
-            <button
-              type="button"
-              className="history-refresh"
-              onClick={loadTransactions}
-            >
-              ↻ Atualizar
-            </button>
-          </div>
+            <Link href="/financeiro" className="history-back-button">
+              <span>←</span>
+              Voltar ao financeiro
+            </Link>
+          </section>
 
-          <div className="history-filters">
-            <div className="history-search">
-              <span>⌕</span>
-              <input
-                type="text"
-                placeholder="Buscar por descrição, categoria ou conta..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
+          <section className="history-summary">
+            <article className="history-card">
+              <div className="history-card-top">
+                <span>Receitas</span>
+                <span className="history-icon income-icon">↗</span>
+              </div>
 
-            <div className="history-filter-grid">
-              <label>
-                Tipo
-                <select
-                  value={typeFilter}
-                  onChange={(event) => setTypeFilter(event.target.value)}
-                >
-                  <option value="Todos">Todos os tipos</option>
-                  <option value="Receita">Receita</option>
-                  <option value="Despesa">Despesa</option>
-                  <option value="Transferência">Transferência</option>
-                  <option value="Aplicação">Aplicação</option>
-                  <option value="Reserva">Reserva</option>
-                </select>
-              </label>
+              <strong className="positive">
+                {currency(totalReceitas)}
+              </strong>
 
-              <label>
-                Status
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                >
-                  <option value="Todos">Todos os status</option>
-                  <option value="Ativos">Não cancelados</option>
-                  <option value="Cancelados">Cancelados</option>
-                  <option value="Pendente">Pendente</option>
-                  <option value="Pago">Pago</option>
-                  <option value="Recebida">Recebida</option>
-                  <option value="Recebido">Recebido</option>
-                </select>
-              </label>
+              <small>Total de receitas não canceladas</small>
+            </article>
 
-              <label>
-                Período
-                <select
-                  value={periodFilter}
-                  onChange={(event) => setPeriodFilter(event.target.value)}
-                >
-                  <option value="Todos">Todo o período</option>
-                  <option value="Este mês">Este mês</option>
-                  <option value="Mês anterior">Mês anterior</option>
-                  <option value="Este ano">Este ano</option>
-                </select>
-              </label>
+            <article className="history-card">
+              <div className="history-card-top">
+                <span>Despesas</span>
+                <span className="history-icon expense-icon">↙</span>
+              </div>
 
-              <label>
-                Ordenação
-                <select
-                  value={sortOrder}
-                  onChange={(event) => setSortOrder(event.target.value)}
-                >
-                  <option value="recentes">Mais recentes</option>
-                  <option value="antigos">Mais antigos</option>
-                </select>
-              </label>
-            </div>
+              <strong className="negative">
+                {currency(totalDespesas)}
+              </strong>
 
-            <div className="history-filter-footer">
-              <span>
-                {filteredTransactions.length} movimentação(ões) encontrada(s)
-              </span>
-              <button type="button" onClick={clearFilters}>
-                Limpar filtros
-              </button>
-            </div>
-          </div>
+              <small>Total de despesas não canceladas</small>
+            </article>
 
-          <div className="history-table-wrapper">
-            {filteredTransactions.length === 0 ? (
-              <div className="history-empty">
-                <span>▤</span>
-                <h3>Nenhuma movimentação encontrada</h3>
+            <article className="history-card">
+              <div className="history-card-top">
+                <span>Resultado</span>
+                <span className="history-icon neutral-icon">＝</span>
+              </div>
+
+              <strong className={resultado >= 0 ? "positive" : "negative"}>
+                {currency(resultado)}
+              </strong>
+
+              <small>Receitas menos despesas</small>
+            </article>
+
+            <article className="history-card">
+              <div className="history-card-top">
+                <span>Movimentações</span>
+                <span className="history-icon neutral-icon">▤</span>
+              </div>
+
+              <strong>{transactions.length}</strong>
+
+              <small>Registros no histórico completo</small>
+            </article>
+          </section>
+
+          <section className="history-panel">
+            <div className="history-panel-heading">
+              <div>
+                <span className="history-eyebrow">CONSULTA</span>
+                <h2>Todas as movimentações</h2>
                 <p>
-                  Não existem registros para os filtros selecionados.
-                  Experimente alterar sua pesquisa.
+                  Pesquise, filtre e consulte os lançamentos financeiros.
                 </p>
               </div>
-            ) : (
-              <table className="history-table">
-                <thead>
-                  <tr>
-                    <th>Descrição</th>
-                    <th>Tipo</th>
-                    <th>Categoria</th>
-                    <th>Data</th>
-                    <th>Status</th>
-                    <th>Valor</th>
-                    <th></th>
-                  </tr>
-                </thead>
 
-                <tbody>
-                  {filteredTransactions.map((item) => (
-                    <>
-                      <tr
-                        key={item.id}
-                        className={
-                          selectedTransaction === item.id
-                            ? "history-row selected"
-                            : "history-row"
-                        }
-                      >
-                        <td>
-                          <div className="history-description">
-                            <strong>{item.description || "Sem descrição"}</strong>
-                            <small>{item.id}</small>
-                          </div>
-                        </td>
+              <button
+                type="button"
+                className="history-refresh"
+                onClick={loadTransactions}
+              >
+                ↻ Atualizar
+              </button>
+            </div>
 
-                        <td>
-                          <span
-                            className={`history-type ${getTypeClass(item.type)}`}
-                          >
-                            {item.type}
-                          </span>
-                        </td>
+            <div className="history-filters">
+              <div className="history-search">
+                <span>⌕</span>
 
-                        <td>
-                          <div className="history-category">
-                            <span>{item.category || "—"}</span>
-                            {item.subcategory && (
-                              <small>{item.subcategory}</small>
-                            )}
-                          </div>
-                        </td>
+                <input
+                  type="text"
+                  placeholder="Buscar por descrição, categoria ou conta..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
 
-                        <td className="history-date">
-                          {formatDate(item.date)}
-                        </td>
+              <div className="history-filter-grid">
+                <label>
+                  Tipo
+                  <select
+                    value={typeFilter}
+                    onChange={(event) => setTypeFilter(event.target.value)}
+                  >
+                    <option value="Todos">Todos os tipos</option>
+                    <option value="Receita">Receita</option>
+                    <option value="Despesa">Despesa</option>
+                    <option value="Transferência">Transferência</option>
+                    <option value="Investimento">Investimento</option>
+                    <option value="Aplicação">Aplicação</option>
+                    <option value="Reserva">Reserva</option>
+                  </select>
+                </label>
 
-                        <td>
-                          <span
-                            className={`history-status ${
-                              isCancelled(item.status)
-                                ? "cancelled"
-                                : (item.status || "Pendente")
-                                    .toLowerCase()
-                                    .includes("pago") ||
-                                  (item.status || "")
-                                    .toLowerCase()
-                                    .includes("recebid")
-                                ? "completed"
-                                : "pending"
-                            }`}
-                          >
-                            {item.status || "Pendente"}
-                          </span>
-                        </td>
+                <label>
+                  Status
+                  <select
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value)}
+                  >
+                    <option value="Todos">Todos os status</option>
+                    <option value="Ativos">Não cancelados</option>
+                    <option value="Cancelados">Cancelados</option>
+                    <option value="Prevista">Prevista</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Recebida parcialmente">
+                      Recebida parcialmente
+                    </option>
+                    <option value="Paga parcialmente">
+                      Paga parcialmente
+                    </option>
+                    <option value="Pago">Pago</option>
+                    <option value="Recebida">Recebida</option>
+                    <option value="Recebido">Recebido</option>
+                    <option value="Aplicado">Aplicado</option>
+                    <option value="Atrasada">Atrasada</option>
+                  </select>
+                </label>
 
-                        <td>
-                          <strong
-                            className={`history-amount ${getAmountClass(
-                              item.type
-                            )}`}
-                          >
-                            {currency(Number(item.amount || 0))}
-                          </strong>
-                        </td>
+                <label>
+                  Período
+                  <select
+                    value={periodFilter}
+                    onChange={(event) => setPeriodFilter(event.target.value)}
+                  >
+                    <option value="Todos">Todo o período</option>
+                    <option value="Este mês">Este mês</option>
+                    <option value="Mês anterior">Mês anterior</option>
+                    <option value="Este ano">Este ano</option>
+                  </select>
+                </label>
 
-                        <td>
-                          <button
-                            type="button"
-                            className="history-details-button"
-                            onClick={() =>
-                              setSelectedTransaction(
-                                selectedTransaction === item.id
-                                  ? null
-                                  : item.id
-                              )
+                <label>
+                  Ordenação
+                  <select
+                    value={sortOrder}
+                    onChange={(event) => setSortOrder(event.target.value)}
+                  >
+                    <option value="recentes">Mais recentes</option>
+                    <option value="antigos">Mais antigos</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="history-filter-footer">
+                <span>
+                  {filteredTransactions.length} movimentação(ões) encontrada(s)
+                </span>
+
+                <button type="button" onClick={clearFilters}>
+                  Limpar filtros
+                </button>
+              </div>
+            </div>
+
+            <div className="history-table-wrapper">
+              {filteredTransactions.length === 0 ? (
+                <div className="history-empty">
+                  <span>▤</span>
+                  <h3>Nenhuma movimentação encontrada</h3>
+                  <p>
+                    Não existem registros para os filtros selecionados.
+                    Experimente alterar sua pesquisa.
+                  </p>
+                </div>
+              ) : (
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Descrição</th>
+                      <th>Tipo</th>
+                      <th>Categoria</th>
+                      <th>Data</th>
+                      <th>Status</th>
+                      <th>Valor</th>
+                      <th aria-label="Ações"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredTransactions.map((item) => {
+                      const key = getTransactionKey(item);
+                      const isSelected = selectedTransaction === key;
+
+                      return (
+                        <Fragment key={key}>
+                          <tr
+                            className={
+                              isSelected
+                                ? "history-row selected"
+                                : "history-row"
                             }
                           >
-                            {selectedTransaction === item.id
-                              ? "Fechar"
-                              : "Detalhes"}
-                          </button>
-                        </td>
-                      </tr>
-
-                      {selectedTransaction === item.id && (
-                        <tr key={`${item.id}-details`}>
-                          <td colSpan={7}>
-                            <div className="history-details">
-                              <div>
-                                <small>Conta financeira</small>
-                                <strong>{item.account || "Não informada"}</strong>
-                              </div>
-                              <div>
-                                <small>Forma de pagamento</small>
-                                <strong>{item.method || "Não informada"}</strong>
-                              </div>
-                              <div>
-                                <small>Recorrência</small>
-                                <strong>{item.recurrence || "Não informada"}</strong>
-                              </div>
-                              <div>
-                                <small>Destino / Instituição</small>
+                            <td>
+                              <div className="history-description">
                                 <strong>
-                                  {item.destination ||
-                                    item.institution ||
-                                    "Não informado"}
+                                  {item.description || "Sem descrição"}
                                 </strong>
+                                <small>{item.id}</small>
                               </div>
-                              {item.investment && (
-                                <div>
-                                  <small>Investimento</small>
-                                  <strong>{item.investment}</strong>
-                                </div>
-                              )}
-                              {item.reserveType && (
-                                <div>
-                                  <small>Tipo de reserva</small>
-                                  <strong>{item.reserveType}</strong>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </section>
+                            </td>
 
-        <footer className="history-footer">
-          <span>NEXO</span>
-          <p>Planeje. Organize. Conquiste.</p>
-        </footer>
-      </div>
+                            <td>
+                              <span
+                                className={`history-type ${getTypeClass(item.type)}`}
+                              >
+                                {item.type}
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="history-category">
+                                <span>{item.category || "—"}</span>
+                                {item.subcategory && (
+                                  <small>{item.subcategory}</small>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="history-date">
+                              {formatDate(item.date)}
+                            </td>
+
+                            <td>
+                              <span
+                                className={`history-status ${getStatusClass(item.status)}`}
+                              >
+                                {item.status || "Pendente"}
+                              </span>
+                            </td>
+
+                            <td>
+                              <strong
+                                className={`history-amount ${getAmountClass(item.type)}`}
+                              >
+                                {currency(Number(item.amount || 0))}
+                              </strong>
+                            </td>
+
+                            <td>
+                              <button
+                                type="button"
+                                className="history-details-button"
+                                onClick={() =>
+                                  setSelectedTransaction(isSelected ? null : key)
+                                }
+                              >
+                                {isSelected ? "Fechar" : "Detalhes"}
+                              </button>
+                            </td>
+                          </tr>
+
+                          {isSelected && (
+                            <tr className="history-details-row">
+                              <td colSpan={7}>
+                                <div className="history-details">
+                                  <div>
+                                    <small>Conta financeira</small>
+                                    <strong>
+                                      {item.account || "Não informada"}
+                                    </strong>
+                                  </div>
+
+                                  <div>
+                                    <small>Forma de pagamento</small>
+                                    <strong>
+                                      {item.method ||
+                                        item.paymentMethod ||
+                                        "Não informada"}
+                                    </strong>
+                                  </div>
+
+                                  <div>
+                                    <small>Recorrência</small>
+                                    <strong>
+                                      {item.recurrence || "Não informada"}
+                                    </strong>
+                                  </div>
+
+                                  <div>
+                                    <small>Destino / Instituição</small>
+                                    <strong>
+                                      {item.destination ||
+                                        item.destinationAccount ||
+                                        item.institution ||
+                                        "Não informado"}
+                                    </strong>
+                                  </div>
+
+                                  {item.investment && (
+                                    <div>
+                                      <small>Investimento</small>
+                                      <strong>{item.investment}</strong>
+                                    </div>
+                                  )}
+
+                                  {item.reserveType && (
+                                    <div>
+                                      <small>Tipo de reserva</small>
+                                      <strong>{item.reserveType}</strong>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </section>
+
+          <footer className="routine-footer">
+            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+          </footer>
+        </div>
+      </section>
 
       <style jsx global>{`
-        .history-page {
-          min-height: 100vh;
-          width: 100%;
-          padding: 34px;
-          color: #f5f5f6;
-          background: #0a0a0b;
-          font-family: "DM Sans", sans-serif;
+        .history-content {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          justify-content: flex-start !important;
+          width: 100% !important;
+          max-width: none !important;
+          gap: 12px !important;
+          box-sizing: border-box;
         }
 
-        .history-container {
-          width: 100%;
-          max-width: 1500px;
-          margin: 0 auto;
-        }
-
-        .history-header {
+        .history-intro {
           display: flex;
           justify-content: space-between;
-          align-items: flex-end;
-          gap: 24px;
-          margin-bottom: 28px;
-        }
-
-        .history-breadcrumb {
-          display: flex;
-          gap: 9px;
           align-items: center;
-          margin-bottom: 25px;
-          color: #77777e;
-          font-size: 12px;
+          gap: 20px;
+          min-height: 115px;
+          padding: 20px 23px;
+          border: 1px solid #35353a;
+          border-radius: 9px;
+          background: linear-gradient(
+            100deg,
+            #222326 0%,
+            #171719 60%,
+            #101012 100%
+          );
         }
 
-        .history-breadcrumb a {
-          color: #9999a1;
-          text-decoration: none;
+        .history-intro h2 {
+          margin: 8px 0 5px;
+          color: #f0f0f2;
+          font-family: var(--font-heading);
+          font-size: clamp(20px, 2.2vw, 27px);
+          font-weight: 800;
+          letter-spacing: -0.8px;
         }
 
-        .history-breadcrumb a:hover {
-          color: #fff;
-        }
-
-        .history-breadcrumb strong {
-          color: #e1e1e4;
-          font-weight: 500;
+        .history-intro p {
+          margin: 0;
+          color: #a1a2a8;
+          font-size: 11px;
+          line-height: 1.6;
         }
 
         .history-eyebrow {
           display: block;
-          color: #9297a0;
-          font-size: 10px;
+          margin-bottom: 8px;
+          color: #9298a2;
+          font-size: 9px;
           font-weight: 700;
-          letter-spacing: 2px;
-          margin-bottom: 9px;
-        }
-
-        .history-header h1 {
-          margin: 0;
-          font-family: "Manrope", sans-serif;
-          font-size: clamp(27px, 3vw, 36px);
-          font-weight: 700;
-          letter-spacing: -1.2px;
-        }
-
-        .history-header p {
-          margin: 9px 0 0;
-          color: #92929a;
-          font-size: 13px;
+          letter-spacing: 1.5px;
         }
 
         .history-back-button {
           display: inline-flex;
           align-items: center;
-          gap: 9px;
-          padding: 11px 15px;
-          border: 1px solid #303035;
-          border-radius: 9px;
-          color: #d5d5da;
-          text-decoration: none;
-          font-size: 12px;
-          white-space: nowrap;
-          transition: 0.2s;
-        }
-
-        .history-back-button:hover,
-        .history-refresh:hover {
-          background: #202024;
-          border-color: #55555d;
-        }
-
-        .finance-navigation {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px;
-          margin-bottom: 22px;
-          overflow-x: auto;
-          border: 1px solid #29292e;
-          border-radius: 9px;
-          background: #151517;
-          scrollbar-width: thin;
-        }
-
-        .navigation-button {
-          display: inline-flex;
-          align-items: center;
           justify-content: center;
-          gap: 7px;
           flex-shrink: 0;
-          min-height: 36px;
-          padding: 0 12px;
-          border: 1px solid #34343a;
+          gap: 9px;
+          min-height: 35px;
+          padding: 0 13px;
+          border: 1px solid #414149;
           border-radius: 6px;
-          color: #bdbdc5;
+          color: #d5d5da;
           background: #202024;
-          font-size: 11px;
           text-decoration: none;
-          transition: 0.2s;
+          font-size: 10px;
+          white-space: nowrap;
+          transition: var(--transition);
         }
 
-        .navigation-button:hover {
-          color: #fff;
+        .history-back-button:hover {
           border-color: #77777f;
           background: #303035;
-        }
-
-        .navigation-button.selected {
           color: #fff;
-          border-color: #77777f;
-          background: #38383e;
-          font-weight: 700;
-        }
-
-        .navigation-button span {
-          font-size: 15px;
         }
 
         .history-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 14px;
-          margin-bottom: 23px;
+          gap: 10px;
+          width: 100%;
         }
 
         .history-card {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
           min-width: 0;
-          padding: 19px;
-          border: 1px solid #29292e;
-          border-radius: 12px;
-          background: #151517;
+          min-height: 105px;
+          padding: 15px;
+          gap: 5px;
+          border: 1px solid #2c2c31;
+          border-radius: 8px;
+          background: linear-gradient(145deg, #1b1b1e, #131315);
         }
 
         .history-card-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 17px;
-          color: #a1a1a9;
-          font-size: 12px;
+          margin-bottom: 7px;
+          color: #a5a6ac;
+          font-size: 11px;
         }
 
         .history-icon {
@@ -758,16 +763,18 @@ export default function HistoricoFinanceiroPage() {
           justify-content: center;
           width: 29px;
           height: 29px;
-          border-radius: 8px;
+          border-radius: 7px;
           background: #222226;
-          font-size: 16px;
+          font-size: 15px;
         }
 
-        .income-icon {
+        .income-icon,
+        .positive {
           color: #a8c7b3;
         }
 
-        .expense-icon {
+        .expense-icon,
+        .negative {
           color: #d18c8c;
         }
 
@@ -778,32 +785,36 @@ export default function HistoricoFinanceiroPage() {
         .history-card > strong {
           display: block;
           overflow-wrap: anywhere;
-          font-family: "Manrope", sans-serif;
-          font-size: clamp(18px, 2vw, 24px);
+          color: #f0f0f2;
+          font-family: var(--font-heading);
+          font-size: clamp(17px, 2vw, 22px);
           font-weight: 700;
-          letter-spacing: -0.7px;
+          letter-spacing: -0.5px;
+        }
+
+        .history-card > strong.positive {
+          color: #a8c7b3;
+        }
+
+        .history-card > strong.negative {
+          color: #d18c8c;
         }
 
         .history-card small {
           display: block;
-          margin-top: 8px;
-          color: #77777f;
-          font-size: 10px;
-        }
-
-        .positive {
-          color: #a8c7b3;
-        }
-
-        .negative {
-          color: #d18c8c;
+          margin-top: 3px;
+          color: #777980;
+          font-size: 9px;
         }
 
         .history-panel {
+          width: 100%;
+          min-width: 0;
           overflow: hidden;
-          border: 1px solid #29292e;
-          border-radius: 13px;
-          background: #121214;
+          border: 1px solid #2c2c31;
+          border-radius: 8px;
+          background: linear-gradient(145deg, #19191c, #131315);
+          box-sizing: border-box;
         }
 
         .history-panel-heading {
@@ -811,53 +822,61 @@ export default function HistoricoFinanceiroPage() {
           justify-content: space-between;
           align-items: center;
           gap: 20px;
-          padding: 23px 24px;
+          padding: 17px 18px;
           border-bottom: 1px solid #28282d;
         }
 
         .history-panel-heading h2 {
-          margin: 0;
-          font-family: "Manrope", sans-serif;
-          font-size: 18px;
+          margin: 5px 0 0;
+          color: #f0f0f2;
+          font-family: var(--font-heading);
+          font-size: 15px;
           font-weight: 700;
         }
 
         .history-panel-heading p {
-          margin: 7px 0 0;
+          margin: 6px 0 0;
           color: #85858d;
-          font-size: 11px;
+          font-size: 10px;
         }
 
         .history-refresh {
-          padding: 9px 13px;
+          min-height: 33px;
+          padding: 0 12px;
           border: 1px solid #34343a;
-          border-radius: 8px;
+          border-radius: 6px;
           color: #d5d5da;
           background: transparent;
-          font-size: 11px;
+          font-family: inherit;
+          font-size: 10px;
           cursor: pointer;
-          transition: 0.2s;
+          transition: var(--transition);
+        }
+
+        .history-refresh:hover {
+          border-color: #77777f;
+          background: #202024;
         }
 
         .history-filters {
-          padding: 20px 24px;
+          padding: 16px 18px;
           border-bottom: 1px solid #28282d;
         }
 
         .history-search {
           display: flex;
           align-items: center;
-          gap: 11px;
-          height: 43px;
-          padding: 0 13px;
+          gap: 10px;
+          height: 38px;
+          padding: 0 12px;
           border: 1px solid #303036;
-          border-radius: 8px;
-          background: #19191c;
+          border-radius: 6px;
+          background: #101012;
         }
 
         .history-search span {
           color: #898991;
-          font-size: 20px;
+          font-size: 19px;
         }
 
         .history-search input {
@@ -867,7 +886,7 @@ export default function HistoricoFinanceiroPage() {
           color: #f2f2f4;
           background: transparent;
           font-family: inherit;
-          font-size: 12px;
+          font-size: 11px;
         }
 
         .history-search input::placeholder {
@@ -877,30 +896,36 @@ export default function HistoricoFinanceiroPage() {
         .history-filter-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 13px;
-          margin-top: 16px;
+          gap: 10px;
+          margin-top: 13px;
         }
 
         .history-filter-grid label {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          color: #96969e;
+          gap: 6px;
+          color: #a7a8ae;
           font-size: 10px;
           font-weight: 600;
         }
 
         .history-filter-grid select {
           width: 100%;
-          height: 39px;
-          padding: 0 10px;
-          border: 1px solid #303036;
-          border-radius: 7px;
+          height: 34px;
+          min-width: 0;
+          padding: 0 9px;
+          border: 1px solid #37373d;
+          border-radius: 6px;
           outline: none;
           color: #e4e4e8;
-          background: #19191c;
+          background: #101012;
           font-family: inherit;
-          font-size: 11px;
+          font-size: 10px;
+          color-scheme: dark;
+        }
+
+        .history-filter-grid select:focus {
+          border-color: #aeb4be;
         }
 
         .history-filter-footer {
@@ -908,9 +933,9 @@ export default function HistoricoFinanceiroPage() {
           justify-content: space-between;
           align-items: center;
           gap: 15px;
-          margin-top: 17px;
-          color: #77777f;
-          font-size: 10px;
+          margin-top: 13px;
+          color: #85858d;
+          font-size: 9px;
         }
 
         .history-filter-footer button {
@@ -945,18 +970,19 @@ export default function HistoricoFinanceiroPage() {
         }
 
         .history-table th {
-          padding: 13px 16px;
+          padding: 12px 14px;
           color: #85858d;
           font-size: 9px;
           font-weight: 700;
-          letter-spacing: 0.8px;
+          letter-spacing: 0.7px;
           text-transform: uppercase;
         }
 
         .history-table td {
-          padding: 15px 16px;
+          padding: 13px 14px;
           border-top: 1px solid #252529;
-          font-size: 11px;
+          color: #d2d2d7;
+          font-size: 10px;
         }
 
         .history-row {
@@ -971,13 +997,13 @@ export default function HistoricoFinanceiroPage() {
         .history-description {
           display: flex;
           flex-direction: column;
-          gap: 5px;
+          gap: 4px;
           min-width: 130px;
         }
 
         .history-description strong {
           color: #e8e8eb;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
         }
 
@@ -997,7 +1023,8 @@ export default function HistoricoFinanceiroPage() {
           font-weight: 600;
         }
 
-        .history-type.income {
+        .history-type.income,
+        .history-status.completed {
           color: #a8c7b3;
           background: #1c2922;
           border-color: #304538;
@@ -1009,7 +1036,8 @@ export default function HistoricoFinanceiroPage() {
           border-color: #493030;
         }
 
-        .history-type.transfer {
+        .history-type.transfer,
+        .history-status.pending {
           color: #c3c7ce;
           background: #25252a;
           border-color: #3c3c43;
@@ -1020,6 +1048,12 @@ export default function HistoricoFinanceiroPage() {
           color: #b7bbc5;
           background: #22242a;
           border-color: #3b3e48;
+        }
+
+        .history-status.cancelled {
+          color: #d18c8c;
+          background: #2b1d1d;
+          border-color: #493030;
         }
 
         .history-category {
@@ -1035,30 +1069,12 @@ export default function HistoricoFinanceiroPage() {
         }
 
         .history-date {
-          color: #b2b2b9;
+          color: #b2b2b9 !important;
           font-size: 10px !important;
         }
 
-        .history-status.completed {
-          color: #a8c7b3;
-          background: #1c2922;
-          border-color: #304538;
-        }
-
-        .history-status.pending {
-          color: #c3c7ce;
-          background: #25252a;
-          border-color: #3c3c43;
-        }
-
-        .history-status.cancelled {
-          color: #d18c8c;
-          background: #2b1d1d;
-          border-color: #493030;
-        }
-
         .history-amount {
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
         }
 
@@ -1075,9 +1091,10 @@ export default function HistoricoFinanceiroPage() {
         }
 
         .history-details-button {
-          padding: 7px 9px;
+          min-height: 27px;
+          padding: 0 9px;
           border: 1px solid #38383e;
-          border-radius: 6px;
+          border-radius: 5px;
           color: #c5c5cc;
           background: transparent;
           font-family: inherit;
@@ -1090,21 +1107,26 @@ export default function HistoricoFinanceiroPage() {
           background: #29292e;
         }
 
+        .history-details-row td {
+          padding: 10px 14px;
+          background: #171719;
+        }
+
         .history-details {
           display: flex;
           flex-wrap: wrap;
-          gap: 28px;
-          padding: 17px;
+          gap: 22px;
+          padding: 13px;
           border: 1px solid #303036;
-          border-radius: 8px;
+          border-radius: 7px;
           background: #19191c;
         }
 
         .history-details > div {
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          min-width: 130px;
+          gap: 5px;
+          min-width: 125px;
         }
 
         .history-details small {
@@ -1114,12 +1136,12 @@ export default function HistoricoFinanceiroPage() {
 
         .history-details strong {
           color: #e0e0e4;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 500;
         }
 
         .history-empty {
-          padding: 65px 20px;
+          padding: 55px 20px;
           text-align: center;
         }
 
@@ -1127,49 +1149,27 @@ export default function HistoricoFinanceiroPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 48px;
-          height: 48px;
+          width: 45px;
+          height: 45px;
           border: 1px solid #36363d;
-          border-radius: 12px;
+          border-radius: 10px;
           color: #aeb2bb;
           background: #1c1c20;
-          font-size: 23px;
+          font-size: 22px;
         }
 
         .history-empty h3 {
-          margin: 17px 0 8px;
+          margin: 14px 0 7px;
           color: #e5e5e9;
-          font-size: 14px;
+          font-size: 12px;
         }
 
         .history-empty p {
           max-width: 370px;
           margin: 0 auto;
           color: #85858d;
-          font-size: 11px;
-          line-height: 1.7;
-        }
-
-        .history-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 25px;
-          padding: 0 3px;
-        }
-
-        .history-footer span {
-          color: #c3c7ce;
-          font-family: "Manrope", sans-serif;
-          font-size: 13px;
-          font-weight: 800;
-          letter-spacing: 3px;
-        }
-
-        .history-footer p {
-          color: #66666e;
           font-size: 10px;
-          letter-spacing: 0.5px;
+          line-height: 1.7;
         }
 
         @media (max-width: 1050px) {
@@ -1182,61 +1182,64 @@ export default function HistoricoFinanceiroPage() {
           }
         }
 
-        @media (max-width: 700px) {
-          .history-page {
-            padding: 20px 14px;
-          }
-
-          .history-header {
+        @media (max-width: 760px) {
+          .history-intro {
             align-items: flex-start;
             flex-direction: column;
+            padding: 18px;
           }
 
-          .finance-navigation {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-          }
-
-          .navigation-button {
-            flex-shrink: 0;
+          .history-back-button {
+            align-self: flex-start;
           }
 
           .history-panel-heading {
             align-items: flex-start;
-            padding: 19px;
+            padding: 15px;
           }
 
           .history-filters {
-            padding: 17px;
-          }
-
-          .history-filter-grid {
-            grid-template-columns: 1fr 1fr;
+            padding: 14px;
           }
         }
 
-        @media (max-width: 420px) {
+        @media (max-width: 520px) {
           .history-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+          }
+
+          .history-card {
+            min-height: 88px;
+            padding: 11px;
+          }
+
+          .history-card > strong {
+            font-size: 16px;
+          }
+
+          .history-filter-grid {
             grid-template-columns: 1fr 1fr;
             gap: 9px;
           }
 
-          .history-card {
-            padding: 13px;
-          }
-
-          .history-card > strong {
-            font-size: 17px;
-          }
-
-          .history-filter-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .history-footer {
+          .history-filter-footer {
             align-items: flex-start;
             flex-direction: column;
-            gap: 5px;
+          }
+
+          .history-panel-heading {
+            gap: 10px;
+          }
+
+          .history-details {
+            gap: 14px;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .history-filter-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>

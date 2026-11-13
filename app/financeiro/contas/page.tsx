@@ -3,6 +3,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Account = {
   id: number;
@@ -15,18 +16,6 @@ type Account = {
 };
 
 const STORAGE_KEY = "nexo_accounts";
-
-const financeNavigation = [
-  { label: "Visão geral", href: "/financeiro", icon: "⌂" },
-  { label: "Contas", href: "/financeiro/contas", icon: "▣" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↓" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↑" },
-  { label: "Histórico financeiro", href: "/financeiro/historico", icon: "↻" },
-  { label: "Investimentos", href: "/financeiro/investimentos", icon: "◈" },
-  { label: "Reserva financeira", href: "/financeiro/reservas", icon: "▣" },
-  { label: "Planejamento", href: "/financeiro/planejamento", icon: "▤" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
-];
 
 const accountTypes = [
   "Conta corrente",
@@ -61,6 +50,7 @@ function money(value: number) {
 
 function parseAmount(value: string) {
   const normalized = value.trim().replace(/\s/g, "");
+
   if (!normalized) return NaN;
 
   if (normalized.includes(",")) {
@@ -78,6 +68,18 @@ function localDate() {
     String(date.getMonth() + 1).padStart(2, "0"),
     String(date.getDate()).padStart(2, "0"),
   ].join("-");
+}
+
+function formatLongDate() {
+  return new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatDate(value: string) {
+  return new Date(value + "T12:00:00").toLocaleDateString("pt-BR");
 }
 
 export default function ContasFinanceirasPage() {
@@ -127,11 +129,15 @@ export default function ContasFinanceirasPage() {
     [activeAccounts]
   );
 
-  const filteredAccounts = accounts.filter((account) => {
-    if (filter === "Todas") return true;
-    if (filter === "Ativas") return account.active;
-    return !account.active;
-  });
+  const filteredAccounts = useMemo(
+    () =>
+      accounts.filter((account) => {
+        if (filter === "Todas") return true;
+        if (filter === "Ativas") return account.active;
+        return !account.active;
+      }),
+    [accounts, filter]
+  );
 
   function addAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -200,429 +206,440 @@ export default function ContasFinanceirasPage() {
   }
 
   return (
-    <main className="accounts-page">
-      <header className="accounts-header">
-        <div className="header-content">
-          <div className="breadcrumb">
-            <Link href="/">Início</Link>
-            <span>/</span>
-            <Link href="/financeiro">Financeiro</Link>
-            <span>/</span>
-            <span>Contas</span>
+    <main className="app-shell">
+      <MainNavigation />
+
+      <section className="main-area">
+        <header className="topbar">
+          <div className="accounts-topbar-left">
+            <div className="accounts-breadcrumb">
+              <Link href="/">NEXO</Link>
+              <span>/</span>
+              <Link href="/financeiro">FINANCEIRO</Link>
+              <span>/</span>
+              <span>CONTAS</span>
+            </div>
+
+            <h1>Contas financeiras</h1>
+            <p>Gerencie suas contas e organize seus saldos iniciais.</p>
           </div>
 
-          <span className="eyebrow">NEXO / GESTÃO FINANCEIRA</span>
-
-          <h1>Contas financeiras</h1>
-
-          <p>
-            Cadastre suas contas e organize os saldos disponíveis.
-          </p>
-        </div>
-
-        <div className="header-actions">
-          <div className="header-date">
-            {new Date().toLocaleDateString("pt-BR", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            })}
+          <div className="accounts-topbar-right">
+            <span className="accounts-date">{formatLongDate()}</span>
+            <div className="accounts-avatar">N</div>
           </div>
+        </header>
 
-          <Link href="/financeiro" className="back-link">
-            <span>←</span>
-            Voltar ao financeiro
-          </Link>
-        </div>
-      </header>
+        <div className="content accounts-content">
+          <section className="accounts-intro">
+            <div>
+              <span className="accounts-eyebrow">
+                GESTÃO FINANCEIRA
+              </span>
+              <h2>Minhas contas</h2>
+              <p>
+                Centralize suas contas bancárias, carteiras e demais
+                recursos financeiros em um só lugar.
+              </p>
+            </div>
 
-      <nav className="finance-navigation">
-        {financeNavigation.map((item) => {
-          const active = item.href === "/financeiro/contas";
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`navigation-button ${active ? "selected" : ""}`}
-              aria-current={active ? "page" : undefined}
-            >
-              <span>{item.icon}</span>
-              {item.label}
+            <Link href="/financeiro" className="accounts-back-link">
+              <span>←</span>
+              Voltar ao financeiro
             </Link>
-          );
-        })}
-      </nav>
+          </section>
 
-      <section className="summary-grid">
-        <article className="summary-card">
-          <div className="summary-top">
-            <span>Contas cadastradas</span>
-            <span className="summary-icon">▣</span>
-          </div>
-          <strong>{accounts.length}</strong>
-          <small>Total de contas registradas</small>
-        </article>
+          <section className="accounts-summary-grid">
+            <article className="accounts-summary-card">
+              <div className="accounts-summary-top">
+                <span>Contas cadastradas</span>
+                <span className="accounts-summary-icon">▣</span>
+              </div>
+              <strong>{accounts.length}</strong>
+              <small>Total de contas registradas</small>
+            </article>
 
-        <article className="summary-card">
-          <div className="summary-top">
-            <span>Contas ativas</span>
-            <span className="summary-icon">✓</span>
-          </div>
-          <strong>{activeAccounts.length}</strong>
-          <small>Disponíveis para movimentação</small>
-        </article>
+            <article className="accounts-summary-card">
+              <div className="accounts-summary-top">
+                <span>Contas ativas</span>
+                <span className="accounts-summary-icon">✓</span>
+              </div>
+              <strong>{activeAccounts.length}</strong>
+              <small>Disponíveis para movimentação</small>
+            </article>
 
-        <article className="summary-card featured">
-          <div className="summary-top">
-            <span>Saldo inicial total</span>
-            <span className="summary-icon">R$</span>
-          </div>
-          <strong>{money(totalInitialBalance)}</strong>
-          <small>Soma dos saldos iniciais das contas ativas</small>
-        </article>
-      </section>
+            <article className="accounts-summary-card featured">
+              <div className="accounts-summary-top">
+                <span>Saldo inicial total</span>
+                <span className="accounts-summary-icon">R$</span>
+              </div>
+              <strong>{money(totalInitialBalance)}</strong>
+              <small>
+                Soma dos saldos iniciais das contas ativas
+              </small>
+            </article>
+          </section>
 
-      <section className="account-panel">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">CADASTRO</span>
-            <h2>Nova conta</h2>
-            <p>Cadastre uma conta para organizar seu patrimônio financeiro.</p>
-          </div>
-        </div>
-
-        <form onSubmit={addAccount}>
-          <div className="form-grid">
-            <div className="field">
-              <label>Nome da conta</label>
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Ex.: Minha conta principal"
-                required
-              />
+          <section className="accounts-panel">
+            <div className="accounts-section-heading">
+              <div>
+                <span className="accounts-eyebrow">CADASTRO</span>
+                <h2>Nova conta</h2>
+                <p>
+                  Cadastre uma conta para organizar seu patrimônio
+                  financeiro.
+                </p>
+              </div>
             </div>
 
-            <div className="field">
-              <label>Banco / Instituição</label>
-              <select
-                value={institution}
-                onChange={(event) => setInstitution(event.target.value)}
-              >
-                {institutions.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label>Tipo de conta</label>
-              <select
-                value={type}
-                onChange={(event) => setType(event.target.value)}
-              >
-                {accountTypes.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label>Saldo inicial (R$)</label>
-              <input
-                value={initialBalance}
-                onChange={(event) => setInitialBalance(event.target.value)}
-                placeholder="0,00"
-                inputMode="decimal"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="submit">+ Cadastrar conta</button>
-          </div>
-        </form>
-      </section>
-
-      <section className="account-panel">
-        <div className="section-heading history-heading">
-          <div>
-            <span className="eyebrow">CONTROLE</span>
-            <h2>Minhas contas</h2>
-            <p>Consulte, ative ou desative suas contas cadastradas.</p>
-          </div>
-
-          <select
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            className="filter-select"
-          >
-            <option>Todas</option>
-            <option>Ativas</option>
-            <option>Inativas</option>
-          </select>
-        </div>
-
-        {!loaded ? (
-          <div className="empty-state">
-            <strong>Carregando contas...</strong>
-          </div>
-        ) : filteredAccounts.length === 0 ? (
-          <div className="empty-state">
-            <span>▣</span>
-            <strong>Nenhuma conta cadastrada</strong>
-            <p>
-              Cadastre sua primeira conta para começar a organizar seu
-              patrimônio financeiro.
-            </p>
-          </div>
-        ) : (
-          <div className="account-list">
-            {filteredAccounts.map((account) => (
-              <article className="account-item" key={account.id}>
-                <div className="account-icon">▣</div>
-
-                <div className="account-info">
-                  <strong>{account.name}</strong>
-                  <span>
-                    {account.institution} · {account.type}
-                  </span>
-                  <small>
-                    Cadastrada em{" "}
-                    {new Date(
-                      account.createdAt + "T12:00:00"
-                    ).toLocaleDateString("pt-BR")}
-                  </small>
+            <form onSubmit={addAccount}>
+              <div className="accounts-form-grid">
+                <div className="accounts-field">
+                  <label htmlFor="account-name">Nome da conta</label>
+                  <input
+                    id="account-name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="Ex.: Minha conta principal"
+                    required
+                  />
                 </div>
 
-                <div className="account-balance">
-                  <span>Saldo inicial</span>
-                  <strong>{money(account.initialBalance)}</strong>
-                </div>
-
-                <div className="account-actions">
-                  <span
-                    className={
-                      account.active ? "status active" : "status inactive"
+                <div className="accounts-field">
+                  <label htmlFor="account-institution">
+                    Banco / Instituição
+                  </label>
+                  <select
+                    id="account-institution"
+                    value={institution}
+                    onChange={(event) =>
+                      setInstitution(event.target.value)
                     }
                   >
-                    {account.active ? "Ativa" : "Inativa"}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleAccount(account.id)}
-                    title={account.active ? "Desativar conta" : "Ativar conta"}
-                  >
-                    {account.active ? "Desativar" : "Ativar"}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="delete-button"
-                    onClick={() => removeAccount(account.id)}
-                    title="Excluir conta"
-                  >
-                    ×
-                  </button>
+                    {institutions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </article>
-            ))}
-          </div>
-        )}
+
+                <div className="accounts-field">
+                  <label htmlFor="account-type">Tipo de conta</label>
+                  <select
+                    id="account-type"
+                    value={type}
+                    onChange={(event) => setType(event.target.value)}
+                  >
+                    {accountTypes.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="accounts-field">
+                  <label htmlFor="account-balance">
+                    Saldo inicial (R$)
+                  </label>
+                  <input
+                    id="account-balance"
+                    value={initialBalance}
+                    onChange={(event) =>
+                      setInitialBalance(event.target.value)
+                    }
+                    placeholder="0,00"
+                    inputMode="decimal"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="accounts-form-actions">
+                <button type="submit">
+                  <span>+</span>
+                  Cadastrar conta
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="accounts-panel">
+            <div className="accounts-section-heading accounts-history-heading">
+              <div>
+                <span className="accounts-eyebrow">CONTROLE</span>
+                <h2>Contas cadastradas</h2>
+                <p>
+                  Consulte, ative, desative ou exclua suas contas.
+                </p>
+              </div>
+
+              <div className="accounts-filter">
+                <label htmlFor="account-filter">Exibir</label>
+                <select
+                  id="account-filter"
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                >
+                  <option value="Todas">Todas</option>
+                  <option value="Ativas">Ativas</option>
+                  <option value="Inativas">Inativas</option>
+                </select>
+              </div>
+            </div>
+
+            {!loaded ? (
+              <div className="accounts-empty-state">
+                <strong>Carregando contas...</strong>
+              </div>
+            ) : filteredAccounts.length === 0 ? (
+              <div className="accounts-empty-state">
+                <span>▣</span>
+                <strong>Nenhuma conta encontrada</strong>
+                <p>
+                  {filter === "Todas"
+                    ? "Cadastre sua primeira conta para começar a organizar seu patrimônio financeiro."
+                    : `Não existem contas ${filter.toLowerCase()} no momento.`}
+                </p>
+              </div>
+            ) : (
+              <div className="accounts-list">
+                {filteredAccounts.map((account) => (
+                  <article
+                    className="accounts-item"
+                    key={account.id}
+                  >
+                    <div className="accounts-item-icon">▣</div>
+
+                    <div className="accounts-item-info">
+                      <strong>{account.name}</strong>
+                      <span>
+                        {account.institution} · {account.type}
+                      </span>
+                      <small>
+                        Cadastrada em {formatDate(account.createdAt)}
+                      </small>
+                    </div>
+
+                    <div className="accounts-item-balance">
+                      <span>Saldo inicial</span>
+                      <strong>
+                        {money(account.initialBalance)}
+                      </strong>
+                    </div>
+
+                    <div className="accounts-item-actions">
+                      <span
+                        className={
+                          account.active
+                            ? "accounts-status active"
+                            : "accounts-status inactive"
+                        }
+                      >
+                        {account.active ? "Ativa" : "Inativa"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleAccount(account.id)}
+                        title={
+                          account.active
+                            ? "Desativar conta"
+                            : "Ativar conta"
+                        }
+                      >
+                        {account.active ? "Desativar" : "Ativar"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="accounts-delete-button"
+                        onClick={() => removeAccount(account.id)}
+                        title="Excluir conta"
+                        aria-label={`Excluir conta ${account.name}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="accounts-information">
+            <div className="accounts-information-icon">i</div>
+            <div>
+              <strong>Importante</strong>
+              <p>
+                Nesta etapa, o sistema registra os saldos iniciais. O
+                saldo disponível será calculado posteriormente,
+                considerando receitas, despesas, transferências,
+                aplicações e resgates efetivados. Os lançamentos
+                existentes não serão alterados.
+              </p>
+            </div>
+          </section>
+
+          <footer className="accounts-footer">
+            NEXO · Planeje. Organize. Conquiste.
+          </footer>
+        </div>
       </section>
 
-      <div className="information">
-        <strong>Importante</strong>
-        <p>
-          Nesta etapa, o sistema registra os saldos iniciais. O saldo
-          disponível será calculado na próxima etapa, considerando receitas,
-          despesas, transferências, aplicações e resgates efetivados.
-          Os lançamentos existentes não serão alterados.
-        </p>
-      </div>
-
-      <footer>NEXO · Planeje. Organize. Conquiste.</footer>
-
       <style jsx global>{`
-        .accounts-page {
-          min-height: 100vh;
-          padding: 32px;
-          color: #f5f5f6;
-          background: #0a0a0b;
-          font-family: "DM Sans", sans-serif;
-          box-sizing: border-box;
-        }
-
-        .accounts-header {
+        .accounts-content {
           display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
+          flex-direction: column;
           gap: 20px;
-          margin-bottom: 20px;
-        }
-
-        .header-content {
           min-width: 0;
         }
 
-        .breadcrumb {
+        .accounts-topbar-left {
+          min-width: 0;
+        }
+
+        .accounts-breadcrumb {
           display: flex;
           align-items: center;
           flex-wrap: wrap;
           gap: 9px;
-          margin-bottom: 13px;
-          color: #89898f;
-          font-size: 12px;
+          margin-bottom: 8px;
+          color: #85858d;
+          font-size: 10px;
+          letter-spacing: 0.7px;
         }
 
-        .breadcrumb a {
-          color: #c3c7ce;
+        .accounts-breadcrumb a {
+          color: #bdbdc5;
           text-decoration: none;
         }
 
-        .breadcrumb a:hover {
+        .accounts-breadcrumb a:hover {
           color: #fff;
         }
 
-        .eyebrow {
-          display: block;
-          color: #888891;
-          font-size: 10px;
-          letter-spacing: 1.5px;
-          font-weight: 700;
-        }
-
-        .accounts-header h1 {
-          margin: 7px 0;
+        .accounts-topbar-left h1 {
+          margin: 0;
+          color: #f5f5f6;
           font-family: "Manrope", sans-serif;
-          font-size: 29px;
+          font-size: 25px;
           font-weight: 700;
-          letter-spacing: -1px;
+          letter-spacing: -0.8px;
         }
 
-        .accounts-header p {
-          margin: 8px 0 0;
-          color: #89898f;
-          font-size: 13px;
+        .accounts-topbar-left p {
+          margin: 5px 0 0;
+          color: #898991;
+          font-size: 12px;
         }
 
-        .header-actions {
+        .accounts-topbar-right {
           display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          justify-content: flex-end;
-          gap: 10px;
+          align-items: center;
+          gap: 15px;
           flex-shrink: 0;
         }
 
-        .header-date {
+        .accounts-date {
           color: #9999a2;
-          font-size: 12px;
+          font-size: 11px;
           white-space: nowrap;
         }
 
-        .back-link {
+        .accounts-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border: 1px solid #414148;
+          border-radius: 50%;
+          color: #f5f5f6;
+          background: #252529;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .accounts-intro {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 18px;
+        }
+
+        .accounts-eyebrow {
+          display: block;
+          color: #888891;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+        }
+
+        .accounts-intro h2 {
+          margin: 6px 0 0;
+          color: #f5f5f6;
+          font-family: "Manrope", sans-serif;
+          font-size: 19px;
+          font-weight: 700;
+          letter-spacing: -0.5px;
+        }
+
+        .accounts-intro p {
+          margin: 6px 0 0;
+          color: #89898f;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .accounts-back-link {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          min-height: 40px;
-          padding: 0 15px;
+          min-height: 37px;
+          padding: 0 13px;
+          flex-shrink: 0;
           border: 1px solid #303034;
-          border-radius: 9px;
+          border-radius: 8px;
           color: #e5e5e7;
           background: #151517;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 600;
           text-decoration: none;
           transition: 0.2s;
-          white-space: nowrap;
         }
 
-        .back-link:hover {
+        .accounts-back-link:hover {
           border-color: #777d87;
-          background: #1b1b1e;
-        }
-
-        .finance-navigation {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px;
-          margin-bottom: 23px;
-          overflow-x: auto;
-          border: 1px solid #29292e;
-          border-radius: 9px;
-          background: #151517;
-          scrollbar-width: thin;
-          box-sizing: border-box;
-        }
-
-        .navigation-button {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          flex-shrink: 0;
-          min-height: 36px;
-          padding: 0 12px;
-          border: 1px solid #34343a;
-          border-radius: 6px;
-          color: #bdbdc5;
           background: #202024;
-          font-size: 11px;
-          text-decoration: none;
-          white-space: nowrap;
-          transition: 0.2s;
-          box-sizing: border-box;
         }
 
-        .navigation-button:hover {
-          color: #fff;
-          border-color: #77777f;
-          background: #303035;
-        }
-
-        .navigation-button.selected {
-          color: #fff;
-          border-color: #77777f;
-          background: #38383e;
-          font-weight: 700;
-        }
-
-        .navigation-button span {
-          font-size: 15px;
-          line-height: 1;
-        }
-
-        .summary-grid {
+        .accounts-summary-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 15px;
-          margin-bottom: 25px;
+          gap: 14px;
         }
 
-        .summary-card {
+        .accounts-summary-card {
           min-width: 0;
-          padding: 20px;
+          padding: 19px;
           border: 1px solid #29292d;
-          border-radius: 13px;
+          border-radius: 12px;
           background: #151517;
         }
 
-        .summary-top {
+        .accounts-summary-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 10px;
           color: #99999f;
-          font-size: 12px;
+          font-size: 11px;
         }
 
-        .summary-icon {
+        .accounts-summary-icon {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -635,9 +652,9 @@ export default function ContasFinanceirasPage() {
           font-size: 12px;
         }
 
-        .summary-card > strong {
+        .accounts-summary-card > strong {
           display: block;
-          margin-top: 17px;
+          margin-top: 16px;
           color: #f5f5f6;
           font-family: "Manrope", sans-serif;
           font-size: 23px;
@@ -646,160 +663,183 @@ export default function ContasFinanceirasPage() {
           overflow-wrap: anywhere;
         }
 
-        .summary-card > small {
+        .accounts-summary-card > small {
           display: block;
           margin-top: 7px;
           color: #77777e;
-          font-size: 11px;
+          font-size: 10px;
+          line-height: 1.5;
         }
 
-        .summary-card.featured {
+        .accounts-summary-card.featured {
           border-color: #494950;
           background: #202024;
         }
 
-        .account-panel {
-          margin-bottom: 20px;
-          padding: 22px 23px;
+        .accounts-panel {
+          min-width: 0;
+          padding: 22px;
           border: 1px solid #29292d;
-          border-radius: 13px;
+          border-radius: 12px;
           background: #111113;
         }
 
-        .section-heading {
+        .accounts-section-heading {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 15px;
-          margin-bottom: 20px;
+          margin-bottom: 19px;
         }
 
-        .section-heading h2 {
+        .accounts-section-heading h2 {
           margin: 5px 0 0;
           color: #f5f5f6;
           font-family: "Manrope", sans-serif;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 700;
         }
 
-        .section-heading p {
+        .accounts-section-heading p {
           margin: 6px 0 0;
           color: #85858b;
-          font-size: 12px;
+          font-size: 11px;
+          line-height: 1.5;
         }
 
-        .form-grid {
+        .accounts-form-grid {
           display: grid;
           grid-template-columns: 2fr 1.4fr 1.3fr 1fr;
           gap: 12px;
         }
 
-        .field {
+        .accounts-field {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 7px;
           min-width: 0;
         }
 
-        .field label {
+        .accounts-field label {
           color: #bdbdc5;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
         }
 
-        .field input,
-        .field select,
-        .filter-select {
+        .accounts-field input,
+        .accounts-field select,
+        .accounts-filter select {
           width: 100%;
-          height: 40px;
-          padding: 0 12px;
+          height: 39px;
+          padding: 0 11px;
           border: 1px solid #303034;
           border-radius: 8px;
           outline: none;
           color: #e5e5e7;
           background: #151517;
           font: inherit;
-          font-size: 12px;
+          font-size: 11px;
           box-sizing: border-box;
         }
 
-        .field input:focus,
-        .field select:focus,
-        .filter-select:focus {
+        .accounts-field input:focus,
+        .accounts-field select:focus,
+        .accounts-filter select:focus {
           border-color: #777d87;
         }
 
-        .field input::placeholder {
+        .accounts-field input::placeholder {
           color: #707077;
         }
 
-        .form-actions {
+        .accounts-form-actions {
           display: flex;
           justify-content: flex-end;
           margin-top: 17px;
         }
 
-        .form-actions button {
+        .accounts-form-actions button {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-height: 40px;
-          padding: 0 17px;
+          gap: 7px;
+          min-height: 39px;
+          padding: 0 16px;
           border: 1px solid #77777f;
           border-radius: 8px;
           color: #fff;
           background: #303035;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 700;
           cursor: pointer;
           transition: 0.2s;
         }
 
-        .form-actions button:hover {
+        .accounts-form-actions button:hover {
           background: #414147;
         }
 
-        .filter-select {
-          width: 155px;
+        .accounts-form-actions button span {
+          font-size: 16px;
+        }
+
+        .accounts-history-heading {
+          align-items: flex-end;
+        }
+
+        .accounts-filter {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           flex-shrink: 0;
         }
 
-        .account-list {
+        .accounts-filter label {
+          color: #85858b;
+          font-size: 10px;
+        }
+
+        .accounts-filter select {
+          width: 140px;
+        }
+
+        .accounts-list {
           display: flex;
           flex-direction: column;
           gap: 8px;
         }
 
-        .account-item {
+        .accounts-item {
           display: flex;
           align-items: center;
           gap: 13px;
-          padding: 15px;
+          min-width: 0;
+          padding: 14px;
           border: 1px solid #29292d;
           border-radius: 9px;
           background: #151517;
           transition: 0.2s;
         }
 
-        .account-item:hover {
+        .accounts-item:hover {
           background: #19191c;
         }
 
-        .account-icon {
+        .accounts-item-icon {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 39px;
-          height: 39px;
+          width: 38px;
+          height: 38px;
           flex-shrink: 0;
           border: 1px solid #303034;
           border-radius: 8px;
           color: #c3c7ce;
           background: #1b1b1e;
-          font-size: 19px;
+          font-size: 18px;
         }
 
-        .account-info {
+        .accounts-item-info {
           display: flex;
           flex: 1;
           flex-direction: column;
@@ -807,93 +847,95 @@ export default function ContasFinanceirasPage() {
           min-width: 0;
         }
 
-        .account-info strong {
+        .accounts-item-info strong {
           color: #ededee;
-          font-size: 12px;
-          font-weight: 600;
-        }
-
-        .account-info span,
-        .account-info small {
-          color: #85858b;
           font-size: 11px;
+          font-weight: 600;
+          overflow-wrap: anywhere;
         }
 
-        .account-balance {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-          min-width: 140px;
-        }
-
-        .account-balance span {
+        .accounts-item-info span,
+        .accounts-item-info small {
           color: #85858b;
           font-size: 10px;
         }
 
-        .account-balance strong {
+        .accounts-item-balance {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          min-width: 130px;
+        }
+
+        .accounts-item-balance span {
+          color: #85858b;
+          font-size: 9px;
+        }
+
+        .accounts-item-balance strong {
           color: #f0f0f1;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
         }
 
-        .account-actions {
+        .accounts-item-actions {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 7px;
+          flex-shrink: 0;
         }
 
-        .status {
+        .accounts-status {
           display: inline-flex;
           align-items: center;
           padding: 5px 9px;
           border: 1px solid #343438;
           border-radius: 20px;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
         }
 
-        .status.active {
+        .accounts-status.active {
           border-color: #35443b;
           color: #a8c7b3;
           background: #18201b;
         }
 
-        .status.inactive {
+        .accounts-status.inactive {
           border-color: #39393d;
           color: #85858b;
           background: #1b1b1e;
         }
 
-        .account-actions button {
-          min-height: 30px;
-          padding: 0 10px;
+        .accounts-item-actions button {
+          min-height: 29px;
+          padding: 0 9px;
           border: 1px solid #414148;
           border-radius: 7px;
           color: #e5e5e7;
           background: #202023;
           font: inherit;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
           cursor: pointer;
           transition: 0.2s;
         }
 
-        .account-actions button:hover {
+        .accounts-item-actions button:hover {
           border-color: #777d87;
           background: #29292d;
         }
 
-        .account-actions .delete-button {
-          width: 30px;
-          height: 30px;
+        .accounts-item-actions .accounts-delete-button {
+          width: 29px;
+          height: 29px;
           padding: 0;
           color: #d18c8c;
           font-size: 17px;
         }
 
-        .empty-state {
-          min-height: 170px;
+        .accounts-empty-state {
+          min-height: 160px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -902,149 +944,175 @@ export default function ContasFinanceirasPage() {
           text-align: center;
         }
 
-        .empty-state > span {
+        .accounts-empty-state > span {
           margin-bottom: 10px;
           color: #777d87;
           font-size: 25px;
         }
 
-        .empty-state strong {
+        .accounts-empty-state strong {
           color: #dedee0;
-          font-size: 13px;
+          font-size: 12px;
         }
 
-        .empty-state p {
+        .accounts-empty-state p {
+          max-width: 440px;
           margin: 7px 0 0;
           color: #85858b;
-          font-size: 11px;
-          line-height: 1.5;
+          font-size: 10px;
+          line-height: 1.6;
         }
 
-        .information {
-          margin-bottom: 5px;
+        .accounts-information {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
           padding: 15px 17px;
           border: 1px solid #29292d;
           border-radius: 9px;
           background: #151517;
         }
 
-        .information strong {
-          color: #ededee;
-          font-size: 12px;
+        .accounts-information-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 22px;
+          height: 22px;
+          flex-shrink: 0;
+          border: 1px solid #414148;
+          border-radius: 50%;
+          color: #c3c7ce;
+          font-size: 11px;
+          font-weight: 700;
         }
 
-        .information p {
-          margin: 6px 0 0;
-          color: #85858b;
+        .accounts-information strong {
+          color: #ededee;
           font-size: 11px;
+        }
+
+        .accounts-information p {
+          margin: 5px 0 0;
+          color: #85858b;
+          font-size: 10px;
           line-height: 1.6;
         }
 
-        .accounts-page footer {
+        .accounts-footer {
           padding: 8px;
           color: #77777f;
           text-align: center;
-          font-size: 10px;
+          font-size: 9px;
         }
 
-        @media (max-width: 1050px) {
-          .summary-grid {
+        @media (max-width: 1100px) {
+          .accounts-summary-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .form-grid {
+          .accounts-form-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .account-item {
+          .accounts-item {
             flex-wrap: wrap;
           }
 
-          .account-info {
-            min-width: calc(100% - 60px);
+          .accounts-item-info {
+            min-width: calc(100% - 55px);
           }
 
-          .account-balance {
-            margin-left: 52px;
+          .accounts-item-balance {
+            margin-left: 51px;
           }
 
-          .account-actions {
+          .accounts-item-actions {
             margin-left: auto;
           }
         }
 
         @media (max-width: 700px) {
-          .accounts-page {
-            padding: 20px 14px;
+          .accounts-topbar-left h1 {
+            font-size: 21px;
           }
 
-          .accounts-header {
+          .accounts-topbar-right {
+            gap: 9px;
+          }
+
+          .accounts-date {
+            font-size: 10px;
+          }
+
+          .accounts-intro {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .accounts-header h1 {
-            font-size: 25px;
-          }
-
-          .header-actions {
-            width: 100%;
-            align-items: flex-start;
-            flex-direction: row;
-            justify-content: space-between;
-            flex-wrap: wrap;
-          }
-
-          .summary-grid {
+          .accounts-summary-grid {
             gap: 10px;
           }
 
-          .summary-card {
+          .accounts-summary-card {
             padding: 15px;
           }
 
-          .summary-card > strong {
+          .accounts-summary-card > strong {
             font-size: 19px;
           }
 
-          .account-panel {
-            padding: 18px;
+          .accounts-panel {
+            padding: 17px;
           }
 
-          .section-heading {
+          .accounts-form-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .accounts-form-actions button {
+            width: 100%;
+          }
+
+          .accounts-history-heading {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .filter-select {
+          .accounts-filter {
             width: 100%;
+            justify-content: space-between;
           }
 
-          .form-grid {
-            grid-template-columns: 1fr;
+          .accounts-filter select {
+            flex: 1;
           }
 
-          .form-actions button {
-            width: 100%;
-          }
-
-          .account-item {
+          .accounts-item {
             align-items: flex-start;
           }
 
-          .account-balance {
+          .accounts-item-balance {
             margin-left: 0;
           }
 
-          .account-actions {
+          .accounts-item-actions {
             width: 100%;
             justify-content: flex-end;
           }
         }
 
-        @media (max-width: 380px) {
-          .summary-grid {
+        @media (max-width: 420px) {
+          .accounts-summary-grid {
             grid-template-columns: 1fr;
+          }
+
+          .accounts-topbar-right {
+            align-items: flex-start;
+          }
+
+          .accounts-item-actions {
+            flex-wrap: wrap;
           }
         }
       `}</style>

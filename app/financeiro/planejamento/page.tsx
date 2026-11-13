@@ -3,6 +3,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type TransactionType =
   | "Receita"
@@ -58,18 +59,6 @@ const TRANSACTIONS_KEY = "nexo_transactions";
 const BUDGETS_KEY = "nexo_planning_budgets";
 const GOALS_KEY = "nexo_planning_goals";
 
-const financeNavigation = [
-  { label: "Visão geral", href: "/financeiro", icon: "⌂" },
-  { label: "Contas", href: "/financeiro/contas", icon: "▣" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↓" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↑" },
-  { label: "Histórico financeiro", href: "/financeiro/historico", icon: "↻" },
-  { label: "Investimentos", href: "/financeiro/investimentos", icon: "◈" },
-  { label: "Reserva financeira", href: "/financeiro/reservas", icon: "▣" },
-  { label: "Planejamento", href: "/financeiro/planejamento", icon: "▤" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
-];
-
 const goalCategories = [
   "Reserva de emergência",
   "Viagem",
@@ -104,6 +93,15 @@ function getLocalDateString() {
 
 function getCurrentMonth() {
   return getLocalDateString().slice(0, 7);
+}
+
+function formatLongDate(date = new Date()) {
+  return date.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function formatCurrency(value: number) {
@@ -160,7 +158,8 @@ function isPaidTransaction(transaction: Transaction) {
 }
 
 function isCanceled(transaction: Transaction) {
-  return (transaction.status || "").toLowerCase().trim() === "cancelada";
+  const status = (transaction.status || "").toLowerCase().trim();
+  return status.includes("cancel");
 }
 
 export default function PlanejamentoFinanceiroPage() {
@@ -295,7 +294,8 @@ export default function PlanejamentoFinanceiroPage() {
 
       const category = transaction.category || "Sem categoria";
 
-      result[category] = (result[category] || 0) + (Number(transaction.amount) || 0);
+      result[category] =
+        (result[category] || 0) + (Number(transaction.amount) || 0);
     });
 
     return result;
@@ -311,9 +311,8 @@ export default function PlanejamentoFinanceiroPage() {
     }, 0);
   }, [monthlyBudgets, categoryExpenses]);
 
-  const budgetUsage = totalBudget > 0
-    ? (totalBudgetUsed / totalBudget) * 100
-    : 0;
+  const budgetUsage =
+    totalBudget > 0 ? (totalBudgetUsed / totalBudget) * 100 : 0;
 
   const activeGoals = useMemo(() => {
     return goals.filter((goal) => goal.current < goal.target);
@@ -331,9 +330,10 @@ export default function PlanejamentoFinanceiroPage() {
     return goals.reduce((total, goal) => total + goal.current, 0);
   }, [goals]);
 
-  const goalProgress = totalGoalsTarget > 0
-    ? Math.min((totalGoalsCurrent / totalGoalsTarget) * 100, 100)
-    : 0;
+  const goalProgress =
+    totalGoalsTarget > 0
+      ? Math.min((totalGoalsCurrent / totalGoalsTarget) * 100, 100)
+      : 0;
 
   const expenseCategories = useMemo(() => {
     const categories = new Set<string>();
@@ -346,7 +346,9 @@ export default function PlanejamentoFinanceiroPage() {
 
     monthlyBudgets.forEach((budget) => categories.add(budget.category));
 
-    return Array.from(categories).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    return Array.from(categories).sort((a, b) =>
+      a.localeCompare(b, "pt-BR")
+    );
   }, [transactions, monthlyBudgets]);
 
   const latestTransactions = useMemo(() => {
@@ -410,7 +412,9 @@ export default function PlanejamentoFinanceiroPage() {
     });
 
     if (duplicate) {
-      setBudgetError("Já existe um orçamento para essa categoria neste mês.");
+      setBudgetError(
+        "Já existe um orçamento para essa categoria neste mês."
+      );
       return;
     }
 
@@ -539,15 +543,13 @@ export default function PlanejamentoFinanceiroPage() {
   }
 
   function updateGoalAmount(goal: FinancialGoal, value: string) {
-    const amount = parseAmount(value);
+    const amount = Number(value);
 
     if (!Number.isFinite(amount) || amount < 0) return;
 
     setGoals((current) =>
       current.map((item) =>
-        item.id === goal.id
-          ? { ...item, current: amount }
-          : item
+        item.id === goal.id ? { ...item, current: amount } : item
       )
     );
   }
@@ -583,916 +585,941 @@ export default function PlanejamentoFinanceiroPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <main className="planning-page">
-        <div className="loading-state">Carregando planejamento financeiro...</div>
-      </main>
-    );
-  }
-
   return (
-    <main className="planning-page">
-      <div className="page-container">
-        <header className="page-header">
-          <div className="header-content">
-            <span className="eyebrow">NEXO / GESTÃO FINANCEIRA</span>
+    <main className="app-shell">
+      <MainNavigation />
+
+      <section className="main-area">
+        <header className="topbar">
+          <div>
+            <div className="breadcrumb">
+              NEXO / FINANCEIRO / PLANEJAMENTO
+            </div>
             <h1>Planejamento financeiro</h1>
-            <p>
-              Organize seu orçamento, acompanhe suas metas e planeje seus
-              próximos passos financeiros.
-            </p>
           </div>
 
-          <div className="header-actions">
-            <div className="header-date">
-              {new Date().toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
+          <div className="topbar-right">
+            <div className="date-display">
+              <span className="date-icon">◷</span>
+              {formatLongDate()}
             </div>
-
-            <Link href="/financeiro" className="back-link">
-              <span>←</span>
-              Voltar ao financeiro
-            </Link>
+            <div className="profile-avatar">N</div>
           </div>
         </header>
 
-        <nav className="finance-navigation">
-          {financeNavigation.map((item) => {
-            const active = item.href === "/financeiro/planejamento";
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`navigation-button ${active ? "selected" : ""}`}
-                aria-current={active ? "page" : undefined}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <section className="month-toolbar">
-          <div>
-            <span className="section-eyebrow">PERÍODO DE ANÁLISE</span>
-            <h2>{getMonthName(selectedMonth)}</h2>
-          </div>
-
-          <div className="month-controls">
-            <button
-              type="button"
-              className="month-arrow"
-              onClick={() => changeMonth(-1)}
-              aria-label="Mês anterior"
-            >
-              ←
-            </button>
-
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-              aria-label="Selecionar mês"
-            />
-
-            <button
-              type="button"
-              className="month-arrow"
-              onClick={() => changeMonth(1)}
-              aria-label="Próximo mês"
-            >
-              →
-            </button>
-
-            <button
-              type="button"
-              className="today-button"
-              onClick={() => setSelectedMonth(getCurrentMonth())}
-            >
-              Mês atual
-            </button>
-          </div>
-        </section>
-
-        <section className="summary-grid">
-          <article className="summary-card">
-            <div className="summary-top">
-              <span>Receitas previstas</span>
-              <span className="summary-icon income">↑</span>
-            </div>
-            <strong className="income-text">
-              {formatCurrency(monthlySummary.plannedIncome)}
-            </strong>
-            <small>
-              Realizadas: {formatCurrency(monthlySummary.realizedIncome)}
-            </small>
-          </article>
-
-          <article className="summary-card">
-            <div className="summary-top">
-              <span>Despesas previstas</span>
-              <span className="summary-icon expense">↓</span>
-            </div>
-            <strong className="expense-text">
-              {formatCurrency(monthlySummary.plannedExpenses)}
-            </strong>
-            <small>
-              Realizadas: {formatCurrency(monthlySummary.realizedExpenses)}
-            </small>
-          </article>
-
-          <article className="summary-card">
-            <div className="summary-top">
-              <span>Saldo planejado</span>
-              <span className="summary-icon balance">◈</span>
-            </div>
-            <strong
-              className={
-                monthlySummary.plannedBalance >= 0
-                  ? "income-text"
-                  : "expense-text"
-              }
-            >
-              {formatCurrency(monthlySummary.plannedBalance)}
-            </strong>
-            <small>Receitas menos despesas previstas</small>
-          </article>
-
-          <article className="summary-card">
-            <div className="summary-top">
-              <span>Saldo realizado</span>
-              <span className="summary-icon realized">✓</span>
-            </div>
-            <strong
-              className={
-                monthlySummary.realizedBalance >= 0
-                  ? "income-text"
-                  : "expense-text"
-              }
-            >
-              {formatCurrency(monthlySummary.realizedBalance)}
-            </strong>
-            <small>Considera somente lançamentos concluídos</small>
-          </article>
-        </section>
-
-        <section className="content-grid">
-          <article className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">ACOMPANHAMENTO</span>
-                <h2>Previsto x realizado</h2>
-                <p>Comparativo das movimentações do mês selecionado.</p>
-              </div>
-            </div>
-
-            <div className="comparison-list">
-              <div className="comparison-item">
-                <div className="comparison-heading">
-                  <span>Receitas</span>
-                  <strong className="income-text">
-                    {formatCurrency(monthlySummary.realizedIncome)}
-                  </strong>
-                </div>
-
-                <div className="comparison-track">
-                  <div
-                    className="comparison-fill income-fill"
-                    style={{
-                      width: `${
-                        monthlySummary.plannedIncome > 0
-                          ? Math.min(
-                              (monthlySummary.realizedIncome /
-                                monthlySummary.plannedIncome) *
-                                100,
-                              100
-                            )
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-
-                <div className="comparison-footer">
-                  <span>Realizado</span>
-                  <span>
-                    Previsto: {formatCurrency(monthlySummary.plannedIncome)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="comparison-item">
-                <div className="comparison-heading">
-                  <span>Despesas</span>
-                  <strong className="expense-text">
-                    {formatCurrency(monthlySummary.realizedExpenses)}
-                  </strong>
-                </div>
-
-                <div className="comparison-track">
-                  <div
-                    className="comparison-fill expense-fill"
-                    style={{
-                      width: `${
-                        monthlySummary.plannedExpenses > 0
-                          ? Math.min(
-                              (monthlySummary.realizedExpenses /
-                                monthlySummary.plannedExpenses) *
-                                100,
-                              100
-                            )
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-
-                <div className="comparison-footer">
-                  <span>Realizado</span>
-                  <span>
-                    Previsto: {formatCurrency(monthlySummary.plannedExpenses)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pending-grid">
-              <div>
-                <span>Receitas pendentes</span>
-                <strong className="income-text">
-                  {formatCurrency(monthlySummary.pendingIncome)}
-                </strong>
-              </div>
-
-              <div>
-                <span>Despesas pendentes</span>
-                <strong className="expense-text">
-                  {formatCurrency(monthlySummary.pendingExpenses)}
-                </strong>
-              </div>
-            </div>
-          </article>
-
-          <article className="panel budget-overview">
-            <div className="panel-header">
-              <div>
-                <span className="section-eyebrow">CONTROLE DE GASTOS</span>
-                <h2>Orçamento mensal</h2>
-                <p>Limites definidos para suas categorias.</p>
-              </div>
-
-              <span className="panel-icon">▤</span>
-            </div>
-
-            <div className="budget-total">
-              <strong>{formatCurrency(totalBudget)}</strong>
-              <span>Limite total definido</span>
-            </div>
-
-            <div className="budget-main-track">
-              <div
-                className={`budget-main-fill ${
-                  budgetUsage > 100 ? "danger-fill" : ""
-                }`}
-                style={{ width: `${Math.min(budgetUsage, 100)}%` }}
-              />
-            </div>
-
-            <div className="budget-total-footer">
-              <span>
-                Utilizado: <strong>{formatCurrency(totalBudgetUsed)}</strong>
-              </span>
-              <span>{budgetUsage.toFixed(1)}%</span>
-            </div>
-
-            <div className="budget-remaining">
-              <span>Disponível no orçamento</span>
-              <strong
-                className={
-                  totalBudget - totalBudgetUsed >= 0
-                    ? "income-text"
-                    : "expense-text"
-                }
-              >
-                {formatCurrency(totalBudget - totalBudgetUsed)}
-              </strong>
-            </div>
-
-            <button
-              type="button"
-              className="secondary-button full-button"
-              onClick={openNewBudgetForm}
-            >
-              + Adicionar categoria ao orçamento
-            </button>
-          </article>
-        </section>
-
-        <section className="panel budget-panel">
-          <div className="panel-header section-panel-header">
-            <div>
-              <span className="section-eyebrow">ORÇAMENTO POR CATEGORIA</span>
-              <h2>Limites de despesas</h2>
-              <p>
-                Compare os gastos registrados com o limite planejado para cada
-                categoria.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="primary-button"
-              onClick={openNewBudgetForm}
-            >
-              + Novo orçamento
-            </button>
-          </div>
-
-          {showBudgetForm && (
-            <form className="form-card" onSubmit={saveBudget}>
-              <div className="form-heading">
-                <h3>
-                  {editingBudgetId !== null
-                    ? "Editar orçamento"
-                    : "Cadastrar orçamento"}
-                </h3>
-
-                <button
-                  type="button"
-                  className="close-button"
-                  onClick={() => {
-                    setShowBudgetForm(false);
-                    setEditingBudgetId(null);
-                    setBudgetError("");
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="form-grid">
-                <label className="field">
-                  <span>Categoria</span>
-                  <input
-                    type="text"
-                    list="expense-categories"
-                    value={budgetForm.category}
-                    onChange={(event) =>
-                      setBudgetForm((current) => ({
-                        ...current,
-                        category: event.target.value,
-                      }))
-                    }
-                    placeholder="Ex.: Alimentação"
-                    required
-                  />
-                  <datalist id="expense-categories">
-                    {expenseCategories.map((category) => (
-                      <option key={category} value={category} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <label className="field">
-                  <span>Limite mensal (R$)</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={budgetForm.limit}
-                    onChange={(event) =>
-                      setBudgetForm((current) => ({
-                        ...current,
-                        limit: event.target.value,
-                      }))
-                    }
-                    placeholder="0,00"
-                    required
-                  />
-                </label>
-              </div>
-
-              {budgetError && <p className="form-error">{budgetError}</p>}
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    setShowBudgetForm(false);
-                    setEditingBudgetId(null);
-                    setBudgetError("");
-                  }}
-                >
-                  Cancelar
-                </button>
-
-                <button type="submit" className="primary-button">
-                  Salvar orçamento
-                </button>
-              </div>
-            </form>
-          )}
-
-          {monthlyBudgets.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">▤</span>
-              <h3>Nenhum orçamento cadastrado</h3>
-              <p>
-                Defina limites mensais para suas categorias e acompanhe seus
-                gastos.
-              </p>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={openNewBudgetForm}
-              >
-                Criar primeiro orçamento
-              </button>
+        <div className="content planning-content">
+          {loading ? (
+            <div className="loading-state">
+              Carregando planejamento financeiro...
             </div>
           ) : (
-            <div className="budget-list">
-              {monthlyBudgets.map((budget) => {
-                const used = categoryExpenses[budget.category] || 0;
-                const percentage = getBudgetPercentage(used, budget.limit);
-                const status = getBudgetStatus(used, budget.limit);
-                const remaining = budget.limit - used;
+            <>
+              <section className="planning-intro">
+                <p>
+                  Organize seu orçamento, acompanhe suas metas e planeje seus
+                  próximos passos financeiros.
+                </p>
+              </section>
 
-                return (
-                  <div className="budget-row" key={budget.id}>
-                    <div className="budget-row-main">
-                      <div className="budget-category">
-                        <strong>{budget.category}</strong>
-                        <span>
-                          {formatCurrency(used)} de{" "}
-                          {formatCurrency(budget.limit)}
-                        </span>
-                      </div>
+              <section className="month-toolbar">
+                <div>
+                  <span className="section-eyebrow">PERÍODO DE ANÁLISE</span>
+                  <h2>{getMonthName(selectedMonth)}</h2>
+                </div>
 
-                      <div className="budget-row-actions">
-                        <span className={`status-pill ${status}`}>
-                          {status === "danger"
-                            ? "Limite excedido"
-                            : status === "warning"
-                              ? "Atenção"
-                              : "Dentro do limite"}
-                        </span>
+                <div className="month-controls">
+                  <button
+                    type="button"
+                    className="month-arrow"
+                    onClick={() => changeMonth(-1)}
+                    aria-label="Mês anterior"
+                  >
+                    ←
+                  </button>
 
-                        <button
-                          type="button"
-                          className="icon-button"
-                          onClick={() => openEditBudgetForm(budget)}
-                          title="Editar orçamento"
-                        >
-                          ✎
-                        </button>
-
-                        <button
-                          type="button"
-                          className="icon-button delete"
-                          onClick={() => deleteBudget(budget.id)}
-                          title="Excluir orçamento"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="budget-row-track">
-                      <div
-                        className={`budget-row-fill ${status}`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-
-                    <div className="budget-row-footer">
-                      <span>{percentage.toFixed(1)}% utilizado</span>
-                      <span className={remaining >= 0 ? "income-text" : "expense-text"}>
-                        {remaining >= 0 ? "Restante: " : "Excedente: "}
-                        {formatCurrency(Math.abs(remaining))}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="panel goals-panel">
-          <div className="panel-header section-panel-header">
-            <div>
-              <span className="section-eyebrow">OBJETIVOS FINANCEIROS</span>
-              <h2>Minhas metas</h2>
-              <p>
-                Acompanhe quanto já acumulou e quanto falta para alcançar seus
-                objetivos.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="primary-button"
-              onClick={openNewGoalForm}
-            >
-              + Nova meta
-            </button>
-          </div>
-
-          <div className="goals-summary">
-            <div>
-              <span>Total acumulado</span>
-              <strong className="income-text">
-                {formatCurrency(totalGoalsCurrent)}
-              </strong>
-            </div>
-
-            <div>
-              <span>Objetivo total</span>
-              <strong>{formatCurrency(totalGoalsTarget)}</strong>
-            </div>
-
-            <div>
-              <span>Metas em andamento</span>
-              <strong>{activeGoals.length}</strong>
-            </div>
-
-            <div>
-              <span>Metas concluídas</span>
-              <strong className="income-text">{completedGoals.length}</strong>
-            </div>
-          </div>
-
-          <div className="goals-total-progress">
-            <div className="goals-total-heading">
-              <span>Progresso geral das metas</span>
-              <strong>{goalProgress.toFixed(1)}%</strong>
-            </div>
-
-            <div className="goal-track">
-              <div
-                className="goal-fill"
-                style={{ width: `${goalProgress}%` }}
-              />
-            </div>
-          </div>
-
-          {showGoalForm && (
-            <form className="form-card" onSubmit={saveGoal}>
-              <div className="form-heading">
-                <h3>
-                  {editingGoalId !== null
-                    ? "Editar meta financeira"
-                    : "Cadastrar nova meta"}
-                </h3>
-
-                <button
-                  type="button"
-                  className="close-button"
-                  onClick={() => {
-                    setShowGoalForm(false);
-                    setEditingGoalId(null);
-                    setGoalError("");
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="form-grid">
-                <label className="field field-wide">
-                  <span>Nome da meta</span>
                   <input
-                    type="text"
-                    value={goalForm.name}
-                    onChange={(event) =>
-                      setGoalForm((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
-                    }
-                    placeholder="Ex.: Comprar meu carro"
-                    required
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(event) => setSelectedMonth(event.target.value)}
+                    aria-label="Selecionar mês"
                   />
-                </label>
 
-                <label className="field">
-                  <span>Categoria</span>
-                  <select
-                    value={goalForm.category}
-                    onChange={(event) =>
-                      setGoalForm((current) => ({
-                        ...current,
-                        category: event.target.value,
-                      }))
+                  <button
+                    type="button"
+                    className="month-arrow"
+                    onClick={() => changeMonth(1)}
+                    aria-label="Próximo mês"
+                  >
+                    →
+                  </button>
+
+                  <button
+                    type="button"
+                    className="today-button"
+                    onClick={() => setSelectedMonth(getCurrentMonth())}
+                  >
+                    Mês atual
+                  </button>
+                </div>
+              </section>
+
+              <section className="summary-grid">
+                <article className="summary-card">
+                  <div className="summary-top">
+                    <span>Receitas previstas</span>
+                    <span className="summary-icon income">↑</span>
+                  </div>
+                  <strong className="income-text">
+                    {formatCurrency(monthlySummary.plannedIncome)}
+                  </strong>
+                  <small>
+                    Realizadas: {formatCurrency(monthlySummary.realizedIncome)}
+                  </small>
+                </article>
+
+                <article className="summary-card">
+                  <div className="summary-top">
+                    <span>Despesas previstas</span>
+                    <span className="summary-icon expense">↓</span>
+                  </div>
+                  <strong className="expense-text">
+                    {formatCurrency(monthlySummary.plannedExpenses)}
+                  </strong>
+                  <small>
+                    Realizadas:{" "}
+                    {formatCurrency(monthlySummary.realizedExpenses)}
+                  </small>
+                </article>
+
+                <article className="summary-card">
+                  <div className="summary-top">
+                    <span>Saldo planejado</span>
+                    <span className="summary-icon balance">◈</span>
+                  </div>
+                  <strong
+                    className={
+                      monthlySummary.plannedBalance >= 0
+                        ? "income-text"
+                        : "expense-text"
                     }
                   >
-                    {goalCategories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    {formatCurrency(monthlySummary.plannedBalance)}
+                  </strong>
+                  <small>Receitas menos despesas previstas</small>
+                </article>
 
-                <label className="field">
-                  <span>Valor desejado (R$)</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={goalForm.target}
-                    onChange={(event) =>
-                      setGoalForm((current) => ({
-                        ...current,
-                        target: event.target.value,
-                      }))
+                <article className="summary-card">
+                  <div className="summary-top">
+                    <span>Saldo realizado</span>
+                    <span className="summary-icon realized">✓</span>
+                  </div>
+                  <strong
+                    className={
+                      monthlySummary.realizedBalance >= 0
+                        ? "income-text"
+                        : "expense-text"
                     }
-                    placeholder="0,00"
-                    required
-                  />
-                </label>
+                  >
+                    {formatCurrency(monthlySummary.realizedBalance)}
+                  </strong>
+                  <small>Considera somente lançamentos concluídos</small>
+                </article>
+              </section>
 
-                <label className="field">
-                  <span>Valor já acumulado (R$)</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={goalForm.current}
-                    onChange={(event) =>
-                      setGoalForm((current) => ({
-                        ...current,
-                        current: event.target.value,
-                      }))
-                    }
-                    placeholder="0,00"
-                  />
-                </label>
-
-                <label className="field">
-                  <span>Prazo para alcançar</span>
-                  <input
-                    type="date"
-                    value={goalForm.deadline}
-                    min={getLocalDateString()}
-                    onChange={(event) =>
-                      setGoalForm((current) => ({
-                        ...current,
-                        deadline: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              {goalError && <p className="form-error">{goalError}</p>}
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    setShowGoalForm(false);
-                    setEditingGoalId(null);
-                    setGoalError("");
-                  }}
-                >
-                  Cancelar
-                </button>
-
-                <button type="submit" className="primary-button">
-                  Salvar meta
-                </button>
-              </div>
-            </form>
-          )}
-
-          {goals.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">◎</span>
-              <h3>Você ainda não possui metas</h3>
-              <p>
-                Cadastre seus objetivos e acompanhe a evolução do seu patrimônio.
-              </p>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={openNewGoalForm}
-              >
-                Criar primeira meta
-              </button>
-            </div>
-          ) : (
-            <div className="goals-grid">
-              {goals.map((goal) => {
-                const percentage = getGoalPercentage(goal);
-                const remaining = Math.max(goal.target - goal.current, 0);
-                const days = getRemainingDays(goal.deadline);
-                const completed = goal.current >= goal.target;
-
-                return (
-                  <article className="goal-card" key={goal.id}>
-                    <div className="goal-card-header">
-                      <div>
-                        <span className="goal-category">{goal.category}</span>
-                        <h3>{goal.name}</h3>
-                      </div>
-
-                      <span
-                        className={`goal-status ${
-                          completed ? "completed" : "in-progress"
-                        }`}
-                      >
-                        {completed ? "Concluída" : "Em andamento"}
-                      </span>
-                    </div>
-
-                    <div className="goal-values">
-                      <strong>{formatCurrency(goal.current)}</strong>
-                      <span>de {formatCurrency(goal.target)}</span>
-                    </div>
-
-                    <div className="goal-track">
-                      <div
-                        className="goal-fill"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-
-                    <div className="goal-progress-label">
-                      <strong>{percentage.toFixed(1)}%</strong>
-                      <span>
-                        {completed
-                          ? "Objetivo alcançado"
-                          : `Faltam ${formatCurrency(remaining)}`}
-                      </span>
-                    </div>
-
-                    <label className="goal-update-field">
-                      <span>Atualizar valor acumulado</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={goal.current}
-                        onChange={(event) =>
-                          updateGoalAmount(goal, event.target.value)
-                        }
-                      />
-                    </label>
-
-                    <div className="goal-card-footer">
-                      <span>
-                        Prazo:{" "}
-                        {goal.deadline
-                          ? formatDate(goal.deadline)
-                          : "Não definido"}
-                      </span>
-
-                      {days !== null && !completed && (
-                        <span className={days < 0 ? "expense-text" : ""}>
-                          {days < 0
-                            ? "Prazo vencido"
-                            : days === 0
-                              ? "Vence hoje"
-                              : `${days} dias restantes`}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="goal-actions">
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => openEditGoalForm(goal)}
-                      >
-                        Editar meta
-                      </button>
-
-                      <button
-                        type="button"
-                        className="text-button delete-text"
-                        onClick={() => deleteGoal(goal.id)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="panel transactions-panel">
-          <div className="panel-header">
-            <div>
-              <span className="section-eyebrow">MOVIMENTAÇÕES DO PERÍODO</span>
-              <h2>Lançamentos do mês</h2>
-              <p>
-                Últimas receitas e despesas registradas no módulo financeiro.
-              </p>
-            </div>
-
-            <Link href="/financeiro/historico" className="text-link">
-              Ver histórico completo →
-            </Link>
-          </div>
-
-          {latestTransactions.length === 0 ? (
-            <div className="empty-state compact">
-              <h3>Nenhum lançamento neste período</h3>
-              <p>
-                Os lançamentos de receitas e despesas aparecerão aqui
-                automaticamente.
-              </p>
-            </div>
-          ) : (
-            <div className="transaction-list">
-              {latestTransactions.map((transaction) => {
-                const isIncome = transaction.type === "Receita";
-
-                return (
-                  <div className="transaction-row" key={transaction.id}>
-                    <div
-                      className={`transaction-symbol ${
-                        isIncome ? "income-symbol" : "expense-symbol"
-                      }`}
-                    >
-                      {isIncome ? "↑" : "↓"}
-                    </div>
-
-                    <div className="transaction-description">
-                      <strong>{transaction.description}</strong>
-                      <span>
-                        {transaction.category || "Sem categoria"} ·{" "}
-                        {formatDate(transaction.date)}
-                      </span>
-                    </div>
-
-                    <div className="transaction-value">
-                      <strong className={isIncome ? "income-text" : "expense-text"}>
-                        {isIncome ? "+" : "-"}
-                        {formatCurrency(Number(transaction.amount) || 0)}
-                      </strong>
-                      <span>{transaction.status || "Sem status"}</span>
+              <section className="content-grid">
+                <article className="panel">
+                  <div className="panel-header">
+                    <div>
+                      <span className="section-eyebrow">ACOMPANHAMENTO</span>
+                      <h2>Previsto x realizado</h2>
+                      <p>
+                        Comparativo das movimentações do mês selecionado.
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="comparison-list">
+                    <div className="comparison-item">
+                      <div className="comparison-heading">
+                        <span>Receitas</span>
+                        <strong className="income-text">
+                          {formatCurrency(monthlySummary.realizedIncome)}
+                        </strong>
+                      </div>
+
+                      <div className="comparison-track">
+                        <div
+                          className="comparison-fill income-fill"
+                          style={{
+                            width: `${
+                              monthlySummary.plannedIncome > 0
+                                ? Math.min(
+                                    (monthlySummary.realizedIncome /
+                                      monthlySummary.plannedIncome) *
+                                      100,
+                                    100
+                                  )
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+
+                      <div className="comparison-footer">
+                        <span>Realizado</span>
+                        <span>
+                          Previsto:{" "}
+                          {formatCurrency(monthlySummary.plannedIncome)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="comparison-item">
+                      <div className="comparison-heading">
+                        <span>Despesas</span>
+                        <strong className="expense-text">
+                          {formatCurrency(monthlySummary.realizedExpenses)}
+                        </strong>
+                      </div>
+
+                      <div className="comparison-track">
+                        <div
+                          className="comparison-fill expense-fill"
+                          style={{
+                            width: `${
+                              monthlySummary.plannedExpenses > 0
+                                ? Math.min(
+                                    (monthlySummary.realizedExpenses /
+                                      monthlySummary.plannedExpenses) *
+                                      100,
+                                    100
+                                  )
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+
+                      <div className="comparison-footer">
+                        <span>Realizado</span>
+                        <span>
+                          Previsto:{" "}
+                          {formatCurrency(monthlySummary.plannedExpenses)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pending-grid">
+                    <div>
+                      <span>Receitas pendentes</span>
+                      <strong className="income-text">
+                        {formatCurrency(monthlySummary.pendingIncome)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Despesas pendentes</span>
+                      <strong className="expense-text">
+                        {formatCurrency(monthlySummary.pendingExpenses)}
+                      </strong>
+                    </div>
+                  </div>
+                </article>
+
+                <article className="panel budget-overview">
+                  <div className="panel-header">
+                    <div>
+                      <span className="section-eyebrow">
+                        CONTROLE DE GASTOS
+                      </span>
+                      <h2>Orçamento mensal</h2>
+                      <p>Limites definidos para suas categorias.</p>
+                    </div>
+
+                    <span className="panel-icon">▤</span>
+                  </div>
+
+                  <div className="budget-total">
+                    <strong>{formatCurrency(totalBudget)}</strong>
+                    <span>Limite total definido</span>
+                  </div>
+
+                  <div className="budget-main-track">
+                    <div
+                      className={`budget-main-fill ${
+                        budgetUsage > 100 ? "danger-fill" : ""
+                      }`}
+                      style={{ width: `${Math.min(budgetUsage, 100)}%` }}
+                    />
+                  </div>
+
+                  <div className="budget-total-footer">
+                    <span>
+                      Utilizado:{" "}
+                      <strong>{formatCurrency(totalBudgetUsed)}</strong>
+                    </span>
+                    <span>{budgetUsage.toFixed(1)}%</span>
+                  </div>
+
+                  <div className="budget-remaining">
+                    <span>Disponível no orçamento</span>
+                    <strong
+                      className={
+                        totalBudget - totalBudgetUsed >= 0
+                          ? "income-text"
+                          : "expense-text"
+                      }
+                    >
+                      {formatCurrency(totalBudget - totalBudgetUsed)}
+                    </strong>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="secondary-button full-button"
+                    onClick={openNewBudgetForm}
+                  >
+                    + Adicionar categoria ao orçamento
+                  </button>
+                </article>
+              </section>
+
+              <section className="panel budget-panel">
+                <div className="panel-header section-panel-header">
+                  <div>
+                    <span className="section-eyebrow">
+                      ORÇAMENTO POR CATEGORIA
+                    </span>
+                    <h2>Limites de despesas</h2>
+                    <p>
+                      Compare os gastos registrados com o limite planejado
+                      para cada categoria.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={openNewBudgetForm}
+                  >
+                    + Novo orçamento
+                  </button>
+                </div>
+
+                {showBudgetForm && (
+                  <form className="form-card" onSubmit={saveBudget}>
+                    <div className="form-heading">
+                      <h3>
+                        {editingBudgetId !== null
+                          ? "Editar orçamento"
+                          : "Cadastrar orçamento"}
+                      </h3>
+
+                      <button
+                        type="button"
+                        className="close-button"
+                        onClick={() => {
+                          setShowBudgetForm(false);
+                          setEditingBudgetId(null);
+                          setBudgetError("");
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="form-grid">
+                      <label className="field">
+                        <span>Categoria</span>
+                        <input
+                          type="text"
+                          list="expense-categories"
+                          value={budgetForm.category}
+                          onChange={(event) =>
+                            setBudgetForm((current) => ({
+                              ...current,
+                              category: event.target.value,
+                            }))
+                          }
+                          placeholder="Ex.: Alimentação"
+                          required
+                        />
+                        <datalist id="expense-categories">
+                          {expenseCategories.map((category) => (
+                            <option key={category} value={category} />
+                          ))}
+                        </datalist>
+                      </label>
+
+                      <label className="field">
+                        <span>Limite mensal (R$)</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={budgetForm.limit}
+                          onChange={(event) =>
+                            setBudgetForm((current) => ({
+                              ...current,
+                              limit: event.target.value,
+                            }))
+                          }
+                          placeholder="0,00"
+                          required
+                        />
+                      </label>
+                    </div>
+
+                    {budgetError && (
+                      <p className="form-error">{budgetError}</p>
+                    )}
+
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                          setShowBudgetForm(false);
+                          setEditingBudgetId(null);
+                          setBudgetError("");
+                        }}
+                      >
+                        Cancelar
+                      </button>
+
+                      <button type="submit" className="primary-button">
+                        Salvar orçamento
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {monthlyBudgets.length === 0 ? (
+                  <div className="empty-state">
+                    <span className="empty-icon">▤</span>
+                    <h3>Nenhum orçamento cadastrado</h3>
+                    <p>
+                      Defina limites mensais para suas categorias e acompanhe
+                      seus gastos.
+                    </p>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={openNewBudgetForm}
+                    >
+                      Criar primeiro orçamento
+                    </button>
+                  </div>
+                ) : (
+                  <div className="budget-list">
+                    {monthlyBudgets.map((budget) => {
+                      const used = categoryExpenses[budget.category] || 0;
+                      const percentage = getBudgetPercentage(
+                        used,
+                        budget.limit
+                      );
+                      const status = getBudgetStatus(used, budget.limit);
+                      const remaining = budget.limit - used;
+
+                      return (
+                        <div className="budget-row" key={budget.id}>
+                          <div className="budget-row-main">
+                            <div className="budget-category">
+                              <strong>{budget.category}</strong>
+                              <span>
+                                {formatCurrency(used)} de{" "}
+                                {formatCurrency(budget.limit)}
+                              </span>
+                            </div>
+
+                            <div className="budget-row-actions">
+                              <span className={`status-pill ${status}`}>
+                                {status === "danger"
+                                  ? "Limite excedido"
+                                  : status === "warning"
+                                    ? "Atenção"
+                                    : "Dentro do limite"}
+                              </span>
+
+                              <button
+                                type="button"
+                                className="icon-button"
+                                onClick={() => openEditBudgetForm(budget)}
+                                title="Editar orçamento"
+                              >
+                                ✎
+                              </button>
+
+                              <button
+                                type="button"
+                                className="icon-button delete"
+                                onClick={() => deleteBudget(budget.id)}
+                                title="Excluir orçamento"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="budget-row-track">
+                            <div
+                              className={`budget-row-fill ${status}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+
+                          <div className="budget-row-footer">
+                            <span>{percentage.toFixed(1)}% utilizado</span>
+                            <span
+                              className={
+                                remaining >= 0 ? "income-text" : "expense-text"
+                              }
+                            >
+                              {remaining >= 0 ? "Restante: " : "Excedente: "}
+                              {formatCurrency(Math.abs(remaining))}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <section className="panel goals-panel">
+                <div className="panel-header section-panel-header">
+                  <div>
+                    <span className="section-eyebrow">
+                      OBJETIVOS FINANCEIROS
+                    </span>
+                    <h2>Minhas metas</h2>
+                    <p>
+                      Acompanhe quanto já acumulou e quanto falta para alcançar
+                      seus objetivos.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={openNewGoalForm}
+                  >
+                    + Nova meta
+                  </button>
+                </div>
+
+                <div className="goals-summary">
+                  <div>
+                    <span>Total acumulado</span>
+                    <strong className="income-text">
+                      {formatCurrency(totalGoalsCurrent)}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Objetivo total</span>
+                    <strong>{formatCurrency(totalGoalsTarget)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Metas em andamento</span>
+                    <strong>{activeGoals.length}</strong>
+                  </div>
+
+                  <div>
+                    <span>Metas concluídas</span>
+                    <strong className="income-text">
+                      {completedGoals.length}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="goals-total-progress">
+                  <div className="goals-total-heading">
+                    <span>Progresso geral das metas</span>
+                    <strong>{goalProgress.toFixed(1)}%</strong>
+                  </div>
+
+                  <div className="goal-track">
+                    <div
+                      className="goal-fill"
+                      style={{ width: `${goalProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {showGoalForm && (
+                  <form className="form-card" onSubmit={saveGoal}>
+                    <div className="form-heading">
+                      <h3>
+                        {editingGoalId !== null
+                          ? "Editar meta financeira"
+                          : "Cadastrar nova meta"}
+                      </h3>
+
+                      <button
+                        type="button"
+                        className="close-button"
+                        onClick={() => {
+                          setShowGoalForm(false);
+                          setEditingGoalId(null);
+                          setGoalError("");
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="form-grid">
+                      <label className="field field-wide">
+                        <span>Nome da meta</span>
+                        <input
+                          type="text"
+                          value={goalForm.name}
+                          onChange={(event) =>
+                            setGoalForm((current) => ({
+                              ...current,
+                              name: event.target.value,
+                            }))
+                          }
+                          placeholder="Ex.: Comprar meu carro"
+                          required
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Categoria</span>
+                        <select
+                          value={goalForm.category}
+                          onChange={(event) =>
+                            setGoalForm((current) => ({
+                              ...current,
+                              category: event.target.value,
+                            }))
+                          }
+                        >
+                          {goalCategories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="field">
+                        <span>Valor desejado (R$)</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={goalForm.target}
+                          onChange={(event) =>
+                            setGoalForm((current) => ({
+                              ...current,
+                              target: event.target.value,
+                            }))
+                          }
+                          placeholder="0,00"
+                          required
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Valor já acumulado (R$)</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={goalForm.current}
+                          onChange={(event) =>
+                            setGoalForm((current) => ({
+                              ...current,
+                              current: event.target.value,
+                            }))
+                          }
+                          placeholder="0,00"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>Prazo para alcançar</span>
+                        <input
+                          type="date"
+                          value={goalForm.deadline}
+                          min={getLocalDateString()}
+                          onChange={(event) =>
+                            setGoalForm((current) => ({
+                              ...current,
+                              deadline: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    {goalError && <p className="form-error">{goalError}</p>}
+
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                          setShowGoalForm(false);
+                          setEditingGoalId(null);
+                          setGoalError("");
+                        }}
+                      >
+                        Cancelar
+                      </button>
+
+                      <button type="submit" className="primary-button">
+                        Salvar meta
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {goals.length === 0 ? (
+                  <div className="empty-state">
+                    <span className="empty-icon">◎</span>
+                    <h3>Você ainda não possui metas</h3>
+                    <p>
+                      Cadastre seus objetivos e acompanhe a evolução do seu
+                      patrimônio.
+                    </p>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={openNewGoalForm}
+                    >
+                      Criar primeira meta
+                    </button>
+                  </div>
+                ) : (
+                  <div className="goals-grid">
+                    {goals.map((goal) => {
+                      const percentage = getGoalPercentage(goal);
+                      const remaining = Math.max(
+                        goal.target - goal.current,
+                        0
+                      );
+                      const days = getRemainingDays(goal.deadline);
+                      const completed = goal.current >= goal.target;
+
+                      return (
+                        <article className="goal-card" key={goal.id}>
+                          <div className="goal-card-header">
+                            <div>
+                              <span className="goal-category">
+                                {goal.category}
+                              </span>
+                              <h3>{goal.name}</h3>
+                            </div>
+
+                            <span
+                              className={`goal-status ${
+                                completed ? "completed" : "in-progress"
+                              }`}
+                            >
+                              {completed ? "Concluída" : "Em andamento"}
+                            </span>
+                          </div>
+
+                          <div className="goal-values">
+                            <strong>{formatCurrency(goal.current)}</strong>
+                            <span>de {formatCurrency(goal.target)}</span>
+                          </div>
+
+                          <div className="goal-track">
+                            <div
+                              className="goal-fill"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+
+                          <div className="goal-progress-label">
+                            <strong>{percentage.toFixed(1)}%</strong>
+                            <span>
+                              {completed
+                                ? "Objetivo alcançado"
+                                : `Faltam ${formatCurrency(remaining)}`}
+                            </span>
+                          </div>
+
+                          <label className="goal-update-field">
+                            <span>Atualizar valor acumulado</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={goal.current}
+                              onChange={(event) =>
+                                updateGoalAmount(goal, event.target.value)
+                              }
+                            />
+                          </label>
+
+                          <div className="goal-card-footer">
+                            <span>
+                              Prazo:{" "}
+                              {goal.deadline
+                                ? formatDate(goal.deadline)
+                                : "Não definido"}
+                            </span>
+
+                            {days !== null && !completed && (
+                              <span className={days < 0 ? "expense-text" : ""}>
+                                {days < 0
+                                  ? "Prazo vencido"
+                                  : days === 0
+                                    ? "Vence hoje"
+                                    : `${days} dias restantes`}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="goal-actions">
+                            <button
+                              type="button"
+                              className="text-button"
+                              onClick={() => openEditGoalForm(goal)}
+                            >
+                              Editar meta
+                            </button>
+
+                            <button
+                              type="button"
+                              className="text-button delete-text"
+                              onClick={() => deleteGoal(goal.id)}
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <section className="panel transactions-panel">
+                <div className="panel-header">
+                  <div>
+                    <span className="section-eyebrow">
+                      MOVIMENTAÇÕES DO PERÍODO
+                    </span>
+                    <h2>Lançamentos do mês</h2>
+                    <p>
+                      Últimas receitas e despesas registradas no módulo
+                      financeiro.
+                    </p>
+                  </div>
+
+                  <Link href="/financeiro/historico" className="text-link">
+                    Ver histórico completo →
+                  </Link>
+                </div>
+
+                {latestTransactions.length === 0 ? (
+                  <div className="empty-state compact">
+                    <h3>Nenhum lançamento neste período</h3>
+                    <p>
+                      Os lançamentos de receitas e despesas aparecerão aqui
+                      automaticamente.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="transaction-list">
+                    {latestTransactions.map((transaction) => {
+                      const isIncome = transaction.type === "Receita";
+
+                      return (
+                        <div
+                          className="transaction-row"
+                          key={transaction.id}
+                        >
+                          <div
+                            className={`transaction-symbol ${
+                              isIncome ? "income-symbol" : "expense-symbol"
+                            }`}
+                          >
+                            {isIncome ? "↑" : "↓"}
+                          </div>
+
+                          <div className="transaction-description">
+                            <strong>{transaction.description}</strong>
+                            <span>
+                              {transaction.category || "Sem categoria"} ·{" "}
+                              {formatDate(transaction.date)}
+                            </span>
+                          </div>
+
+                          <div className="transaction-value">
+                            <strong
+                              className={
+                                isIncome ? "income-text" : "expense-text"
+                              }
+                            >
+                              {isIncome ? "+" : "-"}
+                              {formatCurrency(
+                                Number(transaction.amount) || 0
+                              )}
+                            </strong>
+                            <span>{transaction.status || "Sem status"}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <section className="planning-notice">
+                <span className="notice-icon">i</span>
+                <div>
+                  <strong>Como funciona a integração</strong>
+                  <p>
+                    Receitas e despesas são consultadas diretamente dos
+                    lançamentos financeiros do NEXO. Somente movimentações com
+                    status &quot;Recebida&quot; ou &quot;Pago&quot; entram como
+                    realizadas. Movimentações parciais permanecem no total
+                    previsto, pois o lançamento atual não possui um campo
+                    separado para o valor efetivamente pago ou recebido.
+                    Orçamentos e metas são armazenados separadamente e não
+                    alteram suas contas ou movimentações.
+                  </p>
+                </div>
+              </section>
+            </>
           )}
-        </section>
 
-        <section className="planning-notice">
-          <span className="notice-icon">i</span>
-          <div>
-            <strong>Como funciona a integração</strong>
-            <p>
-              Receitas e despesas são consultadas diretamente dos lançamentos
-              financeiros do NEXO. Somente movimentações com status
-              &quot;Recebida&quot; ou &quot;Pago&quot; entram como realizadas.
-              Movimentações parciais permanecem no total previsto, pois o
-              lançamento atual não possui um campo separado para o valor
-              efetivamente pago ou recebido. Orçamentos e metas são armazenados
-              separadamente e não alteram suas contas ou movimentações.
-            </p>
-          </div>
-        </section>
-      </div>
+          <footer className="routine-footer">
+            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+          </footer>
+        </div>
+      </section>
 
-      <style jsx>{`
-        .planning-page {
-          min-height: 100vh;
-          padding: 28px;
-          color: #f1f1f3;
-          background: #101012;
+      <style jsx global>{`
+        .planning-content {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          width: 100%;
+          min-width: 0;
           box-sizing: border-box;
         }
 
-        .page-container {
-          width: 100%;
-          max-width: 1500px;
-          margin: 0 auto;
+        .planning-intro {
+          margin-bottom: 0;
         }
 
-        .page-header {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 24px;
-          margin-bottom: 26px;
+        .planning-intro p {
+          max-width: 720px;
+          margin: 0;
+          color: #96969f;
+          font-size: 13px;
+          line-height: 1.6;
         }
 
-        .header-content {
-          min-width: 0;
-        }
-
-        .eyebrow,
         .section-eyebrow {
           display: block;
           margin-bottom: 9px;
@@ -1502,121 +1529,16 @@ export default function PlanejamentoFinanceiroPage() {
           letter-spacing: 1.5px;
         }
 
-        .page-header h1 {
-          margin: 0;
-          color: #f5f5f6;
-          font-size: clamp(25px, 3vw, 34px);
-          font-weight: 700;
-          letter-spacing: -1px;
-        }
-
-        .page-header p {
-          max-width: 680px;
-          margin: 9px 0 0;
-          color: #96969f;
-          font-size: 13px;
-          line-height: 1.6;
-        }
-
-        .header-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 12px;
-          flex-shrink: 0;
-        }
-
-        .header-date {
-          color: #85858e;
-          font-size: 11px;
-          text-transform: capitalize;
-        }
-
-        :global(.back-link) {
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          gap: 7px !important;
-          min-height: 36px !important;
-          padding: 0 12px !important;
-          color: #bdbdc5 !important;
-          background: #202024 !important;
-          border: 1px solid #34343a !important;
-          border-radius: 6px !important;
-          font-size: 11px !important;
-          text-decoration: none !important;
-          white-space: nowrap !important;
-          box-sizing: border-box !important;
-        }
-
-        :global(.back-link:hover) {
-          color: #fff !important;
-          border-color: #77777f !important;
-          background: #303035 !important;
-        }
-
-        :global(.finance-navigation) {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          width: 100%;
-          margin-bottom: 24px;
-          padding: 10px;
-          overflow-x: auto;
-          border: 1px solid #29292e;
-          border-radius: 9px;
-          background: #151517;
-          scrollbar-width: thin;
-          box-sizing: border-box;
-        }
-
-        :global(.finance-navigation .navigation-button) {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          flex-shrink: 0;
-          min-height: 36px;
-          padding: 0 12px;
-          border: 1px solid #34343a;
-          border-radius: 6px;
-          color: #bdbdc5;
-          background: #202024;
-          font-size: 11px;
-          text-decoration: none;
-          white-space: nowrap;
-          transition: 0.2s;
-          box-sizing: border-box;
-        }
-
-        :global(.finance-navigation .navigation-button:hover) {
-          color: #fff;
-          border-color: #77777f;
-          background: #303035;
-        }
-
-        :global(.finance-navigation .navigation-button.selected) {
-          color: #fff;
-          border-color: #77777f;
-          background: #38383e;
-          font-weight: 700;
-        }
-
-        :global(.finance-navigation .navigation-button span) {
-          font-size: 15px;
-          line-height: 1;
-        }
-
         .month-toolbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 18px;
-          margin-bottom: 20px;
           padding: 17px 19px;
           border: 1px solid #29292e;
           border-radius: 9px;
           background: #18181b;
+          box-sizing: border-box;
         }
 
         .month-toolbar .section-eyebrow {
@@ -1677,7 +1599,6 @@ export default function PlanejamentoFinanceiroPage() {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 14px;
-          margin-bottom: 18px;
         }
 
         .summary-card {
@@ -1686,6 +1607,7 @@ export default function PlanejamentoFinanceiroPage() {
           border: 1px solid #2c2c32;
           border-radius: 9px;
           background: #19191c;
+          box-sizing: border-box;
         }
 
         .summary-top {
@@ -1757,21 +1679,15 @@ export default function PlanejamentoFinanceiroPage() {
           display: grid;
           grid-template-columns: 1.15fr 0.85fr;
           gap: 16px;
-          margin-bottom: 18px;
         }
 
         .panel {
           min-width: 0;
-          margin-bottom: 18px;
           padding: 21px;
           border: 1px solid #2c2c32;
           border-radius: 9px;
           background: #19191c;
           box-sizing: border-box;
-        }
-
-        .content-grid .panel {
-          margin-bottom: 0;
         }
 
         .panel-header {
@@ -2429,10 +2345,6 @@ export default function PlanejamentoFinanceiroPage() {
           color: #ce8585;
         }
 
-        .transactions-panel {
-          margin-bottom: 18px;
-        }
-
         .transaction-list {
           display: flex;
           flex-direction: column;
@@ -2552,6 +2464,7 @@ export default function PlanejamentoFinanceiroPage() {
           border: 1px solid #33333a;
           border-radius: 8px;
           background: #19191c;
+          box-sizing: border-box;
         }
 
         .notice-icon {
@@ -2598,22 +2511,6 @@ export default function PlanejamentoFinanceiroPage() {
         }
 
         @media (max-width: 760px) {
-          .planning-page {
-            padding: 18px 13px;
-          }
-
-          .page-header {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 15px;
-          }
-
-          .header-actions {
-            align-items: flex-start;
-            flex-direction: row;
-            flex-wrap: wrap;
-          }
-
           .month-toolbar {
             align-items: flex-start;
             flex-direction: column;
@@ -2724,6 +2621,10 @@ export default function PlanejamentoFinanceiroPage() {
 
           .transaction-value strong {
             font-size: 10px;
+          }
+
+          .planning-notice {
+            padding: 13px;
           }
         }
       `}</style>
