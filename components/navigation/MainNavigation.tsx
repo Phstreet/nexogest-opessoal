@@ -175,9 +175,17 @@ export default function MainNavigation() {
     );
   }
 
+  // Recolhe automaticamente o menu ao selecionar uma página.
+  function handleNavigation() {
+    setCollapsed(true);
+    setSearchOpen(false);
+    setSearchTerm("");
+  }
+
   function handleSearchNavigation() {
     setSearchOpen(false);
     setSearchTerm("");
+    setCollapsed(true);
   }
 
   function renderFavoriteButton(item: MenuItem) {
@@ -218,6 +226,7 @@ export default function MainNavigation() {
               }`}
               aria-current={isActive(item.href) ? "page" : undefined}
               title={collapsed ? item.label : undefined}
+              onClick={handleNavigation}
             >
               {item.icon && (
                 <span className="nav-subitem-icon">{item.icon}</span>
@@ -236,7 +245,12 @@ export default function MainNavigation() {
     <>
       <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`}>
         <div className="sidebar-brand-row">
-          <Link href="/" className="brand" title="NEXO - Página inicial">
+          <Link
+            href="/"
+            className="brand"
+            title="NEXO - Página inicial"
+            onClick={handleNavigation}
+          >
             <svg
               className="brand-symbol"
               viewBox="0 0 40 40"
@@ -290,6 +304,7 @@ export default function MainNavigation() {
               className={`nav-item ${isActive("/") ? "active" : ""}`}
               aria-current={isActive("/") ? "page" : undefined}
               title={collapsed ? "Visão geral" : undefined}
+              onClick={handleNavigation}
             >
               <span className="nav-icon">⌂</span>
               <span className="nav-item-label">Visão geral</span>
@@ -376,6 +391,7 @@ export default function MainNavigation() {
                     }`}
                     aria-current={isActive(item.href) ? "page" : undefined}
                     title={collapsed ? item.label : undefined}
+                    onClick={handleNavigation}
                   >
                     <span className="nav-icon">★</span>
                     <span className="nav-item-label">{item.label}</span>
