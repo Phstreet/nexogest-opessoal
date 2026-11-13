@@ -47,8 +47,8 @@ export default function MainNavigation() {
   const isFinanceRoute = pathname.startsWith("/financeiro");
   const isRoutineRoute = pathname.startsWith("/rotina");
 
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(isFinanceRoute);
-  const [routineMenuOpen, setRoutineMenuOpen] = useState(isRoutineRoute);
+  const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
+  const [routineMenuOpen, setRoutineMenuOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -103,15 +103,19 @@ export default function MainNavigation() {
     }
   }, [favorites, collapsed, storageLoaded]);
 
+  // Fecha os submenus sempre que a rota mudar.
   useEffect(() => {
-    if (isFinanceRoute) {
-      setFinanceMenuOpen(true);
-    }
+    setFinanceMenuOpen(false);
+    setRoutineMenuOpen(false);
+  }, [pathname]);
 
-    if (isRoutineRoute) {
-      setRoutineMenuOpen(true);
+  // Fecha os submenus também quando a sidebar for compactada.
+  useEffect(() => {
+    if (collapsed) {
+      setFinanceMenuOpen(false);
+      setRoutineMenuOpen(false);
     }
-  }, [pathname, isFinanceRoute, isRoutineRoute]);
+  }, [collapsed]);
 
   useEffect(() => {
     function handleKeyboard(event: KeyboardEvent) {
@@ -175,9 +179,11 @@ export default function MainNavigation() {
     );
   }
 
-  // Recolhe automaticamente o menu ao selecionar uma página.
+  // Compacta a sidebar e fecha todos os submenus ao navegar.
   function handleNavigation() {
     setCollapsed(true);
+    setFinanceMenuOpen(false);
+    setRoutineMenuOpen(false);
     setSearchOpen(false);
     setSearchTerm("");
   }
@@ -186,6 +192,8 @@ export default function MainNavigation() {
     setSearchOpen(false);
     setSearchTerm("");
     setCollapsed(true);
+    setFinanceMenuOpen(false);
+    setRoutineMenuOpen(false);
   }
 
   function renderFavoriteButton(item: MenuItem) {
@@ -321,10 +329,17 @@ export default function MainNavigation() {
                 isFinanceRoute ? "active" : ""
               }`}
               onClick={() => {
+                if (collapsed) {
+                  setCollapsed(false);
+                  setFinanceMenuOpen(true);
+                  setRoutineMenuOpen(false);
+                  return;
+                }
+
                 setFinanceMenuOpen((current) => !current);
                 setRoutineMenuOpen(false);
               }}
-              aria-expanded={financeMenuOpen}
+              aria-expanded={financeMenuOpen && !collapsed}
               aria-controls="finance-submenu"
               title={collapsed ? "Financeiro" : undefined}
             >
@@ -332,14 +347,15 @@ export default function MainNavigation() {
               <span className="nav-finance-label">Financeiro</span>
               <span
                 className={`nav-chevron ${
-                  financeMenuOpen ? "open" : ""
+                  financeMenuOpen && !collapsed ? "open" : ""
                 }`}
               >
                 ›
               </span>
             </button>
 
-            {financeMenuOpen &&
+            {!collapsed &&
+              financeMenuOpen &&
               renderSubmenu(financeMenuItems, "finance-submenu")}
           </div>
 
@@ -351,10 +367,17 @@ export default function MainNavigation() {
                 isRoutineRoute ? "active" : ""
               }`}
               onClick={() => {
+                if (collapsed) {
+                  setCollapsed(false);
+                  setRoutineMenuOpen(true);
+                  setFinanceMenuOpen(false);
+                  return;
+                }
+
                 setRoutineMenuOpen((current) => !current);
                 setFinanceMenuOpen(false);
               }}
-              aria-expanded={routineMenuOpen}
+              aria-expanded={routineMenuOpen && !collapsed}
               aria-controls="routine-submenu"
               title={collapsed ? "Minha rotina" : undefined}
             >
@@ -362,14 +385,15 @@ export default function MainNavigation() {
               <span className="nav-finance-label">Minha rotina</span>
               <span
                 className={`nav-chevron ${
-                  routineMenuOpen ? "open" : ""
+                  routineMenuOpen && !collapsed ? "open" : ""
                 }`}
               >
                 ›
               </span>
             </button>
 
-            {routineMenuOpen &&
+            {!collapsed &&
+              routineMenuOpen &&
               renderSubmenu(routineMenuItems, "routine-submenu")}
           </div>
         </nav>
@@ -772,27 +796,9 @@ export default function MainNavigation() {
           display: none;
         }
 
+        /* Submenus não aparecem como pop-up na sidebar compacta. */
         .sidebar-collapsed .nav-group > .nav-submenu {
-          position: absolute;
-          z-index: 80;
-          top: 0;
-          left: calc(100% + 10px);
-          width: 245px;
-          max-height: 65vh;
-          overflow-y: auto;
-          padding: 9px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 9px;
-          background: #171c24;
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
-        }
-
-        .sidebar-collapsed .nav-subitem {
-          padding: 10px;
-        }
-
-        .sidebar-collapsed .nav-subitem-label {
-          display: inline;
+          display: none !important;
         }
 
         .sidebar-collapsed .sidebar-search-button {
