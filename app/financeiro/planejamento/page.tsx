@@ -3,7 +3,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type TransactionType =
   | "Receita"
@@ -93,15 +92,6 @@ function getLocalDateString() {
 
 function getCurrentMonth() {
   return getLocalDateString().slice(0, 7);
-}
-
-function formatLongDate(date = new Date()) {
-  return date.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function formatCurrency(value: number) {
@@ -586,917 +576,893 @@ export default function PlanejamentoFinanceiroPage() {
   }
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content planning-content">
+      {loading ? (
+        <div className="loading-state">
+          Carregando planejamento financeiro...
+        </div>
+      ) : (
+        <>
+          <section className="planning-intro">
+            <p>
+              Organize seu orçamento, acompanhe suas metas e planeje seus
+              próximos passos financeiros.
+            </p>
+          </section>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div>
-            <div className="breadcrumb">
-              NEXO / FINANCEIRO / PLANEJAMENTO
+          <section className="month-toolbar">
+            <div>
+              <span className="section-eyebrow">PERÍODO DE ANÁLISE</span>
+              <h2>{getMonthName(selectedMonth)}</h2>
             </div>
-            <h1>Planejamento financeiro</h1>
-          </div>
 
-          <div className="topbar-right">
-            <div className="date-display">
-              <span className="date-icon">◷</span>
-              {formatLongDate()}
+            <div className="month-controls">
+              <button
+                type="button"
+                className="month-arrow"
+                onClick={() => changeMonth(-1)}
+                aria-label="Mês anterior"
+              >
+                ←
+              </button>
+
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
+                aria-label="Selecionar mês"
+              />
+
+              <button
+                type="button"
+                className="month-arrow"
+                onClick={() => changeMonth(1)}
+                aria-label="Próximo mês"
+              >
+                →
+              </button>
+
+              <button
+                type="button"
+                className="today-button"
+                onClick={() => setSelectedMonth(getCurrentMonth())}
+              >
+                Mês atual
+              </button>
             </div>
-            <div className="profile-avatar">N</div>
-          </div>
-        </header>
+          </section>
 
-        <div className="content planning-content">
-          {loading ? (
-            <div className="loading-state">
-              Carregando planejamento financeiro...
-            </div>
-          ) : (
-            <>
-              <section className="planning-intro">
-                <p>
-                  Organize seu orçamento, acompanhe suas metas e planeje seus
-                  próximos passos financeiros.
-                </p>
-              </section>
+          <section className="summary-grid">
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Receitas previstas</span>
+                <span className="summary-icon income">↑</span>
+              </div>
+              <strong className="income-text">
+                {formatCurrency(monthlySummary.plannedIncome)}
+              </strong>
+              <small>
+                Realizadas: {formatCurrency(monthlySummary.realizedIncome)}
+              </small>
+            </article>
 
-              <section className="month-toolbar">
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Despesas previstas</span>
+                <span className="summary-icon expense">↓</span>
+              </div>
+              <strong className="expense-text">
+                {formatCurrency(monthlySummary.plannedExpenses)}
+              </strong>
+              <small>
+                Realizadas: {formatCurrency(monthlySummary.realizedExpenses)}
+              </small>
+            </article>
+
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Saldo planejado</span>
+                <span className="summary-icon balance">◈</span>
+              </div>
+              <strong
+                className={
+                  monthlySummary.plannedBalance >= 0
+                    ? "income-text"
+                    : "expense-text"
+                }
+              >
+                {formatCurrency(monthlySummary.plannedBalance)}
+              </strong>
+              <small>Receitas menos despesas previstas</small>
+            </article>
+
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Saldo realizado</span>
+                <span className="summary-icon realized">✓</span>
+              </div>
+              <strong
+                className={
+                  monthlySummary.realizedBalance >= 0
+                    ? "income-text"
+                    : "expense-text"
+                }
+              >
+                {formatCurrency(monthlySummary.realizedBalance)}
+              </strong>
+              <small>Considera somente lançamentos concluídos</small>
+            </article>
+          </section>
+
+          <section className="content-grid">
+            <article className="panel">
+              <div className="panel-header">
                 <div>
-                  <span className="section-eyebrow">PERÍODO DE ANÁLISE</span>
-                  <h2>{getMonthName(selectedMonth)}</h2>
-                </div>
-
-                <div className="month-controls">
-                  <button
-                    type="button"
-                    className="month-arrow"
-                    onClick={() => changeMonth(-1)}
-                    aria-label="Mês anterior"
-                  >
-                    ←
-                  </button>
-
-                  <input
-                    type="month"
-                    value={selectedMonth}
-                    onChange={(event) => setSelectedMonth(event.target.value)}
-                    aria-label="Selecionar mês"
-                  />
-
-                  <button
-                    type="button"
-                    className="month-arrow"
-                    onClick={() => changeMonth(1)}
-                    aria-label="Próximo mês"
-                  >
-                    →
-                  </button>
-
-                  <button
-                    type="button"
-                    className="today-button"
-                    onClick={() => setSelectedMonth(getCurrentMonth())}
-                  >
-                    Mês atual
-                  </button>
-                </div>
-              </section>
-
-              <section className="summary-grid">
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Receitas previstas</span>
-                    <span className="summary-icon income">↑</span>
-                  </div>
-                  <strong className="income-text">
-                    {formatCurrency(monthlySummary.plannedIncome)}
-                  </strong>
-                  <small>
-                    Realizadas: {formatCurrency(monthlySummary.realizedIncome)}
-                  </small>
-                </article>
-
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Despesas previstas</span>
-                    <span className="summary-icon expense">↓</span>
-                  </div>
-                  <strong className="expense-text">
-                    {formatCurrency(monthlySummary.plannedExpenses)}
-                  </strong>
-                  <small>
-                    Realizadas:{" "}
-                    {formatCurrency(monthlySummary.realizedExpenses)}
-                  </small>
-                </article>
-
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Saldo planejado</span>
-                    <span className="summary-icon balance">◈</span>
-                  </div>
-                  <strong
-                    className={
-                      monthlySummary.plannedBalance >= 0
-                        ? "income-text"
-                        : "expense-text"
-                    }
-                  >
-                    {formatCurrency(monthlySummary.plannedBalance)}
-                  </strong>
-                  <small>Receitas menos despesas previstas</small>
-                </article>
-
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Saldo realizado</span>
-                    <span className="summary-icon realized">✓</span>
-                  </div>
-                  <strong
-                    className={
-                      monthlySummary.realizedBalance >= 0
-                        ? "income-text"
-                        : "expense-text"
-                    }
-                  >
-                    {formatCurrency(monthlySummary.realizedBalance)}
-                  </strong>
-                  <small>Considera somente lançamentos concluídos</small>
-                </article>
-              </section>
-
-              <section className="content-grid">
-                <article className="panel">
-                  <div className="panel-header">
-                    <div>
-                      <span className="section-eyebrow">ACOMPANHAMENTO</span>
-                      <h2>Previsto x realizado</h2>
-                      <p>
-                        Comparativo das movimentações do mês selecionado.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="comparison-list">
-                    <div className="comparison-item">
-                      <div className="comparison-heading">
-                        <span>Receitas</span>
-                        <strong className="income-text">
-                          {formatCurrency(monthlySummary.realizedIncome)}
-                        </strong>
-                      </div>
-
-                      <div className="comparison-track">
-                        <div
-                          className="comparison-fill income-fill"
-                          style={{
-                            width: `${
-                              monthlySummary.plannedIncome > 0
-                                ? Math.min(
-                                    (monthlySummary.realizedIncome /
-                                      monthlySummary.plannedIncome) *
-                                      100,
-                                    100
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-
-                      <div className="comparison-footer">
-                        <span>Realizado</span>
-                        <span>
-                          Previsto:{" "}
-                          {formatCurrency(monthlySummary.plannedIncome)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="comparison-item">
-                      <div className="comparison-heading">
-                        <span>Despesas</span>
-                        <strong className="expense-text">
-                          {formatCurrency(monthlySummary.realizedExpenses)}
-                        </strong>
-                      </div>
-
-                      <div className="comparison-track">
-                        <div
-                          className="comparison-fill expense-fill"
-                          style={{
-                            width: `${
-                              monthlySummary.plannedExpenses > 0
-                                ? Math.min(
-                                    (monthlySummary.realizedExpenses /
-                                      monthlySummary.plannedExpenses) *
-                                      100,
-                                    100
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-
-                      <div className="comparison-footer">
-                        <span>Realizado</span>
-                        <span>
-                          Previsto:{" "}
-                          {formatCurrency(monthlySummary.plannedExpenses)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pending-grid">
-                    <div>
-                      <span>Receitas pendentes</span>
-                      <strong className="income-text">
-                        {formatCurrency(monthlySummary.pendingIncome)}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Despesas pendentes</span>
-                      <strong className="expense-text">
-                        {formatCurrency(monthlySummary.pendingExpenses)}
-                      </strong>
-                    </div>
-                  </div>
-                </article>
-
-                <article className="panel budget-overview">
-                  <div className="panel-header">
-                    <div>
-                      <span className="section-eyebrow">
-                        CONTROLE DE GASTOS
-                      </span>
-                      <h2>Orçamento mensal</h2>
-                      <p>Limites definidos para suas categorias.</p>
-                    </div>
-
-                    <span className="panel-icon">▤</span>
-                  </div>
-
-                  <div className="budget-total">
-                    <strong>{formatCurrency(totalBudget)}</strong>
-                    <span>Limite total definido</span>
-                  </div>
-
-                  <div className="budget-main-track">
-                    <div
-                      className={`budget-main-fill ${
-                        budgetUsage > 100 ? "danger-fill" : ""
-                      }`}
-                      style={{ width: `${Math.min(budgetUsage, 100)}%` }}
-                    />
-                  </div>
-
-                  <div className="budget-total-footer">
-                    <span>
-                      Utilizado:{" "}
-                      <strong>{formatCurrency(totalBudgetUsed)}</strong>
-                    </span>
-                    <span>{budgetUsage.toFixed(1)}%</span>
-                  </div>
-
-                  <div className="budget-remaining">
-                    <span>Disponível no orçamento</span>
-                    <strong
-                      className={
-                        totalBudget - totalBudgetUsed >= 0
-                          ? "income-text"
-                          : "expense-text"
-                      }
-                    >
-                      {formatCurrency(totalBudget - totalBudgetUsed)}
-                    </strong>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="secondary-button full-button"
-                    onClick={openNewBudgetForm}
-                  >
-                    + Adicionar categoria ao orçamento
-                  </button>
-                </article>
-              </section>
-
-              <section className="panel budget-panel">
-                <div className="panel-header section-panel-header">
-                  <div>
-                    <span className="section-eyebrow">
-                      ORÇAMENTO POR CATEGORIA
-                    </span>
-                    <h2>Limites de despesas</h2>
-                    <p>
-                      Compare os gastos registrados com o limite planejado
-                      para cada categoria.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={openNewBudgetForm}
-                  >
-                    + Novo orçamento
-                  </button>
-                </div>
-
-                {showBudgetForm && (
-                  <form className="form-card" onSubmit={saveBudget}>
-                    <div className="form-heading">
-                      <h3>
-                        {editingBudgetId !== null
-                          ? "Editar orçamento"
-                          : "Cadastrar orçamento"}
-                      </h3>
-
-                      <button
-                        type="button"
-                        className="close-button"
-                        onClick={() => {
-                          setShowBudgetForm(false);
-                          setEditingBudgetId(null);
-                          setBudgetError("");
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    <div className="form-grid">
-                      <label className="field">
-                        <span>Categoria</span>
-                        <input
-                          type="text"
-                          list="expense-categories"
-                          value={budgetForm.category}
-                          onChange={(event) =>
-                            setBudgetForm((current) => ({
-                              ...current,
-                              category: event.target.value,
-                            }))
-                          }
-                          placeholder="Ex.: Alimentação"
-                          required
-                        />
-                        <datalist id="expense-categories">
-                          {expenseCategories.map((category) => (
-                            <option key={category} value={category} />
-                          ))}
-                        </datalist>
-                      </label>
-
-                      <label className="field">
-                        <span>Limite mensal (R$)</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={budgetForm.limit}
-                          onChange={(event) =>
-                            setBudgetForm((current) => ({
-                              ...current,
-                              limit: event.target.value,
-                            }))
-                          }
-                          placeholder="0,00"
-                          required
-                        />
-                      </label>
-                    </div>
-
-                    {budgetError && (
-                      <p className="form-error">{budgetError}</p>
-                    )}
-
-                    <div className="form-actions">
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => {
-                          setShowBudgetForm(false);
-                          setEditingBudgetId(null);
-                          setBudgetError("");
-                        }}
-                      >
-                        Cancelar
-                      </button>
-
-                      <button type="submit" className="primary-button">
-                        Salvar orçamento
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {monthlyBudgets.length === 0 ? (
-                  <div className="empty-state">
-                    <span className="empty-icon">▤</span>
-                    <h3>Nenhum orçamento cadastrado</h3>
-                    <p>
-                      Defina limites mensais para suas categorias e acompanhe
-                      seus gastos.
-                    </p>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={openNewBudgetForm}
-                    >
-                      Criar primeiro orçamento
-                    </button>
-                  </div>
-                ) : (
-                  <div className="budget-list">
-                    {monthlyBudgets.map((budget) => {
-                      const used = categoryExpenses[budget.category] || 0;
-                      const percentage = getBudgetPercentage(
-                        used,
-                        budget.limit
-                      );
-                      const status = getBudgetStatus(used, budget.limit);
-                      const remaining = budget.limit - used;
-
-                      return (
-                        <div className="budget-row" key={budget.id}>
-                          <div className="budget-row-main">
-                            <div className="budget-category">
-                              <strong>{budget.category}</strong>
-                              <span>
-                                {formatCurrency(used)} de{" "}
-                                {formatCurrency(budget.limit)}
-                              </span>
-                            </div>
-
-                            <div className="budget-row-actions">
-                              <span className={`status-pill ${status}`}>
-                                {status === "danger"
-                                  ? "Limite excedido"
-                                  : status === "warning"
-                                    ? "Atenção"
-                                    : "Dentro do limite"}
-                              </span>
-
-                              <button
-                                type="button"
-                                className="icon-button"
-                                onClick={() => openEditBudgetForm(budget)}
-                                title="Editar orçamento"
-                              >
-                                ✎
-                              </button>
-
-                              <button
-                                type="button"
-                                className="icon-button delete"
-                                onClick={() => deleteBudget(budget.id)}
-                                title="Excluir orçamento"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="budget-row-track">
-                            <div
-                              className={`budget-row-fill ${status}`}
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-
-                          <div className="budget-row-footer">
-                            <span>{percentage.toFixed(1)}% utilizado</span>
-                            <span
-                              className={
-                                remaining >= 0 ? "income-text" : "expense-text"
-                              }
-                            >
-                              {remaining >= 0 ? "Restante: " : "Excedente: "}
-                              {formatCurrency(Math.abs(remaining))}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              <section className="panel goals-panel">
-                <div className="panel-header section-panel-header">
-                  <div>
-                    <span className="section-eyebrow">
-                      OBJETIVOS FINANCEIROS
-                    </span>
-                    <h2>Minhas metas</h2>
-                    <p>
-                      Acompanhe quanto já acumulou e quanto falta para alcançar
-                      seus objetivos.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={openNewGoalForm}
-                  >
-                    + Nova meta
-                  </button>
-                </div>
-
-                <div className="goals-summary">
-                  <div>
-                    <span>Total acumulado</span>
-                    <strong className="income-text">
-                      {formatCurrency(totalGoalsCurrent)}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>Objetivo total</span>
-                    <strong>{formatCurrency(totalGoalsTarget)}</strong>
-                  </div>
-
-                  <div>
-                    <span>Metas em andamento</span>
-                    <strong>{activeGoals.length}</strong>
-                  </div>
-
-                  <div>
-                    <span>Metas concluídas</span>
-                    <strong className="income-text">
-                      {completedGoals.length}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="goals-total-progress">
-                  <div className="goals-total-heading">
-                    <span>Progresso geral das metas</span>
-                    <strong>{goalProgress.toFixed(1)}%</strong>
-                  </div>
-
-                  <div className="goal-track">
-                    <div
-                      className="goal-fill"
-                      style={{ width: `${goalProgress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {showGoalForm && (
-                  <form className="form-card" onSubmit={saveGoal}>
-                    <div className="form-heading">
-                      <h3>
-                        {editingGoalId !== null
-                          ? "Editar meta financeira"
-                          : "Cadastrar nova meta"}
-                      </h3>
-
-                      <button
-                        type="button"
-                        className="close-button"
-                        onClick={() => {
-                          setShowGoalForm(false);
-                          setEditingGoalId(null);
-                          setGoalError("");
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    <div className="form-grid">
-                      <label className="field field-wide">
-                        <span>Nome da meta</span>
-                        <input
-                          type="text"
-                          value={goalForm.name}
-                          onChange={(event) =>
-                            setGoalForm((current) => ({
-                              ...current,
-                              name: event.target.value,
-                            }))
-                          }
-                          placeholder="Ex.: Comprar meu carro"
-                          required
-                        />
-                      </label>
-
-                      <label className="field">
-                        <span>Categoria</span>
-                        <select
-                          value={goalForm.category}
-                          onChange={(event) =>
-                            setGoalForm((current) => ({
-                              ...current,
-                              category: event.target.value,
-                            }))
-                          }
-                        >
-                          {goalCategories.map((category) => (
-                            <option key={category} value={category}>
-                              {category}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="field">
-                        <span>Valor desejado (R$)</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={goalForm.target}
-                          onChange={(event) =>
-                            setGoalForm((current) => ({
-                              ...current,
-                              target: event.target.value,
-                            }))
-                          }
-                          placeholder="0,00"
-                          required
-                        />
-                      </label>
-
-                      <label className="field">
-                        <span>Valor já acumulado (R$)</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={goalForm.current}
-                          onChange={(event) =>
-                            setGoalForm((current) => ({
-                              ...current,
-                              current: event.target.value,
-                            }))
-                          }
-                          placeholder="0,00"
-                        />
-                      </label>
-
-                      <label className="field">
-                        <span>Prazo para alcançar</span>
-                        <input
-                          type="date"
-                          value={goalForm.deadline}
-                          min={getLocalDateString()}
-                          onChange={(event) =>
-                            setGoalForm((current) => ({
-                              ...current,
-                              deadline: event.target.value,
-                            }))
-                          }
-                        />
-                      </label>
-                    </div>
-
-                    {goalError && <p className="form-error">{goalError}</p>}
-
-                    <div className="form-actions">
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => {
-                          setShowGoalForm(false);
-                          setEditingGoalId(null);
-                          setGoalError("");
-                        }}
-                      >
-                        Cancelar
-                      </button>
-
-                      <button type="submit" className="primary-button">
-                        Salvar meta
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {goals.length === 0 ? (
-                  <div className="empty-state">
-                    <span className="empty-icon">◎</span>
-                    <h3>Você ainda não possui metas</h3>
-                    <p>
-                      Cadastre seus objetivos e acompanhe a evolução do seu
-                      patrimônio.
-                    </p>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={openNewGoalForm}
-                    >
-                      Criar primeira meta
-                    </button>
-                  </div>
-                ) : (
-                  <div className="goals-grid">
-                    {goals.map((goal) => {
-                      const percentage = getGoalPercentage(goal);
-                      const remaining = Math.max(
-                        goal.target - goal.current,
-                        0
-                      );
-                      const days = getRemainingDays(goal.deadline);
-                      const completed = goal.current >= goal.target;
-
-                      return (
-                        <article className="goal-card" key={goal.id}>
-                          <div className="goal-card-header">
-                            <div>
-                              <span className="goal-category">
-                                {goal.category}
-                              </span>
-                              <h3>{goal.name}</h3>
-                            </div>
-
-                            <span
-                              className={`goal-status ${
-                                completed ? "completed" : "in-progress"
-                              }`}
-                            >
-                              {completed ? "Concluída" : "Em andamento"}
-                            </span>
-                          </div>
-
-                          <div className="goal-values">
-                            <strong>{formatCurrency(goal.current)}</strong>
-                            <span>de {formatCurrency(goal.target)}</span>
-                          </div>
-
-                          <div className="goal-track">
-                            <div
-                              className="goal-fill"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-
-                          <div className="goal-progress-label">
-                            <strong>{percentage.toFixed(1)}%</strong>
-                            <span>
-                              {completed
-                                ? "Objetivo alcançado"
-                                : `Faltam ${formatCurrency(remaining)}`}
-                            </span>
-                          </div>
-
-                          <label className="goal-update-field">
-                            <span>Atualizar valor acumulado</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={goal.current}
-                              onChange={(event) =>
-                                updateGoalAmount(goal, event.target.value)
-                              }
-                            />
-                          </label>
-
-                          <div className="goal-card-footer">
-                            <span>
-                              Prazo:{" "}
-                              {goal.deadline
-                                ? formatDate(goal.deadline)
-                                : "Não definido"}
-                            </span>
-
-                            {days !== null && !completed && (
-                              <span className={days < 0 ? "expense-text" : ""}>
-                                {days < 0
-                                  ? "Prazo vencido"
-                                  : days === 0
-                                    ? "Vence hoje"
-                                    : `${days} dias restantes`}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="goal-actions">
-                            <button
-                              type="button"
-                              className="text-button"
-                              onClick={() => openEditGoalForm(goal)}
-                            >
-                              Editar meta
-                            </button>
-
-                            <button
-                              type="button"
-                              className="text-button delete-text"
-                              onClick={() => deleteGoal(goal.id)}
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              <section className="panel transactions-panel">
-                <div className="panel-header">
-                  <div>
-                    <span className="section-eyebrow">
-                      MOVIMENTAÇÕES DO PERÍODO
-                    </span>
-                    <h2>Lançamentos do mês</h2>
-                    <p>
-                      Últimas receitas e despesas registradas no módulo
-                      financeiro.
-                    </p>
-                  </div>
-
-                  <Link href="/financeiro/historico" className="text-link">
-                    Ver histórico completo →
-                  </Link>
-                </div>
-
-                {latestTransactions.length === 0 ? (
-                  <div className="empty-state compact">
-                    <h3>Nenhum lançamento neste período</h3>
-                    <p>
-                      Os lançamentos de receitas e despesas aparecerão aqui
-                      automaticamente.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="transaction-list">
-                    {latestTransactions.map((transaction) => {
-                      const isIncome = transaction.type === "Receita";
-
-                      return (
-                        <div
-                          className="transaction-row"
-                          key={transaction.id}
-                        >
-                          <div
-                            className={`transaction-symbol ${
-                              isIncome ? "income-symbol" : "expense-symbol"
-                            }`}
-                          >
-                            {isIncome ? "↑" : "↓"}
-                          </div>
-
-                          <div className="transaction-description">
-                            <strong>{transaction.description}</strong>
-                            <span>
-                              {transaction.category || "Sem categoria"} ·{" "}
-                              {formatDate(transaction.date)}
-                            </span>
-                          </div>
-
-                          <div className="transaction-value">
-                            <strong
-                              className={
-                                isIncome ? "income-text" : "expense-text"
-                              }
-                            >
-                              {isIncome ? "+" : "-"}
-                              {formatCurrency(
-                                Number(transaction.amount) || 0
-                              )}
-                            </strong>
-                            <span>{transaction.status || "Sem status"}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              <section className="planning-notice">
-                <span className="notice-icon">i</span>
-                <div>
-                  <strong>Como funciona a integração</strong>
+                  <span className="section-eyebrow">ACOMPANHAMENTO</span>
+                  <h2>Previsto x realizado</h2>
                   <p>
-                    Receitas e despesas são consultadas diretamente dos
-                    lançamentos financeiros do NEXO. Somente movimentações com
-                    status &quot;Recebida&quot; ou &quot;Pago&quot; entram como
-                    realizadas. Movimentações parciais permanecem no total
-                    previsto, pois o lançamento atual não possui um campo
-                    separado para o valor efetivamente pago ou recebido.
-                    Orçamentos e metas são armazenados separadamente e não
-                    alteram suas contas ou movimentações.
+                    Comparativo das movimentações do mês selecionado.
                   </p>
                 </div>
-              </section>
-            </>
-          )}
+              </div>
 
-          <footer className="routine-footer">
-            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
-            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
-          </footer>
-        </div>
-      </section>
+              <div className="comparison-list">
+                <div className="comparison-item">
+                  <div className="comparison-heading">
+                    <span>Receitas</span>
+                    <strong className="income-text">
+                      {formatCurrency(monthlySummary.realizedIncome)}
+                    </strong>
+                  </div>
+
+                  <div className="comparison-track">
+                    <div
+                      className="comparison-fill income-fill"
+                      style={{
+                        width: `${
+                          monthlySummary.plannedIncome > 0
+                            ? Math.min(
+                                (monthlySummary.realizedIncome /
+                                  monthlySummary.plannedIncome) *
+                                  100,
+                                100
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="comparison-footer">
+                    <span>Realizado</span>
+                    <span>
+                      Previsto:{" "}
+                      {formatCurrency(monthlySummary.plannedIncome)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="comparison-item">
+                  <div className="comparison-heading">
+                    <span>Despesas</span>
+                    <strong className="expense-text">
+                      {formatCurrency(monthlySummary.realizedExpenses)}
+                    </strong>
+                  </div>
+
+                  <div className="comparison-track">
+                    <div
+                      className="comparison-fill expense-fill"
+                      style={{
+                        width: `${
+                          monthlySummary.plannedExpenses > 0
+                            ? Math.min(
+                                (monthlySummary.realizedExpenses /
+                                  monthlySummary.plannedExpenses) *
+                                  100,
+                                100
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="comparison-footer">
+                    <span>Realizado</span>
+                    <span>
+                      Previsto:{" "}
+                      {formatCurrency(monthlySummary.plannedExpenses)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pending-grid">
+                <div>
+                  <span>Receitas pendentes</span>
+                  <strong className="income-text">
+                    {formatCurrency(monthlySummary.pendingIncome)}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Despesas pendentes</span>
+                  <strong className="expense-text">
+                    {formatCurrency(monthlySummary.pendingExpenses)}
+                  </strong>
+                </div>
+              </div>
+            </article>
+
+            <article className="panel budget-overview">
+              <div className="panel-header">
+                <div>
+                  <span className="section-eyebrow">
+                    CONTROLE DE GASTOS
+                  </span>
+                  <h2>Orçamento mensal</h2>
+                  <p>Limites definidos para suas categorias.</p>
+                </div>
+
+                <span className="panel-icon">▤</span>
+              </div>
+
+              <div className="budget-total">
+                <strong>{formatCurrency(totalBudget)}</strong>
+                <span>Limite total definido</span>
+              </div>
+
+              <div className="budget-main-track">
+                <div
+                  className={`budget-main-fill ${
+                    budgetUsage > 100 ? "danger-fill" : ""
+                  }`}
+                  style={{ width: `${Math.min(budgetUsage, 100)}%` }}
+                />
+              </div>
+
+              <div className="budget-total-footer">
+                <span>
+                  Utilizado:{" "}
+                  <strong>{formatCurrency(totalBudgetUsed)}</strong>
+                </span>
+                <span>{budgetUsage.toFixed(1)}%</span>
+              </div>
+
+              <div className="budget-remaining">
+                <span>Disponível no orçamento</span>
+                <strong
+                  className={
+                    totalBudget - totalBudgetUsed >= 0
+                      ? "income-text"
+                      : "expense-text"
+                  }
+                >
+                  {formatCurrency(totalBudget - totalBudgetUsed)}
+                </strong>
+              </div>
+
+              <button
+                type="button"
+                className="secondary-button full-button"
+                onClick={openNewBudgetForm}
+              >
+                + Adicionar categoria ao orçamento
+              </button>
+            </article>
+          </section>
+
+          <section className="panel budget-panel">
+            <div className="panel-header section-panel-header">
+              <div>
+                <span className="section-eyebrow">
+                  ORÇAMENTO POR CATEGORIA
+                </span>
+                <h2>Limites de despesas</h2>
+                <p>
+                  Compare os gastos registrados com o limite planejado
+                  para cada categoria.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openNewBudgetForm}
+              >
+                + Novo orçamento
+              </button>
+            </div>
+
+            {showBudgetForm && (
+              <form className="form-card" onSubmit={saveBudget}>
+                <div className="form-heading">
+                  <h3>
+                    {editingBudgetId !== null
+                      ? "Editar orçamento"
+                      : "Cadastrar orçamento"}
+                  </h3>
+
+                  <button
+                    type="button"
+                    className="close-button"
+                    onClick={() => {
+                      setShowBudgetForm(false);
+                      setEditingBudgetId(null);
+                      setBudgetError("");
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="form-grid">
+                  <label className="field">
+                    <span>Categoria</span>
+                    <input
+                      type="text"
+                      list="expense-categories"
+                      value={budgetForm.category}
+                      onChange={(event) =>
+                        setBudgetForm((current) => ({
+                          ...current,
+                          category: event.target.value,
+                        }))
+                      }
+                      placeholder="Ex.: Alimentação"
+                      required
+                    />
+                    <datalist id="expense-categories">
+                      {expenseCategories.map((category) => (
+                        <option key={category} value={category} />
+                      ))}
+                    </datalist>
+                  </label>
+
+                  <label className="field">
+                    <span>Limite mensal (R$)</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={budgetForm.limit}
+                      onChange={(event) =>
+                        setBudgetForm((current) => ({
+                          ...current,
+                          limit: event.target.value,
+                        }))
+                      }
+                      placeholder="0,00"
+                      required
+                    />
+                  </label>
+                </div>
+
+                {budgetError && (
+                  <p className="form-error">{budgetError}</p>
+                )}
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      setShowBudgetForm(false);
+                      setEditingBudgetId(null);
+                      setBudgetError("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button type="submit" className="primary-button">
+                    Salvar orçamento
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {monthlyBudgets.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">▤</span>
+                <h3>Nenhum orçamento cadastrado</h3>
+                <p>
+                  Defina limites mensais para suas categorias e acompanhe
+                  seus gastos.
+                </p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={openNewBudgetForm}
+                >
+                  Criar primeiro orçamento
+                </button>
+              </div>
+            ) : (
+              <div className="budget-list">
+                {monthlyBudgets.map((budget) => {
+                  const used = categoryExpenses[budget.category] || 0;
+                  const percentage = getBudgetPercentage(
+                    used,
+                    budget.limit
+                  );
+                  const status = getBudgetStatus(used, budget.limit);
+                  const remaining = budget.limit - used;
+
+                  return (
+                    <div className="budget-row" key={budget.id}>
+                      <div className="budget-row-main">
+                        <div className="budget-category">
+                          <strong>{budget.category}</strong>
+                          <span>
+                            {formatCurrency(used)} de{" "}
+                            {formatCurrency(budget.limit)}
+                          </span>
+                        </div>
+
+                        <div className="budget-row-actions">
+                          <span className={`status-pill ${status}`}>
+                            {status === "danger"
+                              ? "Limite excedido"
+                              : status === "warning"
+                                ? "Atenção"
+                                : "Dentro do limite"}
+                          </span>
+
+                          <button
+                            type="button"
+                            className="icon-button"
+                            onClick={() => openEditBudgetForm(budget)}
+                            title="Editar orçamento"
+                          >
+                            ✎
+                          </button>
+
+                          <button
+                            type="button"
+                            className="icon-button delete"
+                            onClick={() => deleteBudget(budget.id)}
+                            title="Excluir orçamento"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="budget-row-track">
+                        <div
+                          className={`budget-row-fill ${status}`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+
+                      <div className="budget-row-footer">
+                        <span>{percentage.toFixed(1)}% utilizado</span>
+                        <span
+                          className={
+                            remaining >= 0 ? "income-text" : "expense-text"
+                          }
+                        >
+                          {remaining >= 0 ? "Restante: " : "Excedente: "}
+                          {formatCurrency(Math.abs(remaining))}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="panel goals-panel">
+            <div className="panel-header section-panel-header">
+              <div>
+                <span className="section-eyebrow">
+                  OBJETIVOS FINANCEIROS
+                </span>
+                <h2>Minhas metas</h2>
+                <p>
+                  Acompanhe quanto já acumulou e quanto falta para alcançar
+                  seus objetivos.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openNewGoalForm}
+              >
+                + Nova meta
+              </button>
+            </div>
+
+            <div className="goals-summary">
+              <div>
+                <span>Total acumulado</span>
+                <strong className="income-text">
+                  {formatCurrency(totalGoalsCurrent)}
+                </strong>
+              </div>
+
+              <div>
+                <span>Objetivo total</span>
+                <strong>{formatCurrency(totalGoalsTarget)}</strong>
+              </div>
+
+              <div>
+                <span>Metas em andamento</span>
+                <strong>{activeGoals.length}</strong>
+              </div>
+
+              <div>
+                <span>Metas concluídas</span>
+                <strong className="income-text">
+                  {completedGoals.length}
+                </strong>
+              </div>
+            </div>
+
+            <div className="goals-total-progress">
+              <div className="goals-total-heading">
+                <span>Progresso geral das metas</span>
+                <strong>{goalProgress.toFixed(1)}%</strong>
+              </div>
+
+              <div className="goal-track">
+                <div
+                  className="goal-fill"
+                  style={{ width: `${goalProgress}%` }}
+                />
+              </div>
+            </div>
+
+            {showGoalForm && (
+              <form className="form-card" onSubmit={saveGoal}>
+                <div className="form-heading">
+                  <h3>
+                    {editingGoalId !== null
+                      ? "Editar meta financeira"
+                      : "Cadastrar nova meta"}
+                  </h3>
+
+                  <button
+                    type="button"
+                    className="close-button"
+                    onClick={() => {
+                      setShowGoalForm(false);
+                      setEditingGoalId(null);
+                      setGoalError("");
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="form-grid">
+                  <label className="field field-wide">
+                    <span>Nome da meta</span>
+                    <input
+                      type="text"
+                      value={goalForm.name}
+                      onChange={(event) =>
+                        setGoalForm((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                      placeholder="Ex.: Comprar meu carro"
+                      required
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Categoria</span>
+                    <select
+                      value={goalForm.category}
+                      onChange={(event) =>
+                        setGoalForm((current) => ({
+                          ...current,
+                          category: event.target.value,
+                        }))
+                      }
+                    >
+                      {goalCategories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>Valor desejado (R$)</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={goalForm.target}
+                      onChange={(event) =>
+                        setGoalForm((current) => ({
+                          ...current,
+                          target: event.target.value,
+                        }))
+                      }
+                      placeholder="0,00"
+                      required
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Valor já acumulado (R$)</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={goalForm.current}
+                      onChange={(event) =>
+                        setGoalForm((current) => ({
+                          ...current,
+                          current: event.target.value,
+                        }))
+                      }
+                      placeholder="0,00"
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Prazo para alcançar</span>
+                    <input
+                      type="date"
+                      value={goalForm.deadline}
+                      min={getLocalDateString()}
+                      onChange={(event) =>
+                        setGoalForm((current) => ({
+                          ...current,
+                          deadline: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                {goalError && <p className="form-error">{goalError}</p>}
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      setShowGoalForm(false);
+                      setEditingGoalId(null);
+                      setGoalError("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button type="submit" className="primary-button">
+                    Salvar meta
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {goals.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">◎</span>
+                <h3>Você ainda não possui metas</h3>
+                <p>
+                  Cadastre seus objetivos e acompanhe a evolução do seu
+                  patrimônio.
+                </p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={openNewGoalForm}
+                >
+                  Criar primeira meta
+                </button>
+              </div>
+            ) : (
+              <div className="goals-grid">
+                {goals.map((goal) => {
+                  const percentage = getGoalPercentage(goal);
+                  const remaining = Math.max(
+                    goal.target - goal.current,
+                    0
+                  );
+                  const days = getRemainingDays(goal.deadline);
+                  const completed = goal.current >= goal.target;
+
+                  return (
+                    <article className="goal-card" key={goal.id}>
+                      <div className="goal-card-header">
+                        <div>
+                          <span className="goal-category">
+                            {goal.category}
+                          </span>
+                          <h3>{goal.name}</h3>
+                        </div>
+
+                        <span
+                          className={`goal-status ${
+                            completed ? "completed" : "in-progress"
+                          }`}
+                        >
+                          {completed ? "Concluída" : "Em andamento"}
+                        </span>
+                      </div>
+
+                      <div className="goal-values">
+                        <strong>{formatCurrency(goal.current)}</strong>
+                        <span>de {formatCurrency(goal.target)}</span>
+                      </div>
+
+                      <div className="goal-track">
+                        <div
+                          className="goal-fill"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+
+                      <div className="goal-progress-label">
+                        <strong>{percentage.toFixed(1)}%</strong>
+                        <span>
+                          {completed
+                            ? "Objetivo alcançado"
+                            : `Faltam ${formatCurrency(remaining)}`}
+                        </span>
+                      </div>
+
+                      <label className="goal-update-field">
+                        <span>Atualizar valor acumulado</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={goal.current}
+                          onChange={(event) =>
+                            updateGoalAmount(goal, event.target.value)
+                          }
+                        />
+                      </label>
+
+                      <div className="goal-card-footer">
+                        <span>
+                          Prazo:{" "}
+                          {goal.deadline
+                            ? formatDate(goal.deadline)
+                            : "Não definido"}
+                        </span>
+
+                        {days !== null && !completed && (
+                          <span className={days < 0 ? "expense-text" : ""}>
+                            {days < 0
+                              ? "Prazo vencido"
+                              : days === 0
+                                ? "Vence hoje"
+                                : `${days} dias restantes`}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="goal-actions">
+                        <button
+                          type="button"
+                          className="text-button"
+                          onClick={() => openEditGoalForm(goal)}
+                        >
+                          Editar meta
+                        </button>
+
+                        <button
+                          type="button"
+                          className="text-button delete-text"
+                          onClick={() => deleteGoal(goal.id)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="panel transactions-panel">
+            <div className="panel-header">
+              <div>
+                <span className="section-eyebrow">
+                  MOVIMENTAÇÕES DO PERÍODO
+                </span>
+                <h2>Lançamentos do mês</h2>
+                <p>
+                  Últimas receitas e despesas registradas no módulo
+                  financeiro.
+                </p>
+              </div>
+
+              <Link href="/financeiro/historico" className="text-link">
+                Ver histórico completo →
+              </Link>
+            </div>
+
+            {latestTransactions.length === 0 ? (
+              <div className="empty-state compact">
+                <h3>Nenhum lançamento neste período</h3>
+                <p>
+                  Os lançamentos de receitas e despesas aparecerão aqui
+                  automaticamente.
+                </p>
+              </div>
+            ) : (
+              <div className="transaction-list">
+                {latestTransactions.map((transaction) => {
+                  const isIncome = transaction.type === "Receita";
+
+                  return (
+                    <div
+                      className="transaction-row"
+                      key={transaction.id}
+                    >
+                      <div
+                        className={`transaction-symbol ${
+                          isIncome ? "income-symbol" : "expense-symbol"
+                        }`}
+                      >
+                        {isIncome ? "↑" : "↓"}
+                      </div>
+
+                      <div className="transaction-description">
+                        <strong>{transaction.description}</strong>
+                        <span>
+                          {transaction.category || "Sem categoria"} ·{" "}
+                          {formatDate(transaction.date)}
+                        </span>
+                      </div>
+
+                      <div className="transaction-value">
+                        <strong
+                          className={
+                            isIncome ? "income-text" : "expense-text"
+                          }
+                        >
+                          {isIncome ? "+" : "-"}
+                          {formatCurrency(
+                            Number(transaction.amount) || 0
+                          )}
+                        </strong>
+                        <span>{transaction.status || "Sem status"}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="planning-notice">
+            <span className="notice-icon">i</span>
+            <div>
+              <strong>Como funciona a integração</strong>
+              <p>
+                Receitas e despesas são consultadas diretamente dos
+                lançamentos financeiros do NEXO. Somente movimentações com
+                status &quot;Recebida&quot; ou &quot;Pago&quot; entram como
+                realizadas. Movimentações parciais permanecem no total
+                previsto, pois o lançamento atual não possui um campo
+                separado para o valor efetivamente pago ou recebido.
+                Orçamentos e metas são armazenados separadamente e não
+                alteram suas contas ou movimentações.
+              </p>
+            </div>
+          </section>
+        </>
+      )}
+
+      <footer className="routine-footer">
+        <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+        <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+      </footer>
 
       <style jsx global>{`
         .planning-content {
@@ -2628,6 +2594,6 @@ export default function PlanejamentoFinanceiroPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

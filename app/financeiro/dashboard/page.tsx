@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type MovementType =
   | "Receita"
@@ -559,24 +558,20 @@ export default function FinancialDashboardPage() {
 
   if (!loaded) {
     return (
-      <main className="app-shell">
-        <MainNavigation />
-        <section className="main-area">
-          <div className="dashboard-loading">
-            <div className="loading-indicator" />
-            <p>Carregando dashboard financeiro...</p>
-          </div>
-        </section>
+      <div className="content dashboard-content">
+        <div className="dashboard-loading">
+          <div className="loading-indicator" />
+          <p>Carregando dashboard financeiro...</p>
+        </div>
 
-        <style jsx>{`
+        <style jsx global>{`
           .dashboard-loading {
-            min-height: 100vh;
+            min-height: 60vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 14px;
-            background: #101012;
             color: #a1a1aa;
             font-size: 13px;
           }
@@ -596,506 +591,480 @@ export default function FinancialDashboardPage() {
             }
           }
         `}</style>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content dashboard-content">
+      <section className="welcome-section">
+        <div>
+          <span className="section-eyebrow">ANÁLISE FINANCEIRA</span>
+          <h2>
+            Seu panorama de <strong>{currentMonthName}</strong>
+          </h2>
+          <p>
+            Uma visão geral para ajudar você a tomar decisões melhores com
+            seu dinheiro.
+          </p>
+        </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div className="topbar-left">
-            <div className="breadcrumb">
-              NEXO / FINANCEIRO / DASHBOARD
-            </div>
-            <h1>Dashboard financeiro</h1>
-          </div>
-
-          <div className="topbar-right">
-            <div className="topbar-date">
-              {today.toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </div>
-            <div className="topbar-avatar">N</div>
-          </div>
-        </header>
-
-        <div className="content dashboard-content">
-          <section className="welcome-section">
-            <div>
-              <span className="section-eyebrow">ANÁLISE FINANCEIRA</span>
-              <h2>
-                Seu panorama de <strong>{currentMonthName}</strong>
-              </h2>
-              <p>
-                Uma visão geral para ajudar você a tomar decisões melhores com
-                seu dinheiro.
-              </p>
-            </div>
-
-            <div className={`situation-badge ${financialSituation}`}>
-              <span className="situation-dot" />
-              {financialSituation === "negative"
-                ? "Resultado negativo"
-                : financialSituation === "positive"
-                  ? "Resultado positivo"
-                  : "Resultado equilibrado"}
-            </div>
-          </section>
-
-          <section className="summary-grid">
-            <article className="summary-card">
-              <div className="card-top">
-                <span className="card-label">Receitas do mês</span>
-                <span className="card-icon income">↑</span>
-              </div>
-              <strong className="card-value income-text">
-                {money(currentRevenue)}
-              </strong>
-              <span className="card-description">
-                {money(currentConfirmedRevenue)} com status recebido
-              </span>
-            </article>
-
-            <article className="summary-card">
-              <div className="card-top">
-                <span className="card-label">Despesas do mês</span>
-                <span className="card-icon expense">↓</span>
-              </div>
-              <strong className="card-value">
-                {money(currentExpenses)}
-              </strong>
-              <span className="card-description">
-                {money(currentConfirmedExpenses)} com status pago
-              </span>
-            </article>
-
-            <article className="summary-card">
-              <div className="card-top">
-                <span className="card-label">Resultado do mês</span>
-                <span className="card-icon result">∑</span>
-              </div>
-              <strong
-                className={`card-value ${
-                  currentBalance < 0 ? "negative-text" : "positive-text"
-                }`}
-              >
-                {money(currentBalance)}
-              </strong>
-              <span className="card-description">
-                Receitas menos despesas, investimentos e reservas
-              </span>
-            </article>
-
-            <article className="summary-card">
-              <div className="card-top">
-                <span className="card-label">Limite recomendado</span>
-                <span className="card-icon limit">◎</span>
-              </div>
-              <strong className="card-value">
-                {money(availableToSpend)}
-              </strong>
-              <span className="card-description">
-                Estimativa disponível para novas despesas neste mês
-              </span>
-            </article>
-          </section>
-
-          <section className="main-grid">
-            <article className="panel chart-panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-eyebrow">DESEMPENHO</span>
-                  <h3>Receitas x despesas</h3>
-                  <p>Comparativo dos últimos meses e do período atual.</p>
-                </div>
-                <div className="chart-legend">
-                  <span><i className="legend-income" /> Receitas</span>
-                  <span><i className="legend-expense" /> Despesas</span>
-                </div>
-              </div>
-
-              <div className="bar-chart">
-                {monthlyData.map((month) => (
-                  <div className="bar-group" key={month.key}>
-                    <div className="bars">
-                      <div
-                        className="bar income-bar"
-                        style={{
-                          height: `${Math.max(
-                            3,
-                            (month.revenue / maxChartValue) * 150
-                          )}px`,
-                        }}
-                        title={`Receitas: ${money(month.revenue)}`}
-                      />
-                      <div
-                        className="bar expense-bar"
-                        style={{
-                          height: `${Math.max(
-                            3,
-                            (month.expenses / maxChartValue) * 150
-                          )}px`,
-                        }}
-                        title={`Despesas: ${money(month.expenses)}`}
-                      />
-                    </div>
-                    <span className="bar-label">{month.label}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="chart-footer">
-                <span>
-                  <strong>{money(currentRevenue)}</strong> em receitas
-                </span>
-                <span>
-                  <strong>{money(currentExpenses)}</strong> em despesas
-                </span>
-              </div>
-            </article>
-
-            <article className="panel result-panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-eyebrow">SEU RESULTADO</span>
-                  <h3>Distribuição do dinheiro</h3>
-                  <p>Composição dos lançamentos do mês atual.</p>
-                </div>
-              </div>
-
-              <div className="result-main">
-                <span>Saldo do mês</span>
-                <strong
-                  className={
-                    currentBalance < 0 ? "negative-text" : "positive-text"
-                  }
-                >
-                  {money(currentBalance)}
-                </strong>
-              </div>
-
-              <div className="result-line">
-                <span>Receitas registradas</span>
-                <strong className="income-text">{money(currentRevenue)}</strong>
-              </div>
-
-              <div className="result-line">
-                <span>Despesas registradas</span>
-                <strong>{money(currentExpenses)}</strong>
-              </div>
-
-              <div className="result-line">
-                <span>Investimentos e aplicações</span>
-                <strong>{money(currentInvestments)}</strong>
-              </div>
-
-              <div className="result-line">
-                <span>Reservas</span>
-                <strong>{money(currentReserves)}</strong>
-              </div>
-
-              <div className="result-line total-line">
-                <span>Margem sobre receitas</span>
-                <strong className={savingsRate < 0 ? "negative-text" : ""}>
-                  {savingsRate.toFixed(1)}%
-                </strong>
-              </div>
-            </article>
-          </section>
-
-          <section className="main-grid category-grid">
-            <article className="panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-eyebrow">CONTROLE DE GASTOS</span>
-                  <h3>Onde você está gastando</h3>
-                  <p>Despesas agrupadas por categoria neste mês.</p>
-                </div>
-              </div>
-
-              {categoryExpenses.length > 0 ? (
-                <div className="category-list">
-                  {categoryExpenses.slice(0, 7).map((item) => {
-                    const percentage =
-                      totalCategoryExpenses > 0
-                        ? (item.amount / totalCategoryExpenses) * 100
-                        : 0;
-
-                    return (
-                      <div className="category-item" key={item.category}>
-                        <div className="category-info">
-                          <span>{item.category}</span>
-                          <strong>{money(item.amount)}</strong>
-                        </div>
-                        <div className="progress-track">
-                          <div
-                            className="progress-fill"
-                            style={{
-                              width: `${(item.amount / maxCategoryValue) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="category-percentage">
-                          {percentage.toFixed(1)}% das despesas
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <span>◈</span>
-                  <strong>Nenhuma despesa registrada</strong>
-                  <p>Quando você cadastrar despesas, elas aparecerão aqui.</p>
-                </div>
-              )}
-            </article>
-
-            <article className="panel economy-panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-eyebrow">META DE ECONOMIA</span>
-                  <h3>Quanto guardar</h3>
-                  <p>Referência de economia mensal de 10% da receita média.</p>
-                </div>
-              </div>
-
-              <div className="economy-highlight">
-                <span>Meta mensal sugerida</span>
-                <strong>{money(monthlySavingsTarget)}</strong>
-                <small>Baseada na receita média disponível no histórico.</small>
-              </div>
-
-              <div className="economy-row">
-                <span>Investimentos e aplicações</span>
-                <strong>{money(currentInvestments)}</strong>
-              </div>
-
-              <div className="economy-row">
-                <span>Valores destinados a reservas</span>
-                <strong>{money(currentReserves)}</strong>
-              </div>
-
-              <div className="economy-row">
-                <span>Margem atual do mês</span>
-                <strong
-                  className={currentBalance < 0 ? "negative-text" : "positive-text"}
-                >
-                  {money(currentBalance)}
-                </strong>
-              </div>
-
-              <div className="economy-note">
-                <span>!</span>
-                A meta de 10% é uma referência inicial. Ajuste sua economia de
-                acordo com suas despesas essenciais e compromissos.
-              </div>
-            </article>
-          </section>
-
-          <section className="panel forecast-panel">
-            <div className="panel-header forecast-header">
-              <div>
-                <span className="section-eyebrow">VISÃO DE FUTURO</span>
-                <h3>Projeção dos próximos meses</h3>
-                <p>
-                  Acompanhe o que está previsto e identifique períodos que exigem
-                  atenção.
-                </p>
-              </div>
-
-              <select
-                value={period}
-                onChange={(event) =>
-                  setPeriod(event.target.value as "3" | "6")
-                }
-                className="period-select"
-              >
-                <option value="3">Próximos 3 meses</option>
-                <option value="6">Próximos 6 meses</option>
-              </select>
-            </div>
-
-            <div className="forecast-table-wrapper">
-              <table className="forecast-table">
-                <thead>
-                  <tr>
-                    <th>Mês</th>
-                    <th>Receitas estimadas</th>
-                    <th>Despesas estimadas</th>
-                    <th>Resultado projetado</th>
-                    <th>Situação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleForecast.map((month) => (
-                    <tr key={month.key}>
-                      <td>
-                        <strong>{month.label}</strong>
-                        {"estimated" in month && month.estimated && (
-                          <small className="estimate-label">Estimativa</small>
-                        )}
-                      </td>
-                      <td className="income-text">{money(month.revenue)}</td>
-                      <td>{money(month.expenses)}</td>
-                      <td
-                        className={
-                          month.balance < 0 ? "negative-text" : "positive-text"
-                        }
-                      >
-                        {money(month.balance)}
-                      </td>
-                      <td>
-                        <span
-                          className={`forecast-status ${
-                            month.balance < 0 ? "danger" : "safe"
-                          }`}
-                        >
-                          {month.balance < 0 ? "Atenção" : "Positivo"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {visibleForecast.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="empty-table">
-                        Não há dados suficientes para a projeção.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="forecast-summary">
-              <div>
-                <span>Receitas do período</span>
-                <strong className="income-text">{money(totalFutureRevenue)}</strong>
-              </div>
-              <div>
-                <span>Despesas do período</span>
-                <strong>{money(totalFutureExpenses)}</strong>
-              </div>
-              <div>
-                <span>Resultado médio mensal</span>
-                <strong
-                  className={
-                    averageFutureBalance < 0 ? "negative-text" : "positive-text"
-                  }
-                >
-                  {money(averageFutureBalance)}
-                </strong>
-              </div>
-            </div>
-
-            <p className="forecast-disclaimer">
-              As projeções utilizam lançamentos futuros cadastrados. Quando não
-              existem lançamentos para determinado mês, o painel utiliza a média
-              dos meses anteriores como estimativa. Não representa garantia de
-              receita ou despesa futura.
-            </p>
-          </section>
-
-          <section className="main-grid bottom-grid">
-            <article className="panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-eyebrow">PLANO DE AÇÃO</span>
-                  <h3>Como melhorar sua situação financeira</h3>
-                  <p>Recomendações automáticas com base nos seus lançamentos.</p>
-                </div>
-              </div>
-
-              <div className="recommendation-list">
-                {recommendations.map((item, index) => (
-                  <div
-                    className={`recommendation-item ${item.type}`}
-                    key={`${item.title}-${index}`}
-                  >
-                    <span className="recommendation-icon">
-                      {item.type === "warning"
-                        ? "!"
-                        : item.type === "success"
-                          ? "✓"
-                          : "i"}
-                    </span>
-                    <div>
-                      <strong>{item.title}</strong>
-                      <p>{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <article className="panel account-panel">
-              <div className="panel-header">
-                <div>
-                  <span className="section-eyebrow">CONTAS FINANCEIRAS</span>
-                  <h3>Contas cadastradas</h3>
-                  <p>Resumo dos saldos iniciais informados.</p>
-                </div>
-                <Link href="/financeiro/contas" className="panel-link">
-                  Ver contas →
-                </Link>
-              </div>
-
-              <div className="account-total">
-                <span>Total de saldos iniciais</span>
-                <strong>{money(accountBalance)}</strong>
-              </div>
-
-              {accounts.filter((account) => account.active).length > 0 ? (
-                <div className="account-list">
-                  {accounts
-                    .filter((account) => account.active)
-                    .slice(0, 5)
-                    .map((account) => (
-                      <div className="account-item" key={account.id}>
-                        <div className="account-symbol">▣</div>
-                        <div className="account-info">
-                          <strong>{account.name}</strong>
-                          <span>{account.institution || account.type}</span>
-                        </div>
-                        <strong className="account-value">
-                          {money(parseAmount(account.initialBalance))}
-                        </strong>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="empty-state compact">
-                  <strong>Nenhuma conta cadastrada</strong>
-                  <p>Cadastre suas contas para visualizar os saldos iniciais.</p>
-                </div>
-              )}
-            </article>
-          </section>
-
-          <section className="disclaimer">
-            <span>ⓘ</span>
-            <p>
-              <strong>Sobre os indicadores:</strong> os valores são calculados
-              com base nos lançamentos cadastrados no NEXO. O valor total do
-              lançamento é utilizado nos cálculos, pois o cadastro atual não
-              armazena o valor efetivamente liquidado em pagamentos parciais.
-              O saldo inicial das contas é exibido separadamente e não representa
-              o saldo bancário atualizado.
-            </p>
-          </section>
-
-          <footer className="routine-footer">
-            NEXO · Planeje. Organize. Conquiste.
-          </footer>
+        <div className={`situation-badge ${financialSituation}`}>
+          <span className="situation-dot" />
+          {financialSituation === "negative"
+            ? "Resultado negativo"
+            : financialSituation === "positive"
+              ? "Resultado positivo"
+              : "Resultado equilibrado"}
         </div>
       </section>
+
+      <section className="summary-grid">
+        <article className="summary-card">
+          <div className="card-top">
+            <span className="card-label">Receitas do mês</span>
+            <span className="card-icon income">↑</span>
+          </div>
+          <strong className="card-value income-text">
+            {money(currentRevenue)}
+          </strong>
+          <span className="card-description">
+            {money(currentConfirmedRevenue)} com status recebido
+          </span>
+        </article>
+
+        <article className="summary-card">
+          <div className="card-top">
+            <span className="card-label">Despesas do mês</span>
+            <span className="card-icon expense">↓</span>
+          </div>
+          <strong className="card-value">
+            {money(currentExpenses)}
+          </strong>
+          <span className="card-description">
+            {money(currentConfirmedExpenses)} com status pago
+          </span>
+        </article>
+
+        <article className="summary-card">
+          <div className="card-top">
+            <span className="card-label">Resultado do mês</span>
+            <span className="card-icon result">∑</span>
+          </div>
+          <strong
+            className={`card-value ${
+              currentBalance < 0 ? "negative-text" : "positive-text"
+            }`}
+          >
+            {money(currentBalance)}
+          </strong>
+          <span className="card-description">
+            Receitas menos despesas, investimentos e reservas
+          </span>
+        </article>
+
+        <article className="summary-card">
+          <div className="card-top">
+            <span className="card-label">Limite recomendado</span>
+            <span className="card-icon limit">◎</span>
+          </div>
+          <strong className="card-value">
+            {money(availableToSpend)}
+          </strong>
+          <span className="card-description">
+            Estimativa disponível para novas despesas neste mês
+          </span>
+        </article>
+      </section>
+
+      <section className="main-grid">
+        <article className="panel chart-panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-eyebrow">DESEMPENHO</span>
+              <h3>Receitas x despesas</h3>
+              <p>Comparativo dos últimos meses e do período atual.</p>
+            </div>
+            <div className="chart-legend">
+              <span><i className="legend-income" /> Receitas</span>
+              <span><i className="legend-expense" /> Despesas</span>
+            </div>
+          </div>
+
+          <div className="bar-chart">
+            {monthlyData.map((month) => (
+              <div className="bar-group" key={month.key}>
+                <div className="bars">
+                  <div
+                    className="bar income-bar"
+                    style={{
+                      height: `${Math.max(
+                        3,
+                        (month.revenue / maxChartValue) * 150
+                      )}px`,
+                    }}
+                    title={`Receitas: ${money(month.revenue)}`}
+                  />
+                  <div
+                    className="bar expense-bar"
+                    style={{
+                      height: `${Math.max(
+                        3,
+                        (month.expenses / maxChartValue) * 150
+                      )}px`,
+                    }}
+                    title={`Despesas: ${money(month.expenses)}`}
+                  />
+                </div>
+                <span className="bar-label">{month.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="chart-footer">
+            <span>
+              <strong>{money(currentRevenue)}</strong> em receitas
+            </span>
+            <span>
+              <strong>{money(currentExpenses)}</strong> em despesas
+            </span>
+          </div>
+        </article>
+
+        <article className="panel result-panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-eyebrow">SEU RESULTADO</span>
+              <h3>Distribuição do dinheiro</h3>
+              <p>Composição dos lançamentos do mês atual.</p>
+            </div>
+          </div>
+
+          <div className="result-main">
+            <span>Saldo do mês</span>
+            <strong
+              className={
+                currentBalance < 0 ? "negative-text" : "positive-text"
+              }
+            >
+              {money(currentBalance)}
+            </strong>
+          </div>
+
+          <div className="result-line">
+            <span>Receitas registradas</span>
+            <strong className="income-text">{money(currentRevenue)}</strong>
+          </div>
+
+          <div className="result-line">
+            <span>Despesas registradas</span>
+            <strong>{money(currentExpenses)}</strong>
+          </div>
+
+          <div className="result-line">
+            <span>Investimentos e aplicações</span>
+            <strong>{money(currentInvestments)}</strong>
+          </div>
+
+          <div className="result-line">
+            <span>Reservas</span>
+            <strong>{money(currentReserves)}</strong>
+          </div>
+
+          <div className="result-line total-line">
+            <span>Margem sobre receitas</span>
+            <strong className={savingsRate < 0 ? "negative-text" : ""}>
+              {savingsRate.toFixed(1)}%
+            </strong>
+          </div>
+        </article>
+      </section>
+
+      <section className="main-grid category-grid">
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-eyebrow">CONTROLE DE GASTOS</span>
+              <h3>Onde você está gastando</h3>
+              <p>Despesas agrupadas por categoria neste mês.</p>
+            </div>
+          </div>
+
+          {categoryExpenses.length > 0 ? (
+            <div className="category-list">
+              {categoryExpenses.slice(0, 7).map((item) => {
+                const percentage =
+                  totalCategoryExpenses > 0
+                    ? (item.amount / totalCategoryExpenses) * 100
+                    : 0;
+
+                return (
+                  <div className="category-item" key={item.category}>
+                    <div className="category-info">
+                      <span>{item.category}</span>
+                      <strong>{money(item.amount)}</strong>
+                    </div>
+                    <div className="progress-track">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${(item.amount / maxCategoryValue) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="category-percentage">
+                      {percentage.toFixed(1)}% das despesas
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <span>◈</span>
+              <strong>Nenhuma despesa registrada</strong>
+              <p>Quando você cadastrar despesas, elas aparecerão aqui.</p>
+            </div>
+          )}
+        </article>
+
+        <article className="panel economy-panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-eyebrow">META DE ECONOMIA</span>
+              <h3>Quanto guardar</h3>
+              <p>Referência de economia mensal de 10% da receita média.</p>
+            </div>
+          </div>
+
+          <div className="economy-highlight">
+            <span>Meta mensal sugerida</span>
+            <strong>{money(monthlySavingsTarget)}</strong>
+            <small>Baseada na receita média disponível no histórico.</small>
+          </div>
+
+          <div className="economy-row">
+            <span>Investimentos e aplicações</span>
+            <strong>{money(currentInvestments)}</strong>
+          </div>
+
+          <div className="economy-row">
+            <span>Valores destinados a reservas</span>
+            <strong>{money(currentReserves)}</strong>
+          </div>
+
+          <div className="economy-row">
+            <span>Margem atual do mês</span>
+            <strong
+              className={currentBalance < 0 ? "negative-text" : "positive-text"}
+            >
+              {money(currentBalance)}
+            </strong>
+          </div>
+
+          <div className="economy-note">
+            <span>!</span>
+            A meta de 10% é uma referência inicial. Ajuste sua economia de
+            acordo com suas despesas essenciais e compromissos.
+          </div>
+        </article>
+      </section>
+
+      <section className="panel forecast-panel">
+        <div className="panel-header forecast-header">
+          <div>
+            <span className="section-eyebrow">VISÃO DE FUTURO</span>
+            <h3>Projeção dos próximos meses</h3>
+            <p>
+              Acompanhe o que está previsto e identifique períodos que exigem
+              atenção.
+            </p>
+          </div>
+
+          <select
+            value={period}
+            onChange={(event) =>
+              setPeriod(event.target.value as "3" | "6")
+            }
+            className="period-select"
+          >
+            <option value="3">Próximos 3 meses</option>
+            <option value="6">Próximos 6 meses</option>
+          </select>
+        </div>
+
+        <div className="forecast-table-wrapper">
+          <table className="forecast-table">
+            <thead>
+              <tr>
+                <th>Mês</th>
+                <th>Receitas estimadas</th>
+                <th>Despesas estimadas</th>
+                <th>Resultado projetado</th>
+                <th>Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleForecast.map((month) => (
+                <tr key={month.key}>
+                  <td>
+                    <strong>{month.label}</strong>
+                    {"estimated" in month && month.estimated && (
+                      <small className="estimate-label">Estimativa</small>
+                    )}
+                  </td>
+                  <td className="income-text">{money(month.revenue)}</td>
+                  <td>{money(month.expenses)}</td>
+                  <td
+                    className={
+                      month.balance < 0 ? "negative-text" : "positive-text"
+                    }
+                  >
+                    {money(month.balance)}
+                  </td>
+                  <td>
+                    <span
+                      className={`forecast-status ${
+                        month.balance < 0 ? "danger" : "safe"
+                      }`}
+                    >
+                      {month.balance < 0 ? "Atenção" : "Positivo"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+
+              {visibleForecast.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="empty-table">
+                    Não há dados suficientes para a projeção.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="forecast-summary">
+          <div>
+            <span>Receitas do período</span>
+            <strong className="income-text">{money(totalFutureRevenue)}</strong>
+          </div>
+          <div>
+            <span>Despesas do período</span>
+            <strong>{money(totalFutureExpenses)}</strong>
+          </div>
+          <div>
+            <span>Resultado médio mensal</span>
+            <strong
+              className={
+                averageFutureBalance < 0 ? "negative-text" : "positive-text"
+              }
+            >
+              {money(averageFutureBalance)}
+            </strong>
+          </div>
+        </div>
+
+        <p className="forecast-disclaimer">
+          As projeções utilizam lançamentos futuros cadastrados. Quando não
+          existem lançamentos para determinado mês, o painel utiliza a média
+          dos meses anteriores como estimativa. Não representa garantia de
+          receita ou despesa futura.
+        </p>
+      </section>
+
+      <section className="main-grid bottom-grid">
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-eyebrow">PLANO DE AÇÃO</span>
+              <h3>Como melhorar sua situação financeira</h3>
+              <p>Recomendações automáticas com base nos seus lançamentos.</p>
+            </div>
+          </div>
+
+          <div className="recommendation-list">
+            {recommendations.map((item, index) => (
+              <div
+                className={`recommendation-item ${item.type}`}
+                key={`${item.title}-${index}`}
+              >
+                <span className="recommendation-icon">
+                  {item.type === "warning"
+                    ? "!"
+                    : item.type === "success"
+                      ? "✓"
+                      : "i"}
+                </span>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel account-panel">
+          <div className="panel-header">
+            <div>
+              <span className="section-eyebrow">CONTAS FINANCEIRAS</span>
+              <h3>Contas cadastradas</h3>
+              <p>Resumo dos saldos iniciais informados.</p>
+            </div>
+            <Link href="/financeiro/contas" className="panel-link">
+              Ver contas →
+            </Link>
+          </div>
+
+          <div className="account-total">
+            <span>Total de saldos iniciais</span>
+            <strong>{money(accountBalance)}</strong>
+          </div>
+
+          {accounts.filter((account) => account.active).length > 0 ? (
+            <div className="account-list">
+              {accounts
+                .filter((account) => account.active)
+                .slice(0, 5)
+                .map((account) => (
+                  <div className="account-item" key={account.id}>
+                    <div className="account-symbol">▣</div>
+                    <div className="account-info">
+                      <strong>{account.name}</strong>
+                      <span>{account.institution || account.type}</span>
+                    </div>
+                    <strong className="account-value">
+                      {money(parseAmount(account.initialBalance))}
+                    </strong>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="empty-state compact">
+              <strong>Nenhuma conta cadastrada</strong>
+              <p>Cadastre suas contas para visualizar os saldos iniciais.</p>
+            </div>
+          )}
+        </article>
+      </section>
+
+      <section className="disclaimer">
+        <span>ⓘ</span>
+        <p>
+          <strong>Sobre os indicadores:</strong> os valores são calculados
+          com base nos lançamentos cadastrados no NEXO. O valor total do
+          lançamento é utilizado nos cálculos, pois o cadastro atual não
+          armazena o valor efetivamente liquidado em pagamentos parciais.
+          O saldo inicial das contas é exibido separadamente e não representa
+          o saldo bancário atualizado.
+        </p>
+      </section>
+
+      <footer className="routine-footer">
+        NEXO · Planeje. Organize. Conquiste.
+      </footer>
 
       <style jsx global>{`
         .dashboard-content {
@@ -1919,6 +1888,6 @@ export default function FinancialDashboardPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

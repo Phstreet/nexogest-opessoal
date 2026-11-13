@@ -3,7 +3,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Transaction = {
   id: number;
@@ -123,25 +122,42 @@ export default function ContasAReceberPage() {
     return transactions.filter((item) => item.type === "Receita");
   }, [transactions]);
 
-  const activeRevenues = revenues.filter(
-    (item) => !isCancelled(item.status)
+  const activeRevenues = useMemo(
+    () => revenues.filter((item) => !isCancelled(item.status)),
+    [revenues]
   );
 
-  const totalOpen = activeRevenues
-    .filter((item) => !isReceived(item.status))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalOpen = useMemo(
+    () =>
+      activeRevenues
+        .filter((item) => !isReceived(item.status))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeRevenues]
+  );
 
-  const totalReceived = activeRevenues
-    .filter((item) => isReceived(item.status))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalReceived = useMemo(
+    () =>
+      activeRevenues
+        .filter((item) => isReceived(item.status))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeRevenues]
+  );
 
-  const totalOverdue = activeRevenues
-    .filter((item) => isOverdue(item))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalOverdue = useMemo(
+    () =>
+      activeRevenues
+        .filter((item) => isOverdue(item))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [activeRevenues]
+  );
 
-  const totalCancelled = revenues
-    .filter((item) => isCancelled(item.status))
-    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const totalCancelled = useMemo(
+    () =>
+      revenues
+        .filter((item) => isCancelled(item.status))
+        .reduce((total, item) => total + Number(item.amount || 0), 0),
+    [revenues]
+  );
 
   const filteredRevenues = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
@@ -225,270 +241,245 @@ export default function ContasAReceberPage() {
   }
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content receivable-content-page">
+      <div className="receivable-intro">
+        <div>
+          <p>
+            Acompanhe suas receitas, recebimentos e valores pendentes.
+          </p>
+        </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div className="topbar-left">
-            <div className="breadcrumb">
-              NEXO / FINANCEIRO / CONTAS A RECEBER
-            </div>
+        <Link href="/financeiro" className="receivable-back">
+          ← Voltar ao financeiro
+        </Link>
+      </div>
 
-            <h1>Contas a receber</h1>
+      <section className="receivable-summary">
+        <article className="receivable-card">
+          <div className="receivable-card-top">
+            <span>Receitas em aberto</span>
+            <span className="receivable-icon">◷</span>
           </div>
 
-          <div className="topbar-right">
-            <div className="topbar-date">
-              {new Date().toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </div>
+          <strong>{formatCurrency(totalOpen)}</strong>
+          <small>Valores ainda não recebidos</small>
+        </article>
 
-            <div className="topbar-avatar">N</div>
-          </div>
-        </header>
-
-        <div className="content receivable-content-page">
-          <div className="receivable-intro">
-            <div>
-              <p>
-                Acompanhe suas receitas, recebimentos e valores pendentes.
-              </p>
-            </div>
-
-            <Link href="/financeiro" className="receivable-back">
-              ← Voltar ao financeiro
-            </Link>
+        <article className="receivable-card">
+          <div className="receivable-card-top">
+            <span>Total recebido</span>
+            <span className="receivable-icon">✓</span>
           </div>
 
-          <section className="receivable-summary">
-            <article className="receivable-card">
-              <div className="receivable-card-top">
-                <span>Receitas em aberto</span>
-                <span className="receivable-icon">◷</span>
-              </div>
+          <strong>{formatCurrency(totalReceived)}</strong>
+          <small>Receitas já confirmadas</small>
+        </article>
 
-              <strong>{formatCurrency(totalOpen)}</strong>
-              <small>Valores ainda não recebidos</small>
-            </article>
+        <article className="receivable-card overdue-card">
+          <div className="receivable-card-top">
+            <span>Receitas atrasadas</span>
+            <span className="receivable-icon">!</span>
+          </div>
 
-            <article className="receivable-card">
-              <div className="receivable-card-top">
-                <span>Total recebido</span>
-                <span className="receivable-icon">✓</span>
-              </div>
+          <strong>{formatCurrency(totalOverdue)}</strong>
+          <small>Receitas com data vencida</small>
+        </article>
 
-              <strong>{formatCurrency(totalReceived)}</strong>
-              <small>Receitas já confirmadas</small>
-            </article>
+        <article className="receivable-card">
+          <div className="receivable-card-top">
+            <span>Receitas canceladas</span>
+            <span className="receivable-icon">×</span>
+          </div>
 
-            <article className="receivable-card overdue-card">
-              <div className="receivable-card-top">
-                <span>Receitas atrasadas</span>
-                <span className="receivable-icon">!</span>
-              </div>
+          <strong>{formatCurrency(totalCancelled)}</strong>
+          <small>Valores cancelados</small>
+        </article>
+      </section>
 
-              <strong>{formatCurrency(totalOverdue)}</strong>
-              <small>Receitas com data vencida</small>
-            </article>
+      <section className="receivable-content">
+        <div className="receivable-heading">
+          <div>
+            <h2>Histórico de recebimentos</h2>
+            <p>
+              Consulte e acompanhe todas as receitas cadastradas.
+            </p>
+          </div>
 
-            <article className="receivable-card">
-              <div className="receivable-card-top">
-                <span>Receitas canceladas</span>
-                <span className="receivable-icon">×</span>
-              </div>
+          <Link
+            href="/financeiro"
+            className="receivable-new-button"
+          >
+            + Nova receita
+          </Link>
+        </div>
 
-              <strong>{formatCurrency(totalCancelled)}</strong>
-              <small>Valores cancelados</small>
-            </article>
-          </section>
+        <div className="receivable-filters">
+          <div className="receivable-search">
+            <span>⌕</span>
 
-          <section className="receivable-content">
-            <div className="receivable-heading">
-              <div>
-                <h2>Histórico de recebimentos</h2>
-                <p>
-                  Consulte e acompanhe todas as receitas cadastradas.
-                </p>
-              </div>
+            <input
+              type="text"
+              placeholder="Buscar por descrição ou categoria..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label="Buscar receitas"
+            />
+          </div>
 
-              <Link
-                href="/financeiro"
-                className="receivable-new-button"
-              >
-                + Nova receita
-              </Link>
-            </div>
+          <select
+            aria-label="Filtrar receitas por situação"
+            value={filter}
+            onChange={(event) =>
+              setFilter(event.target.value as FilterType)
+            }
+          >
+            <option value="Todas">Todas as receitas</option>
+            <option value="Em aberto">Em aberto</option>
+            <option value="Recebidas">Recebidas</option>
+            <option value="Atrasadas">Atrasadas</option>
+            <option value="Canceladas">Canceladas</option>
+          </select>
+        </div>
 
-            <div className="receivable-filters">
-              <div className="receivable-search">
-                <span>⌕</span>
+        <div className="receivable-table-wrapper">
+          <table className="receivable-table">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Data prevista</th>
+                <th>Conta</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
 
-                <input
-                  type="text"
-                  placeholder="Buscar por descrição ou categoria..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="receivable-empty">
+                    Carregando receitas...
+                  </td>
+                </tr>
+              ) : filteredRevenues.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="receivable-empty">
+                    <div className="receivable-empty-icon">▤</div>
 
-              <select
-                value={filter}
-                onChange={(event) =>
-                  setFilter(event.target.value as FilterType)
-                }
-              >
-                <option value="Todas">Todas as receitas</option>
-                <option value="Em aberto">Em aberto</option>
-                <option value="Recebidas">Recebidas</option>
-                <option value="Atrasadas">Atrasadas</option>
-                <option value="Canceladas">Canceladas</option>
-              </select>
-            </div>
+                    <strong>Nenhuma receita encontrada</strong>
 
-            <div className="receivable-table-wrapper">
-              <table className="receivable-table">
-                <thead>
-                  <tr>
-                    <th>Descrição</th>
-                    <th>Categoria</th>
-                    <th>Data prevista</th>
-                    <th>Conta</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th>Ação</th>
-                  </tr>
-                </thead>
+                    <span>
+                      Cadastre uma receita na página Financeiro
+                      para visualizar aqui.
+                    </span>
+                  </td>
+                </tr>
+              ) : (
+                filteredRevenues.map((item) => {
+                  const status = getStatus(item);
 
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="receivable-empty">
-                        Carregando receitas...
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <div className="receivable-description">
+                          <strong>{item.description}</strong>
+                          <small>
+                            {item.subcategory || "Sem subcategoria"}
+                          </small>
+                        </div>
                       </td>
-                    </tr>
-                  ) : filteredRevenues.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="receivable-empty">
-                        <div className="receivable-empty-icon">▤</div>
 
-                        <strong>Nenhuma receita encontrada</strong>
+                      <td>{item.category || "Não informada"}</td>
 
-                        <span>
-                          Cadastre uma receita na página Financeiro
-                          para visualizar aqui.
+                      <td>
+                        <span
+                          className={
+                            isOverdue(item)
+                              ? "receivable-date date-overdue"
+                              : "receivable-date"
+                          }
+                        >
+                          {formatDate(item.date)}
                         </span>
                       </td>
+
+                      <td>{item.account || "Não informada"}</td>
+
+                      <td className="receivable-amount">
+                        {formatCurrency(Number(item.amount || 0))}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`receivable-status ${
+                            status === "Recebida"
+                              ? "status-received"
+                              : status === "Atrasada"
+                                ? "status-overdue"
+                                : status === "Cancelada"
+                                  ? "status-cancelled"
+                                  : "status-pending"
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+
+                      <td>
+                        {!isReceived(item.status) &&
+                        !isCancelled(item.status) ? (
+                          <button
+                            type="button"
+                            className="receive-button"
+                            onClick={() => markAsReceived(item)}
+                          >
+                            Marcar recebida
+                          </button>
+                        ) : isReceived(item.status) ? (
+                          <button
+                            type="button"
+                            className="reopen-button"
+                            onClick={() => reopenRevenue(item)}
+                          >
+                            Reabrir
+                          </button>
+                        ) : (
+                          <span className="no-action">—</span>
+                        )}
+                      </td>
                     </tr>
-                  ) : (
-                    filteredRevenues.map((item) => {
-                      const status = getStatus(item);
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
-                      return (
-                        <tr key={item.id}>
-                          <td>
-                            <div className="receivable-description">
-                              <strong>{item.description}</strong>
-                              <small>
-                                {item.subcategory || "Sem subcategoria"}
-                              </small>
-                            </div>
-                          </td>
+        <div className="receivable-footer-table">
+          <span>
+            Exibindo <strong>{filteredRevenues.length}</strong> de{" "}
+            <strong>{revenues.length}</strong> receitas
+          </span>
 
-                          <td>{item.category || "Não informada"}</td>
-
-                          <td>
-                            <span
-                              className={
-                                isOverdue(item)
-                                  ? "receivable-date date-overdue"
-                                  : "receivable-date"
-                              }
-                            >
-                              {formatDate(item.date)}
-                            </span>
-                          </td>
-
-                          <td>{item.account || "Não informada"}</td>
-
-                          <td className="receivable-amount">
-                            {formatCurrency(Number(item.amount || 0))}
-                          </td>
-
-                          <td>
-                            <span
-                              className={`receivable-status ${
-                                status === "Recebida"
-                                  ? "status-received"
-                                  : status === "Atrasada"
-                                    ? "status-overdue"
-                                    : status === "Cancelada"
-                                      ? "status-cancelled"
-                                      : "status-pending"
-                              }`}
-                            >
-                              {status}
-                            </span>
-                          </td>
-
-                          <td>
-                            {!isReceived(item.status) &&
-                            !isCancelled(item.status) ? (
-                              <button
-                                className="receive-button"
-                                onClick={() => markAsReceived(item)}
-                              >
-                                Marcar recebida
-                              </button>
-                            ) : isReceived(item.status) ? (
-                              <button
-                                className="reopen-button"
-                                onClick={() => reopenRevenue(item)}
-                              >
-                                Reabrir
-                              </button>
-                            ) : (
-                              <span className="no-action">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="receivable-footer-table">
-              <span>
-                Exibindo <strong>{filteredRevenues.length}</strong> de{" "}
-                <strong>{revenues.length}</strong> receitas
-              </span>
-
-              <span>
-                Total listado:{" "}
-                <strong>
-                  {formatCurrency(
-                    filteredRevenues.reduce(
-                      (total, item) =>
-                        total + Number(item.amount || 0),
-                      0
-                    )
-                  )}
-                </strong>
-              </span>
-            </div>
-          </section>
-
-          <footer className="routine-footer">
-            NEXO · Planeje. Organize. Conquiste.
-          </footer>
+          <span>
+            Total listado:{" "}
+            <strong>
+              {formatCurrency(
+                filteredRevenues.reduce(
+                  (total, item) =>
+                    total + Number(item.amount || 0),
+                  0
+                )
+              )}
+            </strong>
+          </span>
         </div>
       </section>
+
+      <footer className="routine-footer">
+        NEXO · Planeje. Organize. Conquiste.
+      </footer>
 
       <style jsx global>{`
         .receivable-content-page {
@@ -909,6 +900,6 @@ export default function ContasAReceberPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

@@ -3,7 +3,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Account = {
   id: number;
@@ -68,14 +67,6 @@ function localDate() {
     String(date.getMonth() + 1).padStart(2, "0"),
     String(date.getDate()).padStart(2, "0"),
   ].join("-");
-}
-
-function formatLongDate() {
-  return new Date().toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function formatDate(value: string) {
@@ -206,287 +197,261 @@ export default function ContasFinanceirasPage() {
   }
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content accounts-content">
+      <section className="accounts-intro">
+        <div>
+          <span className="accounts-eyebrow">
+            GESTÃO FINANCEIRA
+          </span>
+          <h2>Minhas contas</h2>
+          <p>
+            Centralize suas contas bancárias, carteiras e demais
+            recursos financeiros em um só lugar.
+          </p>
+        </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div className="accounts-topbar-left">
-            <div className="accounts-breadcrumb">
-              <Link href="/">NEXO</Link>
-              <span>/</span>
-              <Link href="/financeiro">FINANCEIRO</Link>
-              <span>/</span>
-              <span>CONTAS</span>
-            </div>
+        <Link href="/financeiro" className="accounts-back-link">
+          <span>←</span>
+          Voltar ao financeiro
+        </Link>
+      </section>
 
-            <h1>Contas financeiras</h1>
-            <p>Gerencie suas contas e organize seus saldos iniciais.</p>
+      <section className="accounts-summary-grid">
+        <article className="accounts-summary-card">
+          <div className="accounts-summary-top">
+            <span>Contas cadastradas</span>
+            <span className="accounts-summary-icon">▣</span>
           </div>
+          <strong>{accounts.length}</strong>
+          <small>Total de contas registradas</small>
+        </article>
 
-          <div className="accounts-topbar-right">
-            <span className="accounts-date">{formatLongDate()}</span>
-            <div className="accounts-avatar">N</div>
+        <article className="accounts-summary-card">
+          <div className="accounts-summary-top">
+            <span>Contas ativas</span>
+            <span className="accounts-summary-icon">✓</span>
           </div>
-        </header>
+          <strong>{activeAccounts.length}</strong>
+          <small>Disponíveis para movimentação</small>
+        </article>
 
-        <div className="content accounts-content">
-          <section className="accounts-intro">
-            <div>
-              <span className="accounts-eyebrow">
-                GESTÃO FINANCEIRA
-              </span>
-              <h2>Minhas contas</h2>
-              <p>
-                Centralize suas contas bancárias, carteiras e demais
-                recursos financeiros em um só lugar.
-              </p>
+        <article className="accounts-summary-card featured">
+          <div className="accounts-summary-top">
+            <span>Saldo inicial total</span>
+            <span className="accounts-summary-icon">R$</span>
+          </div>
+          <strong>{money(totalInitialBalance)}</strong>
+          <small>
+            Soma dos saldos iniciais das contas ativas
+          </small>
+        </article>
+      </section>
+
+      <section className="accounts-panel">
+        <div className="accounts-section-heading">
+          <div>
+            <span className="accounts-eyebrow">CADASTRO</span>
+            <h2>Nova conta</h2>
+            <p>
+              Cadastre uma conta para organizar seu patrimônio
+              financeiro.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={addAccount}>
+          <div className="accounts-form-grid">
+            <div className="accounts-field">
+              <label htmlFor="account-name">Nome da conta</label>
+              <input
+                id="account-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Ex.: Minha conta principal"
+                required
+              />
             </div>
 
-            <Link href="/financeiro" className="accounts-back-link">
-              <span>←</span>
-              Voltar ao financeiro
-            </Link>
-          </section>
-
-          <section className="accounts-summary-grid">
-            <article className="accounts-summary-card">
-              <div className="accounts-summary-top">
-                <span>Contas cadastradas</span>
-                <span className="accounts-summary-icon">▣</span>
-              </div>
-              <strong>{accounts.length}</strong>
-              <small>Total de contas registradas</small>
-            </article>
-
-            <article className="accounts-summary-card">
-              <div className="accounts-summary-top">
-                <span>Contas ativas</span>
-                <span className="accounts-summary-icon">✓</span>
-              </div>
-              <strong>{activeAccounts.length}</strong>
-              <small>Disponíveis para movimentação</small>
-            </article>
-
-            <article className="accounts-summary-card featured">
-              <div className="accounts-summary-top">
-                <span>Saldo inicial total</span>
-                <span className="accounts-summary-icon">R$</span>
-              </div>
-              <strong>{money(totalInitialBalance)}</strong>
-              <small>
-                Soma dos saldos iniciais das contas ativas
-              </small>
-            </article>
-          </section>
-
-          <section className="accounts-panel">
-            <div className="accounts-section-heading">
-              <div>
-                <span className="accounts-eyebrow">CADASTRO</span>
-                <h2>Nova conta</h2>
-                <p>
-                  Cadastre uma conta para organizar seu patrimônio
-                  financeiro.
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={addAccount}>
-              <div className="accounts-form-grid">
-                <div className="accounts-field">
-                  <label htmlFor="account-name">Nome da conta</label>
-                  <input
-                    id="account-name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Ex.: Minha conta principal"
-                    required
-                  />
-                </div>
-
-                <div className="accounts-field">
-                  <label htmlFor="account-institution">
-                    Banco / Instituição
-                  </label>
-                  <select
-                    id="account-institution"
-                    value={institution}
-                    onChange={(event) =>
-                      setInstitution(event.target.value)
-                    }
-                  >
-                    {institutions.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="accounts-field">
-                  <label htmlFor="account-type">Tipo de conta</label>
-                  <select
-                    id="account-type"
-                    value={type}
-                    onChange={(event) => setType(event.target.value)}
-                  >
-                    {accountTypes.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="accounts-field">
-                  <label htmlFor="account-balance">
-                    Saldo inicial (R$)
-                  </label>
-                  <input
-                    id="account-balance"
-                    value={initialBalance}
-                    onChange={(event) =>
-                      setInitialBalance(event.target.value)
-                    }
-                    placeholder="0,00"
-                    inputMode="decimal"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="accounts-form-actions">
-                <button type="submit">
-                  <span>+</span>
-                  Cadastrar conta
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section className="accounts-panel">
-            <div className="accounts-section-heading accounts-history-heading">
-              <div>
-                <span className="accounts-eyebrow">CONTROLE</span>
-                <h2>Contas cadastradas</h2>
-                <p>
-                  Consulte, ative, desative ou exclua suas contas.
-                </p>
-              </div>
-
-              <div className="accounts-filter">
-                <label htmlFor="account-filter">Exibir</label>
-                <select
-                  id="account-filter"
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value)}
-                >
-                  <option value="Todas">Todas</option>
-                  <option value="Ativas">Ativas</option>
-                  <option value="Inativas">Inativas</option>
-                </select>
-              </div>
-            </div>
-
-            {!loaded ? (
-              <div className="accounts-empty-state">
-                <strong>Carregando contas...</strong>
-              </div>
-            ) : filteredAccounts.length === 0 ? (
-              <div className="accounts-empty-state">
-                <span>▣</span>
-                <strong>Nenhuma conta encontrada</strong>
-                <p>
-                  {filter === "Todas"
-                    ? "Cadastre sua primeira conta para começar a organizar seu patrimônio financeiro."
-                    : `Não existem contas ${filter.toLowerCase()} no momento.`}
-                </p>
-              </div>
-            ) : (
-              <div className="accounts-list">
-                {filteredAccounts.map((account) => (
-                  <article
-                    className="accounts-item"
-                    key={account.id}
-                  >
-                    <div className="accounts-item-icon">▣</div>
-
-                    <div className="accounts-item-info">
-                      <strong>{account.name}</strong>
-                      <span>
-                        {account.institution} · {account.type}
-                      </span>
-                      <small>
-                        Cadastrada em {formatDate(account.createdAt)}
-                      </small>
-                    </div>
-
-                    <div className="accounts-item-balance">
-                      <span>Saldo inicial</span>
-                      <strong>
-                        {money(account.initialBalance)}
-                      </strong>
-                    </div>
-
-                    <div className="accounts-item-actions">
-                      <span
-                        className={
-                          account.active
-                            ? "accounts-status active"
-                            : "accounts-status inactive"
-                        }
-                      >
-                        {account.active ? "Ativa" : "Inativa"}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => toggleAccount(account.id)}
-                        title={
-                          account.active
-                            ? "Desativar conta"
-                            : "Ativar conta"
-                        }
-                      >
-                        {account.active ? "Desativar" : "Ativar"}
-                      </button>
-
-                      <button
-                        type="button"
-                        className="accounts-delete-button"
-                        onClick={() => removeAccount(account.id)}
-                        title="Excluir conta"
-                        aria-label={`Excluir conta ${account.name}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </article>
+            <div className="accounts-field">
+              <label htmlFor="account-institution">
+                Banco / Instituição
+              </label>
+              <select
+                id="account-institution"
+                value={institution}
+                onChange={(event) =>
+                  setInstitution(event.target.value)
+                }
+              >
+                {institutions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
                 ))}
-              </div>
-            )}
-          </section>
-
-          <section className="accounts-information">
-            <div className="accounts-information-icon">i</div>
-            <div>
-              <strong>Importante</strong>
-              <p>
-                Nesta etapa, o sistema registra os saldos iniciais. O
-                saldo disponível será calculado posteriormente,
-                considerando receitas, despesas, transferências,
-                aplicações e resgates efetivados. Os lançamentos
-                existentes não serão alterados.
-              </p>
+              </select>
             </div>
-          </section>
 
-          <footer className="accounts-footer">
-            NEXO · Planeje. Organize. Conquiste.
-          </footer>
+            <div className="accounts-field">
+              <label htmlFor="account-type">Tipo de conta</label>
+              <select
+                id="account-type"
+                value={type}
+                onChange={(event) => setType(event.target.value)}
+              >
+                {accountTypes.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="accounts-field">
+              <label htmlFor="account-balance">
+                Saldo inicial (R$)
+              </label>
+              <input
+                id="account-balance"
+                value={initialBalance}
+                onChange={(event) =>
+                  setInitialBalance(event.target.value)
+                }
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="accounts-form-actions">
+            <button type="submit">
+              <span>+</span>
+              Cadastrar conta
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="accounts-panel">
+        <div className="accounts-section-heading accounts-history-heading">
+          <div>
+            <span className="accounts-eyebrow">CONTROLE</span>
+            <h2>Contas cadastradas</h2>
+            <p>
+              Consulte, ative, desative ou exclua suas contas.
+            </p>
+          </div>
+
+          <div className="accounts-filter">
+            <label htmlFor="account-filter">Exibir</label>
+            <select
+              id="account-filter"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+            >
+              <option value="Todas">Todas</option>
+              <option value="Ativas">Ativas</option>
+              <option value="Inativas">Inativas</option>
+            </select>
+          </div>
+        </div>
+
+        {!loaded ? (
+          <div className="accounts-empty-state">
+            <strong>Carregando contas...</strong>
+          </div>
+        ) : filteredAccounts.length === 0 ? (
+          <div className="accounts-empty-state">
+            <span>▣</span>
+            <strong>Nenhuma conta encontrada</strong>
+            <p>
+              {filter === "Todas"
+                ? "Cadastre sua primeira conta para começar a organizar seu patrimônio financeiro."
+                : `Não existem contas ${filter.toLowerCase()} no momento.`}
+            </p>
+          </div>
+        ) : (
+          <div className="accounts-list">
+            {filteredAccounts.map((account) => (
+              <article
+                className="accounts-item"
+                key={account.id}
+              >
+                <div className="accounts-item-icon">▣</div>
+
+                <div className="accounts-item-info">
+                  <strong>{account.name}</strong>
+                  <span>
+                    {account.institution} · {account.type}
+                  </span>
+                  <small>
+                    Cadastrada em {formatDate(account.createdAt)}
+                  </small>
+                </div>
+
+                <div className="accounts-item-balance">
+                  <span>Saldo inicial</span>
+                  <strong>
+                    {money(account.initialBalance)}
+                  </strong>
+                </div>
+
+                <div className="accounts-item-actions">
+                  <span
+                    className={
+                      account.active
+                        ? "accounts-status active"
+                        : "accounts-status inactive"
+                    }
+                  >
+                    {account.active ? "Ativa" : "Inativa"}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleAccount(account.id)}
+                    title={
+                      account.active
+                        ? "Desativar conta"
+                        : "Ativar conta"
+                    }
+                  >
+                    {account.active ? "Desativar" : "Ativar"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="accounts-delete-button"
+                    onClick={() => removeAccount(account.id)}
+                    title="Excluir conta"
+                    aria-label={`Excluir conta ${account.name}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="accounts-information">
+        <div className="accounts-information-icon">i</div>
+        <div>
+          <strong>Importante</strong>
+          <p>
+            Nesta etapa, o sistema registra os saldos iniciais. O
+            saldo disponível será calculado posteriormente,
+            considerando receitas, despesas, transferências,
+            aplicações e resgates efetivados. Os lançamentos
+            existentes não serão alterados.
+          </p>
         </div>
       </section>
+
+      <footer className="accounts-footer">
+        NEXO · Planeje. Organize. Conquiste.
+      </footer>
 
       <style jsx global>{`
         .accounts-content {
@@ -494,72 +459,6 @@ export default function ContasFinanceirasPage() {
           flex-direction: column;
           gap: 20px;
           min-width: 0;
-        }
-
-        .accounts-topbar-left {
-          min-width: 0;
-        }
-
-        .accounts-breadcrumb {
-          display: flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 9px;
-          margin-bottom: 8px;
-          color: #85858d;
-          font-size: 10px;
-          letter-spacing: 0.7px;
-        }
-
-        .accounts-breadcrumb a {
-          color: #bdbdc5;
-          text-decoration: none;
-        }
-
-        .accounts-breadcrumb a:hover {
-          color: #fff;
-        }
-
-        .accounts-topbar-left h1 {
-          margin: 0;
-          color: #f5f5f6;
-          font-family: "Manrope", sans-serif;
-          font-size: 25px;
-          font-weight: 700;
-          letter-spacing: -0.8px;
-        }
-
-        .accounts-topbar-left p {
-          margin: 5px 0 0;
-          color: #898991;
-          font-size: 12px;
-        }
-
-        .accounts-topbar-right {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          flex-shrink: 0;
-        }
-
-        .accounts-date {
-          color: #9999a2;
-          font-size: 11px;
-          white-space: nowrap;
-        }
-
-        .accounts-avatar {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          border: 1px solid #414148;
-          border-radius: 50%;
-          color: #f5f5f6;
-          background: #252529;
-          font-size: 13px;
-          font-weight: 700;
         }
 
         .accounts-intro {
@@ -1033,18 +932,6 @@ export default function ContasFinanceirasPage() {
         }
 
         @media (max-width: 700px) {
-          .accounts-topbar-left h1 {
-            font-size: 21px;
-          }
-
-          .accounts-topbar-right {
-            gap: 9px;
-          }
-
-          .accounts-date {
-            font-size: 10px;
-          }
-
           .accounts-intro {
             align-items: flex-start;
             flex-direction: column;
@@ -1107,15 +994,11 @@ export default function ContasFinanceirasPage() {
             grid-template-columns: 1fr;
           }
 
-          .accounts-topbar-right {
-            align-items: flex-start;
-          }
-
           .accounts-item-actions {
             flex-wrap: wrap;
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

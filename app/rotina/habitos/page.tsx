@@ -2,7 +2,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Frequency = "Diário" | "Dias úteis" | "3 vezes por semana";
 
@@ -334,277 +333,133 @@ export default function HabitosPage() {
   const filters: HabitFilter[] = ["Todos", "Pendentes", "Concluídos"];
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content">
+      <section className="page-heading">
+        <div>
+          <div className="eyebrow">DESENVOLVIMENTO PESSOAL</div>
+          <h1>Meus hábitos</h1>
+          <p>
+            Construa bons hábitos, acompanhe sua consistência e evolua
+            um dia de cada vez.
+          </p>
+        </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div className="breadcrumb">
-            Minha rotina <span>/</span> <strong>Hábitos</strong>
+        <button className="primary-button" onClick={openNewHabit}>
+          <span>＋</span> Novo hábito
+        </button>
+      </section>
+
+      <section className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Hábitos ativos</span>
+            <span className="metric-icon">▤</span>
+          </div>
+          <div className="metric-value">{metrics.total}</div>
+          <div className="metric-description">Hábitos em acompanhamento</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Concluídos hoje</span>
+            <span className="metric-icon">✓</span>
+          </div>
+          <div className="metric-value">{metrics.completed}</div>
+          <div className="metric-description">Hábitos realizados hoje</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Pendentes hoje</span>
+            <span className="metric-icon">◷</span>
+          </div>
+          <div className="metric-value">{metrics.pending}</div>
+          <div className="metric-description">Ainda precisam ser realizados</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Desempenho diário</span>
+            <span className="metric-icon">%</span>
+          </div>
+          <div className="metric-value">{metrics.percentage}%</div>
+          <div className="metric-description">Percentual de conclusão</div>
+        </div>
+      </section>
+
+      <section className="progress-section">
+        <div className="progress-info">
+          <div>
+            <span className="section-label">CONSISTÊNCIA DIÁRIA</span>
+            <h2>Seu progresso de hoje</h2>
+            <p>
+              Você realizou {metrics.completed} de {metrics.total} hábitos
+              ativos.
+            </p>
           </div>
 
-          <div className="topbar-right">
-            <span className="topbar-date">
-              {new Date().toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-
-            <div className="profile-avatar">N</div>
+          <div className="progress-percentage">
+            {metrics.percentage}%
           </div>
-        </header>
+        </div>
 
-        <div className="content">
-          <section className="page-heading">
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{ width: `${metrics.percentage}%` }}
+          />
+        </div>
+
+        <div className="progress-footer">
+          <span>{metrics.completed} realizados</span>
+          <span>{metrics.pending} restantes</span>
+        </div>
+      </section>
+
+      {showForm && (
+        <section className="form-card" id="habit-form">
+          <div className="form-heading">
             <div>
-              <div className="eyebrow">DESENVOLVIMENTO PESSOAL</div>
-              <h1>Meus hábitos</h1>
-              <p>
-                Construa bons hábitos, acompanhe sua consistência e evolua
-                um dia de cada vez.
-              </p>
+              <span className="section-label">
+                {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
+              </span>
+              <h2>
+                {editingId !== null
+                  ? "Editar hábito"
+                  : "Cadastrar hábito"}
+              </h2>
             </div>
 
-            <button className="primary-button" onClick={openNewHabit}>
-              <span>＋</span> Novo hábito
+            <button
+              className="close-button"
+              onClick={resetForm}
+              type="button"
+              aria-label="Fechar formulário"
+            >
+              ×
             </button>
-          </section>
+          </div>
 
-          <section className="metrics-grid">
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Hábitos ativos</span>
-                <span className="metric-icon">▤</span>
-              </div>
-              <div className="metric-value">{metrics.total}</div>
-              <div className="metric-description">Hábitos em acompanhamento</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Concluídos hoje</span>
-                <span className="metric-icon">✓</span>
-              </div>
-              <div className="metric-value">{metrics.completed}</div>
-              <div className="metric-description">Hábitos realizados hoje</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Pendentes hoje</span>
-                <span className="metric-icon">◷</span>
-              </div>
-              <div className="metric-value">{metrics.pending}</div>
-              <div className="metric-description">Ainda precisam ser realizados</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Desempenho diário</span>
-                <span className="metric-icon">%</span>
-              </div>
-              <div className="metric-value">{metrics.percentage}%</div>
-              <div className="metric-description">Percentual de conclusão</div>
-            </div>
-          </section>
-
-          <section className="progress-section">
-            <div className="progress-info">
-              <div>
-                <span className="section-label">CONSISTÊNCIA DIÁRIA</span>
-                <h2>Seu progresso de hoje</h2>
-                <p>
-                  Você realizou {metrics.completed} de {metrics.total} hábitos
-                  ativos.
-                </p>
-              </div>
-
-              <div className="progress-percentage">
-                {metrics.percentage}%
-              </div>
-            </div>
-
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${metrics.percentage}%` }}
-              />
-            </div>
-
-            <div className="progress-footer">
-              <span>{metrics.completed} realizados</span>
-              <span>{metrics.pending} restantes</span>
-            </div>
-          </section>
-
-          {showForm && (
-            <section className="form-card" id="habit-form">
-              <div className="form-heading">
-                <div>
-                  <span className="section-label">
-                    {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
-                  </span>
-                  <h2>
-                    {editingId !== null
-                      ? "Editar hábito"
-                      : "Cadastrar hábito"}
-                  </h2>
-                </div>
-
-                <button
-                  className="close-button"
-                  onClick={resetForm}
-                  type="button"
-                  aria-label="Fechar formulário"
-                >
-                  ×
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit}>
-                <div className="form-field full-field">
-                  <label>Nome do hábito *</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Ex.: Treinar musculação"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div className="form-grid">
-                  <div className="form-field">
-                    <label>Categoria</label>
-                    <select
-                      value={category}
-                      onChange={(event) => setCategory(event.target.value)}
-                    >
-                      {CATEGORIES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-field">
-                    <label>Frequência</label>
-                    <select
-                      value={frequency}
-                      onChange={(event) =>
-                        setFrequency(event.target.value as Frequency)
-                      }
-                    >
-                      {FREQUENCIES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-field">
-                    <label>Horário previsto</label>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(event) => setTime(event.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-field full-field">
-                  <label>Observações</label>
-                  <textarea
-                    value={notes}
-                    onChange={(event) => setNotes(event.target.value)}
-                    placeholder="Adicione detalhes ou metas para este hábito..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={resetForm}
-                  >
-                    Cancelar
-                  </button>
-
-                  <button type="submit" className="primary-button">
-                    {editingId !== null
-                      ? "Salvar alterações"
-                      : "Cadastrar hábito"}
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
-
-          <section className="habits-section">
-            <div className="habits-heading">
-              <div>
-                <span className="section-label">ACOMPANHAMENTO</span>
-                <h2>Minha rotina de hábitos</h2>
-                <p>
-                  Marque os hábitos realizados e acompanhe sua evolução.
-                </p>
-              </div>
-
-              <div className="habit-count">
-                {filteredHabits.length}{" "}
-                {filteredHabits.length === 1 ? "hábito" : "hábitos"}
-              </div>
-            </div>
-
-            <div className="search-container">
-              <span className="search-icon">⌕</span>
+          <form onSubmit={handleSubmit}>
+            <div className="form-field full-field">
+              <label>Nome do hábito *</label>
               <input
                 type="text"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar hábito ou observação..."
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Ex.: Treinar musculação"
+                required
+                autoFocus
               />
-
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="clear-search"
-                  type="button"
-                >
-                  ×
-                </button>
-              )}
             </div>
 
-            <div className="filters-row">
-              <div className="filter-tabs">
-                {filters.map((item) => (
-                  <button
-                    key={item}
-                    className={`filter-tab ${
-                      filter === item ? "selected" : ""
-                    }`}
-                    onClick={() => setFilter(item)}
-                    type="button"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-
-              <div className="select-filters">
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Categoria</label>
                 <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value)}
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
                 >
-                  <option value="Todas">Todas as categorias</option>
                   {CATEGORIES.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -612,243 +467,305 @@ export default function HabitosPage() {
                   ))}
                 </select>
               </div>
-            </div>
 
-            <div className="habit-list">
-              {!loaded ? (
-                <div className="empty-state">
-                  <div className="empty-icon">◷</div>
-                  <h3>Carregando hábitos...</h3>
-                </div>
-              ) : filteredHabits.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">✧</div>
-                  <h3>Nenhum hábito encontrado</h3>
-                  <p>
-                    Cadastre um novo hábito ou altere os filtros para visualizar
-                    seus registros.
-                  </p>
-
-                  <button
-                    className="secondary-button"
-                    onClick={() => {
-                      setFilter("Todos");
-                      setCategoryFilter("Todas");
-                      setSearch("");
-                    }}
-                    type="button"
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              ) : (
-                filteredHabits.map((habit) => {
-                  const completedToday =
-                    habit.completedDates.includes(today);
-
-                  const streak = getStreak(habit, today);
-                  const weekProgress = getWeekProgress(habit, today);
-
-                  return (
-                    <article
-                      className={`habit-item ${
-                        completedToday ? "habit-completed" : ""
-                      }`}
-                      key={habit.id}
-                    >
-                      <button
-                        className={`habit-check ${
-                          completedToday ? "checked" : ""
-                        }`}
-                        onClick={() => toggleCompletion(habit.id)}
-                        type="button"
-                        aria-label={
-                          completedToday
-                            ? "Desmarcar hábito"
-                            : "Marcar hábito como concluído"
-                        }
-                      >
-                        {completedToday ? "✓" : ""}
-                      </button>
-
-                      <div className="habit-content">
-                        <div className="habit-title-row">
-                          <h3>{habit.name}</h3>
-
-                          {completedToday && (
-                            <span className="completed-tag">Concluído</span>
-                          )}
-                        </div>
-
-                        <div className="habit-meta">
-                          <span>{habit.category}</span>
-                          <span className="meta-separator">•</span>
-                          <span>{habit.frequency}</span>
-
-                          {habit.time && (
-                            <>
-                              <span className="meta-separator">•</span>
-                              <span>{habit.time}</span>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="habit-stats">
-                          <span className="streak-indicator">
-                            <span>↗</span> {streak}{" "}
-                            {streak === 1 ? "dia seguido" : "dias seguidos"}
-                          </span>
-                          <span className="week-indicator">
-                            Semana: {weekProgress}/7
-                          </span>
-                        </div>
-
-                        {habit.notes && (
-                          <p className="habit-notes">{habit.notes}</p>
-                        )}
-                      </div>
-
-                      <div className="habit-actions">
-                        <button
-                          className="icon-action"
-                          onClick={() => editHabit(habit)}
-                          title="Editar hábito"
-                          type="button"
-                        >
-                          ✎
-                        </button>
-
-                        <button
-                          className="icon-action"
-                          onClick={() => toggleActive(habit.id)}
-                          title="Desativar hábito"
-                          type="button"
-                        >
-                          ◷
-                        </button>
-
-                        <button
-                          className="icon-action delete-action"
-                          onClick={() => deleteHabit(habit.id)}
-                          title="Excluir hábito"
-                          type="button"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })
-              )}
-            </div>
-          </section>
-
-          {habits.some((habit) => !habit.active) && (
-            <section className="inactive-section">
-              <div className="inactive-heading">
-                <div>
-                  <span className="section-label">ARQUIVO</span>
-                  <h2>Hábitos desativados</h2>
-                </div>
-                <span className="inactive-count">
-                  {habits.filter((habit) => !habit.active).length}
-                </span>
+              <div className="form-field">
+                <label>Frequência</label>
+                <select
+                  value={frequency}
+                  onChange={(event) =>
+                    setFrequency(event.target.value as Frequency)
+                  }
+                >
+                  {FREQUENCIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {habits
-                .filter((habit) => !habit.active)
-                .map((habit) => (
-                  <div className="inactive-item" key={habit.id}>
-                    <div>
-                      <strong>{habit.name}</strong>
-                      <span>{habit.category}</span>
-                    </div>
+              <div className="form-field">
+                <label>Horário previsto</label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                />
+              </div>
+            </div>
 
-                    <div className="inactive-actions">
-                      <button
-                        type="button"
-                        onClick={() => toggleActive(habit.id)}
-                      >
-                        Reativar
-                      </button>
-                      <button
-                        type="button"
-                        className="delete-action"
-                        onClick={() => deleteHabit(habit.id)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </section>
+            <div className="form-field full-field">
+              <label>Observações</label>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Adicione detalhes ou metas para este hábito..."
+                rows={3}
+              />
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
+
+              <button type="submit" className="primary-button">
+                {editingId !== null
+                  ? "Salvar alterações"
+                  : "Cadastrar hábito"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      <section className="habits-section">
+        <div className="habits-heading">
+          <div>
+            <span className="section-label">ACOMPANHAMENTO</span>
+            <h2>Minha rotina de hábitos</h2>
+            <p>
+              Marque os hábitos realizados e acompanhe sua evolução.
+            </p>
+          </div>
+
+          <div className="habit-count">
+            {filteredHabits.length}{" "}
+            {filteredHabits.length === 1 ? "hábito" : "hábitos"}
+          </div>
+        </div>
+
+        <div className="search-container">
+          <span className="search-icon">⌕</span>
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar hábito ou observação..."
+          />
+
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="clear-search"
+              type="button"
+            >
+              ×
+            </button>
           )}
+        </div>
 
-          <footer className="page-footer">
-            <span>NEXO · GESTÃO PESSOAL</span>
-            <span>Pequenos hábitos, grandes resultados.</span>
-          </footer>
+        <div className="filters-row">
+          <div className="filter-tabs">
+            {filters.map((item) => (
+              <button
+                key={item}
+                className={`filter-tab ${
+                  filter === item ? "selected" : ""
+                }`}
+                onClick={() => setFilter(item)}
+                type="button"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="select-filters">
+            <select
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+            >
+              <option value="Todas">Todas as categorias</option>
+              {CATEGORIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="habit-list">
+          {!loaded ? (
+            <div className="empty-state">
+              <div className="empty-icon">◷</div>
+              <h3>Carregando hábitos...</h3>
+            </div>
+          ) : filteredHabits.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">✧</div>
+              <h3>Nenhum hábito encontrado</h3>
+              <p>
+                Cadastre um novo hábito ou altere os filtros para visualizar
+                seus registros.
+              </p>
+
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setFilter("Todos");
+                  setCategoryFilter("Todas");
+                  setSearch("");
+                }}
+                type="button"
+              >
+                Limpar filtros
+              </button>
+            </div>
+          ) : (
+            filteredHabits.map((habit) => {
+              const completedToday =
+                habit.completedDates.includes(today);
+
+              const streak = getStreak(habit, today);
+              const weekProgress = getWeekProgress(habit, today);
+
+              return (
+                <article
+                  className={`habit-item ${
+                    completedToday ? "habit-completed" : ""
+                  }`}
+                  key={habit.id}
+                >
+                  <button
+                    className={`habit-check ${
+                      completedToday ? "checked" : ""
+                    }`}
+                    onClick={() => toggleCompletion(habit.id)}
+                    type="button"
+                    aria-label={
+                      completedToday
+                        ? "Desmarcar hábito"
+                        : "Marcar hábito como concluído"
+                    }
+                  >
+                    {completedToday ? "✓" : ""}
+                  </button>
+
+                  <div className="habit-content">
+                    <div className="habit-title-row">
+                      <h3>{habit.name}</h3>
+
+                      {completedToday && (
+                        <span className="completed-tag">Concluído</span>
+                      )}
+                    </div>
+
+                    <div className="habit-meta">
+                      <span>{habit.category}</span>
+                      <span className="meta-separator">•</span>
+                      <span>{habit.frequency}</span>
+
+                      {habit.time && (
+                        <>
+                          <span className="meta-separator">•</span>
+                          <span>{habit.time}</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="habit-stats">
+                      <span className="streak-indicator">
+                        <span>↗</span> {streak}{" "}
+                        {streak === 1 ? "dia seguido" : "dias seguidos"}
+                      </span>
+                      <span className="week-indicator">
+                        Semana: {weekProgress}/7
+                      </span>
+                    </div>
+
+                    {habit.notes && (
+                      <p className="habit-notes">{habit.notes}</p>
+                    )}
+                  </div>
+
+                  <div className="habit-actions">
+                    <button
+                      className="icon-action"
+                      onClick={() => editHabit(habit)}
+                      title="Editar hábito"
+                      type="button"
+                    >
+                      ✎
+                    </button>
+
+                    <button
+                      className="icon-action"
+                      onClick={() => toggleActive(habit.id)}
+                      title="Desativar hábito"
+                      type="button"
+                    >
+                      ◷
+                    </button>
+
+                    <button
+                      className="icon-action delete-action"
+                      onClick={() => deleteHabit(habit.id)}
+                      title="Excluir hábito"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          )}
         </div>
       </section>
 
+      {habits.some((habit) => !habit.active) && (
+        <section className="inactive-section">
+          <div className="inactive-heading">
+            <div>
+              <span className="section-label">ARQUIVO</span>
+              <h2>Hábitos desativados</h2>
+            </div>
+            <span className="inactive-count">
+              {habits.filter((habit) => !habit.active).length}
+            </span>
+          </div>
+
+          {habits
+            .filter((habit) => !habit.active)
+            .map((habit) => (
+              <div className="inactive-item" key={habit.id}>
+                <div>
+                  <strong>{habit.name}</strong>
+                  <span>{habit.category}</span>
+                </div>
+
+                <div className="inactive-actions">
+                  <button
+                    type="button"
+                    onClick={() => toggleActive(habit.id)}
+                  >
+                    Reativar
+                  </button>
+                  <button
+                    type="button"
+                    className="delete-action"
+                    onClick={() => deleteHabit(habit.id)}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+        </section>
+      )}
+
+      <footer className="page-footer">
+        <span>NEXO · GESTÃO PESSOAL</span>
+        <span>Pequenos hábitos, grandes resultados.</span>
+      </footer>
+
       <style jsx>{`
-        .main-area {
-          flex: 1;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .topbar {
-          min-height: 68px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 38px;
-          border-bottom: 1px solid #22272d;
-          background: #0e1115;
-        }
-
-        .breadcrumb {
-          color: #858d98;
-          font-size: 12px;
-        }
-
-        .breadcrumb span {
-          margin: 0 9px;
-          color: #515965;
-        }
-
-        .breadcrumb strong {
-          color: #e8e9ec;
-          font-weight: 600;
-        }
-
-        .topbar-right {
-          display: flex;
-          align-items: center;
-          gap: 18px;
-        }
-
-        .topbar-date {
-          color: #89919c;
-          font-size: 11px;
-          text-transform: capitalize;
-        }
-
-        .profile-avatar {
-          width: 33px;
-          height: 33px;
-          display: grid;
-          place-items: center;
-          border-radius: 50%;
-          background: #252b33;
-          border: 1px solid #414954;
-          color: #f0f1f3;
-          font-size: 13px;
-          font-weight: 700;
-        }
-
         .content {
           width: 100%;
           max-width: 1450px;
@@ -1493,15 +1410,6 @@ export default function HabitosPage() {
         }
 
         @media (max-width: 760px) {
-          .topbar {
-            min-height: 56px;
-            padding: 0 17px;
-          }
-
-          .topbar-date {
-            display: none;
-          }
-
           .content {
             padding: 25px 16px;
           }
@@ -1585,6 +1493,6 @@ export default function HabitosPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

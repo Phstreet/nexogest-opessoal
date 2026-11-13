@@ -2,7 +2,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -297,434 +296,409 @@ export default function AgendaPage() {
   }
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content agenda-content">
+      <section className="agenda-welcome">
+        <div>
+          <span className="eyebrow">ORGANIZAÇÃO PESSOAL</span>
+          <h1>{greeting}, organize seu dia.</h1>
+          <p>
+            Visualize seus compromissos, organize seus horários e acompanhe
+            suas atividades.
+          </p>
+        </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div className="breadcrumb">
-            <span>Minha rotina</span>
-            <span className="breadcrumb-separator">/</span>
-            <strong>Agenda diária</strong>
+        <button className="primary-button" onClick={openNewTask}>
+          <span>＋</span> Nova atividade
+        </button>
+      </section>
+
+      <section className="agenda-date-panel">
+        <div className="date-navigation">
+          <button
+            type="button"
+            className="date-arrow"
+            onClick={() => changeDay(-1)}
+            aria-label="Dia anterior"
+          >
+            ‹
+          </button>
+
+          <div className="selected-date">
+            <span className="selected-date-day">
+              {formatLongDate(selectedDate)}
+            </span>
+            <span className="selected-date-number">
+              {formatDate(selectedDate)}
+            </span>
           </div>
 
-          <div className="topbar-right">
-            <div className="date-display">
-              {new Date().toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </div>
-            <div className="profile-avatar">N</div>
-          </div>
-        </header>
+          <button
+            type="button"
+            className="date-arrow"
+            onClick={() => changeDay(1)}
+            aria-label="Próximo dia"
+          >
+            ›
+          </button>
+        </div>
 
-        <div className="agenda-content">
-          <section className="agenda-welcome">
+        <button className="today-button" onClick={goToToday}>
+          Ir para hoje
+        </button>
+      </section>
+
+      <section className="agenda-metrics">
+        <div className="agenda-metric-card">
+          <span className="metric-label">ATIVIDADES DO DIA</span>
+          <strong>{selectedTasks.length}</strong>
+          <span className="metric-description">Total programado</span>
+        </div>
+
+        <div className="agenda-metric-card">
+          <span className="metric-label">PENDENTES</span>
+          <strong>{pendingTasks.length}</strong>
+          <span className="metric-description">Aguardando conclusão</span>
+        </div>
+
+        <div className="agenda-metric-card">
+          <span className="metric-label">CONCLUÍDAS</span>
+          <strong>{completedTasks.length}</strong>
+          <span className="metric-description">Atividades realizadas</span>
+        </div>
+
+        <div className="agenda-metric-card">
+          <span className="metric-label">ATRASADAS</span>
+          <strong className={overdueTasks.length ? "metric-danger" : ""}>
+            {overdueTasks.length}
+          </strong>
+          <span className="metric-description">Precisam de atenção</span>
+        </div>
+      </section>
+
+      {showForm && (
+        <section className="agenda-form-panel">
+          <div className="panel-heading">
             <div>
-              <span className="eyebrow">ORGANIZAÇÃO PESSOAL</span>
-              <h1>{greeting}, organize seu dia.</h1>
-              <p>
-                Visualize seus compromissos, organize seus horários e acompanhe
-                suas atividades.
-              </p>
+              <span className="eyebrow">
+                {editingId !== null ? "EDIÇÃO" : "CADASTRO"}
+              </span>
+              <h2>
+                {editingId !== null
+                  ? "Editar atividade"
+                  : "Nova atividade"}
+              </h2>
             </div>
 
-            <button className="primary-button" onClick={openNewTask}>
-              <span>＋</span> Nova atividade
+            <button
+              type="button"
+              className="close-button"
+              onClick={resetForm}
+            >
+              ×
             </button>
-          </section>
+          </div>
 
-          <section className="agenda-date-panel">
-            <div className="date-navigation">
-              <button
-                type="button"
-                className="date-arrow"
-                onClick={() => changeDay(-1)}
-                aria-label="Dia anterior"
-              >
-                ‹
-              </button>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <label className="form-field field-wide">
+                <span>Nome da atividade *</span>
+                <input
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Ex.: Reunião, academia, estudar..."
+                  required
+                />
+              </label>
 
-              <div className="selected-date">
-                <span className="selected-date-day">
-                  {formatLongDate(selectedDate)}
-                </span>
-                <span className="selected-date-number">
-                  {formatDate(selectedDate)}
-                </span>
-              </div>
+              <label className="form-field">
+                <span>Data</span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  required
+                />
+              </label>
 
-              <button
-                type="button"
-                className="date-arrow"
-                onClick={() => changeDay(1)}
-                aria-label="Próximo dia"
-              >
-                ›
-              </button>
-            </div>
+              <label className="form-field">
+                <span>Horário</span>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                />
+              </label>
 
-            <button className="today-button" onClick={goToToday}>
-              Ir para hoje
-            </button>
-          </section>
-
-          <section className="agenda-metrics">
-            <div className="agenda-metric-card">
-              <span className="metric-label">ATIVIDADES DO DIA</span>
-              <strong>{selectedTasks.length}</strong>
-              <span className="metric-description">Total programado</span>
-            </div>
-
-            <div className="agenda-metric-card">
-              <span className="metric-label">PENDENTES</span>
-              <strong>{pendingTasks.length}</strong>
-              <span className="metric-description">Aguardando conclusão</span>
-            </div>
-
-            <div className="agenda-metric-card">
-              <span className="metric-label">CONCLUÍDAS</span>
-              <strong>{completedTasks.length}</strong>
-              <span className="metric-description">Atividades realizadas</span>
-            </div>
-
-            <div className="agenda-metric-card">
-              <span className="metric-label">ATRASADAS</span>
-              <strong className={overdueTasks.length ? "metric-danger" : ""}>
-                {overdueTasks.length}
-              </strong>
-              <span className="metric-description">Precisam de atenção</span>
-            </div>
-          </section>
-
-          {showForm && (
-            <section className="agenda-form-panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">
-                    {editingId !== null ? "EDIÇÃO" : "CADASTRO"}
-                  </span>
-                  <h2>
-                    {editingId !== null
-                      ? "Editar atividade"
-                      : "Nova atividade"}
-                  </h2>
-                </div>
-
-                <button
-                  type="button"
-                  className="close-button"
-                  onClick={resetForm}
+              <label className="form-field">
+                <span>Prioridade</span>
+                <select
+                  value={priority}
+                  onChange={(event) =>
+                    setPriority(event.target.value as Priority)
+                  }
                 >
-                  ×
-                </button>
-              </div>
+                  <option value="Baixa">Baixa</option>
+                  <option value="Média">Média</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Urgente">Urgente</option>
+                </select>
+              </label>
 
-              <form onSubmit={handleSubmit}>
-                <div className="form-grid">
-                  <label className="form-field field-wide">
-                    <span>Nome da atividade *</span>
-                    <input
-                      value={description}
-                      onChange={(event) => setDescription(event.target.value)}
-                      placeholder="Ex.: Reunião, academia, estudar..."
-                      required
-                    />
-                  </label>
+              <label className="form-field">
+                <span>Categoria</span>
+                <select
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                >
+                  <option value="Pessoal">Pessoal</option>
+                  <option value="Trabalho">Trabalho</option>
+                  <option value="Saúde">Saúde</option>
+                  <option value="Estudos">Estudos</option>
+                  <option value="Financeiro">Financeiro</option>
+                  <option value="Lazer">Lazer</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </label>
 
-                  <label className="form-field">
-                    <span>Data</span>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                      required
-                    />
-                  </label>
+              <label className="form-field field-wide">
+                <span>Observações</span>
+                <textarea
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Adicione detalhes sobre esta atividade..."
+                  rows={3}
+                />
+              </label>
+            </div>
 
-                  <label className="form-field">
-                    <span>Horário</span>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(event) => setTime(event.target.value)}
-                    />
-                  </label>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
+              <button type="submit" className="primary-button">
+                {editingId !== null
+                  ? "Salvar alterações"
+                  : "Cadastrar atividade"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
 
-                  <label className="form-field">
-                    <span>Prioridade</span>
-                    <select
-                      value={priority}
-                      onChange={(event) =>
-                        setPriority(event.target.value as Priority)
-                      }
-                    >
-                      <option value="Baixa">Baixa</option>
-                      <option value="Média">Média</option>
-                      <option value="Alta">Alta</option>
-                      <option value="Urgente">Urgente</option>
-                    </select>
-                  </label>
+      <div className="agenda-layout">
+        <section className="agenda-main-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">PROGRAMAÇÃO</span>
+              <h2>Atividades do dia</h2>
+            </div>
+            <span className="task-counter">
+              {selectedTasks.length} atividade(s)
+            </span>
+          </div>
 
-                  <label className="form-field">
-                    <span>Categoria</span>
-                    <select
-                      value={category}
-                      onChange={(event) => setCategory(event.target.value)}
-                    >
-                      <option value="Pessoal">Pessoal</option>
-                      <option value="Trabalho">Trabalho</option>
-                      <option value="Saúde">Saúde</option>
-                      <option value="Estudos">Estudos</option>
-                      <option value="Financeiro">Financeiro</option>
-                      <option value="Lazer">Lazer</option>
-                      <option value="Outros">Outros</option>
-                    </select>
-                  </label>
+          <div className="day-progress">
+            <div className="day-progress-heading">
+              <span>Progresso diário</span>
+              <strong>{progress}%</strong>
+            </div>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
 
-                  <label className="form-field field-wide">
-                    <span>Observações</span>
-                    <textarea
-                      value={notes}
-                      onChange={(event) => setNotes(event.target.value)}
-                      placeholder="Adicione detalhes sobre esta atividade..."
-                      rows={3}
-                    />
-                  </label>
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={resetForm}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="primary-button">
-                    {editingId !== null
-                      ? "Salvar alterações"
-                      : "Cadastrar atividade"}
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
-
-          <div className="agenda-layout">
-            <section className="agenda-main-panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">PROGRAMAÇÃO</span>
-                  <h2>Atividades do dia</h2>
-                </div>
-                <span className="task-counter">
-                  {selectedTasks.length} atividade(s)
-                </span>
-              </div>
-
-              <div className="day-progress">
-                <div className="day-progress-heading">
-                  <span>Progresso diário</span>
-                  <strong>{progress}%</strong>
-                </div>
-                <div className="progress-track">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-
-              {!loaded ? (
-                <div className="empty-state">Carregando atividades...</div>
-              ) : selectedTasks.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">▦</div>
-                  <h3>Nenhuma atividade programada</h3>
-                  <p>
-                    Você ainda não cadastrou atividades para este dia.
-                  </p>
-                  <button className="primary-button" onClick={openNewTask}>
-                    ＋ Adicionar atividade
-                  </button>
-                </div>
-              ) : (
-                <div className="timeline">
-                  {selectedTasks.map((task) => (
-                    <div
-                      className={`timeline-item ${task.done ? "completed" : ""}`}
-                      key={task.id}
-                    >
-                      <div className="timeline-time">
-                        {task.time || "--:--"}
-                      </div>
-
-                      <div className="timeline-marker">
-                        <span />
-                      </div>
-
-                      <div className="timeline-card">
-                        <div className="timeline-card-top">
-                          <div className="task-title-area">
-                            <button
-                              type="button"
-                              className={`task-check ${task.done ? "checked" : ""}`}
-                              onClick={() => toggleTask(task.id)}
-                              aria-label={
-                                task.done
-                                  ? "Marcar como pendente"
-                                  : "Concluir atividade"
-                              }
-                            >
-                              {task.done ? "✓" : ""}
-                            </button>
-
-                            <div>
-                              <h3>{task.description}</h3>
-                              <span className="task-category">
-                                {task.category || "Pessoal"}
-                              </span>
-                            </div>
-                          </div>
-
-                          <span
-                            className={`priority-badge ${priorityClass(
-                              task.priority
-                            )}`}
-                          >
-                            {task.priority || "Baixa"}
-                          </span>
-                        </div>
-
-                        {task.notes && (
-                          <p className="task-notes">{task.notes}</p>
-                        )}
-
-                        <div className="task-actions">
-                          <span
-                            className={
-                              task.done ? "done-label" : "waiting-label"
-                            }
-                          >
-                            {task.done ? "Concluída" : "Pendente"}
-                          </span>
-
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => editTask(task)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="delete-action"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <aside className="agenda-side-column">
-              <section className="side-panel">
-                <div className="panel-heading">
-                  <div>
-                    <span className="eyebrow">PRÓXIMOS DIAS</span>
-                    <h2>Próximas atividades</h2>
+          {!loaded ? (
+            <div className="empty-state">Carregando atividades...</div>
+          ) : selectedTasks.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">▦</div>
+              <h3>Nenhuma atividade programada</h3>
+              <p>
+                Você ainda não cadastrou atividades para este dia.
+              </p>
+              <button className="primary-button" onClick={openNewTask}>
+                ＋ Adicionar atividade
+              </button>
+            </div>
+          ) : (
+            <div className="timeline">
+              {selectedTasks.map((task) => (
+                <div
+                  className={`timeline-item ${task.done ? "completed" : ""}`}
+                  key={task.id}
+                >
+                  <div className="timeline-time">
+                    {task.time || "--:--"}
                   </div>
-                </div>
 
-                {upcomingTasks.length === 0 ? (
-                  <p className="side-empty">
-                    Nenhuma atividade futura pendente.
-                  </p>
-                ) : (
-                  <div className="upcoming-list">
-                    {upcomingTasks.map((task) => (
-                      <button
-                        type="button"
-                        className="upcoming-item"
-                        key={task.id}
-                        onClick={() => {
-                          if (task.date) setSelectedDate(task.date);
-                        }}
-                      >
-                        <div className="upcoming-date">
-                          <strong>
-                            {task.date ? task.date.slice(8, 10) : "--"}
-                          </strong>
-                          <span>
-                            {task.date
-                              ? new Date(
-                                  `${task.date}T12:00:00`
-                                ).toLocaleDateString("pt-BR", {
-                                  month: "short",
-                                })
-                              : ""}
-                          </span>
-                        </div>
-                        <div className="upcoming-info">
-                          <strong>{task.description}</strong>
-                          <span>
-                            {task.time || "Sem horário"} ·{" "}
+                  <div className="timeline-marker">
+                    <span />
+                  </div>
+
+                  <div className="timeline-card">
+                    <div className="timeline-card-top">
+                      <div className="task-title-area">
+                        <button
+                          type="button"
+                          className={`task-check ${task.done ? "checked" : ""}`}
+                          onClick={() => toggleTask(task.id)}
+                          aria-label={
+                            task.done
+                              ? "Marcar como pendente"
+                              : "Concluir atividade"
+                          }
+                        >
+                          {task.done ? "✓" : ""}
+                        </button>
+
+                        <div>
+                          <h3>{task.description}</h3>
+                          <span className="task-category">
                             {task.category || "Pessoal"}
                           </span>
                         </div>
-                        <span className="upcoming-arrow">›</span>
-                      </button>
-                    ))}
+                      </div>
+
+                      <span
+                        className={`priority-badge ${priorityClass(
+                          task.priority
+                        )}`}
+                      >
+                        {task.priority || "Baixa"}
+                      </span>
+                    </div>
+
+                    {task.notes && (
+                      <p className="task-notes">{task.notes}</p>
+                    )}
+
+                    <div className="task-actions">
+                      <span
+                        className={
+                          task.done ? "done-label" : "waiting-label"
+                        }
+                      >
+                        {task.done ? "Concluída" : "Pendente"}
+                      </span>
+
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => editTask(task)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="delete-action"
+                          onClick={() => deleteTask(task.id)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </section>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-              <section className="side-panel">
-                <div className="panel-heading">
-                  <div>
-                    <span className="eyebrow">ACOMPANHAMENTO</span>
-                    <h2>Resumo do dia</h2>
-                  </div>
-                </div>
+        <aside className="agenda-side-column">
+          <section className="side-panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">PRÓXIMOS DIAS</span>
+                <h2>Próximas atividades</h2>
+              </div>
+            </div>
 
-                <div className="summary-row">
-                  <span>Concluídas</span>
-                  <strong>{completedTasks.length}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>Pendentes</span>
-                  <strong>{pendingTasks.length}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>Total de atividades</span>
-                  <strong>{selectedTasks.length}</strong>
-                </div>
+            {upcomingTasks.length === 0 ? (
+              <p className="side-empty">
+                Nenhuma atividade futura pendente.
+              </p>
+            ) : (
+              <div className="upcoming-list">
+                {upcomingTasks.map((task) => (
+                  <button
+                    type="button"
+                    className="upcoming-item"
+                    key={task.id}
+                    onClick={() => {
+                      if (task.date) setSelectedDate(task.date);
+                    }}
+                  >
+                    <div className="upcoming-date">
+                      <strong>
+                        {task.date ? task.date.slice(8, 10) : "--"}
+                      </strong>
+                      <span>
+                        {task.date
+                          ? new Date(
+                              `${task.date}T12:00:00`
+                            ).toLocaleDateString("pt-BR", {
+                              month: "short",
+                            })
+                          : ""}
+                      </span>
+                    </div>
+                    <div className="upcoming-info">
+                      <strong>{task.description}</strong>
+                      <span>
+                        {task.time || "Sem horário"} ·{" "}
+                        {task.category || "Pessoal"}
+                      </span>
+                    </div>
+                    <span className="upcoming-arrow">›</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
 
-                <div className="summary-message">
-                  {selectedTasks.length === 0
-                    ? "Comece organizando suas atividades para este dia."
-                    : progress === 100
-                    ? "Excelente! Todas as atividades deste dia foram concluídas."
-                    : `Você já concluiu ${progress}% das atividades deste dia.`}
-                </div>
-              </section>
-            </aside>
-          </div>
+          <section className="side-panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">ACOMPANHAMENTO</span>
+                <h2>Resumo do dia</h2>
+              </div>
+            </div>
 
-          <footer className="agenda-footer">
-            NEXO · GESTÃO PESSOAL
-            <span>Organize seu tempo. Evolua todos os dias.</span>
-          </footer>
-        </div>
-      </section>
+            <div className="summary-row">
+              <span>Concluídas</span>
+              <strong>{completedTasks.length}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Pendentes</span>
+              <strong>{pendingTasks.length}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Total de atividades</span>
+              <strong>{selectedTasks.length}</strong>
+            </div>
+
+            <div className="summary-message">
+              {selectedTasks.length === 0
+                ? "Comece organizando suas atividades para este dia."
+                : progress === 100
+                ? "Excelente! Todas as atividades deste dia foram concluídas."
+                : `Você já concluiu ${progress}% das atividades deste dia.`}
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <footer className="agenda-footer">
+        NEXO · GESTÃO PESSOAL
+        <span>Organize seu tempo. Evolua todos os dias.</span>
+      </footer>
 
       <style jsx>{`
         .agenda-content {
@@ -735,14 +709,6 @@ export default function AgendaPage() {
           color: #f1f1f1;
         }
 
-        .agenda-welcome {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 25px;
-        }
-
         .eyebrow {
           display: block;
           color: #929292;
@@ -750,6 +716,14 @@ export default function AgendaPage() {
           font-weight: 700;
           letter-spacing: 1.8px;
           margin-bottom: 9px;
+        }
+
+        .agenda-welcome {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 25px;
         }
 
         .agenda-welcome h1 {
@@ -1477,6 +1451,6 @@ export default function AgendaPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

@@ -3,7 +3,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -35,15 +34,6 @@ function formatDate(date: string) {
   const [year, month, day] = date.split("-");
 
   return `${day}/${month}/${year}`;
-}
-
-function formatLongDate(date = new Date()) {
-  return date.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function isValidTaskArray(value: unknown): value is Task[] {
@@ -143,7 +133,6 @@ export default function RoutineDashboard() {
   const pendingTasks = tasks.filter((task) => !task.done);
 
   const todayTasks = tasks.filter((task) => task.date === today);
-
   const todayCompleted = todayTasks.filter((task) => task.done);
 
   const overdueTasks = pendingTasks.filter(
@@ -238,439 +227,272 @@ export default function RoutineDashboard() {
     );
   }
 
-  function deleteTask(id: number) {
-    if (!confirm("Deseja excluir esta atividade?")) return;
-
-    setTasks((current) =>
-      current.filter((task) => task.id !== id)
-    );
-  }
-
   return (
-    <main className="app-shell">
-      {/* NAVEGAÇÃO CENTRALIZADA NEXO */}
+    <>
+      <div className="content routine-content">
+        {/* BOAS-VINDAS */}
 
-      <MainNavigation />
-
-      {/* ÁREA PRINCIPAL */}
-
-      <section className="main-area">
-        <header className="topbar">
-          <div>
-            <div className="breadcrumb">
-              NEXO / MINHA ROTINA / VISÃO GERAL
-            </div>
-            <h1>Minha rotina</h1>
-          </div>
-
-          <div className="topbar-right">
-            <div className="date-display">
-              <span className="date-icon">◷</span>
-              {formatLongDate()}
+        <section className="routine-welcome">
+          <div className="routine-welcome-content">
+            <div className="routine-eyebrow">
+              <span />
+              SEU CENTRO DE ORGANIZAÇÃO
             </div>
 
-            <div className="profile-avatar">N</div>
+            <h2>
+              {greeting}, vamos colocar
+              <br />
+              seus planos em <span>movimento.</span>
+            </h2>
+
+            <p>
+              Organize suas prioridades, acompanhe suas atividades
+              e transforme seus objetivos em resultados.
+            </p>
+
+            <button
+              type="button"
+              className="routine-primary-button"
+              onClick={() =>
+                setShowQuickForm((current) => !current)
+              }
+            >
+              + Nova atividade
+            </button>
           </div>
-        </header>
 
-        <div className="content routine-content">
-          {/* BOAS-VINDAS */}
+          <div className="routine-welcome-art">
+            <div className="routine-art-circle circle-one" />
+            <div className="routine-art-circle circle-two" />
+            <div className="routine-art-center">
+              <span>✓</span>
+            </div>
+            <div className="routine-art-line" />
+          </div>
 
-          <section className="routine-welcome">
-            <div className="routine-welcome-content">
-              <div className="routine-eyebrow">
-                <span />
-                SEU CENTRO DE ORGANIZAÇÃO
+          <div className="routine-welcome-index">
+            01 — ORGANIZAÇÃO
+          </div>
+        </section>
+
+        {/* CADASTRO RÁPIDO */}
+
+        {showQuickForm && (
+          <section className="routine-panel quick-form">
+            <div className="routine-panel-heading">
+              <div>
+                <div className="routine-kicker">
+                  PLANEJAMENTO
+                </div>
+                <h3>Adicionar atividade</h3>
               </div>
 
-              <h2>
-                {greeting}, vamos colocar
-                <br />
-                seus planos em <span>movimento.</span>
-              </h2>
+              <button
+                type="button"
+                className="routine-close"
+                onClick={() => setShowQuickForm(false)}
+                aria-label="Fechar formulário"
+              >
+                ×
+              </button>
+            </div>
 
-              <p>
-                Organize suas prioridades, acompanhe suas atividades
-                e transforme seus objetivos em resultados.
-              </p>
+            <div className="quick-form-grid">
+              <label className="quick-field field-description">
+                <span>Descrição da atividade</span>
+                <input
+                  value={taskName}
+                  onChange={(event) =>
+                    setTaskName(event.target.value)
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") addTask();
+                  }}
+                  placeholder="O que você precisa fazer?"
+                  autoFocus
+                />
+              </label>
+
+              <label className="quick-field">
+                <span>Data</span>
+                <input
+                  type="date"
+                  value={taskDate}
+                  onChange={(event) =>
+                    setTaskDate(event.target.value)
+                  }
+                />
+              </label>
+
+              <label className="quick-field">
+                <span>Horário</span>
+                <input
+                  type="time"
+                  value={taskTime}
+                  onChange={(event) =>
+                    setTaskTime(event.target.value)
+                  }
+                />
+              </label>
+
+              <label className="quick-field">
+                <span>Prioridade</span>
+                <select
+                  value={taskPriority}
+                  onChange={(event) =>
+                    setTaskPriority(
+                      event.target.value as Priority
+                    )
+                  }
+                >
+                  <option value="Baixa">Baixa</option>
+                  <option value="Média">Média</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Urgente">Urgente</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="quick-form-actions">
+              <button
+                type="button"
+                className="routine-secondary-button"
+                onClick={() => setShowQuickForm(false)}
+              >
+                Cancelar
+              </button>
 
               <button
                 type="button"
                 className="routine-primary-button"
-                onClick={() =>
-                  setShowQuickForm((current) => !current)
-                }
+                onClick={addTask}
               >
-                + Nova atividade
+                Salvar atividade
               </button>
             </div>
-
-            <div className="routine-welcome-art">
-              <div className="routine-art-circle circle-one" />
-              <div className="routine-art-circle circle-two" />
-              <div className="routine-art-center">
-                <span>✓</span>
-              </div>
-              <div className="routine-art-line" />
-            </div>
-
-            <div className="routine-welcome-index">
-              01 — ORGANIZAÇÃO
-            </div>
           </section>
+        )}
 
-          {/* CADASTRO RÁPIDO */}
+        {/* INDICADORES */}
 
-          {showQuickForm && (
-            <section className="routine-panel quick-form">
-              <div className="routine-panel-heading">
-                <div>
-                  <div className="routine-kicker">
-                    PLANEJAMENTO
-                  </div>
-                  <h3>Adicionar atividade</h3>
-                </div>
-
-                <button
-                  type="button"
-                  className="routine-close"
-                  onClick={() => setShowQuickForm(false)}
-                  aria-label="Fechar formulário"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="quick-form-grid">
-                <label className="quick-field field-description">
-                  <span>Descrição da atividade</span>
-                  <input
-                    value={taskName}
-                    onChange={(event) =>
-                      setTaskName(event.target.value)
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") addTask();
-                    }}
-                    placeholder="O que você precisa fazer?"
-                    autoFocus
-                  />
-                </label>
-
-                <label className="quick-field">
-                  <span>Data</span>
-                  <input
-                    type="date"
-                    value={taskDate}
-                    onChange={(event) =>
-                      setTaskDate(event.target.value)
-                    }
-                  />
-                </label>
-
-                <label className="quick-field">
-                  <span>Horário</span>
-                  <input
-                    type="time"
-                    value={taskTime}
-                    onChange={(event) =>
-                      setTaskTime(event.target.value)
-                    }
-                  />
-                </label>
-
-                <label className="quick-field">
-                  <span>Prioridade</span>
-                  <select
-                    value={taskPriority}
-                    onChange={(event) =>
-                      setTaskPriority(
-                        event.target.value as Priority
-                      )
-                    }
-                  >
-                    <option value="Baixa">Baixa</option>
-                    <option value="Média">Média</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Urgente">Urgente</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="quick-form-actions">
-                <button
-                  type="button"
-                  className="routine-secondary-button"
-                  onClick={() => setShowQuickForm(false)}
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  className="routine-primary-button"
-                  onClick={addTask}
-                >
-                  Salvar atividade
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* INDICADORES */}
-
-          <div className="routine-section-heading">
-            <div>
-              <div className="routine-kicker">
-                ACOMPANHAMENTO
-              </div>
-              <h2>Resumo da rotina</h2>
+        <div className="routine-section-heading">
+          <div>
+            <div className="routine-kicker">
+              ACOMPANHAMENTO
             </div>
-
-            <span className="routine-updated">
-              Dados atualizados automaticamente
-            </span>
+            <h2>Resumo da rotina</h2>
           </div>
 
-          <section className="routine-metrics">
-            <div className="routine-metric-card">
-              <div className="routine-metric-top">
-                <span>Total de atividades</span>
-                <span className="routine-metric-icon">▤</span>
-              </div>
-              <strong>{tasks.length}</strong>
-              <small>Atividades cadastradas</small>
-              <div className="routine-metric-line" />
+          <span className="routine-updated">
+            Dados atualizados automaticamente
+          </span>
+        </div>
+
+        <section className="routine-metrics">
+          <div className="routine-metric-card">
+            <div className="routine-metric-top">
+              <span>Total de atividades</span>
+              <span className="routine-metric-icon">▤</span>
             </div>
+            <strong>{tasks.length}</strong>
+            <small>Atividades cadastradas</small>
+            <div className="routine-metric-line" />
+          </div>
 
-            <div className="routine-metric-card">
-              <div className="routine-metric-top">
-                <span>Concluídas</span>
-                <span className="routine-metric-icon">✓</span>
-              </div>
-              <strong>{completedTasks.length}</strong>
-              <small>Atividades finalizadas</small>
-              <div className="routine-metric-line" />
+          <div className="routine-metric-card">
+            <div className="routine-metric-top">
+              <span>Concluídas</span>
+              <span className="routine-metric-icon">✓</span>
             </div>
+            <strong>{completedTasks.length}</strong>
+            <small>Atividades finalizadas</small>
+            <div className="routine-metric-line" />
+          </div>
 
-            <div className="routine-metric-card">
-              <div className="routine-metric-top">
-                <span>Pendentes</span>
-                <span className="routine-metric-icon">◷</span>
-              </div>
-              <strong>{pendingTasks.length}</strong>
-              <small>Aguardando conclusão</small>
-              <div className="routine-metric-line" />
+          <div className="routine-metric-card">
+            <div className="routine-metric-top">
+              <span>Pendentes</span>
+              <span className="routine-metric-icon">◷</span>
             </div>
+            <strong>{pendingTasks.length}</strong>
+            <small>Aguardando conclusão</small>
+            <div className="routine-metric-line" />
+          </div>
 
-            <div className="routine-metric-card">
-              <div className="routine-metric-top">
-                <span>Atrasadas</span>
-                <span className="routine-metric-icon">!</span>
-              </div>
-              <strong className={overdueTasks.length ? "metric-danger" : ""}>
-                {overdueTasks.length}
-              </strong>
-              <small>Precisam de atenção</small>
-              <div className="routine-metric-line" />
+          <div className="routine-metric-card">
+            <div className="routine-metric-top">
+              <span>Atrasadas</span>
+              <span className="routine-metric-icon">!</span>
             </div>
-          </section>
+            <strong className={overdueTasks.length ? "metric-danger" : ""}>
+              {overdueTasks.length}
+            </strong>
+            <small>Precisam de atenção</small>
+            <div className="routine-metric-line" />
+          </div>
+        </section>
 
-          {/* ATIVIDADES DE HOJE E PROGRESSO */}
+        {/* ATIVIDADES DE HOJE E PROGRESSO */}
 
-          <section className="routine-dashboard-grid">
-            <div className="routine-panel today-panel">
-              <div className="routine-panel-heading">
-                <div>
-                  <div className="routine-kicker">
-                    {formatDate(today)}
-                  </div>
-                  <h3>Atividades de hoje</h3>
+        <section className="routine-dashboard-grid">
+          <div className="routine-panel today-panel">
+            <div className="routine-panel-heading">
+              <div>
+                <div className="routine-kicker">
+                  {formatDate(today)}
                 </div>
-
-                <Link
-                  href="/rotina/agenda"
-                  className="routine-text-link"
-                >
-                  Ver agenda →
-                </Link>
+                <h3>Atividades de hoje</h3>
               </div>
 
-              <div className="today-progress">
-                <div className="today-progress-info">
-                  <span>Progresso do dia</span>
-                  <strong>{todayProgress}%</strong>
-                </div>
+              <Link
+                href="/rotina/agenda"
+                className="routine-text-link"
+              >
+                Ver agenda →
+              </Link>
+            </div>
 
-                <div className="today-progress-track">
-                  <div
-                    className="today-progress-fill"
-                    style={{ width: `${todayProgress}%` }}
-                  />
-                </div>
+            <div className="today-progress">
+              <div className="today-progress-info">
+                <span>Progresso do dia</span>
+                <strong>{todayProgress}%</strong>
               </div>
 
-              {todayTasks.length > 0 ? (
-                <div className="routine-task-list">
-                  {todayTasks
-                    .slice()
-                    .sort((a, b) =>
-                      (a.time || "99:99").localeCompare(
-                        b.time || "99:99"
-                      )
+              <div className="today-progress-track">
+                <div
+                  className="today-progress-fill"
+                  style={{ width: `${todayProgress}%` }}
+                />
+              </div>
+            </div>
+
+            {todayTasks.length > 0 ? (
+              <div className="routine-task-list">
+                {todayTasks
+                  .slice()
+                  .sort((a, b) =>
+                    (a.time || "99:99").localeCompare(
+                      b.time || "99:99"
                     )
-                    .slice(0, 6)
-                    .map((task) => (
-                      <div className="routine-task" key={task.id}>
-                        <input
-                          type="checkbox"
-                          checked={task.done}
-                          onChange={() => toggleTask(task.id)}
-                          aria-label={`Concluir ${task.description}`}
-                        />
+                  )
+                  .slice(0, 6)
+                  .map((task) => (
+                    <div className="routine-task" key={task.id}>
+                      <input
+                        type="checkbox"
+                        checked={task.done}
+                        onChange={() => toggleTask(task.id)}
+                        aria-label={`Concluir ${task.description}`}
+                      />
 
-                        <div className="routine-task-info">
-                          <strong
-                            className={
-                              task.done ? "task-completed" : ""
-                            }
-                          >
-                            {task.description}
-                          </strong>
-                          <small>
-                            {task.time || "Horário não definido"}
-                          </small>
-                        </div>
-
-                        <span
-                          className={`routine-priority ${priorityClass(
-                            task.priority
-                          )}`}
+                      <div className="routine-task-info">
+                        <strong
+                          className={
+                            task.done ? "task-completed" : ""
+                          }
                         >
-                          {task.priority || "Normal"}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="routine-empty">
-                  <span>✓</span>
-                  <strong>
-                    Nenhuma atividade programada para hoje.
-                  </strong>
-                  <small>Que tal organizar seu dia?</small>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowQuickForm(true)}
-                  >
-                    Adicionar atividade
-                  </button>
-                </div>
-              )}
-
-              {todayTasks.length > 6 && (
-                <Link
-                  href="/rotina/agenda"
-                  className="routine-see-more"
-                >
-                  Ver todas as {todayTasks.length} atividades
-                </Link>
-              )}
-            </div>
-
-            <div className="routine-panel progress-panel">
-              <div className="routine-kicker">
-                DESEMPENHO GERAL
-              </div>
-
-              <h3>Sua evolução</h3>
-
-              <p>
-                Acompanhe seu ritmo de execução e mantenha a
-                consistência nas suas atividades.
-              </p>
-
-              <div className="routine-progress-circle">
-                <svg viewBox="0 0 160 160">
-                  <circle
-                    cx="80"
-                    cy="80"
-                    r="66"
-                    className="progress-circle-background"
-                  />
-                  <circle
-                    cx="80"
-                    cy="80"
-                    r="66"
-                    className="progress-circle-value"
-                    style={{
-                      strokeDasharray: `${
-                        (progress / 100) * 414.69
-                      } 414.69`,
-                    }}
-                  />
-                </svg>
-
-                <div className="routine-progress-center">
-                  <strong>{progress}%</strong>
-                  <small>Concluído</small>
-                </div>
-              </div>
-
-              <div className="progress-detail">
-                <div>
-                  <span className="progress-dot completed-dot" />
-                  Concluídas
-                  <strong>{completedTasks.length}</strong>
-                </div>
-
-                <div>
-                  <span className="progress-dot pending-dot" />
-                  Pendentes
-                  <strong>{pendingTasks.length}</strong>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* PRÓXIMAS ATIVIDADES E PRIORIDADES */}
-
-          <section className="routine-dashboard-grid secondary-grid">
-            <div className="routine-panel upcoming-panel">
-              <div className="routine-panel-heading">
-                <div>
-                  <div className="routine-kicker">
-                    PRÓXIMOS SETE DIAS
-                  </div>
-                  <h3>Próximas atividades</h3>
-                </div>
-
-                <Link
-                  href="/rotina/planejamento"
-                  className="routine-text-link"
-                >
-                  Planejar semana →
-                </Link>
-              </div>
-
-              {upcomingTasks.length > 0 ? (
-                <div className="upcoming-list">
-                  {upcomingTasks.slice(0, 5).map((task) => (
-                    <div className="upcoming-item" key={task.id}>
-                      <div className="upcoming-date">
-                        <strong>{task.date?.slice(8, 10)}</strong>
-                        <small>
-                          {new Date(
-                            `${task.date}T12:00:00`
-                          ).toLocaleDateString("pt-BR", {
-                            month: "short",
-                          })}
-                        </small>
-                      </div>
-
-                      <div className="upcoming-info">
-                        <strong>{task.description}</strong>
+                          {task.description}
+                        </strong>
                         <small>
                           {task.time || "Horário não definido"}
                         </small>
@@ -685,104 +507,235 @@ export default function RoutineDashboard() {
                       </span>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="routine-empty compact-empty">
-                  <span>▦</span>
-                  <strong>
-                    Nenhuma atividade futura cadastrada.
-                  </strong>
-                  <small>
-                    Suas próximas atividades aparecerão aqui.
-                  </small>
-                </div>
-              )}
+              </div>
+            ) : (
+              <div className="routine-empty">
+                <span>✓</span>
+                <strong>
+                  Nenhuma atividade programada para hoje.
+                </strong>
+                <small>Que tal organizar seu dia?</small>
+
+                <button
+                  type="button"
+                  onClick={() => setShowQuickForm(true)}
+                >
+                  Adicionar atividade
+                </button>
+              </div>
+            )}
+
+            {todayTasks.length > 6 && (
+              <Link
+                href="/rotina/agenda"
+                className="routine-see-more"
+              >
+                Ver todas as {todayTasks.length} atividades
+              </Link>
+            )}
+          </div>
+
+          <div className="routine-panel progress-panel">
+            <div className="routine-kicker">
+              DESEMPENHO GERAL
             </div>
 
-            <div className="routine-panel attention-panel">
-              <div className="routine-kicker">
-                PONTOS DE ATENÇÃO
+            <h3>Sua evolução</h3>
+
+            <p>
+              Acompanhe seu ritmo de execução e mantenha a
+              consistência nas suas atividades.
+            </p>
+
+            <div className="routine-progress-circle">
+              <svg viewBox="0 0 160 160">
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="66"
+                  className="progress-circle-background"
+                />
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="66"
+                  className="progress-circle-value"
+                  style={{
+                    strokeDasharray: `${
+                      (progress / 100) * 414.69
+                    } 414.69`,
+                  }}
+                />
+              </svg>
+
+              <div className="routine-progress-center">
+                <strong>{progress}%</strong>
+                <small>Concluído</small>
+              </div>
+            </div>
+
+            <div className="progress-detail">
+              <div>
+                <span className="progress-dot completed-dot" />
+                Concluídas
+                <strong>{completedTasks.length}</strong>
               </div>
 
-              <h3>O que precisa de foco?</h3>
-
-              <div className="attention-item">
-                <span className="attention-indicator danger-indicator" />
-                <div>
-                  <strong>Atividades atrasadas</strong>
-                  <small>Precisam ser revisadas</small>
-                </div>
-                <b>{overdueTasks.length}</b>
+              <div>
+                <span className="progress-dot pending-dot" />
+                Pendentes
+                <strong>{pendingTasks.length}</strong>
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="attention-item">
-                <span className="attention-indicator warning-indicator" />
-                <div>
-                  <strong>Alta prioridade</strong>
-                  <small>Exigem atenção especial</small>
-                </div>
-                <b>{highPriorityTasks.length}</b>
-              </div>
+        {/* PRÓXIMAS ATIVIDADES E PRIORIDADES */}
 
-              <div className="attention-item">
-                <span className="attention-indicator neutral-indicator" />
-                <div>
-                  <strong>Sem data definida</strong>
-                  <small>Precisam de planejamento</small>
+        <section className="routine-dashboard-grid secondary-grid">
+          <div className="routine-panel upcoming-panel">
+            <div className="routine-panel-heading">
+              <div>
+                <div className="routine-kicker">
+                  PRÓXIMOS SETE DIAS
                 </div>
-                <b>{tasksWithoutDate.length}</b>
+                <h3>Próximas atividades</h3>
               </div>
 
               <Link
-                href="/rotina/tarefas"
-                className="attention-link"
+                href="/rotina/planejamento"
+                className="routine-text-link"
               >
-                Organizar minhas tarefas →
+                Planejar semana →
               </Link>
             </div>
-          </section>
 
-          {/* HÁBITOS */}
+            {upcomingTasks.length > 0 ? (
+              <div className="upcoming-list">
+                {upcomingTasks.slice(0, 5).map((task) => (
+                  <div className="upcoming-item" key={task.id}>
+                    <div className="upcoming-date">
+                      <strong>{task.date?.slice(8, 10)}</strong>
+                      <small>
+                        {new Date(
+                          `${task.date}T12:00:00`
+                        ).toLocaleDateString("pt-BR", {
+                          month: "short",
+                        })}
+                      </small>
+                    </div>
 
-          <section className="routine-panel habits-preview">
-            <div className="habits-preview-content">
-              <div className="routine-kicker">
-                CONSTÂNCIA E EVOLUÇÃO
+                    <div className="upcoming-info">
+                      <strong>{task.description}</strong>
+                      <small>
+                        {task.time || "Horário não definido"}
+                      </small>
+                    </div>
+
+                    <span
+                      className={`routine-priority ${priorityClass(
+                        task.priority
+                      )}`}
+                    >
+                      {task.priority || "Normal"}
+                    </span>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <div className="routine-empty compact-empty">
+                <span>▦</span>
+                <strong>
+                  Nenhuma atividade futura cadastrada.
+                </strong>
+                <small>
+                  Suas próximas atividades aparecerão aqui.
+                </small>
+              </div>
+            )}
+          </div>
 
-              <h3>Pequenos hábitos, grandes resultados.</h3>
-
-              <p>
-                Crie hábitos, acompanhe sua frequência e construa
-                uma rotina mais consistente.
-              </p>
-
-              <Link
-                href="/rotina/habitos"
-                className="routine-secondary-button"
-              >
-                Acessar meus hábitos →
-              </Link>
+          <div className="routine-panel attention-panel">
+            <div className="routine-kicker">
+              PONTOS DE ATENÇÃO
             </div>
 
-            <div className="habits-preview-art">
-              <div>01</div>
-              <div>02</div>
-              <div>03</div>
-              <span>CONSISTÊNCIA</span>
-            </div>
-          </section>
+            <h3>O que precisa de foco?</h3>
 
-          <footer className="routine-footer">
-            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
-            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
-          </footer>
-        </div>
-      </section>
+            <div className="attention-item">
+              <span className="attention-indicator danger-indicator" />
+              <div>
+                <strong>Atividades atrasadas</strong>
+                <small>Precisam ser revisadas</small>
+              </div>
+              <b>{overdueTasks.length}</b>
+            </div>
+
+            <div className="attention-item">
+              <span className="attention-indicator warning-indicator" />
+              <div>
+                <strong>Alta prioridade</strong>
+                <small>Exigem atenção especial</small>
+              </div>
+              <b>{highPriorityTasks.length}</b>
+            </div>
+
+            <div className="attention-item">
+              <span className="attention-indicator neutral-indicator" />
+              <div>
+                <strong>Sem data definida</strong>
+                <small>Precisam de planejamento</small>
+              </div>
+              <b>{tasksWithoutDate.length}</b>
+            </div>
+
+            <Link
+              href="/rotina/tarefas"
+              className="attention-link"
+            >
+              Organizar minhas tarefas →
+            </Link>
+          </div>
+        </section>
+
+        {/* HÁBITOS */}
+
+        <section className="routine-panel habits-preview">
+          <div className="habits-preview-content">
+            <div className="routine-kicker">
+              CONSTÂNCIA E EVOLUÇÃO
+            </div>
+
+            <h3>Pequenos hábitos, grandes resultados.</h3>
+
+            <p>
+              Crie hábitos, acompanhe sua frequência e construa
+              uma rotina mais consistente.
+            </p>
+
+            <Link
+              href="/rotina/habitos"
+              className="routine-secondary-button"
+            >
+              Acessar meus hábitos →
+            </Link>
+          </div>
+
+          <div className="habits-preview-art">
+            <div>01</div>
+            <div>02</div>
+            <div>03</div>
+            <span>CONSISTÊNCIA</span>
+          </div>
+        </section>
+
+        <footer className="routine-footer">
+          <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+          <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+        </footer>
+      </div>
 
       <style jsx>{`
-        /* CONTEÚDO DA ROTINA */
-
         .routine-content {
           padding-top: 23px;
         }
@@ -933,8 +886,6 @@ export default function RoutineDashboard() {
           letter-spacing: 1.5px;
         }
 
-        /* TÍTULOS E SEÇÕES */
-
         .routine-kicker {
           color: #777a81;
           font-size: 8px;
@@ -962,8 +913,6 @@ export default function RoutineDashboard() {
           color: #727782;
           font-size: 10px;
         }
-
-        /* INDICADORES */
 
         .routine-metrics {
           display: grid;
@@ -1034,8 +983,6 @@ export default function RoutineDashboard() {
           background: linear-gradient(90deg, #c5cad2, #777d87);
         }
 
-        /* PAINÉIS */
-
         .routine-dashboard-grid {
           display: grid;
           grid-template-columns: minmax(0, 1.35fr) minmax(260px, 1fr);
@@ -1078,8 +1025,6 @@ export default function RoutineDashboard() {
           color: #fff;
         }
 
-        /* PROGRESSO DO DIA */
-
         .today-progress {
           margin: 18px 0 12px;
         }
@@ -1109,8 +1054,6 @@ export default function RoutineDashboard() {
           border-radius: 5px;
           transition: width 0.3s ease;
         }
-
-        /* TAREFAS */
 
         .routine-task-list {
           display: flex;
@@ -1188,8 +1131,6 @@ export default function RoutineDashboard() {
           background: rgba(100, 140, 110, 0.12);
         }
 
-        /* ESTADO VAZIO */
-
         .routine-empty {
           min-height: 150px;
           display: flex;
@@ -1234,8 +1175,6 @@ export default function RoutineDashboard() {
           font-size: 10px;
           text-decoration: none;
         }
-
-        /* PROGRESSO GERAL */
 
         .progress-panel {
           display: flex;
@@ -1332,8 +1271,6 @@ export default function RoutineDashboard() {
           background: #626873;
         }
 
-        /* PRÓXIMAS ATIVIDADES */
-
         .secondary-grid {
           margin-top: 12px;
         }
@@ -1382,8 +1319,6 @@ export default function RoutineDashboard() {
         .compact-empty {
           min-height: 130px;
         }
-
-        /* PONTOS DE ATENÇÃO */
 
         .attention-panel h3 {
           margin-bottom: 13px;
@@ -1447,8 +1382,6 @@ export default function RoutineDashboard() {
           font-size: 10px;
           text-decoration: none;
         }
-
-        /* HÁBITOS */
 
         .habits-preview {
           display: flex;
@@ -1530,8 +1463,6 @@ export default function RoutineDashboard() {
           margin-left: 5px;
         }
 
-        /* RODAPÉ */
-
         .routine-footer {
           display: flex;
           justify-content: space-between;
@@ -1547,8 +1478,6 @@ export default function RoutineDashboard() {
         .routine-footer span:last-child {
           text-align: right;
         }
-
-        /* FORMULÁRIO RÁPIDO */
 
         .quick-form {
           margin-top: 17px;
@@ -1610,8 +1539,6 @@ export default function RoutineDashboard() {
           margin-top: 15px;
         }
 
-        /* RESPONSIVIDADE */
-
         @media (max-width: 1100px) {
           .routine-content {
             padding: 20px 22px;
@@ -1657,10 +1584,6 @@ export default function RoutineDashboard() {
           .routine-section-heading {
             align-items: flex-start;
             flex-direction: column;
-          }
-
-          .routine-date {
-            display: none;
           }
 
           .routine-updated {
@@ -1753,6 +1676,6 @@ export default function RoutineDashboard() {
           }
         }
       `}</style>
-    </main>
+    </>
   );
 }

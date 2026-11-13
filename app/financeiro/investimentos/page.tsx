@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type InvestmentTransaction = {
   id: number | string;
@@ -39,15 +38,6 @@ function formatDate(value?: string) {
   if (Number.isNaN(date.getTime())) return "Data não informada";
 
   return date.toLocaleDateString("pt-BR");
-}
-
-function formatLongDate(date = new Date()) {
-  return date.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function getInvestmentType(transaction: InvestmentTransaction) {
@@ -252,388 +242,364 @@ export default function InvestimentosPage() {
   };
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content investments-content">
+      <section className="investments-intro">
+        <div>
+          <span className="eyebrow">
+            GESTÃO E PATRIMÔNIO
+          </span>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div>
-            <div className="breadcrumb">
-              NEXO / FINANCEIRO / INVESTIMENTOS
-            </div>
-            <h1>Investimentos</h1>
+          <h2>Organize seus investimentos.</h2>
+
+          <p>
+            Acompanhe suas aplicações, instituições financeiras e valores
+            investidos em um só lugar.
+          </p>
+        </div>
+
+        <Link href="/financeiro" className="back-link">
+          <span>←</span>
+          Voltar ao financeiro
+        </Link>
+      </section>
+
+      <section className="summary-grid">
+        <article className="summary-card featured">
+          <div className="summary-card-top">
+            <span>Total investido</span>
+            <span className="summary-icon">◈</span>
           </div>
 
-          <div className="topbar-right">
-            <div className="date-display">
-              <span className="date-icon">◷</span>
-              {formatLongDate()}
-            </div>
+          <strong>{money(totalInvested)}</strong>
+          <small>Valor das aplicações efetivadas</small>
+        </article>
 
-            <div className="profile-avatar">N</div>
+        <article className="summary-card">
+          <div className="summary-card-top">
+            <span>Investimentos ativos</span>
+            <span className="summary-icon">▣</span>
           </div>
-        </header>
 
-        <div className="content investments-content">
-          <section className="investments-intro">
+          <strong>{appliedInvestments.length}</strong>
+          <small>Aplicações com status aplicado</small>
+        </article>
+
+        <article className="summary-card">
+          <div className="summary-card-top">
+            <span>Aplicações pendentes</span>
+            <span className="summary-icon">◷</span>
+          </div>
+
+          <strong>{money(totalPending)}</strong>
+          <small>
+            {pendingInvestments.length} movimentação(ões) pendente(s)
+          </small>
+        </article>
+      </section>
+
+      <section className="content-grid">
+        <article className="panel">
+          <div className="section-heading">
             <div>
-              <span className="eyebrow">
-                GESTÃO E PATRIMÔNIO
-              </span>
+              <span className="eyebrow">CARTEIRA</span>
+              <h2>Distribuição por tipo</h2>
+              <p>Visualize como seus recursos estão distribuídos.</p>
+            </div>
+          </div>
 
-              <h2>Organize seus investimentos.</h2>
-
+          {investmentTypes.length === 0 ? (
+            <div className="empty-distribution">
+              <span>◈</span>
+              <strong>Nenhum investimento registrado</strong>
               <p>
-                Acompanhe suas aplicações, instituições financeiras e valores
-                investidos em um só lugar.
+                As aplicações realizadas na Visão geral aparecerão
+                automaticamente nesta seção.
               </p>
             </div>
-
-            <Link href="/financeiro" className="back-link">
-              <span>←</span>
-              Voltar ao financeiro
-            </Link>
-          </section>
-
-          <section className="summary-grid">
-            <article className="summary-card featured">
-              <div className="summary-card-top">
-                <span>Total investido</span>
-                <span className="summary-icon">◈</span>
-              </div>
-
-              <strong>{money(totalInvested)}</strong>
-              <small>Valor das aplicações efetivadas</small>
-            </article>
-
-            <article className="summary-card">
-              <div className="summary-card-top">
-                <span>Investimentos ativos</span>
-                <span className="summary-icon">▣</span>
-              </div>
-
-              <strong>{appliedInvestments.length}</strong>
-              <small>Aplicações com status aplicado</small>
-            </article>
-
-            <article className="summary-card">
-              <div className="summary-card-top">
-                <span>Aplicações pendentes</span>
-                <span className="summary-icon">◷</span>
-              </div>
-
-              <strong>{money(totalPending)}</strong>
-              <small>
-                {pendingInvestments.length} movimentação(ões) pendente(s)
-              </small>
-            </article>
-          </section>
-
-          <section className="content-grid">
-            <article className="panel">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">CARTEIRA</span>
-                  <h2>Distribuição por tipo</h2>
-                  <p>Visualize como seus recursos estão distribuídos.</p>
-                </div>
-              </div>
-
-              {investmentTypes.length === 0 ? (
-                <div className="empty-distribution">
-                  <span>◈</span>
-                  <strong>Nenhum investimento registrado</strong>
-                  <p>
-                    As aplicações realizadas na Visão geral aparecerão
-                    automaticamente nesta seção.
-                  </p>
-                </div>
-              ) : (
-                <div className="distribution-list">
-                  {investmentTypes.map((type) => {
-                    const typeTotal = appliedInvestments
-                      .filter(
-                        (investment) =>
-                          getInvestmentType(investment) === type
-                      )
-                      .reduce(
-                        (total, investment) =>
-                          total + Number(investment.amount || 0),
-                        0
-                      );
-
-                    const percentage =
-                      totalInvested > 0
-                        ? (typeTotal / totalInvested) * 100
-                        : 0;
-
-                    return (
-                      <div className="distribution-item" key={type}>
-                        <div className="distribution-top">
-                          <strong>{type}</strong>
-                          <span>{money(typeTotal)}</span>
-                        </div>
-
-                        <div className="progress-track">
-                          <div
-                            className="progress-fill"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-
-                        <small>
-                          {percentage.toFixed(1).replace(".", ",")}% da carteira
-                        </small>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </article>
-
-            <article className="panel">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">INSTITUIÇÕES</span>
-                  <h2>Onde você investe</h2>
-                  <p>Distribuição das aplicações por instituição.</p>
-                </div>
-              </div>
-
-              {institutions.length === 0 ? (
-                <div className="empty-distribution">
-                  <span>▣</span>
-                  <strong>Nenhuma instituição registrada</strong>
-                  <p>Suas instituições financeiras aparecerão aqui.</p>
-                </div>
-              ) : (
-                <div className="institution-list">
-                  {institutions.map((institution) => {
-                    const institutionInvestments = appliedInvestments.filter(
-                      (investment) =>
-                        getInstitution(investment) === institution
-                    );
-
-                    const institutionTotal = institutionInvestments.reduce(
-                      (total, investment) =>
-                        total + Number(investment.amount || 0),
-                      0
-                    );
-
-                    return (
-                      <div className="institution-item" key={institution}>
-                        <div className="institution-icon">▣</div>
-
-                        <div className="institution-info">
-                          <strong>{institution}</strong>
-                          <small>
-                            {institutionInvestments.length} aplicação(ões)
-                            efetivada(s)
-                          </small>
-                        </div>
-
-                        <strong className="institution-value">
-                          {money(institutionTotal)}
-                        </strong>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </article>
-          </section>
-
-          <section className="panel history-panel">
-            <div className="section-heading history-heading">
-              <div>
-                <span className="eyebrow">ACOMPANHAMENTO</span>
-                <h2>Minha carteira de investimentos</h2>
-                <p>
-                  Consulte e filtre suas aplicações registradas na Visão geral.
-                </p>
-              </div>
-
-              <span className="record-counter">
-                {filteredInvestments.length} registro(s)
-              </span>
-            </div>
-
-            <div className="filters">
-              <div className="search-field">
-                <label htmlFor="investment-search">Pesquisar</label>
-                <input
-                  id="investment-search"
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Nome, investimento ou instituição..."
-                />
-              </div>
-
-              <div className="filter-field">
-                <label htmlFor="investment-type">Tipo de investimento</label>
-                <select
-                  id="investment-type"
-                  value={typeFilter}
-                  onChange={(event) => setTypeFilter(event.target.value)}
-                >
-                  <option value="Todos">Todos</option>
-                  {investmentTypes.map((type) => (
-                    <option value={type} key={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="filter-field">
-                <label htmlFor="investment-institution">Instituição</label>
-                <select
-                  id="investment-institution"
-                  value={institutionFilter}
-                  onChange={(event) =>
-                    setInstitutionFilter(event.target.value)
-                  }
-                >
-                  <option value="Todas">Todas</option>
-                  {institutions.map((institution) => (
-                    <option value={institution} key={institution}>
-                      {institution}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="filter-field">
-                <label htmlFor="investment-status">Situação</label>
-                <select
-                  id="investment-status"
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                >
-                  <option value="Todos">Todas</option>
-                  <option value="Ativos">Ativos</option>
-                  <option value="Cancelados">Cancelados</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="filter-footer">
-              <span>
-                Exibindo {filteredInvestments.length} de {transactions.length}{" "}
-                investimento(s)
-              </span>
-
-              <button type="button" onClick={clearFilters}>
-                Limpar filtros
-              </button>
-            </div>
-
-            {filteredInvestments.length === 0 ? (
-              <div className="empty-state">
-                <span>◈</span>
-                <strong>Nenhum investimento encontrado</strong>
-                <p>
-                  {transactions.length === 0
-                    ? "Quando você registrar uma aplicação na Visão geral, ela aparecerá automaticamente aqui."
-                    : "Não existem investimentos que correspondam aos filtros selecionados."}
-                </p>
-              </div>
-            ) : (
-              <div className="investment-list">
-                {filteredInvestments.map((investment) => {
-                  const status = getStatus(investment);
-                  const cancelled = isCancelled(investment);
-                  const pending =
-                    status.toLowerCase() !== "aplicado" && !cancelled;
-
-                  return (
-                    <article
-                      className={`investment-item ${
-                        cancelled ? "cancelled" : ""
-                      }`}
-                      key={String(investment.id)}
-                    >
-                      <div className="investment-icon">◈</div>
-
-                      <div className="investment-info">
-                        <strong>
-                          {investment.description ||
-                            getInvestmentType(investment)}
-                        </strong>
-
-                        <span>
-                          {getInvestmentType(investment)} ·{" "}
-                          {getInstitution(investment)}
-                        </span>
-
-                        <small>
-                          Aplicação em {formatDate(investment.date)}
-                        </small>
-
-                        {investment.account && (
-                          <small>Conta de origem: {investment.account}</small>
-                        )}
-
-                        {investment.destinationAccount && (
-                          <small>
-                            Conta de destino: {investment.destinationAccount}
-                          </small>
-                        )}
-
-                        {investment.paymentMethod && (
-                          <small>
-                            Forma de pagamento: {investment.paymentMethod}
-                          </small>
-                        )}
-                      </div>
-
-                      <div className="investment-value">
-                        <span>Valor aplicado</span>
-                        <strong>{money(investment.amount)}</strong>
-                      </div>
-
-                      <div className="investment-status">
-                        <span
-                          className={`status ${
-                            cancelled
-                              ? "status-cancelled"
-                              : pending
-                                ? "status-pending"
-                                : "status-applied"
-                          }`}
-                        >
-                          {status}
-                        </span>
-                      </div>
-                    </article>
+          ) : (
+            <div className="distribution-list">
+              {investmentTypes.map((type) => {
+                const typeTotal = appliedInvestments
+                  .filter(
+                    (investment) =>
+                      getInvestmentType(investment) === type
+                  )
+                  .reduce(
+                    (total, investment) =>
+                      total + Number(investment.amount || 0),
+                    0
                   );
-                })}
-              </div>
-            )}
-          </section>
 
-          <section className="information">
-            <div className="information-icon">i</div>
+                const percentage =
+                  totalInvested > 0
+                    ? (typeTotal / totalInvested) * 100
+                    : 0;
 
-            <div>
-              <strong>Sobre os valores da carteira</strong>
-              <p>
-                Os valores apresentados correspondem às aplicações registradas
-                na Visão geral. O sistema ainda não possui atualização
-                automática de cotação, valorização, juros ou rendimentos. Por
-                isso, o total investido representa o valor efetivamente
-                aplicado, e não necessariamente o valor atual de resgate.
-              </p>
+                return (
+                  <div className="distribution-item" key={type}>
+                    <div className="distribution-top">
+                      <strong>{type}</strong>
+                      <span>{money(typeTotal)}</span>
+                    </div>
+
+                    <div className="progress-track">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+
+                    <small>
+                      {percentage.toFixed(1).replace(".", ",")}% da carteira
+                    </small>
+                  </div>
+                );
+              })}
             </div>
-          </section>
+          )}
+        </article>
 
-          <footer className="routine-footer">
-            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
-            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
-          </footer>
+        <article className="panel">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">INSTITUIÇÕES</span>
+              <h2>Onde você investe</h2>
+              <p>Distribuição das aplicações por instituição.</p>
+            </div>
+          </div>
+
+          {institutions.length === 0 ? (
+            <div className="empty-distribution">
+              <span>▣</span>
+              <strong>Nenhuma instituição registrada</strong>
+              <p>Suas instituições financeiras aparecerão aqui.</p>
+            </div>
+          ) : (
+            <div className="institution-list">
+              {institutions.map((institution) => {
+                const institutionInvestments = appliedInvestments.filter(
+                  (investment) =>
+                    getInstitution(investment) === institution
+                );
+
+                const institutionTotal = institutionInvestments.reduce(
+                  (total, investment) =>
+                    total + Number(investment.amount || 0),
+                  0
+                );
+
+                return (
+                  <div className="institution-item" key={institution}>
+                    <div className="institution-icon">▣</div>
+
+                    <div className="institution-info">
+                      <strong>{institution}</strong>
+                      <small>
+                        {institutionInvestments.length} aplicação(ões)
+                        efetivada(s)
+                      </small>
+                    </div>
+
+                    <strong className="institution-value">
+                      {money(institutionTotal)}
+                    </strong>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </article>
+      </section>
+
+      <section className="panel history-panel">
+        <div className="section-heading history-heading">
+          <div>
+            <span className="eyebrow">ACOMPANHAMENTO</span>
+            <h2>Minha carteira de investimentos</h2>
+            <p>
+              Consulte e filtre suas aplicações registradas na Visão geral.
+            </p>
+          </div>
+
+          <span className="record-counter">
+            {filteredInvestments.length} registro(s)
+          </span>
+        </div>
+
+        <div className="filters">
+          <div className="search-field">
+            <label htmlFor="investment-search">Pesquisar</label>
+            <input
+              id="investment-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Nome, investimento ou instituição..."
+            />
+          </div>
+
+          <div className="filter-field">
+            <label htmlFor="investment-type">Tipo de investimento</label>
+            <select
+              id="investment-type"
+              value={typeFilter}
+              onChange={(event) => setTypeFilter(event.target.value)}
+            >
+              <option value="Todos">Todos</option>
+              {investmentTypes.map((type) => (
+                <option value={type} key={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-field">
+            <label htmlFor="investment-institution">Instituição</label>
+            <select
+              id="investment-institution"
+              value={institutionFilter}
+              onChange={(event) =>
+                setInstitutionFilter(event.target.value)
+              }
+            >
+              <option value="Todas">Todas</option>
+              {institutions.map((institution) => (
+                <option value={institution} key={institution}>
+                  {institution}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-field">
+            <label htmlFor="investment-status">Situação</label>
+            <select
+              id="investment-status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="Todos">Todas</option>
+              <option value="Ativos">Ativos</option>
+              <option value="Cancelados">Cancelados</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="filter-footer">
+          <span>
+            Exibindo {filteredInvestments.length} de {transactions.length}{" "}
+            investimento(s)
+          </span>
+
+          <button type="button" onClick={clearFilters}>
+            Limpar filtros
+          </button>
+        </div>
+
+        {filteredInvestments.length === 0 ? (
+          <div className="empty-state">
+            <span>◈</span>
+            <strong>Nenhum investimento encontrado</strong>
+            <p>
+              {transactions.length === 0
+                ? "Quando você registrar uma aplicação na Visão geral, ela aparecerá automaticamente aqui."
+                : "Não existem investimentos que correspondam aos filtros selecionados."}
+            </p>
+          </div>
+        ) : (
+          <div className="investment-list">
+            {filteredInvestments.map((investment) => {
+              const status = getStatus(investment);
+              const cancelled = isCancelled(investment);
+              const pending =
+                status.toLowerCase() !== "aplicado" && !cancelled;
+
+              return (
+                <article
+                  className={`investment-item ${
+                    cancelled ? "cancelled" : ""
+                  }`}
+                  key={String(investment.id)}
+                >
+                  <div className="investment-icon">◈</div>
+
+                  <div className="investment-info">
+                    <strong>
+                      {investment.description ||
+                        getInvestmentType(investment)}
+                    </strong>
+
+                    <span>
+                      {getInvestmentType(investment)} ·{" "}
+                      {getInstitution(investment)}
+                    </span>
+
+                    <small>
+                      Aplicação em {formatDate(investment.date)}
+                    </small>
+
+                    {investment.account && (
+                      <small>Conta de origem: {investment.account}</small>
+                    )}
+
+                    {investment.destinationAccount && (
+                      <small>
+                        Conta de destino: {investment.destinationAccount}
+                      </small>
+                    )}
+
+                    {investment.paymentMethod && (
+                      <small>
+                        Forma de pagamento: {investment.paymentMethod}
+                      </small>
+                    )}
+                  </div>
+
+                  <div className="investment-value">
+                    <span>Valor aplicado</span>
+                    <strong>{money(investment.amount)}</strong>
+                  </div>
+
+                  <div className="investment-status">
+                    <span
+                      className={`status ${
+                        cancelled
+                          ? "status-cancelled"
+                          : pending
+                            ? "status-pending"
+                            : "status-applied"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="information">
+        <div className="information-icon">i</div>
+
+        <div>
+          <strong>Sobre os valores da carteira</strong>
+          <p>
+            Os valores apresentados correspondem às aplicações registradas
+            na Visão geral. O sistema ainda não possui atualização
+            automática de cotação, valorização, juros ou rendimentos. Por
+            isso, o total investido representa o valor efetivamente
+            aplicado, e não necessariamente o valor atual de resgate.
+          </p>
         </div>
       </section>
+
+      <footer className="routine-footer">
+        <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+        <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+      </footer>
 
       <style jsx global>{`
         .investments-content {
@@ -1262,6 +1228,6 @@ export default function InvestimentosPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

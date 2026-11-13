@@ -2,7 +2,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -343,305 +342,154 @@ export default function TarefasPage() {
   ];
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content">
+      <section className="page-heading">
+        <div>
+          <div className="eyebrow">ORGANIZAÇÃO PESSOAL</div>
+          <h1>Minhas tarefas</h1>
+          <p>
+            Organize suas atividades, acompanhe prioridades e mantenha
+            sua rotina sob controle.
+          </p>
+        </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div className="breadcrumb">
-            Minha rotina <span>/</span> <strong>Tarefas</strong>
+        <button className="primary-button" onClick={openNewTask}>
+          <span>＋</span> Nova tarefa
+        </button>
+      </section>
+
+      <section className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Total de tarefas</span>
+            <span className="metric-icon">▤</span>
+          </div>
+          <div className="metric-value">{metrics.total}</div>
+          <div className="metric-description">Atividades cadastradas</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Pendentes</span>
+            <span className="metric-icon">◷</span>
+          </div>
+          <div className="metric-value">{metrics.pending}</div>
+          <div className="metric-description">Aguardando conclusão</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Concluídas</span>
+            <span className="metric-icon">✓</span>
+          </div>
+          <div className="metric-value">{metrics.completed}</div>
+          <div className="metric-description">Atividades finalizadas</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Atrasadas</span>
+            <span className="metric-icon">!</span>
+          </div>
+          <div className="metric-value overdue-value">
+            {metrics.overdue}
+          </div>
+          <div className="metric-description">Precisam de atenção</div>
+        </div>
+      </section>
+
+      <section className="progress-section">
+        <div className="progress-info">
+          <div>
+            <span className="section-label">SEU DESEMPENHO</span>
+            <h2>Progresso geral</h2>
+            <p>
+              Você concluiu {metrics.completed} de {metrics.total} tarefas.
+            </p>
           </div>
 
-          <div className="topbar-right">
-            <span className="topbar-date">
-              {new Date().toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-
-            <div className="profile-avatar">N</div>
+          <div className="progress-percentage">
+            {metrics.percentage}%
           </div>
-        </header>
+        </div>
 
-        <div className="content">
-          <section className="page-heading">
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{ width: `${metrics.percentage}%` }}
+          />
+        </div>
+
+        <div className="progress-footer">
+          <span>{metrics.completed} concluídas</span>
+          <span>{metrics.pending} pendentes</span>
+        </div>
+      </section>
+
+      {showForm && (
+        <section className="form-card" id="task-form">
+          <div className="form-heading">
             <div>
-              <div className="eyebrow">ORGANIZAÇÃO PESSOAL</div>
-              <h1>Minhas tarefas</h1>
-              <p>
-                Organize suas atividades, acompanhe prioridades e mantenha
-                sua rotina sob controle.
-              </p>
+              <span className="section-label">
+                {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
+              </span>
+              <h2>
+                {editingId !== null
+                  ? "Editar tarefa"
+                  : "Cadastrar tarefa"}
+              </h2>
             </div>
 
-            <button className="primary-button" onClick={openNewTask}>
-              <span>＋</span> Nova tarefa
+            <button
+              className="close-button"
+              onClick={resetForm}
+              type="button"
+              aria-label="Fechar formulário"
+            >
+              ×
             </button>
-          </section>
+          </div>
 
-          <section className="metrics-grid">
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Total de tarefas</span>
-                <span className="metric-icon">▤</span>
-              </div>
-              <div className="metric-value">{metrics.total}</div>
-              <div className="metric-description">Atividades cadastradas</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Pendentes</span>
-                <span className="metric-icon">◷</span>
-              </div>
-              <div className="metric-value">{metrics.pending}</div>
-              <div className="metric-description">Aguardando conclusão</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Concluídas</span>
-                <span className="metric-icon">✓</span>
-              </div>
-              <div className="metric-value">{metrics.completed}</div>
-              <div className="metric-description">Atividades finalizadas</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-top">
-                <span className="metric-label">Atrasadas</span>
-                <span className="metric-icon">!</span>
-              </div>
-              <div className="metric-value overdue-value">
-                {metrics.overdue}
-              </div>
-              <div className="metric-description">Precisam de atenção</div>
-            </div>
-          </section>
-
-          <section className="progress-section">
-            <div className="progress-info">
-              <div>
-                <span className="section-label">SEU DESEMPENHO</span>
-                <h2>Progresso geral</h2>
-                <p>
-                  Você concluiu {metrics.completed} de {metrics.total} tarefas.
-                </p>
-              </div>
-
-              <div className="progress-percentage">
-                {metrics.percentage}%
-              </div>
-            </div>
-
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${metrics.percentage}%` }}
-              />
-            </div>
-
-            <div className="progress-footer">
-              <span>{metrics.completed} concluídas</span>
-              <span>{metrics.pending} pendentes</span>
-            </div>
-          </section>
-
-          {showForm && (
-            <section className="form-card" id="task-form">
-              <div className="form-heading">
-                <div>
-                  <span className="section-label">
-                    {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
-                  </span>
-                  <h2>
-                    {editingId !== null
-                      ? "Editar tarefa"
-                      : "Cadastrar tarefa"}
-                  </h2>
-                </div>
-
-                <button
-                  className="close-button"
-                  onClick={resetForm}
-                  type="button"
-                  aria-label="Fechar formulário"
-                >
-                  ×
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit}>
-                <div className="form-field full-field">
-                  <label>Descrição da tarefa *</label>
-                  <input
-                    type="text"
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    placeholder="Ex.: Finalizar relatório financeiro"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div className="form-grid">
-                  <div className="form-field">
-                    <label>Data prevista</label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-field">
-                    <label>Horário</label>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(event) => setTime(event.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-field">
-                    <label>Prioridade</label>
-                    <select
-                      value={priority}
-                      onChange={(event) =>
-                        setPriority(event.target.value as Priority)
-                      }
-                    >
-                      {PRIORITIES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-field">
-                    <label>Categoria</label>
-                    <select
-                      value={category}
-                      onChange={(event) => setCategory(event.target.value)}
-                    >
-                      {CATEGORIES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-field full-field">
-                  <label>Observações</label>
-                  <textarea
-                    value={notes}
-                    onChange={(event) => setNotes(event.target.value)}
-                    placeholder="Adicione detalhes ou informações importantes..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={resetForm}
-                  >
-                    Cancelar
-                  </button>
-
-                  <button type="submit" className="primary-button">
-                    {editingId !== null
-                      ? "Salvar alterações"
-                      : "Cadastrar tarefa"}
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
-
-          <section className="tasks-section">
-            <div className="tasks-heading">
-              <div>
-                <span className="section-label">GERENCIAMENTO</span>
-                <h2>Lista de tarefas</h2>
-                <p>
-                  Visualize, filtre e gerencie todas as suas atividades.
-                </p>
-              </div>
-
-              <div className="task-count">
-                {filteredTasks.length}{" "}
-                {filteredTasks.length === 1 ? "tarefa" : "tarefas"}
-              </div>
-            </div>
-
-            <div className="search-container">
-              <span className="search-icon">⌕</span>
+          <form onSubmit={handleSubmit}>
+            <div className="form-field full-field">
+              <label>Descrição da tarefa *</label>
               <input
                 type="text"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar tarefa ou observação..."
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Ex.: Finalizar relatório financeiro"
+                required
+                autoFocus
               />
-
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="clear-search"
-                  type="button"
-                >
-                  ×
-                </button>
-              )}
             </div>
 
-            <div className="filters-row">
-              <div className="filter-tabs">
-                {filters.map((item) => (
-                  <button
-                    key={item}
-                    className={`filter-tab ${
-                      filter === item ? "selected" : ""
-                    }`}
-                    onClick={() => setFilter(item)}
-                    type="button"
-                  >
-                    {item}
-
-                    {item === "Atrasadas" && metrics.overdue > 0 && (
-                      <span className="filter-number">
-                        {metrics.overdue}
-                      </span>
-                    )}
-                  </button>
-                ))}
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Data prevista</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                />
               </div>
 
-              <div className="select-filters">
-                <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value)}
-                >
-                  <option value="Todas">Todas as categorias</option>
-                  {CATEGORIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
+              <div className="form-field">
+                <label>Horário</label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                />
+              </div>
 
+              <div className="form-field">
+                <label>Prioridade</label>
                 <select
-                  value={priorityFilter}
-                  onChange={(event) => setPriorityFilter(event.target.value)}
+                  value={priority}
+                  onChange={(event) =>
+                    setPriority(event.target.value as Priority)
+                  }
                 >
-                  <option value="Todas">Todas as prioridades</option>
                   {PRIORITIES.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -649,225 +497,287 @@ export default function TarefasPage() {
                   ))}
                 </select>
               </div>
+
+              <div className="form-field">
+                <label>Categoria</label>
+                <select
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                >
+                  {CATEGORIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="task-list">
-              {!loaded ? (
-                <div className="empty-state">
-                  <div className="empty-icon">◷</div>
-                  <h3>Carregando tarefas...</h3>
-                </div>
-              ) : filteredTasks.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">▤</div>
-                  <h3>Nenhuma tarefa encontrada</h3>
-                  <p>
-                    Não existem tarefas para os filtros selecionados.
-                    Cadastre uma nova atividade ou altere os filtros.
-                  </p>
+            <div className="form-field full-field">
+              <label>Observações</label>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Adicione detalhes ou informações importantes..."
+                rows={3}
+              />
+            </div>
 
-                  <button
-                    className="secondary-button"
-                    onClick={() => {
-                      setFilter("Todas");
-                      setCategoryFilter("Todas");
-                      setPriorityFilter("Todas");
-                      setSearch("");
-                    }}
-                    type="button"
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              ) : (
-                filteredTasks.map((task) => {
-                  const overdue =
-                    !task.done && !!task.date && task.date < today;
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
 
-                  const expanded = expandedTask === task.id;
+              <button type="submit" className="primary-button">
+                {editingId !== null
+                  ? "Salvar alterações"
+                  : "Cadastrar tarefa"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
 
-                  return (
-                    <article
-                      className={`task-item ${
-                        task.done ? "task-completed" : ""
+      <section className="tasks-section">
+        <div className="tasks-heading">
+          <div>
+            <span className="section-label">GERENCIAMENTO</span>
+            <h2>Lista de tarefas</h2>
+            <p>
+              Visualize, filtre e gerencie todas as suas atividades.
+            </p>
+          </div>
+
+          <div className="task-count">
+            {filteredTasks.length}{" "}
+            {filteredTasks.length === 1 ? "tarefa" : "tarefas"}
+          </div>
+        </div>
+
+        <div className="search-container">
+          <span className="search-icon">⌕</span>
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar tarefa ou observação..."
+          />
+
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="clear-search"
+              type="button"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        <div className="filters-row">
+          <div className="filter-tabs">
+            {filters.map((item) => (
+              <button
+                key={item}
+                className={`filter-tab ${
+                  filter === item ? "selected" : ""
+                }`}
+                onClick={() => setFilter(item)}
+                type="button"
+              >
+                {item}
+
+                {item === "Atrasadas" && metrics.overdue > 0 && (
+                  <span className="filter-number">
+                    {metrics.overdue}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="select-filters">
+            <select
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+            >
+              <option value="Todas">Todas as categorias</option>
+              {CATEGORIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value)}
+            >
+              <option value="Todas">Todas as prioridades</option>
+              {PRIORITIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="task-list">
+          {!loaded ? (
+            <div className="empty-state">
+              <div className="empty-icon">◷</div>
+              <h3>Carregando tarefas...</h3>
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">▤</div>
+              <h3>Nenhuma tarefa encontrada</h3>
+              <p>
+                Não existem tarefas para os filtros selecionados.
+                Cadastre uma nova atividade ou altere os filtros.
+              </p>
+
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setFilter("Todas");
+                  setCategoryFilter("Todas");
+                  setPriorityFilter("Todas");
+                  setSearch("");
+                }}
+                type="button"
+              >
+                Limpar filtros
+              </button>
+            </div>
+          ) : (
+            filteredTasks.map((task) => {
+              const overdue =
+                !task.done && !!task.date && task.date < today;
+
+              const expanded = expandedTask === task.id;
+
+              return (
+                <article
+                  className={`task-item ${
+                    task.done ? "task-completed" : ""
+                  }`}
+                  key={task.id}
+                >
+                  <div className="task-main">
+                    <button
+                      className={`task-checkbox ${
+                        task.done ? "checked" : ""
                       }`}
-                      key={task.id}
+                      onClick={() => toggleTask(task.id)}
+                      aria-label={
+                        task.done
+                          ? "Reabrir tarefa"
+                          : "Concluir tarefa"
+                      }
+                      type="button"
                     >
-                      <div className="task-main">
-                        <button
-                          className={`task-checkbox ${
-                            task.done ? "checked" : ""
-                          }`}
-                          onClick={() => toggleTask(task.id)}
-                          aria-label={
-                            task.done
-                              ? "Reabrir tarefa"
-                              : "Concluir tarefa"
-                          }
-                          type="button"
-                        >
-                          {task.done ? "✓" : ""}
-                        </button>
+                      {task.done ? "✓" : ""}
+                    </button>
 
-                        <div className="task-content">
-                          <div className="task-title-row">
-                            <h3>{task.description}</h3>
+                    <div className="task-content">
+                      <div className="task-title-row">
+                        <h3>{task.description}</h3>
 
-                            {overdue && (
-                              <span className="overdue-tag">Atrasada</span>
-                            )}
-                          </div>
-
-                          <div className="task-meta">
-                            <span>{task.category || "Pessoal"}</span>
-                            <span className="meta-separator">•</span>
-                            <span>{formatDate(task.date)}</span>
-
-                            {task.time && (
-                              <>
-                                <span className="meta-separator">•</span>
-                                <span>{task.time}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="task-actions">
-                          <span
-                            className={`priority-badge ${priorityClass(
-                              task.priority
-                            )}`}
-                          >
-                            {task.priority || "Média"}
-                          </span>
-
-                          <button
-                            className="icon-action"
-                            onClick={() =>
-                              setExpandedTask(expanded ? null : task.id)
-                            }
-                            title="Mais opções"
-                            type="button"
-                          >
-                            ⋯
-                          </button>
-                        </div>
+                        {overdue && (
+                          <span className="overdue-tag">Atrasada</span>
+                        )}
                       </div>
 
-                      {expanded && (
-                        <div className="task-details">
-                          {task.notes ? (
-                            <p>{task.notes}</p>
-                          ) : (
-                            <p className="no-notes">
-                              Nenhuma observação adicionada.
-                            </p>
-                          )}
+                      <div className="task-meta">
+                        <span>{task.category || "Pessoal"}</span>
+                        <span className="meta-separator">•</span>
+                        <span>{formatDate(task.date)}</span>
 
-                          <div className="task-detail-actions">
-                            <button
-                              onClick={() => editTask(task)}
-                              type="button"
-                            >
-                              ✎ Editar
-                            </button>
+                        {task.time && (
+                          <>
+                            <span className="meta-separator">•</span>
+                            <span>{task.time}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
 
-                            <button
-                              onClick={() => toggleTask(task.id)}
-                              type="button"
-                            >
-                              {task.done ? "↺ Reabrir" : "✓ Concluir"}
-                            </button>
+                    <div className="task-actions">
+                      <span
+                        className={`priority-badge ${priorityClass(
+                          task.priority
+                        )}`}
+                      >
+                        {task.priority || "Média"}
+                      </span>
 
-                            <button
-                              className="delete-action"
-                              onClick={() => deleteTask(task.id)}
-                              type="button"
-                            >
-                              × Excluir
-                            </button>
-                          </div>
-                        </div>
+                      <button
+                        className="icon-action"
+                        onClick={() =>
+                          setExpandedTask(expanded ? null : task.id)
+                        }
+                        title="Mais opções"
+                        type="button"
+                      >
+                        ⋯
+                      </button>
+                    </div>
+                  </div>
+
+                  {expanded && (
+                    <div className="task-details">
+                      {task.notes ? (
+                        <p>{task.notes}</p>
+                      ) : (
+                        <p className="no-notes">
+                          Nenhuma observação adicionada.
+                        </p>
                       )}
-                    </article>
-                  );
-                })
-              )}
-            </div>
-          </section>
 
-          <footer className="page-footer">
-            <span>NEXO · GESTÃO PESSOAL</span>
-            <span>Organização que gera resultados.</span>
-          </footer>
+                      <div className="task-detail-actions">
+                        <button
+                          onClick={() => editTask(task)}
+                          type="button"
+                        >
+                          ✎ Editar
+                        </button>
+
+                        <button
+                          onClick={() => toggleTask(task.id)}
+                          type="button"
+                        >
+                          {task.done ? "↺ Reabrir" : "✓ Concluir"}
+                        </button>
+
+                        <button
+                          className="delete-action"
+                          onClick={() => deleteTask(task.id)}
+                          type="button"
+                        >
+                          × Excluir
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })
+          )}
         </div>
       </section>
 
+      <footer className="page-footer">
+        <span>NEXO · GESTÃO PESSOAL</span>
+        <span>Organização que gera resultados.</span>
+      </footer>
+
       <style jsx>{`
-        .main-area {
-          flex: 1;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .topbar {
-          min-height: 68px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 38px;
-          border-bottom: 1px solid #22272d;
-          background: #0e1115;
-        }
-
-        .breadcrumb {
-          color: #858d98;
-          font-size: 12px;
-        }
-
-        .breadcrumb span {
-          margin: 0 9px;
-          color: #515965;
-        }
-
-        .breadcrumb strong {
-          color: #e8e9ec;
-          font-weight: 600;
-        }
-
-        .topbar-right {
-          display: flex;
-          align-items: center;
-          gap: 18px;
-        }
-
-        .topbar-date {
-          color: #89919c;
-          font-size: 11px;
-          text-transform: capitalize;
-        }
-
-        .profile-avatar {
-          width: 33px;
-          height: 33px;
-          display: grid;
-          place-items: center;
-          border-radius: 50%;
-          background: #252b33;
-          border: 1px solid #414954;
-          color: #f0f1f3;
-          font-size: 13px;
-          font-weight: 700;
-        }
-
-        .content {
-          width: 100%;
-          max-width: 1450px;
-          padding: 34px 38px 28px;
-          margin: 0 auto;
-        }
-
         button {
           font-family: inherit;
           cursor: pointer;
@@ -1527,15 +1437,6 @@ export default function TarefasPage() {
         }
 
         @media (max-width: 760px) {
-          .topbar {
-            min-height: 56px;
-            padding: 0 17px;
-          }
-
-          .topbar-date {
-            display: none;
-          }
-
           .content {
             padding: 25px 16px;
           }
@@ -1633,6 +1534,6 @@ export default function TarefasPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

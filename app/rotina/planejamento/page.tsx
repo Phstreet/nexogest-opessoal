@@ -2,7 +2,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -340,457 +339,434 @@ export default function WeeklyPlanningPage() {
   }
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
-
-      <section className="main-area">
-        <header className="topbar">
-          <div className="breadcrumb">
-            <span>Minha rotina</span>
-            <span className="breadcrumb-separator">/</span>
-            <strong>Planejamento semanal</strong>
+    <div className="content weekly-page-content">
+      <div className="weekly-content">
+        <section className="weekly-welcome">
+          <div>
+            <span className="eyebrow">ORGANIZAÇÃO E PLANEJAMENTO</span>
+            <h1>{greeting}, planeje sua semana.</h1>
+            <p>
+              Organize suas prioridades, distribua suas atividades e acompanhe
+              sua evolução durante a semana.
+            </p>
           </div>
 
-          <div className="topbar-right">
-            <div className="date-display">
-              {new Date().toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => openNewTask()}
+          >
+            ＋ Nova atividade
+          </button>
+        </section>
+
+        <section className="week-selector">
+          <div className="week-selector-left">
+            <button
+              type="button"
+              className="week-arrow"
+              onClick={() => changeWeek(-1)}
+              aria-label="Semana anterior"
+            >
+              ‹
+            </button>
+
+            <div className="week-period">
+              <span className="eyebrow">PERÍODO SELECIONADO</span>
+              <h2>{formatPeriod(weekStart, weekEnd)}</h2>
             </div>
-            <div className="profile-avatar">N</div>
-          </div>
-        </header>
 
-        <div className="weekly-content">
-          <section className="weekly-welcome">
+            <button
+              type="button"
+              className="week-arrow"
+              onClick={() => changeWeek(1)}
+              aria-label="Próxima semana"
+            >
+              ›
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="today-button"
+            onClick={goToCurrentWeek}
+          >
+            Semana atual
+          </button>
+        </section>
+
+        <section className="weekly-metrics">
+          <div className="metric-card">
+            <span className="metric-label">TOTAL DE ATIVIDADES</span>
+            <strong>{totalTasks}</strong>
+            <span className="metric-caption">Nesta semana</span>
+          </div>
+
+          <div className="metric-card">
+            <span className="metric-label">CONCLUÍDAS</span>
+            <strong>{completedTasks}</strong>
+            <span className="metric-caption">Atividades realizadas</span>
+          </div>
+
+          <div className="metric-card">
+            <span className="metric-label">PENDENTES</span>
+            <strong>{pendingTasks}</strong>
+            <span className="metric-caption">Aguardando execução</span>
+          </div>
+
+          <div className="metric-card">
+            <span className="metric-label">URGENTES</span>
+            <strong className={urgentTasks ? "danger-number" : ""}>
+              {urgentTasks}
+            </strong>
+            <span className="metric-caption">Prioridade máxima</span>
+          </div>
+        </section>
+
+        <section className="weekly-progress-panel">
+          <div className="progress-info">
             <div>
-              <span className="eyebrow">ORGANIZAÇÃO E PLANEJAMENTO</span>
-              <h1>{greeting}, planeje sua semana.</h1>
+              <span className="eyebrow">DESEMPENHO SEMANAL</span>
+              <h2>Progresso da semana</h2>
               <p>
-                Organize suas prioridades, distribua suas atividades e acompanhe
-                sua evolução durante a semana.
+                {completedTasks} de {totalTasks} atividades concluídas
               </p>
             </div>
+            <strong className="progress-percentage">{weeklyProgress}%</strong>
+          </div>
 
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => openNewTask()}
-            >
-              ＋ Nova atividade
-            </button>
-          </section>
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{ width: `${weeklyProgress}%` }}
+            />
+          </div>
+        </section>
 
-          <section className="week-selector">
-            <div className="week-selector-left">
-              <button
-                type="button"
-                className="week-arrow"
-                onClick={() => changeWeek(-1)}
-                aria-label="Semana anterior"
-              >
-                ‹
-              </button>
-
-              <div className="week-period">
-                <span className="eyebrow">PERÍODO SELECIONADO</span>
-                <h2>{formatPeriod(weekStart, weekEnd)}</h2>
-              </div>
-
-              <button
-                type="button"
-                className="week-arrow"
-                onClick={() => changeWeek(1)}
-                aria-label="Próxima semana"
-              >
-                ›
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="today-button"
-              onClick={goToCurrentWeek}
-            >
-              Semana atual
-            </button>
-          </section>
-
-          <section className="weekly-metrics">
-            <div className="metric-card">
-              <span className="metric-label">TOTAL DE ATIVIDADES</span>
-              <strong>{totalTasks}</strong>
-              <span className="metric-caption">Nesta semana</span>
-            </div>
-
-            <div className="metric-card">
-              <span className="metric-label">CONCLUÍDAS</span>
-              <strong>{completedTasks}</strong>
-              <span className="metric-caption">Atividades realizadas</span>
-            </div>
-
-            <div className="metric-card">
-              <span className="metric-label">PENDENTES</span>
-              <strong>{pendingTasks}</strong>
-              <span className="metric-caption">Aguardando execução</span>
-            </div>
-
-            <div className="metric-card">
-              <span className="metric-label">URGENTES</span>
-              <strong className={urgentTasks ? "danger-number" : ""}>
-                {urgentTasks}
-              </strong>
-              <span className="metric-caption">Prioridade máxima</span>
-            </div>
-          </section>
-
-          <section className="weekly-progress-panel">
-            <div className="progress-info">
-              <div>
-                <span className="eyebrow">DESEMPENHO SEMANAL</span>
-                <h2>Progresso da semana</h2>
-                <p>
-                  {completedTasks} de {totalTasks} atividades concluídas
-                </p>
-              </div>
-              <strong className="progress-percentage">{weeklyProgress}%</strong>
-            </div>
-
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${weeklyProgress}%` }}
-              />
-            </div>
-          </section>
-
-          {showForm && (
-            <section className="task-form-panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">
-                    {editingId !== null ? "EDIÇÃO" : "CADASTRO"}
-                  </span>
-                  <h2>
-                    {editingId !== null
-                      ? "Editar atividade"
-                      : "Adicionar ao planejamento"}
-                  </h2>
-                </div>
-
-                <button
-                  type="button"
-                  className="close-button"
-                  onClick={resetForm}
-                >
-                  ×
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit}>
-                <div className="form-grid">
-                  <label className="form-field field-wide">
-                    <span>Nome da atividade *</span>
-                    <input
-                      value={description}
-                      onChange={(event) => setDescription(event.target.value)}
-                      placeholder="Ex.: Treino, reunião, estudar..."
-                      required
-                    />
-                  </label>
-
-                  <label className="form-field">
-                    <span>Data *</span>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                      required
-                    />
-                  </label>
-
-                  <label className="form-field">
-                    <span>Horário</span>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(event) => setTime(event.target.value)}
-                    />
-                  </label>
-
-                  <label className="form-field">
-                    <span>Prioridade</span>
-                    <select
-                      value={priority}
-                      onChange={(event) =>
-                        setPriority(event.target.value as Priority)
-                      }
-                    >
-                      <option value="Baixa">Baixa</option>
-                      <option value="Média">Média</option>
-                      <option value="Alta">Alta</option>
-                      <option value="Urgente">Urgente</option>
-                    </select>
-                  </label>
-
-                  <label className="form-field">
-                    <span>Categoria</span>
-                    <select
-                      value={category}
-                      onChange={(event) => setCategory(event.target.value)}
-                    >
-                      <option value="Pessoal">Pessoal</option>
-                      <option value="Trabalho">Trabalho</option>
-                      <option value="Saúde">Saúde</option>
-                      <option value="Estudos">Estudos</option>
-                      <option value="Financeiro">Financeiro</option>
-                      <option value="Lazer">Lazer</option>
-                      <option value="Outros">Outros</option>
-                    </select>
-                  </label>
-
-                  <label className="form-field field-wide">
-                    <span>Observações</span>
-                    <textarea
-                      value={notes}
-                      onChange={(event) => setNotes(event.target.value)}
-                      placeholder="Detalhes e informações adicionais..."
-                      rows={3}
-                    />
-                  </label>
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={resetForm}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="primary-button">
-                    {editingId !== null
-                      ? "Salvar alterações"
-                      : "Adicionar atividade"}
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
-
-          <section className="week-board-section">
+        {showForm && (
+          <section className="task-form-panel">
             <div className="panel-heading">
               <div>
-                <span className="eyebrow">VISÃO GERAL</span>
-                <h2>Programação semanal</h2>
+                <span className="eyebrow">
+                  {editingId !== null ? "EDIÇÃO" : "CADASTRO"}
+                </span>
+                <h2>
+                  {editingId !== null
+                    ? "Editar atividade"
+                    : "Adicionar ao planejamento"}
+                </h2>
               </div>
-              <span className="board-caption">Segunda a domingo</span>
+
+              <button
+                type="button"
+                className="close-button"
+                onClick={resetForm}
+              >
+                ×
+              </button>
             </div>
 
-            {!loaded ? (
-              <div className="empty-state">Carregando planejamento...</div>
-            ) : (
-              <div className="week-board">
-                {days.map((day) => (
-                  <div
-                    className={`day-column ${
-                      day.date === today ? "current-day" : ""
-                    }`}
-                    key={day.date}
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <label className="form-field field-wide">
+                  <span>Nome da atividade *</span>
+                  <input
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder="Ex.: Treino, reunião, estudar..."
+                    required
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>Data *</span>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(event) => setDate(event.target.value)}
+                    required
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>Horário</span>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(event) => setTime(event.target.value)}
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>Prioridade</span>
+                  <select
+                    value={priority}
+                    onChange={(event) =>
+                      setPriority(event.target.value as Priority)
+                    }
                   >
-                    <div className="day-column-header">
-                      <div>
-                        <span className="day-name">{day.name}</span>
-                        <strong>{day.number.toString().padStart(2, "0")}</strong>
-                        <span className="day-month">
-                          {parseDate(day.date).toLocaleDateString("pt-BR", {
-                            month: "short",
-                          })}
-                        </span>
-                      </div>
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Urgente">Urgente</option>
+                  </select>
+                </label>
 
-                      {day.date === today && (
-                        <span className="today-indicator">HOJE</span>
-                      )}
-                    </div>
+                <label className="form-field">
+                  <span>Categoria</span>
+                  <select
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value)}
+                  >
+                    <option value="Pessoal">Pessoal</option>
+                    <option value="Trabalho">Trabalho</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Estudos">Estudos</option>
+                    <option value="Financeiro">Financeiro</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </label>
 
-                    <div className="day-summary">
-                      <span>{day.total} atividade(s)</span>
-                      <span>
-                        {day.completed}/{day.total} feitas
+                <label className="form-field field-wide">
+                  <span>Observações</span>
+                  <textarea
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    placeholder="Detalhes e informações adicionais..."
+                    rows={3}
+                  />
+                </label>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={resetForm}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="primary-button">
+                  {editingId !== null
+                    ? "Salvar alterações"
+                    : "Adicionar atividade"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+
+        <section className="week-board-section">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">VISÃO GERAL</span>
+              <h2>Programação semanal</h2>
+            </div>
+            <span className="board-caption">Segunda a domingo</span>
+          </div>
+
+          {!loaded ? (
+            <div className="empty-state">Carregando planejamento...</div>
+          ) : (
+            <div className="week-board">
+              {days.map((day) => (
+                <div
+                  className={`day-column ${
+                    day.date === today ? "current-day" : ""
+                  }`}
+                  key={day.date}
+                >
+                  <div className="day-column-header">
+                    <div>
+                      <span className="day-name">{day.name}</span>
+                      <strong>{day.number.toString().padStart(2, "0")}</strong>
+                      <span className="day-month">
+                        {parseDate(day.date).toLocaleDateString("pt-BR", {
+                          month: "short",
+                        })}
                       </span>
                     </div>
 
-                    <div className="day-mini-progress">
-                      <div
-                        style={{
-                          width: `${
-                            day.total
-                              ? (day.completed / day.total) * 100
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-
-                    <div className="day-tasks">
-                      {day.tasks.length === 0 ? (
-                        <div className="no-day-tasks">Dia livre</div>
-                      ) : (
-                        day.tasks.map((task) => (
-                          <div
-                            className={`week-task ${
-                              task.done ? "task-completed" : ""
-                            }`}
-                            key={task.id}
-                          >
-                            <button
-                              type="button"
-                              className={`task-check ${
-                                task.done ? "checked" : ""
-                              }`}
-                              onClick={() => toggleTask(task.id)}
-                              aria-label={
-                                task.done
-                                  ? "Marcar como pendente"
-                                  : "Concluir atividade"
-                              }
-                            >
-                              {task.done ? "✓" : ""}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="week-task-content"
-                              onClick={() => editTask(task)}
-                            >
-                              <strong>{task.description}</strong>
-                              <span>
-                                {task.time || "Sem horário"} ·{" "}
-                                {task.category || "Pessoal"}
-                              </span>
-                            </button>
-
-                            <span
-                              className={`task-priority ${priorityClass(
-                                task.priority
-                              )}`}
-                              title={task.priority || "Baixa"}
-                            />
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      className="add-day-task"
-                      onClick={() => openNewTask(day.date)}
-                    >
-                      ＋ Adicionar
-                    </button>
+                    {day.date === today && (
+                      <span className="today-indicator">HOJE</span>
+                    )}
                   </div>
-                ))}
+
+                  <div className="day-summary">
+                    <span>{day.total} atividade(s)</span>
+                    <span>
+                      {day.completed}/{day.total} feitas
+                    </span>
+                  </div>
+
+                  <div className="day-mini-progress">
+                    <div
+                      style={{
+                        width: `${
+                          day.total
+                            ? (day.completed / day.total) * 100
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="day-tasks">
+                    {day.tasks.length === 0 ? (
+                      <div className="no-day-tasks">Dia livre</div>
+                    ) : (
+                      day.tasks.map((task) => (
+                        <div
+                          className={`week-task ${
+                            task.done ? "task-completed" : ""
+                          }`}
+                          key={task.id}
+                        >
+                          <button
+                            type="button"
+                            className={`task-check ${
+                              task.done ? "checked" : ""
+                            }`}
+                            onClick={() => toggleTask(task.id)}
+                            aria-label={
+                              task.done
+                                ? "Marcar como pendente"
+                                : "Concluir atividade"
+                            }
+                          >
+                            {task.done ? "✓" : ""}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="week-task-content"
+                            onClick={() => editTask(task)}
+                          >
+                            <strong>{task.description}</strong>
+                            <span>
+                              {task.time || "Sem horário"} ·{" "}
+                              {task.category || "Pessoal"}
+                            </span>
+                          </button>
+
+                          <span
+                            className={`task-priority ${priorityClass(
+                              task.priority
+                            )}`}
+                            title={task.priority || "Baixa"}
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="add-day-task"
+                    onClick={() => openNewTask(day.date)}
+                  >
+                    ＋ Adicionar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="weekly-bottom-grid">
+          <section className="bottom-panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">DISTRIBUIÇÃO</span>
+                <h2>Atividades por dia</h2>
+              </div>
+            </div>
+
+            <div className="distribution-list">
+              {days.map((day) => (
+                <div className="distribution-item" key={day.date}>
+                  <span className="distribution-name">
+                    {day.name.replace("-feira", "")}
+                  </span>
+                  <div className="distribution-track">
+                    <div
+                      className="distribution-fill"
+                      style={{
+                        width: `${
+                          totalTasks
+                            ? (day.total / totalTasks) * 100
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                  <strong>{day.total}</strong>
+                </div>
+              ))}
+            </div>
+
+            {busiestDay && busiestDay.total > 0 && (
+              <div className="insight-message">
+                <span>MAIOR CONCENTRAÇÃO</span>
+                <strong>
+                  {busiestDay.name} · {busiestDay.total} atividade(s)
+                </strong>
               </div>
             )}
           </section>
 
-          <div className="weekly-bottom-grid">
-            <section className="bottom-panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">DISTRIBUIÇÃO</span>
-                  <h2>Atividades por dia</h2>
-                </div>
+          <section className="bottom-panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">PONTOS DE ATENÇÃO</span>
+                <h2>Resumo do planejamento</h2>
               </div>
+            </div>
 
-              <div className="distribution-list">
-                {days.map((day) => (
-                  <div className="distribution-item" key={day.date}>
-                    <span className="distribution-name">
-                      {day.name.replace("-feira", "")}
-                    </span>
-                    <div className="distribution-track">
-                      <div
-                        className="distribution-fill"
-                        style={{
-                          width: `${
-                            totalTasks
-                              ? (day.total / totalTasks) * 100
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <strong>{day.total}</strong>
-                  </div>
-                ))}
+            <div className="attention-row">
+              <div>
+                <span>Atividades urgentes</span>
+                <small>Precisam de prioridade</small>
               </div>
+              <strong className={urgentTasks ? "danger-number" : ""}>
+                {urgentTasks}
+              </strong>
+            </div>
 
-              {busiestDay && busiestDay.total > 0 && (
-                <div className="insight-message">
-                  <span>MAIOR CONCENTRAÇÃO</span>
-                  <strong>
-                    {busiestDay.name} · {busiestDay.total} atividade(s)
-                  </strong>
-                </div>
-              )}
-            </section>
-
-            <section className="bottom-panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">PONTOS DE ATENÇÃO</span>
-                  <h2>Resumo do planejamento</h2>
-                </div>
+            <div className="attention-row">
+              <div>
+                <span>Atividades sem data</span>
+                <small>Precisam ser organizadas</small>
               </div>
+              <strong>{unplannedTasks}</strong>
+            </div>
 
-              <div className="attention-row">
-                <div>
-                  <span>Atividades urgentes</span>
-                  <small>Precisam de prioridade</small>
-                </div>
-                <strong className={urgentTasks ? "danger-number" : ""}>
-                  {urgentTasks}
+            <div className="attention-row">
+              <div>
+                <span>Atividades pendentes</span>
+                <small>Ainda não concluídas nesta semana</small>
+              </div>
+              <strong>{pendingTasks}</strong>
+            </div>
+
+            {unplannedTasks > 0 && (
+              <div className="insight-message">
+                <span>ORGANIZAÇÃO</span>
+                <strong>
+                  Existem atividades sem data. Defina quando pretende
+                  realizá-las.
                 </strong>
               </div>
-
-              <div className="attention-row">
-                <div>
-                  <span>Atividades sem data</span>
-                  <small>Precisam ser organizadas</small>
-                </div>
-                <strong>{unplannedTasks}</strong>
-              </div>
-
-              <div className="attention-row">
-                <div>
-                  <span>Atividades pendentes</span>
-                  <small>Ainda não concluídas nesta semana</small>
-                </div>
-                <strong>{pendingTasks}</strong>
-              </div>
-
-              {unplannedTasks > 0 && (
-                <div className="insight-message">
-                  <span>ORGANIZAÇÃO</span>
-                  <strong>
-                    Existem atividades sem data. Defina quando pretende
-                    realizá-las.
-                  </strong>
-                </div>
-              )}
-            </section>
-          </div>
-
-          <footer className="weekly-footer">
-            NEXO · GESTÃO PESSOAL
-            <span>Planeje melhor. Execute com propósito.</span>
-          </footer>
+            )}
+          </section>
         </div>
-      </section>
+
+        <footer className="weekly-footer">
+          NEXO · GESTÃO PESSOAL
+          <span>Planeje melhor. Execute com propósito.</span>
+        </footer>
+      </div>
 
       <style jsx>{`
         .weekly-content {
@@ -1531,6 +1507,6 @@ export default function WeeklyPlanningPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

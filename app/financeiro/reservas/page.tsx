@@ -2,7 +2,6 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type ReserveCategory =
   | "Emergência"
@@ -75,15 +74,6 @@ function getLocalDate() {
   const day = String(now.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-function formatLongDate(date = new Date()) {
-  return date.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 const emptyReserveForm = {
@@ -558,841 +548,812 @@ export default function ReservasFinanceirasPage() {
   ).length;
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content reserves-content">
+      <div className="page-description">
+        Organize suas reservas, acompanhe suas metas e controle seus aportes e
+        resgates.
+      </div>
 
-      <section className="main-area">
-        <header className="topbar">
-          <div>
-            <div className="breadcrumb">
-              NEXO / FINANCEIRO / RESERVA FINANCEIRA
+      {!loaded ? (
+        <div className="loading-state">
+          Carregando reservas financeiras...
+        </div>
+      ) : (
+        <>
+          {feedback && (
+            <div className="feedback-message" role="status">
+              <span>{feedback}</span>
+              <button
+                type="button"
+                onClick={() => setFeedback("")}
+                aria-label="Fechar mensagem"
+              >
+                ×
+              </button>
             </div>
-            <h1>Reserva financeira</h1>
-          </div>
+          )}
 
-          <div className="topbar-right">
-            <div className="date-display">
-              <span className="date-icon">◷</span>
-              {formatLongDate()}
+          <section className="summary-grid">
+            <article className="summary-card main-summary">
+              <div className="summary-top">
+                <span>Patrimônio reservado</span>
+                <span className="summary-icon">◈</span>
+              </div>
+              <strong>{formatCurrency(totalBalance)}</strong>
+              <small>Saldo atual de todas as reservas</small>
+            </article>
+
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Meta total</span>
+                <span className="summary-icon">◎</span>
+              </div>
+              <strong>{formatCurrency(totalGoals)}</strong>
+              <small>{reserves.length} reserva(s) cadastrada(s)</small>
+            </article>
+
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Valor para alcançar as metas</span>
+                <span className="summary-icon">↗</span>
+              </div>
+              <strong>{formatCurrency(totalRemaining)}</strong>
+              <small>Saldo que falta acumular</small>
+            </article>
+
+            <article className="summary-card">
+              <div className="summary-top">
+                <span>Aporte mensal planejado</span>
+                <span className="summary-icon">▤</span>
+              </div>
+              <strong>{formatCurrency(totalMonthlyContribution)}</strong>
+              <small>Considerando reservas ativas</small>
+            </article>
+          </section>
+
+          <section className="secondary-summary">
+            <div className="secondary-item">
+              <span>Reservas ativas</span>
+              <strong>{activeReserves}</strong>
             </div>
-            <div className="profile-avatar">N</div>
-          </div>
-        </header>
 
-        <div className="content reserves-content">
-          <div className="page-description">
-            Organize suas reservas, acompanhe suas metas e controle seus
-            aportes e resgates.
-          </div>
-
-          {!loaded ? (
-            <div className="loading-state">
-              Carregando reservas financeiras...
+            <div className="secondary-item">
+              <span>Metas alcançadas</span>
+              <strong>{completedGoals}</strong>
             </div>
-          ) : (
-            <>
-              {feedback && (
-                <div className="feedback-message" role="status">
-                  <span>{feedback}</span>
+
+            <div className="secondary-item">
+              <span>Total aportado</span>
+              <strong className="positive">
+                {formatCurrency(totalContributions)}
+              </strong>
+            </div>
+
+            <div className="secondary-item">
+              <span>Total resgatado</span>
+              <strong className="negative">
+                {formatCurrency(totalWithdrawals)}
+              </strong>
+            </div>
+
+            <div className="secondary-item">
+              <span>Rendimentos registrados</span>
+              <strong className="positive">
+                {formatCurrency(totalEarnings)}
+              </strong>
+            </div>
+          </section>
+
+          <section className="content-section">
+            <div className="section-heading">
+              <div>
+                <span className="section-eyebrow">CONTROLE DE METAS</span>
+                <h2>Minhas reservas</h2>
+                <p>
+                  Acompanhe o saldo e a evolução de cada objetivo financeiro.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  if (showReserveForm) {
+                    resetReserveForm();
+                  } else {
+                    setEditingReserveId(null);
+                    setReserveForm({
+                      ...emptyReserveForm,
+                      startDate: getLocalDate(),
+                    });
+                    setShowReserveForm(true);
+                    setShowMovementForm(false);
+                  }
+                }}
+              >
+                <span>＋</span>
+                Nova reserva
+              </button>
+            </div>
+
+            {showReserveForm && (
+              <form className="form-card" onSubmit={handleReserveSubmit}>
+                <div className="form-heading">
+                  <div>
+                    <h3>
+                      {editingReserveId !== null
+                        ? "Editar reserva"
+                        : "Cadastrar reserva"}
+                    </h3>
+                    <p>Preencha os dados do seu objetivo financeiro.</p>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => setFeedback("")}
-                    aria-label="Fechar mensagem"
+                    className="close-button"
+                    onClick={resetReserveForm}
+                    aria-label="Fechar formulário"
                   >
                     ×
                   </button>
                 </div>
-              )}
 
-              <section className="summary-grid">
-                <article className="summary-card main-summary">
-                  <div className="summary-top">
-                    <span>Patrimônio reservado</span>
-                    <span className="summary-icon">◈</span>
-                  </div>
-                  <strong>{formatCurrency(totalBalance)}</strong>
-                  <small>Saldo atual de todas as reservas</small>
-                </article>
-
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Meta total</span>
-                    <span className="summary-icon">◎</span>
-                  </div>
-                  <strong>{formatCurrency(totalGoals)}</strong>
-                  <small>{reserves.length} reserva(s) cadastrada(s)</small>
-                </article>
-
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Valor para alcançar as metas</span>
-                    <span className="summary-icon">↗</span>
-                  </div>
-                  <strong>{formatCurrency(totalRemaining)}</strong>
-                  <small>Saldo que falta acumular</small>
-                </article>
-
-                <article className="summary-card">
-                  <div className="summary-top">
-                    <span>Aporte mensal planejado</span>
-                    <span className="summary-icon">▤</span>
-                  </div>
-                  <strong>{formatCurrency(totalMonthlyContribution)}</strong>
-                  <small>Considerando reservas ativas</small>
-                </article>
-              </section>
-
-              <section className="secondary-summary">
-                <div className="secondary-item">
-                  <span>Reservas ativas</span>
-                  <strong>{activeReserves}</strong>
-                </div>
-
-                <div className="secondary-item">
-                  <span>Metas alcançadas</span>
-                  <strong>{completedGoals}</strong>
-                </div>
-
-                <div className="secondary-item">
-                  <span>Total aportado</span>
-                  <strong className="positive">
-                    {formatCurrency(totalContributions)}
-                  </strong>
-                </div>
-
-                <div className="secondary-item">
-                  <span>Total resgatado</span>
-                  <strong className="negative">
-                    {formatCurrency(totalWithdrawals)}
-                  </strong>
-                </div>
-
-                <div className="secondary-item">
-                  <span>Rendimentos registrados</span>
-                  <strong className="positive">
-                    {formatCurrency(totalEarnings)}
-                  </strong>
-                </div>
-              </section>
-
-              <section className="content-section">
-                <div className="section-heading">
-                  <div>
-                    <span className="section-eyebrow">CONTROLE DE METAS</span>
-                    <h2>Minhas reservas</h2>
-                    <p>
-                      Acompanhe o saldo e a evolução de cada objetivo financeiro.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={() => {
-                      if (showReserveForm) {
-                        resetReserveForm();
-                      } else {
-                        setEditingReserveId(null);
-                        setReserveForm({
-                          ...emptyReserveForm,
-                          startDate: getLocalDate(),
-                        });
-                        setShowReserveForm(true);
-                        setShowMovementForm(false);
-                      }
-                    }}
-                  >
-                    <span>＋</span>
-                    Nova reserva
-                  </button>
-                </div>
-
-                {showReserveForm && (
-                  <form className="form-card" onSubmit={handleReserveSubmit}>
-                    <div className="form-heading">
-                      <div>
-                        <h3>
-                          {editingReserveId !== null
-                            ? "Editar reserva"
-                            : "Cadastrar reserva"}
-                        </h3>
-                        <p>Preencha os dados do seu objetivo financeiro.</p>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="close-button"
-                        onClick={resetReserveForm}
-                        aria-label="Fechar formulário"
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    <div className="form-grid">
-                      <div className="field field-wide">
-                        <label htmlFor="reserve-name">Nome da reserva *</label>
-                        <input
-                          id="reserve-name"
-                          type="text"
-                          value={reserveForm.name}
-                          onChange={(event) =>
-                            updateReserveField("name", event.target.value)
-                          }
-                          placeholder="Ex.: Reserva de emergência"
-                          required
-                        />
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-category">Categoria *</label>
-                        <select
-                          id="reserve-category"
-                          value={reserveForm.category}
-                          onChange={(event) =>
-                            updateReserveField("category", event.target.value)
-                          }
-                        >
-                          {categories.map((category) => (
-                            <option key={category} value={category}>
-                              {category}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-status">Status</label>
-                        <select
-                          id="reserve-status"
-                          value={reserveForm.status}
-                          onChange={(event) =>
-                            updateReserveField("status", event.target.value)
-                          }
-                        >
-                          <option value="Ativa">Ativa</option>
-                          <option value="Pausada">Pausada</option>
-                          <option value="Concluída">Concluída</option>
-                        </select>
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-target">Valor da meta *</label>
-                        <input
-                          id="reserve-target"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={reserveForm.targetAmount}
-                          onChange={(event) =>
-                            updateReserveField("targetAmount", event.target.value)
-                          }
-                          placeholder="0,00"
-                          required
-                        />
-                      </div>
-
-                      {editingReserveId === null && (
-                        <div className="field">
-                          <label htmlFor="reserve-initial">Saldo inicial</label>
-                          <input
-                            id="reserve-initial"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={reserveForm.initialBalance}
-                            onChange={(event) =>
-                              updateReserveField(
-                                "initialBalance",
-                                event.target.value
-                              )
-                            }
-                            placeholder="0,00"
-                          />
-                        </div>
-                      )}
-
-                      <div className="field">
-                        <label htmlFor="reserve-monthly">
-                          Aporte mensal planejado
-                        </label>
-                        <input
-                          id="reserve-monthly"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={reserveForm.monthlyContribution}
-                          onChange={(event) =>
-                            updateReserveField(
-                              "monthlyContribution",
-                              event.target.value
-                            )
-                          }
-                          placeholder="0,00"
-                        />
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-start">Data de início</label>
-                        <input
-                          id="reserve-start"
-                          type="date"
-                          value={reserveForm.startDate}
-                          onChange={(event) =>
-                            updateReserveField("startDate", event.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-target-date">
-                          Previsão da meta
-                        </label>
-                        <input
-                          id="reserve-target-date"
-                          type="date"
-                          value={reserveForm.targetDate}
-                          onChange={(event) =>
-                            updateReserveField("targetDate", event.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-account">Conta vinculada</label>
-                        <select
-                          id="reserve-account"
-                          value={reserveForm.accountId}
-                          onChange={(event) =>
-                            updateReserveField("accountId", event.target.value)
-                          }
-                        >
-                          <option value="">Nenhuma conta vinculada</option>
-                          {accounts
-                            .filter((account) => account.active !== false)
-                            .map((account) => (
-                              <option key={account.id} value={account.id}>
-                                {account.name}
-                              </option>
-                            ))}
-                        </select>
-
-                        {accounts.length === 0 && (
-                          <small className="field-hint">
-                            Cadastre contas no módulo Contas para vinculá-las aqui.
-                          </small>
-                        )}
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="reserve-institution">
-                          Instituição financeira
-                        </label>
-                        <input
-                          id="reserve-institution"
-                          type="text"
-                          value={reserveForm.institution}
-                          onChange={(event) =>
-                            updateReserveField("institution", event.target.value)
-                          }
-                          placeholder="Ex.: Banco Inter"
-                        />
-                      </div>
-
-                      <div className="field field-full">
-                        <label htmlFor="reserve-description">Descrição</label>
-                        <textarea
-                          id="reserve-description"
-                          rows={3}
-                          value={reserveForm.description}
-                          onChange={(event) =>
-                            updateReserveField("description", event.target.value)
-                          }
-                          placeholder="Descreva o objetivo desta reserva..."
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-actions">
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={resetReserveForm}
-                      >
-                        Cancelar
-                      </button>
-
-                      <button type="submit" className="primary-button">
-                        {editingReserveId !== null
-                          ? "Salvar alterações"
-                          : "Cadastrar reserva"}
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {showMovementForm && selectedReserve && (
-                  <form
-                    className="form-card movement-form"
-                    onSubmit={handleMovementSubmit}
-                  >
-                    <div className="form-heading">
-                      <div>
-                        <span className="section-eyebrow">
-                          MOVIMENTAÇÃO FINANCEIRA
-                        </span>
-                        <h3>{selectedReserve.name}</h3>
-                        <p>
-                          Saldo disponível:{" "}
-                          <strong>
-                            {formatCurrency(
-                              getReserveBalance(selectedReserve, movements)
-                            )}
-                          </strong>
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="close-button"
-                        onClick={() => setShowMovementForm(false)}
-                        aria-label="Fechar formulário"
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    <div className="form-grid">
-                      <div className="field">
-                        <label htmlFor="movement-type">
-                          Tipo de movimentação *
-                        </label>
-                        <select
-                          id="movement-type"
-                          value={movementForm.type}
-                          onChange={(event) =>
-                            setMovementForm((current) => ({
-                              ...current,
-                              type: event.target.value as MovementType,
-                            }))
-                          }
-                        >
-                          {movementTypes.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="movement-amount">Valor *</label>
-                        <input
-                          id="movement-amount"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={movementForm.amount}
-                          onChange={(event) =>
-                            setMovementForm((current) => ({
-                              ...current,
-                              amount: event.target.value,
-                            }))
-                          }
-                          placeholder="0,00"
-                          required
-                        />
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="movement-date">Data *</label>
-                        <input
-                          id="movement-date"
-                          type="date"
-                          value={movementForm.date}
-                          onChange={(event) =>
-                            setMovementForm((current) => ({
-                              ...current,
-                              date: event.target.value,
-                            }))
-                          }
-                          required
-                        />
-                      </div>
-
-                      <div className="field">
-                        <label htmlFor="movement-description">Descrição</label>
-                        <input
-                          id="movement-description"
-                          type="text"
-                          value={movementForm.description}
-                          onChange={(event) =>
-                            setMovementForm((current) => ({
-                              ...current,
-                              description: event.target.value,
-                            }))
-                          }
-                          placeholder="Ex.: Aporte referente ao mês"
-                        />
-                      </div>
-                    </div>
-
-                    <p className="form-note">
-                      Esta movimentação será registrada no controle da reserva.
-                      Ela ainda não altera automaticamente o saldo da conta
-                      vinculada nem gera lançamento no histórico financeiro.
-                    </p>
-
-                    <div className="form-actions">
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => setShowMovementForm(false)}
-                      >
-                        Cancelar
-                      </button>
-
-                      <button type="submit" className="primary-button">
-                        Registrar movimentação
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                <div className="filters-bar">
-                  <div className="search-field">
-                    <span>⌕</span>
+                <div className="form-grid">
+                  <div className="field field-wide">
+                    <label htmlFor="reserve-name">Nome da reserva *</label>
                     <input
-                      type="search"
-                      placeholder="Buscar reserva..."
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
+                      id="reserve-name"
+                      type="text"
+                      value={reserveForm.name}
+                      onChange={(event) =>
+                        updateReserveField("name", event.target.value)
+                      }
+                      placeholder="Ex.: Reserva de emergência"
+                      required
                     />
                   </div>
 
-                  <select
-                    value={categoryFilter}
-                    onChange={(event) => setCategoryFilter(event.target.value)}
-                    aria-label="Filtrar por categoria"
-                  >
-                    <option value="Todas">Todas as categorias</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="field">
+                    <label htmlFor="reserve-category">Categoria *</label>
+                    <select
+                      id="reserve-category"
+                      value={reserveForm.category}
+                      onChange={(event) =>
+                        updateReserveField("category", event.target.value)
+                      }
+                    >
+                      {categories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                    aria-label="Filtrar por status"
-                  >
-                    <option value="Todos">Todos os status</option>
-                    <option value="Ativa">Ativas</option>
-                    <option value="Pausada">Pausadas</option>
-                    <option value="Concluída">Concluídas</option>
-                  </select>
-                </div>
+                  <div className="field">
+                    <label htmlFor="reserve-status">Status</label>
+                    <select
+                      id="reserve-status"
+                      value={reserveForm.status}
+                      onChange={(event) =>
+                        updateReserveField("status", event.target.value)
+                      }
+                    >
+                      <option value="Ativa">Ativa</option>
+                      <option value="Pausada">Pausada</option>
+                      <option value="Concluída">Concluída</option>
+                    </select>
+                  </div>
 
-                {filteredReserves.length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-icon">◈</div>
-                    <h3>Nenhuma reserva encontrada</h3>
-                    <p>
-                      Cadastre sua primeira reserva financeira para começar a
-                      acompanhar suas metas.
-                    </p>
-                    {!showReserveForm && (
-                      <button
-                        type="button"
-                        className="primary-button"
-                        onClick={() => {
-                          setEditingReserveId(null);
-                          setReserveForm({
-                            ...emptyReserveForm,
-                            startDate: getLocalDate(),
-                          });
-                          setShowReserveForm(true);
-                          setShowMovementForm(false);
-                        }}
-                      >
-                        Criar primeira reserva
-                      </button>
+                  <div className="field">
+                    <label htmlFor="reserve-target">Valor da meta *</label>
+                    <input
+                      id="reserve-target"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={reserveForm.targetAmount}
+                      onChange={(event) =>
+                        updateReserveField("targetAmount", event.target.value)
+                      }
+                      placeholder="0,00"
+                      required
+                    />
+                  </div>
+
+                  {editingReserveId === null && (
+                    <div className="field">
+                      <label htmlFor="reserve-initial">Saldo inicial</label>
+                      <input
+                        id="reserve-initial"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={reserveForm.initialBalance}
+                        onChange={(event) =>
+                          updateReserveField(
+                            "initialBalance",
+                            event.target.value
+                          )
+                        }
+                        placeholder="0,00"
+                      />
+                    </div>
+                  )}
+
+                  <div className="field">
+                    <label htmlFor="reserve-monthly">
+                      Aporte mensal planejado
+                    </label>
+                    <input
+                      id="reserve-monthly"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={reserveForm.monthlyContribution}
+                      onChange={(event) =>
+                        updateReserveField(
+                          "monthlyContribution",
+                          event.target.value
+                        )
+                      }
+                      placeholder="0,00"
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="reserve-start">Data de início</label>
+                    <input
+                      id="reserve-start"
+                      type="date"
+                      value={reserveForm.startDate}
+                      onChange={(event) =>
+                        updateReserveField("startDate", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="reserve-target-date">Previsão da meta</label>
+                    <input
+                      id="reserve-target-date"
+                      type="date"
+                      value={reserveForm.targetDate}
+                      onChange={(event) =>
+                        updateReserveField("targetDate", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="reserve-account">Conta vinculada</label>
+                    <select
+                      id="reserve-account"
+                      value={reserveForm.accountId}
+                      onChange={(event) =>
+                        updateReserveField("accountId", event.target.value)
+                      }
+                    >
+                      <option value="">Nenhuma conta vinculada</option>
+                      {accounts
+                        .filter((account) => account.active !== false)
+                        .map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name}
+                          </option>
+                        ))}
+                    </select>
+
+                    {accounts.length === 0 && (
+                      <small className="field-hint">
+                        Cadastre contas no módulo Contas para vinculá-las aqui.
+                      </small>
                     )}
                   </div>
-                ) : (
-                  <div className="reserve-grid">
-                    {filteredReserves.map(({ reserve, balance }) => {
-                      const progress = getProgress(
-                        balance,
-                        reserve.targetAmount
-                      );
 
-                      const remaining = Math.max(
-                        reserve.targetAmount - balance,
-                        0
-                      );
-
-                      const estimatedMonths = getEstimatedMonths(
-                        balance,
-                        reserve
-                      );
-
-                      return (
-                        <article className="reserve-card" key={reserve.id}>
-                          <div className="reserve-card-header">
-                            <div className="reserve-category-icon">◈</div>
-
-                            <div className="reserve-card-title">
-                              <span>{reserve.category}</span>
-                              <h3>{reserve.name}</h3>
-                            </div>
-
-                            <span
-                              className={`status-badge ${reserve.status.toLowerCase()}`}
-                            >
-                              {reserve.status}
-                            </span>
-                          </div>
-
-                          {reserve.description && (
-                            <p className="reserve-description">
-                              {reserve.description}
-                            </p>
-                          )}
-
-                          <div className="reserve-balance">
-                            <span>Saldo acumulado</span>
-                            <strong>{formatCurrency(balance)}</strong>
-                          </div>
-
-                          <div className="progress-info">
-                            <span>Progresso da meta</span>
-                            <strong>{progress.toFixed(1)}%</strong>
-                          </div>
-
-                          <div className="progress-track">
-                            <div
-                              className="progress-fill"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-
-                          <div className="reserve-values">
-                            <div>
-                              <span>Meta</span>
-                              <strong>
-                                {formatCurrency(reserve.targetAmount)}
-                              </strong>
-                            </div>
-
-                            <div>
-                              <span>Falta acumular</span>
-                              <strong>{formatCurrency(remaining)}</strong>
-                            </div>
-                          </div>
-
-                          <div className="reserve-details">
-                            <div>
-                              <span>Aporte mensal</span>
-                              <strong>
-                                {formatCurrency(reserve.monthlyContribution)}
-                              </strong>
-                            </div>
-
-                            <div>
-                              <span>Previsão</span>
-                              <strong>
-                                {reserve.targetDate
-                                  ? formatDate(reserve.targetDate)
-                                  : estimatedMonths === null
-                                    ? "Não definida"
-                                    : estimatedMonths === 0
-                                      ? "Meta alcançada"
-                                      : `Em ${estimatedMonths} mês(es)`}
-                              </strong>
-                            </div>
-
-                            <div>
-                              <span>Conta vinculada</span>
-                              <strong>
-                                {getAccountName(reserve.accountId)}
-                              </strong>
-                            </div>
-
-                            <div>
-                              <span>Instituição</span>
-                              <strong>{reserve.institution || "—"}</strong>
-                            </div>
-                          </div>
-
-                          <div className="reserve-actions">
-                            <button
-                              type="button"
-                              className="action-button highlight"
-                              onClick={() => openMovementForm(reserve.id)}
-                            >
-                              ＋ Movimentar
-                            </button>
-
-                            <button
-                              type="button"
-                              className="action-button"
-                              onClick={() => {
-                                setSelectedReserveId(reserve.id);
-                                setShowMovementForm(false);
-                                setShowReserveForm(false);
-                              }}
-                            >
-                              Histórico
-                            </button>
-
-                            <button
-                              type="button"
-                              className="action-button"
-                              onClick={() => handleEditReserve(reserve)}
-                            >
-                              Editar
-                            </button>
-
-                            <button
-                              type="button"
-                              className="action-button delete-action"
-                              onClick={() => handleDeleteReserve(reserve)}
-                              aria-label={`Excluir ${reserve.name}`}
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              {selectedReserve && !showMovementForm && (
-                <section className="content-section history-section">
-                  <div className="section-heading">
-                    <div>
-                      <span className="section-eyebrow">
-                        EXTRATO DA RESERVA
-                      </span>
-                      <h2>{selectedReserve.name}</h2>
-                      <p>
-                        Histórico de aportes, resgates e rendimentos registrados.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => setSelectedReserveId(null)}
-                    >
-                      Fechar histórico
-                    </button>
+                  <div className="field">
+                    <label htmlFor="reserve-institution">
+                      Instituição financeira
+                    </label>
+                    <input
+                      id="reserve-institution"
+                      type="text"
+                      value={reserveForm.institution}
+                      onChange={(event) =>
+                        updateReserveField("institution", event.target.value)
+                      }
+                      placeholder="Ex.: Banco Inter"
+                    />
                   </div>
 
-                  <div className="history-summary">
-                    <div>
-                      <span>Saldo atual</span>
+                  <div className="field field-full">
+                    <label htmlFor="reserve-description">Descrição</label>
+                    <textarea
+                      id="reserve-description"
+                      rows={3}
+                      value={reserveForm.description}
+                      onChange={(event) =>
+                        updateReserveField("description", event.target.value)
+                      }
+                      placeholder="Descreva o objetivo desta reserva..."
+                    />
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={resetReserveForm}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button type="submit" className="primary-button">
+                    {editingReserveId !== null
+                      ? "Salvar alterações"
+                      : "Cadastrar reserva"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {showMovementForm && selectedReserve && (
+              <form
+                className="form-card movement-form"
+                onSubmit={handleMovementSubmit}
+              >
+                <div className="form-heading">
+                  <div>
+                    <span className="section-eyebrow">
+                      MOVIMENTAÇÃO FINANCEIRA
+                    </span>
+                    <h3>{selectedReserve.name}</h3>
+                    <p>
+                      Saldo disponível:{" "}
                       <strong>
                         {formatCurrency(
                           getReserveBalance(selectedReserve, movements)
                         )}
                       </strong>
-                    </div>
-
-                    <div>
-                      <span>Movimentações</span>
-                      <strong>{selectedMovements.length}</strong>
-                    </div>
+                    </p>
                   </div>
 
-                  {selectedMovements.length === 0 ? (
-                    <div className="empty-history">
-                      Nenhuma movimentação registrada para esta reserva.
-                    </div>
-                  ) : (
-                    <div className="table-container">
-                      <table className="movements-table">
-                        <thead>
-                          <tr>
-                            <th>Data</th>
-                            <th>Descrição</th>
-                            <th>Tipo</th>
-                            <th>Valor</th>
-                            <th>Ação</th>
-                          </tr>
-                        </thead>
+                  <button
+                    type="button"
+                    className="close-button"
+                    onClick={() => setShowMovementForm(false)}
+                    aria-label="Fechar formulário"
+                  >
+                    ×
+                  </button>
+                </div>
 
-                        <tbody>
-                          {selectedMovements.map((movement) => (
-                            <tr key={movement.id}>
-                              <td>{formatDate(movement.date)}</td>
-                              <td>{movement.description || movement.type}</td>
-                              <td>
-                                <span
-                                  className={`movement-badge ${getMovementColor(
-                                    movement.type
-                                  )}`}
-                                >
-                                  {movement.type}
-                                </span>
-                              </td>
-                              <td
-                                className={`movement-value ${getMovementColor(
-                                  movement.type
-                                )}`}
-                              >
-                                {movement.type === "Resgate" ? "− " : "+ "}
-                                {formatCurrency(movement.amount)}
-                              </td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="table-delete"
-                                  onClick={() => handleDeleteMovement(movement)}
-                                >
-                                  Excluir
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-              )}
+                <div className="form-grid">
+                  <div className="field">
+                    <label htmlFor="movement-type">
+                      Tipo de movimentação *
+                    </label>
+                    <select
+                      id="movement-type"
+                      value={movementForm.type}
+                      onChange={(event) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          type: event.target.value as MovementType,
+                        }))
+                      }
+                    >
+                      {movementTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <section className="information-section">
-                <div className="information-icon">i</div>
+                  <div className="field">
+                    <label htmlFor="movement-amount">Valor *</label>
+                    <input
+                      id="movement-amount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={movementForm.amount}
+                      onChange={(event) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          amount: event.target.value,
+                        }))
+                      }
+                      placeholder="0,00"
+                      required
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="movement-date">Data *</label>
+                    <input
+                      id="movement-date"
+                      type="date"
+                      value={movementForm.date}
+                      onChange={(event) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          date: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="movement-description">Descrição</label>
+                    <input
+                      id="movement-description"
+                      type="text"
+                      value={movementForm.description}
+                      onChange={(event) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      placeholder="Ex.: Aporte referente ao mês"
+                    />
+                  </div>
+                </div>
+
+                <p className="form-note">
+                  Esta movimentação será registrada no controle da reserva.
+                  Ela ainda não altera automaticamente o saldo da conta
+                  vinculada nem gera lançamento no histórico financeiro.
+                </p>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setShowMovementForm(false)}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button type="submit" className="primary-button">
+                    Registrar movimentação
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="filters-bar">
+              <div className="search-field">
+                <span>⌕</span>
+                <input
+                  type="search"
+                  placeholder="Buscar reserva..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+
+              <select
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                aria-label="Filtrar por categoria"
+              >
+                <option value="Todas">Todas as categorias</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                aria-label="Filtrar por status"
+              >
+                <option value="Todos">Todos os status</option>
+                <option value="Ativa">Ativas</option>
+                <option value="Pausada">Pausadas</option>
+                <option value="Concluída">Concluídas</option>
+              </select>
+            </div>
+
+            {filteredReserves.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">◈</div>
+                <h3>Nenhuma reserva encontrada</h3>
+                <p>
+                  Cadastre sua primeira reserva financeira para começar a
+                  acompanhar suas metas.
+                </p>
+                {!showReserveForm && (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => {
+                      setEditingReserveId(null);
+                      setReserveForm({
+                        ...emptyReserveForm,
+                        startDate: getLocalDate(),
+                      });
+                      setShowReserveForm(true);
+                      setShowMovementForm(false);
+                    }}
+                  >
+                    Criar primeira reserva
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="reserve-grid">
+                {filteredReserves.map(({ reserve, balance }) => {
+                  const progress = getProgress(
+                    balance,
+                    reserve.targetAmount
+                  );
+
+                  const remaining = Math.max(
+                    reserve.targetAmount - balance,
+                    0
+                  );
+
+                  const estimatedMonths = getEstimatedMonths(
+                    balance,
+                    reserve
+                  );
+
+                  return (
+                    <article className="reserve-card" key={reserve.id}>
+                      <div className="reserve-card-header">
+                        <div className="reserve-category-icon">◈</div>
+
+                        <div className="reserve-card-title">
+                          <span>{reserve.category}</span>
+                          <h3>{reserve.name}</h3>
+                        </div>
+
+                        <span
+                          className={`status-badge ${reserve.status.toLowerCase()}`}
+                        >
+                          {reserve.status}
+                        </span>
+                      </div>
+
+                      {reserve.description && (
+                        <p className="reserve-description">
+                          {reserve.description}
+                        </p>
+                      )}
+
+                      <div className="reserve-balance">
+                        <span>Saldo acumulado</span>
+                        <strong>{formatCurrency(balance)}</strong>
+                      </div>
+
+                      <div className="progress-info">
+                        <span>Progresso da meta</span>
+                        <strong>{progress.toFixed(1)}%</strong>
+                      </div>
+
+                      <div className="progress-track">
+                        <div
+                          className="progress-fill"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+
+                      <div className="reserve-values">
+                        <div>
+                          <span>Meta</span>
+                          <strong>{formatCurrency(reserve.targetAmount)}</strong>
+                        </div>
+
+                        <div>
+                          <span>Falta acumular</span>
+                          <strong>{formatCurrency(remaining)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="reserve-details">
+                        <div>
+                          <span>Aporte mensal</span>
+                          <strong>
+                            {formatCurrency(reserve.monthlyContribution)}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Previsão</span>
+                          <strong>
+                            {reserve.targetDate
+                              ? formatDate(reserve.targetDate)
+                              : estimatedMonths === null
+                                ? "Não definida"
+                                : estimatedMonths === 0
+                                  ? "Meta alcançada"
+                                  : `Em ${estimatedMonths} mês(es)`}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Conta vinculada</span>
+                          <strong>{getAccountName(reserve.accountId)}</strong>
+                        </div>
+
+                        <div>
+                          <span>Instituição</span>
+                          <strong>{reserve.institution || "—"}</strong>
+                        </div>
+                      </div>
+
+                      <div className="reserve-actions">
+                        <button
+                          type="button"
+                          className="action-button highlight"
+                          onClick={() => openMovementForm(reserve.id)}
+                        >
+                          ＋ Movimentar
+                        </button>
+
+                        <button
+                          type="button"
+                          className="action-button"
+                          onClick={() => {
+                            setSelectedReserveId(reserve.id);
+                            setShowMovementForm(false);
+                            setShowReserveForm(false);
+                          }}
+                        >
+                          Histórico
+                        </button>
+
+                        <button
+                          type="button"
+                          className="action-button"
+                          onClick={() => handleEditReserve(reserve)}
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          className="action-button delete-action"
+                          onClick={() => handleDeleteReserve(reserve)}
+                          aria-label={`Excluir ${reserve.name}`}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {selectedReserve && !showMovementForm && (
+            <section className="content-section history-section">
+              <div className="section-heading">
                 <div>
-                  <h3>Como funciona o controle de reservas?</h3>
+                  <span className="section-eyebrow">
+                    EXTRATO DA RESERVA
+                  </span>
+                  <h2>{selectedReserve.name}</h2>
                   <p>
-                    Os aportes aumentam o saldo reservado, os resgates reduzem o
-                    saldo e os rendimentos são registrados separadamente. O
-                    saldo inicial é considerado no cálculo da reserva.
-                  </p>
-                  <p>
-                    As movimentações desta página são independentes dos
-                    lançamentos de receitas e despesas. Assim, você evita
-                    contabilizar um aporte como uma nova receita ou um resgate
-                    como uma nova despesa.
+                    Histórico de aportes, resgates e rendimentos registrados.
                   </p>
                 </div>
-              </section>
-            </>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setSelectedReserveId(null)}
+                >
+                  Fechar histórico
+                </button>
+              </div>
+
+              <div className="history-summary">
+                <div>
+                  <span>Saldo atual</span>
+                  <strong>
+                    {formatCurrency(
+                      getReserveBalance(selectedReserve, movements)
+                    )}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Movimentações</span>
+                  <strong>{selectedMovements.length}</strong>
+                </div>
+              </div>
+
+              {selectedMovements.length === 0 ? (
+                <div className="empty-history">
+                  Nenhuma movimentação registrada para esta reserva.
+                </div>
+              ) : (
+                <div className="table-container">
+                  <table className="movements-table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Ação</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {selectedMovements.map((movement) => (
+                        <tr key={movement.id}>
+                          <td>{formatDate(movement.date)}</td>
+                          <td>{movement.description || movement.type}</td>
+                          <td>
+                            <span
+                              className={`movement-badge ${getMovementColor(
+                                movement.type
+                              )}`}
+                            >
+                              {movement.type}
+                            </span>
+                          </td>
+                          <td
+                            className={`movement-value ${getMovementColor(
+                              movement.type
+                            )}`}
+                          >
+                            {movement.type === "Resgate" ? "− " : "+ "}
+                            {formatCurrency(movement.amount)}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="table-delete"
+                              onClick={() => handleDeleteMovement(movement)}
+                            >
+                              Excluir
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
           )}
 
-          <footer className="routine-footer">
-            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
-            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
-          </footer>
-        </div>
-      </section>
+          <section className="information-section">
+            <div className="information-icon">i</div>
+            <div>
+              <h3>Como funciona o controle de reservas?</h3>
+              <p>
+                Os aportes aumentam o saldo reservado, os resgates reduzem o
+                saldo e os rendimentos são registrados separadamente. O saldo
+                inicial é considerado no cálculo da reserva.
+              </p>
+              <p>
+                As movimentações desta página são independentes dos
+                lançamentos de receitas e despesas. Assim, você evita
+                contabilizar um aporte como uma nova receita ou um resgate
+                como uma nova despesa.
+              </p>
+            </div>
+          </section>
+        </>
+      )}
+
+      <footer className="routine-footer">
+        <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+        <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+      </footer>
 
       <style jsx global>{`
         .reserves-content {
@@ -2259,6 +2220,6 @@ export default function ReservasFinanceirasPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

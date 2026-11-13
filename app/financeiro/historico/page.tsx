@@ -3,7 +3,6 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type MovementType =
   | "Receita"
@@ -51,14 +50,6 @@ const formatDate = (date?: string) => {
 
   return parsed.toLocaleDateString("pt-BR");
 };
-
-const formatLongDate = (date = new Date()) =>
-  date.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
 
 const isCancelled = (status?: string) =>
   (status || "").toLowerCase().includes("cancel");
@@ -279,376 +270,352 @@ export default function HistoricoFinanceiroPage() {
   const getTransactionKey = (item: Transaction) => String(item.id);
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
+    <div className="content history-content">
+      <section className="history-intro">
+        <div>
+          <span className="history-eyebrow">
+            CONTROLE E ACOMPANHAMENTO
+          </span>
 
-      <section className="main-area">
-        <header className="topbar">
+          <h2>Histórico de movimentações.</h2>
+
+          <p>
+            Consulte, pesquise e acompanhe todas as movimentações
+            financeiras cadastradas no NEXO.
+          </p>
+        </div>
+
+        <Link href="/financeiro" className="history-back-button">
+          <span>←</span>
+          Voltar ao financeiro
+        </Link>
+      </section>
+
+      <section className="history-summary">
+        <article className="history-card">
+          <div className="history-card-top">
+            <span>Receitas</span>
+            <span className="history-icon income-icon">↗</span>
+          </div>
+
+          <strong className="positive">
+            {currency(totalReceitas)}
+          </strong>
+
+          <small>Total de receitas não canceladas</small>
+        </article>
+
+        <article className="history-card">
+          <div className="history-card-top">
+            <span>Despesas</span>
+            <span className="history-icon expense-icon">↙</span>
+          </div>
+
+          <strong className="negative">
+            {currency(totalDespesas)}
+          </strong>
+
+          <small>Total de despesas não canceladas</small>
+        </article>
+
+        <article className="history-card">
+          <div className="history-card-top">
+            <span>Resultado</span>
+            <span className="history-icon neutral-icon">＝</span>
+          </div>
+
+          <strong className={resultado >= 0 ? "positive" : "negative"}>
+            {currency(resultado)}
+          </strong>
+
+          <small>Receitas menos despesas</small>
+        </article>
+
+        <article className="history-card">
+          <div className="history-card-top">
+            <span>Movimentações</span>
+            <span className="history-icon neutral-icon">▤</span>
+          </div>
+
+          <strong>{transactions.length}</strong>
+
+          <small>Registros no histórico completo</small>
+        </article>
+      </section>
+
+      <section className="history-panel">
+        <div className="history-panel-heading">
           <div>
-            <div className="breadcrumb">
-              NEXO / FINANCEIRO / HISTÓRICO FINANCEIRO
-            </div>
-            <h1>Histórico financeiro</h1>
+            <span className="history-eyebrow">CONSULTA</span>
+            <h2>Todas as movimentações</h2>
+            <p>
+              Pesquise, filtre e consulte os lançamentos financeiros.
+            </p>
           </div>
 
-          <div className="topbar-right">
-            <div className="date-display">
-              <span className="date-icon">◷</span>
-              {formatLongDate()}
-            </div>
+          <button
+            type="button"
+            className="history-refresh"
+            onClick={loadTransactions}
+          >
+            ↻ Atualizar
+          </button>
+        </div>
 
-            <div className="profile-avatar">N</div>
+        <div className="history-filters">
+          <div className="history-search">
+            <span>⌕</span>
+
+            <input
+              type="text"
+              placeholder="Buscar por descrição, categoria ou conta..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
           </div>
-        </header>
 
-        <div className="content history-content">
-          <section className="history-intro">
-            <div>
-              <span className="history-eyebrow">
-                CONTROLE E ACOMPANHAMENTO
-              </span>
+          <div className="history-filter-grid">
+            <label>
+              Tipo
+              <select
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value)}
+              >
+                <option value="Todos">Todos os tipos</option>
+                <option value="Receita">Receita</option>
+                <option value="Despesa">Despesa</option>
+                <option value="Transferência">Transferência</option>
+                <option value="Investimento">Investimento</option>
+                <option value="Aplicação">Aplicação</option>
+                <option value="Reserva">Reserva</option>
+              </select>
+            </label>
 
-              <h2>Histórico de movimentações.</h2>
+            <label>
+              Status
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="Todos">Todos os status</option>
+                <option value="Ativos">Não cancelados</option>
+                <option value="Cancelados">Cancelados</option>
+                <option value="Prevista">Prevista</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Recebida parcialmente">
+                  Recebida parcialmente
+                </option>
+                <option value="Paga parcialmente">
+                  Paga parcialmente
+                </option>
+                <option value="Pago">Pago</option>
+                <option value="Recebida">Recebida</option>
+                <option value="Recebido">Recebido</option>
+                <option value="Aplicado">Aplicado</option>
+                <option value="Atrasada">Atrasada</option>
+              </select>
+            </label>
 
+            <label>
+              Período
+              <select
+                value={periodFilter}
+                onChange={(event) => setPeriodFilter(event.target.value)}
+              >
+                <option value="Todos">Todo o período</option>
+                <option value="Este mês">Este mês</option>
+                <option value="Mês anterior">Mês anterior</option>
+                <option value="Este ano">Este ano</option>
+              </select>
+            </label>
+
+            <label>
+              Ordenação
+              <select
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
+              >
+                <option value="recentes">Mais recentes</option>
+                <option value="antigos">Mais antigos</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="history-filter-footer">
+            <span>
+              {filteredTransactions.length} movimentação(ões) encontrada(s)
+            </span>
+
+            <button type="button" onClick={clearFilters}>
+              Limpar filtros
+            </button>
+          </div>
+        </div>
+
+        <div className="history-table-wrapper">
+          {filteredTransactions.length === 0 ? (
+            <div className="history-empty">
+              <span>▤</span>
+              <h3>Nenhuma movimentação encontrada</h3>
               <p>
-                Consulte, pesquise e acompanhe todas as movimentações
-                financeiras cadastradas no NEXO.
+                Não existem registros para os filtros selecionados.
+                Experimente alterar sua pesquisa.
               </p>
             </div>
+          ) : (
+            <table className="history-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Tipo</th>
+                  <th>Categoria</th>
+                  <th>Data</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                  <th aria-label="Ações"></th>
+                </tr>
+              </thead>
 
-            <Link href="/financeiro" className="history-back-button">
-              <span>←</span>
-              Voltar ao financeiro
-            </Link>
-          </section>
+              <tbody>
+                {filteredTransactions.map((item) => {
+                  const key = getTransactionKey(item);
+                  const isSelected = selectedTransaction === key;
 
-          <section className="history-summary">
-            <article className="history-card">
-              <div className="history-card-top">
-                <span>Receitas</span>
-                <span className="history-icon income-icon">↗</span>
-              </div>
+                  return (
+                    <Fragment key={key}>
+                      <tr
+                        className={
+                          isSelected
+                            ? "history-row selected"
+                            : "history-row"
+                        }
+                      >
+                        <td>
+                          <div className="history-description">
+                            <strong>
+                              {item.description || "Sem descrição"}
+                            </strong>
+                            <small>{item.id}</small>
+                          </div>
+                        </td>
 
-              <strong className="positive">
-                {currency(totalReceitas)}
-              </strong>
+                        <td>
+                          <span
+                            className={`history-type ${getTypeClass(item.type)}`}
+                          >
+                            {item.type}
+                          </span>
+                        </td>
 
-              <small>Total de receitas não canceladas</small>
-            </article>
+                        <td>
+                          <div className="history-category">
+                            <span>{item.category || "—"}</span>
+                            {item.subcategory && (
+                              <small>{item.subcategory}</small>
+                            )}
+                          </div>
+                        </td>
 
-            <article className="history-card">
-              <div className="history-card-top">
-                <span>Despesas</span>
-                <span className="history-icon expense-icon">↙</span>
-              </div>
+                        <td className="history-date">
+                          {formatDate(item.date)}
+                        </td>
 
-              <strong className="negative">
-                {currency(totalDespesas)}
-              </strong>
+                        <td>
+                          <span
+                            className={`history-status ${getStatusClass(item.status)}`}
+                          >
+                            {item.status || "Pendente"}
+                          </span>
+                        </td>
 
-              <small>Total de despesas não canceladas</small>
-            </article>
+                        <td>
+                          <strong
+                            className={`history-amount ${getAmountClass(item.type)}`}
+                          >
+                            {currency(Number(item.amount || 0))}
+                          </strong>
+                        </td>
 
-            <article className="history-card">
-              <div className="history-card-top">
-                <span>Resultado</span>
-                <span className="history-icon neutral-icon">＝</span>
-              </div>
-
-              <strong className={resultado >= 0 ? "positive" : "negative"}>
-                {currency(resultado)}
-              </strong>
-
-              <small>Receitas menos despesas</small>
-            </article>
-
-            <article className="history-card">
-              <div className="history-card-top">
-                <span>Movimentações</span>
-                <span className="history-icon neutral-icon">▤</span>
-              </div>
-
-              <strong>{transactions.length}</strong>
-
-              <small>Registros no histórico completo</small>
-            </article>
-          </section>
-
-          <section className="history-panel">
-            <div className="history-panel-heading">
-              <div>
-                <span className="history-eyebrow">CONSULTA</span>
-                <h2>Todas as movimentações</h2>
-                <p>
-                  Pesquise, filtre e consulte os lançamentos financeiros.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="history-refresh"
-                onClick={loadTransactions}
-              >
-                ↻ Atualizar
-              </button>
-            </div>
-
-            <div className="history-filters">
-              <div className="history-search">
-                <span>⌕</span>
-
-                <input
-                  type="text"
-                  placeholder="Buscar por descrição, categoria ou conta..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-
-              <div className="history-filter-grid">
-                <label>
-                  Tipo
-                  <select
-                    value={typeFilter}
-                    onChange={(event) => setTypeFilter(event.target.value)}
-                  >
-                    <option value="Todos">Todos os tipos</option>
-                    <option value="Receita">Receita</option>
-                    <option value="Despesa">Despesa</option>
-                    <option value="Transferência">Transferência</option>
-                    <option value="Investimento">Investimento</option>
-                    <option value="Aplicação">Aplicação</option>
-                    <option value="Reserva">Reserva</option>
-                  </select>
-                </label>
-
-                <label>
-                  Status
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                  >
-                    <option value="Todos">Todos os status</option>
-                    <option value="Ativos">Não cancelados</option>
-                    <option value="Cancelados">Cancelados</option>
-                    <option value="Prevista">Prevista</option>
-                    <option value="Pendente">Pendente</option>
-                    <option value="Recebida parcialmente">
-                      Recebida parcialmente
-                    </option>
-                    <option value="Paga parcialmente">
-                      Paga parcialmente
-                    </option>
-                    <option value="Pago">Pago</option>
-                    <option value="Recebida">Recebida</option>
-                    <option value="Recebido">Recebido</option>
-                    <option value="Aplicado">Aplicado</option>
-                    <option value="Atrasada">Atrasada</option>
-                  </select>
-                </label>
-
-                <label>
-                  Período
-                  <select
-                    value={periodFilter}
-                    onChange={(event) => setPeriodFilter(event.target.value)}
-                  >
-                    <option value="Todos">Todo o período</option>
-                    <option value="Este mês">Este mês</option>
-                    <option value="Mês anterior">Mês anterior</option>
-                    <option value="Este ano">Este ano</option>
-                  </select>
-                </label>
-
-                <label>
-                  Ordenação
-                  <select
-                    value={sortOrder}
-                    onChange={(event) => setSortOrder(event.target.value)}
-                  >
-                    <option value="recentes">Mais recentes</option>
-                    <option value="antigos">Mais antigos</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="history-filter-footer">
-                <span>
-                  {filteredTransactions.length} movimentação(ões) encontrada(s)
-                </span>
-
-                <button type="button" onClick={clearFilters}>
-                  Limpar filtros
-                </button>
-              </div>
-            </div>
-
-            <div className="history-table-wrapper">
-              {filteredTransactions.length === 0 ? (
-                <div className="history-empty">
-                  <span>▤</span>
-                  <h3>Nenhuma movimentação encontrada</h3>
-                  <p>
-                    Não existem registros para os filtros selecionados.
-                    Experimente alterar sua pesquisa.
-                  </p>
-                </div>
-              ) : (
-                <table className="history-table">
-                  <thead>
-                    <tr>
-                      <th>Descrição</th>
-                      <th>Tipo</th>
-                      <th>Categoria</th>
-                      <th>Data</th>
-                      <th>Status</th>
-                      <th>Valor</th>
-                      <th aria-label="Ações"></th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filteredTransactions.map((item) => {
-                      const key = getTransactionKey(item);
-                      const isSelected = selectedTransaction === key;
-
-                      return (
-                        <Fragment key={key}>
-                          <tr
-                            className={
-                              isSelected
-                                ? "history-row selected"
-                                : "history-row"
+                        <td>
+                          <button
+                            type="button"
+                            className="history-details-button"
+                            onClick={() =>
+                              setSelectedTransaction(isSelected ? null : key)
                             }
                           >
-                            <td>
-                              <div className="history-description">
+                            {isSelected ? "Fechar" : "Detalhes"}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {isSelected && (
+                        <tr className="history-details-row">
+                          <td colSpan={7}>
+                            <div className="history-details">
+                              <div>
+                                <small>Conta financeira</small>
                                 <strong>
-                                  {item.description || "Sem descrição"}
+                                  {item.account || "Não informada"}
                                 </strong>
-                                <small>{item.id}</small>
                               </div>
-                            </td>
 
-                            <td>
-                              <span
-                                className={`history-type ${getTypeClass(item.type)}`}
-                              >
-                                {item.type}
-                              </span>
-                            </td>
-
-                            <td>
-                              <div className="history-category">
-                                <span>{item.category || "—"}</span>
-                                {item.subcategory && (
-                                  <small>{item.subcategory}</small>
-                                )}
+                              <div>
+                                <small>Forma de pagamento</small>
+                                <strong>
+                                  {item.method ||
+                                    item.paymentMethod ||
+                                    "Não informada"}
+                                </strong>
                               </div>
-                            </td>
 
-                            <td className="history-date">
-                              {formatDate(item.date)}
-                            </td>
+                              <div>
+                                <small>Recorrência</small>
+                                <strong>
+                                  {item.recurrence || "Não informada"}
+                                </strong>
+                              </div>
 
-                            <td>
-                              <span
-                                className={`history-status ${getStatusClass(item.status)}`}
-                              >
-                                {item.status || "Pendente"}
-                              </span>
-                            </td>
+                              <div>
+                                <small>Destino / Instituição</small>
+                                <strong>
+                                  {item.destination ||
+                                    item.destinationAccount ||
+                                    item.institution ||
+                                    "Não informado"}
+                                </strong>
+                              </div>
 
-                            <td>
-                              <strong
-                                className={`history-amount ${getAmountClass(item.type)}`}
-                              >
-                                {currency(Number(item.amount || 0))}
-                              </strong>
-                            </td>
-
-                            <td>
-                              <button
-                                type="button"
-                                className="history-details-button"
-                                onClick={() =>
-                                  setSelectedTransaction(isSelected ? null : key)
-                                }
-                              >
-                                {isSelected ? "Fechar" : "Detalhes"}
-                              </button>
-                            </td>
-                          </tr>
-
-                          {isSelected && (
-                            <tr className="history-details-row">
-                              <td colSpan={7}>
-                                <div className="history-details">
-                                  <div>
-                                    <small>Conta financeira</small>
-                                    <strong>
-                                      {item.account || "Não informada"}
-                                    </strong>
-                                  </div>
-
-                                  <div>
-                                    <small>Forma de pagamento</small>
-                                    <strong>
-                                      {item.method ||
-                                        item.paymentMethod ||
-                                        "Não informada"}
-                                    </strong>
-                                  </div>
-
-                                  <div>
-                                    <small>Recorrência</small>
-                                    <strong>
-                                      {item.recurrence || "Não informada"}
-                                    </strong>
-                                  </div>
-
-                                  <div>
-                                    <small>Destino / Instituição</small>
-                                    <strong>
-                                      {item.destination ||
-                                        item.destinationAccount ||
-                                        item.institution ||
-                                        "Não informado"}
-                                    </strong>
-                                  </div>
-
-                                  {item.investment && (
-                                    <div>
-                                      <small>Investimento</small>
-                                      <strong>{item.investment}</strong>
-                                    </div>
-                                  )}
-
-                                  {item.reserveType && (
-                                    <div>
-                                      <small>Tipo de reserva</small>
-                                      <strong>{item.reserveType}</strong>
-                                    </div>
-                                  )}
+                              {item.investment && (
+                                <div>
+                                  <small>Investimento</small>
+                                  <strong>{item.investment}</strong>
                                 </div>
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </section>
+                              )}
 
-          <footer className="routine-footer">
-            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
-            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
-          </footer>
+                              {item.reserveType && (
+                                <div>
+                                  <small>Tipo de reserva</small>
+                                  <strong>{item.reserveType}</strong>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
+
+      <footer className="routine-footer">
+        <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+        <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+      </footer>
 
       <style jsx global>{`
         .history-content {
@@ -1243,6 +1210,6 @@ export default function HistoricoFinanceiroPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }

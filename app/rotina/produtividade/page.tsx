@@ -1,8 +1,8 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Task = {
   id: number;
@@ -260,432 +260,348 @@ export default function ProdutividadePage() {
           : "Comece registrando suas tarefas e hábitos para acompanhar sua evolução.";
 
   return (
-    <main className="app-shell">
-      <MainNavigation />
-
-      <section className="main-area">
-        <header className="topbar">
-          <div className="breadcrumb">
-            Minha rotina <span>/</span> <strong>Produtividade</strong>
-          </div>
-
-          <div className="topbar-right">
-            <div className="topbar-date">
-              {new Date().toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </div>
-            <div className="profile-avatar">N</div>
-          </div>
-        </header>
-
-        <div className="content">
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">DESEMPENHO PESSOAL</div>
-              <h1>Produtividade</h1>
-              <p>
-                Acompanhe seu desempenho, sua consistência e a evolução da sua
-                rotina.
-              </p>
-            </div>
-            <div className="heading-period">
-              <span className="period-dot" />
-              Últimos 7 dias
-            </div>
-          </div>
-
-          {!loaded ? (
-            <div className="loading-state">Carregando indicadores...</div>
-          ) : (
-            <>
-              <section className="metrics-grid">
-                <article className="metric-card highlight-card">
-                  <div className="metric-top">
-                    <span className="metric-label">ÍNDICE DE CONCLUSÃO</span>
-                    <span className="metric-icon">◉</span>
-                  </div>
-                  <div className="metric-value">{overallRate}%</div>
-                  <div className="metric-description">
-                    Desempenho geral dos registros
-                  </div>
-                  <div className="metric-progress">
-                    <div
-                      className="metric-progress-fill"
-                      style={{ width: `${overallRate}%` }}
-                    />
-                  </div>
-                </article>
-
-                <article className="metric-card">
-                  <div className="metric-top">
-                    <span className="metric-label">TAREFAS CONCLUÍDAS</span>
-                    <span className="metric-icon">✓</span>
-                  </div>
-                  <div className="metric-value">
-                    {completedTasks.length}
-                    <small>/{activeTasks.length}</small>
-                  </div>
-                  <div className="metric-description">
-                    {pendingTasks.length} tarefas pendentes
-                  </div>
-                </article>
-
-                <article className="metric-card">
-                  <div className="metric-top">
-                    <span className="metric-label">HÁBITOS DE HOJE</span>
-                    <span className="metric-icon">↗</span>
-                  </div>
-                  <div className="metric-value">
-                    {completedHabitsToday.length}
-                    <small>/{activeHabits.length}</small>
-                  </div>
-                  <div className="metric-description">
-                    {habitRate}% de conclusão diária
-                  </div>
-                </article>
-
-                <article className="metric-card">
-                  <div className="metric-top">
-                    <span className="metric-label">REGISTROS HOJE</span>
-                    <span className="metric-icon">▦</span>
-                  </div>
-                  <div className="metric-value">{todayTotal}</div>
-                  <div className="metric-description">
-                    Tarefas e hábitos registrados como concluídos
-                  </div>
-                </article>
-              </section>
-
-              <section className="insight-card">
-                <div className="insight-symbol">✦</div>
-                <div>
-                  <div className="insight-title">Seu ritmo atual</div>
-                  <p>{productivityMessage}</p>
-                </div>
-              </section>
-
-              <section className="dashboard-grid">
-                <article className="panel weekly-panel">
-                  <div className="panel-heading">
-                    <div>
-                      <div className="section-label">ACOMPANHAMENTO</div>
-                      <h2>Desempenho semanal</h2>
-                      <p>Atividades concluídas por dia</p>
-                    </div>
-                    <div className="chart-total">
-                      <strong>{weeklyTotal}</strong>
-                      <span>conclusões</span>
-                    </div>
-                  </div>
-
-                  <div className="chart-legend">
-                    <span><i className="legend-task" /> Tarefas</span>
-                    <span><i className="legend-habit" /> Hábitos</span>
-                  </div>
-
-                  <div className="weekly-chart">
-                    {weeklyData.map((day) => {
-                      const taskHeight =
-                        (day.tasks / maxDailyValue) * 100;
-                      const habitHeight =
-                        (day.habits / maxDailyValue) * 100;
-
-                      return (
-                        <div className="chart-day" key={day.date}>
-                          <div className="chart-value">
-                            {day.total > 0 ? day.total : ""}
-                          </div>
-                          <div className="bar-area">
-                            <div className="bar-stack">
-                              <div
-                                className="bar-task"
-                                style={{ height: `${taskHeight}%` }}
-                                title={`${day.tasks} tarefas`}
-                              />
-                              <div
-                                className="bar-habit"
-                                style={{ height: `${habitHeight}%` }}
-                                title={`${day.habits} hábitos`}
-                              />
-                            </div>
-                          </div>
-                          <span className="chart-day-label">{day.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="chart-summary">
-                    <div>
-                      <span className="summary-number">{weeklyTasks}</span>
-                      <span className="summary-label">Tarefas na semana</span>
-                    </div>
-                    <div>
-                      <span className="summary-number">{weeklyHabits}</span>
-                      <span className="summary-label">Hábitos na semana</span>
-                    </div>
-                  </div>
-                  <p className="chart-note">
-                    As tarefas são agrupadas pela data cadastrada nelas. Os
-                    hábitos consideram as datas em que foram marcados como
-                    concluídos.
-                  </p>
-                </article>
-
-                <article className="panel today-panel">
-                  <div className="panel-heading">
-                    <div>
-                      <div className="section-label">RESUMO DIÁRIO</div>
-                      <h2>Hoje</h2>
-                      <p>Seu progresso no dia</p>
-                    </div>
-                    <div className="today-symbol">◷</div>
-                  </div>
-
-                  <div className="today-progress">
-                    <div
-                      className="progress-ring"
-                      style={{
-                        background: `conic-gradient(#d6d9de ${overallRate}%, #292f37 ${overallRate}% 100%)`,
-                      }}
-                    >
-                      <div className="progress-ring-inner">
-                        <strong>{overallRate}%</strong>
-                        <span>concluído</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="today-breakdown">
-                    <div className="breakdown-row">
-                      <span className="breakdown-indicator task-indicator" />
-                      <span>Tarefas concluídas hoje</span>
-                      <strong>{todayTasks}</strong>
-                    </div>
-                    <div className="breakdown-row">
-                      <span className="breakdown-indicator habit-indicator" />
-                      <span>Hábitos concluídos hoje</span>
-                      <strong>{completedHabitsToday.length}</strong>
-                    </div>
-                    <div className="breakdown-row">
-                      <span className="breakdown-indicator pending-indicator" />
-                      <span>Tarefas pendentes</span>
-                      <strong>{pendingTasks.length}</strong>
-                    </div>
-                  </div>
-                </article>
-              </section>
-
-              <section className="lower-grid">
-                <article className="panel best-day-panel">
-                  <div className="panel-heading">
-                    <div>
-                      <div className="section-label">CONSISTÊNCIA</div>
-                      <h2>Melhor dia da semana</h2>
-                      <p>Com base nos registros dos últimos 7 dias</p>
-                    </div>
-                    <span className="trophy-symbol">♛</span>
-                  </div>
-
-                  {bestDay && bestDay.total > 0 ? (
-                    <div className="best-day-content">
-                      <div className="best-day-number">
-                        {bestDay.total}
-                      </div>
-                      <div>
-                        <strong>
-                          {parseDate(bestDay.date).toLocaleDateString(
-                            "pt-BR",
-                            { weekday: "long" }
-                          )}
-                        </strong>
-                        <span>{formatDate(bestDay.date)}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="small-empty">
-                      Ainda não há conclusões registradas nesta semana.
-                    </div>
-                  )}
-                </article>
-
-                <article className="panel categories-panel">
-                  <div className="panel-heading">
-                    <div>
-                      <div className="section-label">ORGANIZAÇÃO</div>
-                      <h2>Hábitos por categoria</h2>
-                      <p>Distribuição dos hábitos ativos</p>
-                    </div>
-                  </div>
-
-                  {categorySummary.length > 0 ? (
-                    <div className="category-list">
-                      {categorySummary.map((category) => (
-                        <div className="category-row" key={category.name}>
-                          <span>{category.name}</span>
-                          <div className="category-track">
-                            <div
-                              className="category-fill"
-                              style={{
-                                width: `${
-                                  (category.total /
-                                    Math.max(
-                                      ...categorySummary.map(
-                                        (item) => item.total
-                                      )
-                                    )) *
-                                  100
-                                }%`,
-                              }}
-                            />
-                          </div>
-                          <strong>{category.total}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="small-empty">
-                      Cadastre hábitos para visualizar sua distribuição.
-                    </div>
-                  )}
-                </article>
-              </section>
-
-              <section className="panel upcoming-panel">
-                <div className="panel-heading upcoming-heading">
-                  <div>
-                    <div className="section-label">ORGANIZAÇÃO</div>
-                    <h2>Próximas tarefas</h2>
-                    <p>Suas próximas atividades ainda não concluídas</p>
-                  </div>
-                  <Link href="/rotina/tarefas" className="text-link">
-                    Ver todas <span>→</span>
-                  </Link>
-                </div>
-
-                {upcomingTasks.length > 0 ? (
-                  <div className="upcoming-list">
-                    {upcomingTasks.map((task) => (
-                      <div className="upcoming-item" key={task.id}>
-                        <div className="upcoming-check" />
-                        <div className="upcoming-info">
-                          <strong>{task.description}</strong>
-                          <span>
-                            {task.category || "Sem categoria"}
-                            {task.time ? ` · ${task.time}` : ""}
-                          </span>
-                        </div>
-                        <div className="upcoming-date">
-                          {task.date === today
-                            ? "Hoje"
-                            : formatDate(task.date!)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="small-empty">
-                    Nenhuma tarefa futura pendente com data definida.
-                  </div>
-                )}
-              </section>
-
-              <section className="quick-links">
-                <Link href="/rotina/tarefas" className="quick-link">
-                  <span className="quick-link-icon">✓</span>
-                  <span>
-                    <strong>Organizar tarefas</strong>
-                    <small>Gerencie suas atividades</small>
-                  </span>
-                  <span className="quick-arrow">→</span>
-                </Link>
-
-                <Link href="/rotina/habitos" className="quick-link">
-                  <span className="quick-link-icon">↗</span>
-                  <span>
-                    <strong>Acompanhar hábitos</strong>
-                    <small>Construa consistência diariamente</small>
-                  </span>
-                  <span className="quick-arrow">→</span>
-                </Link>
-
-                <Link href="/rotina/planejamento" className="quick-link">
-                  <span className="quick-link-icon">▦</span>
-                  <span>
-                    <strong>Planejar semana</strong>
-                    <small>Organize seus próximos dias</small>
-                  </span>
-                  <span className="quick-arrow">→</span>
-                </Link>
-              </section>
-            </>
-          )}
-
-          <footer className="page-footer">
-            NEXO Gestão Pessoal <span>·</span> Produtividade
-          </footer>
+    <div className="content productivity-page-content">
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">DESEMPENHO PESSOAL</div>
+          <h1>Produtividade</h1>
+          <p>
+            Acompanhe seu desempenho, sua consistência e a evolução da sua
+            rotina.
+          </p>
         </div>
-      </section>
+        <div className="heading-period">
+          <span className="period-dot" />
+          Últimos 7 dias
+        </div>
+      </div>
+
+      {!loaded ? (
+        <div className="loading-state">Carregando indicadores...</div>
+      ) : (
+        <>
+          <section className="metrics-grid">
+            <article className="metric-card highlight-card">
+              <div className="metric-top">
+                <span className="metric-label">ÍNDICE DE CONCLUSÃO</span>
+                <span className="metric-icon">◉</span>
+              </div>
+              <div className="metric-value">{overallRate}%</div>
+              <div className="metric-description">
+                Desempenho geral dos registros
+              </div>
+              <div className="metric-progress">
+                <div
+                  className="metric-progress-fill"
+                  style={{ width: `${overallRate}%` }}
+                />
+              </div>
+            </article>
+
+            <article className="metric-card">
+              <div className="metric-top">
+                <span className="metric-label">TAREFAS CONCLUÍDAS</span>
+                <span className="metric-icon">✓</span>
+              </div>
+              <div className="metric-value">
+                {completedTasks.length}
+                <small>/{activeTasks.length}</small>
+              </div>
+              <div className="metric-description">
+                {pendingTasks.length} tarefas pendentes
+              </div>
+            </article>
+
+            <article className="metric-card">
+              <div className="metric-top">
+                <span className="metric-label">HÁBITOS DE HOJE</span>
+                <span className="metric-icon">↗</span>
+              </div>
+              <div className="metric-value">
+                {completedHabitsToday.length}
+                <small>/{activeHabits.length}</small>
+              </div>
+              <div className="metric-description">
+                {habitRate}% de conclusão diária
+              </div>
+            </article>
+
+            <article className="metric-card">
+              <div className="metric-top">
+                <span className="metric-label">REGISTROS HOJE</span>
+                <span className="metric-icon">▦</span>
+              </div>
+              <div className="metric-value">{todayTotal}</div>
+              <div className="metric-description">
+                Tarefas e hábitos registrados como concluídos
+              </div>
+            </article>
+          </section>
+
+          <section className="insight-card">
+            <div className="insight-symbol">✦</div>
+            <div>
+              <div className="insight-title">Seu ritmo atual</div>
+              <p>{productivityMessage}</p>
+            </div>
+          </section>
+
+          <section className="dashboard-grid">
+            <article className="panel weekly-panel">
+              <div className="panel-heading">
+                <div>
+                  <div className="section-label">ACOMPANHAMENTO</div>
+                  <h2>Desempenho semanal</h2>
+                  <p>Atividades concluídas por dia</p>
+                </div>
+                <div className="chart-total">
+                  <strong>{weeklyTotal}</strong>
+                  <span>conclusões</span>
+                </div>
+              </div>
+
+              <div className="chart-legend">
+                <span><i className="legend-task" /> Tarefas</span>
+                <span><i className="legend-habit" /> Hábitos</span>
+              </div>
+
+              <div className="weekly-chart">
+                {weeklyData.map((day) => {
+                  const taskHeight = (day.tasks / maxDailyValue) * 100;
+                  const habitHeight = (day.habits / maxDailyValue) * 100;
+
+                  return (
+                    <div className="chart-day" key={day.date}>
+                      <div className="chart-value">
+                        {day.total > 0 ? day.total : ""}
+                      </div>
+                      <div className="bar-area">
+                        <div className="bar-stack">
+                          <div
+                            className="bar-task"
+                            style={{ height: `${taskHeight}%` }}
+                            title={`${day.tasks} tarefas`}
+                          />
+                          <div
+                            className="bar-habit"
+                            style={{ height: `${habitHeight}%` }}
+                            title={`${day.habits} hábitos`}
+                          />
+                        </div>
+                      </div>
+                      <span className="chart-day-label">{day.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="chart-summary">
+                <div>
+                  <span className="summary-number">{weeklyTasks}</span>
+                  <span className="summary-label">Tarefas na semana</span>
+                </div>
+                <div>
+                  <span className="summary-number">{weeklyHabits}</span>
+                  <span className="summary-label">Hábitos na semana</span>
+                </div>
+              </div>
+              <p className="chart-note">
+                As tarefas são agrupadas pela data cadastrada nelas. Os hábitos
+                consideram as datas em que foram marcados como concluídos.
+              </p>
+            </article>
+
+            <article className="panel today-panel">
+              <div className="panel-heading">
+                <div>
+                  <div className="section-label">RESUMO DIÁRIO</div>
+                  <h2>Hoje</h2>
+                  <p>Seu progresso no dia</p>
+                </div>
+                <div className="today-symbol">◷</div>
+              </div>
+
+              <div className="today-progress">
+                <div
+                  className="progress-ring"
+                  style={{
+                    background: `conic-gradient(#d6d9de ${overallRate}%, #292f37 ${overallRate}% 100%)`,
+                  }}
+                >
+                  <div className="progress-ring-inner">
+                    <strong>{overallRate}%</strong>
+                    <span>concluído</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="today-breakdown">
+                <div className="breakdown-row">
+                  <span className="breakdown-indicator task-indicator" />
+                  <span>Tarefas concluídas hoje</span>
+                  <strong>{todayTasks}</strong>
+                </div>
+                <div className="breakdown-row">
+                  <span className="breakdown-indicator habit-indicator" />
+                  <span>Hábitos concluídos hoje</span>
+                  <strong>{completedHabitsToday.length}</strong>
+                </div>
+                <div className="breakdown-row">
+                  <span className="breakdown-indicator pending-indicator" />
+                  <span>Tarefas pendentes</span>
+                  <strong>{pendingTasks.length}</strong>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section className="lower-grid">
+            <article className="panel best-day-panel">
+              <div className="panel-heading">
+                <div>
+                  <div className="section-label">CONSISTÊNCIA</div>
+                  <h2>Melhor dia da semana</h2>
+                  <p>Com base nos registros dos últimos 7 dias</p>
+                </div>
+                <span className="trophy-symbol">♛</span>
+              </div>
+
+              {bestDay && bestDay.total > 0 ? (
+                <div className="best-day-content">
+                  <div className="best-day-number">{bestDay.total}</div>
+                  <div>
+                    <strong>
+                      {parseDate(bestDay.date).toLocaleDateString("pt-BR", {
+                        weekday: "long",
+                      })}
+                    </strong>
+                    <span>{formatDate(bestDay.date)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="small-empty">
+                  Ainda não há conclusões registradas nesta semana.
+                </div>
+              )}
+            </article>
+
+            <article className="panel categories-panel">
+              <div className="panel-heading">
+                <div>
+                  <div className="section-label">ORGANIZAÇÃO</div>
+                  <h2>Hábitos por categoria</h2>
+                  <p>Distribuição dos hábitos ativos</p>
+                </div>
+              </div>
+
+              {categorySummary.length > 0 ? (
+                <div className="category-list">
+                  {categorySummary.map((category) => (
+                    <div className="category-row" key={category.name}>
+                      <span>{category.name}</span>
+                      <div className="category-track">
+                        <div
+                          className="category-fill"
+                          style={{
+                            width: `${
+                              (category.total /
+                                Math.max(
+                                  ...categorySummary.map(
+                                    (item) => item.total
+                                  )
+                                )) *
+                              100
+                            }%`,
+                          }}
+                        />
+                      </div>
+                      <strong>{category.total}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="small-empty">
+                  Cadastre hábitos para visualizar sua distribuição.
+                </div>
+              )}
+            </article>
+          </section>
+
+          <section className="panel upcoming-panel">
+            <div className="panel-heading upcoming-heading">
+              <div>
+                <div className="section-label">ORGANIZAÇÃO</div>
+                <h2>Próximas tarefas</h2>
+                <p>Suas próximas atividades ainda não concluídas</p>
+              </div>
+              <Link href="/rotina/tarefas" className="text-link">
+                Ver todas <span>→</span>
+              </Link>
+            </div>
+
+            {upcomingTasks.length > 0 ? (
+              <div className="upcoming-list">
+                {upcomingTasks.map((task) => (
+                  <div className="upcoming-item" key={task.id}>
+                    <div className="upcoming-check" />
+                    <div className="upcoming-info">
+                      <strong>{task.description}</strong>
+                      <span>
+                        {task.category || "Sem categoria"}
+                        {task.time ? ` · ${task.time}` : ""}
+                      </span>
+                    </div>
+                    <div className="upcoming-date">
+                      {task.date === today ? "Hoje" : formatDate(task.date!)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="small-empty">
+                Nenhuma tarefa futura pendente com data definida.
+              </div>
+            )}
+          </section>
+
+          <section className="quick-links">
+            <Link href="/rotina/tarefas" className="quick-link">
+              <span className="quick-link-icon">✓</span>
+              <span>
+                <strong>Organizar tarefas</strong>
+                <small>Gerencie suas atividades</small>
+              </span>
+              <span className="quick-arrow">→</span>
+            </Link>
+
+            <Link href="/rotina/habitos" className="quick-link">
+              <span className="quick-link-icon">↗</span>
+              <span>
+                <strong>Acompanhar hábitos</strong>
+                <small>Construa consistência diariamente</small>
+              </span>
+              <span className="quick-arrow">→</span>
+            </Link>
+
+            <Link href="/rotina/planejamento" className="quick-link">
+              <span className="quick-link-icon">▦</span>
+              <span>
+                <strong>Planejar semana</strong>
+                <small>Organize seus próximos dias</small>
+              </span>
+              <span className="quick-arrow">→</span>
+            </Link>
+          </section>
+        </>
+      )}
+
+      <footer className="page-footer">
+        NEXO Gestão Pessoal <span>·</span> Produtividade
+      </footer>
 
       <style jsx>{`
-        .main-area {
-          min-width: 0;
-          flex: 1;
-        }
-
-        .topbar {
-          height: 76px;
-          padding: 0 38px;
-          border-bottom: 1px solid #252b33;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .breadcrumb {
-          color: #858c96;
-          font-size: 13px;
-        }
-
-        .breadcrumb span {
-          margin: 0 10px;
-          color: #515965;
-        }
-
-        .breadcrumb strong {
-          color: #e5e7eb;
-          font-weight: 500;
-        }
-
-        .topbar-right {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-
-        .topbar-date {
-          color: #9299a3;
-          font-size: 12px;
-          text-transform: capitalize;
-        }
-
-        .profile-avatar {
-          width: 34px;
-          height: 34px;
-          border: 1px solid #414852;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          color: #e5e7eb;
-          font-size: 13px;
-          background: #20252c;
-        }
-
         .content {
+          width: 100%;
           max-width: 1500px;
           padding: 34px 38px 28px;
           margin: 0 auto;
@@ -1349,10 +1265,6 @@ export default function ProdutividadePage() {
         }
 
         @media (max-width: 760px) {
-          .topbar {
-            padding: 0 20px;
-          }
-
           .content {
             padding: 27px 20px;
           }
@@ -1365,10 +1277,6 @@ export default function ProdutividadePage() {
           .page-heading {
             align-items: flex-start;
             flex-direction: column;
-          }
-
-          .topbar-date {
-            display: none;
           }
         }
 
@@ -1407,15 +1315,11 @@ export default function ProdutividadePage() {
             gap: 8px;
           }
 
-          .breadcrumb {
-            font-size: 11px;
-          }
-
           .content {
             padding: 24px 14px;
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }
