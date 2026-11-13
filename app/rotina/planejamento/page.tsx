@@ -2,7 +2,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -19,27 +19,6 @@ type Task = {
 };
 
 const TASKS_KEY = "nexo_tasks";
-
-const financeMenuItems = [
-  { label: "Visão geral financeira", href: "/financeiro" },
-  { label: "Contas", href: "/financeiro/contas" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber" },
-  { label: "Histórico financeiro", href: "/financeiro/historico" },
-  { label: "Investimentos", href: "/financeiro/investimentos" },
-  { label: "Reserva financeira", href: "/financeiro/reservas" },
-  { label: "Planejamento", href: "/financeiro/planejamento" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard" },
-];
-
-const routineMenuItems = [
-  { label: "Visão geral da rotina", href: "/rotina", icon: "▤" },
-  { label: "Agenda diária", href: "/rotina/agenda", icon: "▦" },
-  { label: "Tarefas", href: "/rotina/tarefas", icon: "☑" },
-  { label: "Planejamento semanal", href: "/rotina/planejamento", icon: "▥" },
-  { label: "Hábitos", href: "/rotina/habitos", icon: "◉" },
-  { label: "Produtividade", href: "/rotina/produtividade", icon: "↗" },
-];
 
 const weekDays = [
   "Segunda-feira",
@@ -77,15 +56,6 @@ function getWeekStart(date: Date) {
   result.setHours(12, 0, 0, 0);
 
   return result;
-}
-
-function formatShortDate(date: string) {
-  const parsed = parseDate(date);
-
-  return parsed.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
 }
 
 function formatPeriod(start: Date, end: Date) {
@@ -144,9 +114,6 @@ export default function WeeklyPlanningPage() {
   const [weekStart, setWeekStart] = useState(() =>
     getWeekStart(new Date())
   );
-
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
-  const [routineMenuOpen, setRoutineMenuOpen] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -372,96 +339,9 @@ export default function WeeklyPlanningPage() {
     if (editingId === id) resetForm();
   }
 
-  function openTaskDate(dateString: string) {
-    const target = getWeekStart(parseDate(dateString));
-    setWeekStart(target);
-  }
-
   return (
     <main className="app-shell">
-      <aside className="sidebar">
-        <Link href="/" className="brand">
-          <span className="brand-symbol">N</span>
-          <span className="brand-name">NEXO</span>
-        </Link>
-
-        <div className="sidebar-section-label">MENU PRINCIPAL</div>
-
-        <nav className="navigation">
-          <Link href="/" className="nav-item">
-            <span className="nav-icon">⌂</span>
-            <span>Visão geral</span>
-          </Link>
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent"
-              onClick={() => setFinanceMenuOpen(!financeMenuOpen)}
-            >
-              <span className="nav-icon">◈</span>
-              <span className="nav-finance-label">Financeiro</span>
-              <span className={`nav-chevron ${financeMenuOpen ? "open" : ""}`}>
-                ›
-              </span>
-            </button>
-
-            {financeMenuOpen && (
-              <div className="nav-submenu">
-                {financeMenuItems.map((item) => (
-                  <Link
-                    href={item.href}
-                    className="nav-subitem"
-                    key={item.href}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent active"
-              onClick={() => setRoutineMenuOpen(!routineMenuOpen)}
-            >
-              <span className="nav-icon">▤</span>
-              <span className="nav-finance-label">Minha rotina</span>
-              <span className={`nav-chevron ${routineMenuOpen ? "open" : ""}`}>
-                ›
-              </span>
-            </button>
-
-            {routineMenuOpen && (
-              <div className="nav-submenu">
-                {routineMenuItems.map((item) => (
-                  <Link
-                    href={item.href}
-                    key={item.href}
-                    className={`nav-subitem ${
-                      item.href === "/rotina/planejamento"
-                        ? "nav-subitem-main"
-                        : ""
-                    }`}
-                  >
-                    {item.icon} {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="sidebar-status">
-            <span className="status-dot" />
-            Sistema operacional
-          </div>
-          <div className="sidebar-version">NEXO · VERSÃO 2.0</div>
-        </div>
-      </aside>
+      <MainNavigation />
 
       <section className="main-area">
         <header className="topbar">
@@ -691,7 +571,9 @@ export default function WeeklyPlanningPage() {
                     Cancelar
                   </button>
                   <button type="submit" className="primary-button">
-                    {editingId !== null ? "Salvar alterações" : "Adicionar atividade"}
+                    {editingId !== null
+                      ? "Salvar alterações"
+                      : "Adicionar atividade"}
                   </button>
                 </div>
               </form>
@@ -755,9 +637,7 @@ export default function WeeklyPlanningPage() {
 
                     <div className="day-tasks">
                       {day.tasks.length === 0 ? (
-                        <div className="no-day-tasks">
-                          Dia livre
-                        </div>
+                        <div className="no-day-tasks">Dia livre</div>
                       ) : (
                         day.tasks.map((task) => (
                           <div

@@ -2,7 +2,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -32,58 +32,6 @@ const CATEGORIES = [
 ];
 
 const PRIORITIES: Priority[] = ["Baixa", "Média", "Alta", "Urgente"];
-
-const financeMenuItems = [
-  { label: "Visão geral financeira", href: "/financeiro", main: true },
-  { label: "Contas", href: "/financeiro/contas" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber" },
-  { label: "Histórico financeiro", href: "/financeiro/historico" },
-  { label: "Investimentos", href: "/financeiro/investimentos" },
-  { label: "Reserva financeira", href: "/financeiro/reservas" },
-  { label: "Planejamento", href: "/financeiro/planejamento" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard" },
-];
-
-const routineMenuItems = [
-  { label: "Agenda diária", href: "/rotina/agenda" },
-  { label: "Tarefas", href: "/rotina/tarefas" },
-  { label: "Planejamento semanal", href: "/rotina/planejamento" },
-  { label: "Hábitos", href: "/rotina/habitos" },
-  { label: "Produtividade", href: "/rotina/produtividade" },
-];
-
-function Logo() {
-  return (
-    <div className="brand">
-      <svg
-        className="brand-symbol"
-        viewBox="0 0 52 52"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <linearGradient id="silver" x1="5" y1="5" x2="48" y2="48">
-            <stop stopColor="#FFFFFF" />
-            <stop offset=".45" stopColor="#AEB4BC" />
-            <stop offset="1" stopColor="#5D626B" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M10 42V10H18L42 37V10H34V42H26L10 24"
-          stroke="url(#silver)"
-          strokeWidth="4"
-          strokeLinecap="square"
-          strokeLinejoin="miter"
-        />
-      </svg>
-      <div>
-        <div className="brand-name">NEXO</div>
-        <div className="brand-subtitle">GESTÃO PESSOAL</div>
-      </div>
-    </div>
-  );
-}
 
 function getLocalDate() {
   const date = new Date();
@@ -146,10 +94,6 @@ function priorityClass(priority?: Priority) {
 export default function TarefasPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
-
-  // Menus laterais: Minha rotina aberta por padrão nesta página.
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
-  const [routineMenuOpen, setRoutineMenuOpen] = useState(true);
 
   const [filter, setFilter] = useState<Filter>("Todas");
   const [search, setSearch] = useState("");
@@ -400,121 +344,8 @@ export default function TarefasPage() {
 
   return (
     <main className="app-shell">
-      {/* MENU LATERAL PADRÃO NEXO */}
-      <aside className="sidebar">
-        <Logo />
+      <MainNavigation />
 
-        <div className="sidebar-section-label">MENU PRINCIPAL</div>
-
-        <nav className="navigation">
-          <Link href="/" className="nav-item">
-            <span className="nav-icon">⌂</span>
-            <span>Visão geral</span>
-          </Link>
-
-          {/* FINANCEIRO */}
-          <div className="nav-group">
-            <button
-              type="button"
-              className={`nav-item nav-finance-parent ${
-                financeMenuOpen ? "active" : ""
-              }`}
-              onClick={() => {
-                setFinanceMenuOpen((current) => !current);
-                setRoutineMenuOpen(false);
-              }}
-              aria-expanded={financeMenuOpen}
-              aria-controls="finance-submenu"
-            >
-              <span className="nav-icon">◈</span>
-              <span className="nav-finance-label">Financeiro</span>
-              <span
-                className={`nav-chevron ${
-                  financeMenuOpen ? "open" : ""
-                }`}
-              >
-                ›
-              </span>
-            </button>
-
-            {financeMenuOpen && (
-              <div className="nav-submenu" id="finance-submenu">
-                {financeMenuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-subitem ${
-                      item.main ? "nav-subitem-main" : ""
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* MINHA ROTINA */}
-          <div className="nav-group">
-            <button
-              type="button"
-              className={`nav-item nav-finance-parent ${
-                routineMenuOpen ? "active" : ""
-              }`}
-              onClick={() => {
-                setRoutineMenuOpen((current) => !current);
-                setFinanceMenuOpen(false);
-              }}
-              aria-expanded={routineMenuOpen}
-              aria-controls="routine-submenu"
-            >
-              <span className="nav-icon">▤</span>
-              <span className="nav-finance-label">Minha rotina</span>
-              <span
-                className={`nav-chevron ${
-                  routineMenuOpen ? "open" : ""
-                }`}
-              >
-                ›
-              </span>
-            </button>
-
-            {routineMenuOpen && (
-              <div className="nav-submenu" id="routine-submenu">
-                <Link
-                  href="/rotina"
-                  className="nav-subitem nav-subitem-main"
-                >
-                  Visão geral da rotina
-                </Link>
-
-                {routineMenuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-subitem ${
-                      item.href === "/rotina/tarefas" ? "active" : ""
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="sidebar-status">
-            <span className="status-dot" />
-            Sistema operacional
-          </div>
-
-          <div className="sidebar-version">NEXO · VERSÃO 2.0</div>
-        </div>
-      </aside>
-
-      {/* CONTEÚDO PRINCIPAL */}
       <section className="main-area">
         <header className="topbar">
           <div className="breadcrumb">
@@ -972,8 +803,6 @@ export default function TarefasPage() {
         </div>
       </section>
 
-      {/* ESTILOS EXCLUSIVOS DO CONTEÚDO.
-          A SIDEBAR UTILIZA O CSS GLOBAL DO NEXO. */}
       <style jsx>{`
         .main-area {
           flex: 1;

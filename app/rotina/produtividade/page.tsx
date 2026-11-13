@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Task = {
   id: number;
@@ -108,44 +108,10 @@ function loadHabits(): Habit[] {
   }
 }
 
-function Logo() {
-  return (
-    <div className="brand">
-      <svg
-        className="brand-symbol"
-        viewBox="0 0 52 52"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <linearGradient id="silver" x1="5" y1="5" x2="48" y2="48">
-            <stop stopColor="#FFFFFF" />
-            <stop offset=".45" stopColor="#AEB4BC" />
-            <stop offset="1" stopColor="#5D626B" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M10 42V10H18L42 37V10H34V42H26L10 24"
-          stroke="url(#silver)"
-          strokeWidth="4"
-          strokeLinecap="square"
-          strokeLinejoin="miter"
-        />
-      </svg>
-      <div>
-        <div className="brand-name">NEXO</div>
-        <div className="brand-subtitle">GESTÃO PESSOAL</div>
-      </div>
-    </div>
-  );
-}
-
 export default function ProdutividadePage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
-  const [routineMenuOpen, setRoutineMenuOpen] = useState(true);
 
   const today = getLocalDate();
 
@@ -164,26 +130,6 @@ export default function ProdutividadePage() {
       window.removeEventListener("storage", syncData);
     };
   }, []);
-
-  const financeMenuItems = [
-    { label: "Visão geral financeira", href: "/financeiro", main: true },
-    { label: "Contas", href: "/financeiro/contas" },
-    { label: "Contas a pagar", href: "/financeiro/contas-a-pagar" },
-    { label: "Contas a receber", href: "/financeiro/contas-a-receber" },
-    { label: "Histórico financeiro", href: "/financeiro/historico" },
-    { label: "Investimentos", href: "/financeiro/investimentos" },
-    { label: "Reserva financeira", href: "/financeiro/reservas" },
-    { label: "Planejamento", href: "/financeiro/planejamento" },
-    { label: "Dashboard financeiro", href: "/financeiro/dashboard" },
-  ];
-
-  const routineMenuItems = [
-    { label: "Agenda diária", href: "/rotina/agenda" },
-    { label: "Tarefas", href: "/rotina/tarefas" },
-    { label: "Planejamento semanal", href: "/rotina/planejamento" },
-    { label: "Hábitos", href: "/rotina/habitos" },
-    { label: "Produtividade", href: "/rotina/produtividade" },
-  ];
 
   const activeTasks = tasks;
   const completedTasks = activeTasks.filter((task) => task.done);
@@ -236,9 +182,11 @@ export default function ProdutividadePage() {
 
       return {
         date: dateKey,
-        label: date.toLocaleDateString("pt-BR", {
-          weekday: "short",
-        }).replace(".", ""),
+        label: date
+          .toLocaleDateString("pt-BR", {
+            weekday: "short",
+          })
+          .replace(".", ""),
         tasks: tasksForDay,
         habits: habitsForDay,
         total: tasksForDay + habitsForDay,
@@ -313,103 +261,7 @@ export default function ProdutividadePage() {
 
   return (
     <main className="app-shell">
-      <aside className="sidebar">
-        <Logo />
-
-        <div className="sidebar-section-label">MENU PRINCIPAL</div>
-
-        <nav className="navigation">
-          <Link href="/" className="nav-item">
-            <span className="nav-icon">⌂</span>
-            <span>Visão geral</span>
-          </Link>
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent"
-              onClick={() => {
-                setFinanceMenuOpen(!financeMenuOpen);
-                setRoutineMenuOpen(false);
-              }}
-              aria-expanded={financeMenuOpen}
-              aria-controls="finance-submenu"
-            >
-              <span className="nav-icon">◈</span>
-              <span className="nav-finance-label">Financeiro</span>
-              <span className={`nav-chevron ${financeMenuOpen ? "open" : ""}`}>
-                ›
-              </span>
-            </button>
-
-            {financeMenuOpen && (
-              <div className="nav-submenu" id="finance-submenu">
-                {financeMenuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-subitem ${
-                      item.main ? "nav-subitem-main" : ""
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent"
-              onClick={() => {
-                setRoutineMenuOpen(!routineMenuOpen);
-                setFinanceMenuOpen(false);
-              }}
-              aria-expanded={routineMenuOpen}
-              aria-controls="routine-submenu"
-            >
-              <span className="nav-icon">▤</span>
-              <span className="nav-finance-label">Minha rotina</span>
-              <span className={`nav-chevron ${routineMenuOpen ? "open" : ""}`}>
-                ›
-              </span>
-            </button>
-
-            {routineMenuOpen && (
-              <div className="nav-submenu" id="routine-submenu">
-                <Link
-                  href="/rotina"
-                  className="nav-subitem nav-subitem-main"
-                >
-                  Visão geral da rotina
-                </Link>
-
-                {routineMenuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-subitem ${
-                      item.href === "/rotina/produtividade" ? "active" : ""
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="sidebar-status">
-            <span className="status-dot" />
-            <span>Sistema operacional</span>
-          </div>
-          <div className="sidebar-version">NEXO · VERSÃO 2.0</div>
-        </div>
-      </aside>
+      <MainNavigation />
 
       <section className="main-area">
         <header className="topbar">
