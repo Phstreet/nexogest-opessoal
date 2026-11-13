@@ -2,7 +2,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import MainNavigation from "../../components/navigation/MainNavigation";
 
 type FormMovementType =
   | "Receita"
@@ -32,106 +32,214 @@ type Transaction = {
 
 const STORAGE_KEY = "nexo_transactions";
 
-const financeNavigation = [
-  { label: "Visão geral", href: "/financeiro", icon: "⌂" },
-  { label: "Contas", href: "/financeiro/contas", icon: "▣" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↓" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↑" },
-  { label: "Histórico financeiro", href: "/financeiro/historico", icon: "↻" },
-  { label: "Investimentos", href: "/financeiro/investimentos", icon: "◈" },
-  { label: "Reserva financeira", href: "/financeiro/reservas", icon: "▣" },
-  { label: "Planejamento", href: "/financeiro/planejamento", icon: "▤" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
-];
-
 const categoriesByType: Record<FormMovementType, string[]> = {
   Receita: [
-    "Salário", "13º Salário", "Adiantamento Salarial",
-    "Horas Extras", "Comissões", "Trabalhos Extras",
-    "Reembolsos", "Receitas Eventuais", "Rendimentos", "Outros",
+    "Salário",
+    "13º Salário",
+    "Adiantamento Salarial",
+    "Horas Extras",
+    "Comissões",
+    "Trabalhos Extras",
+    "Reembolsos",
+    "Receitas Eventuais",
+    "Rendimentos",
+    "Outros",
   ],
   Despesa: [
-    "Moradia", "Alimentação", "Transporte", "Saúde",
-    "Educação", "Lazer", "Serviços", "Assinaturas",
-    "Religião", "Impostos", "Dívidas", "Outros",
+    "Moradia",
+    "Alimentação",
+    "Transporte",
+    "Saúde",
+    "Educação",
+    "Lazer",
+    "Serviços",
+    "Assinaturas",
+    "Religião",
+    "Impostos",
+    "Dívidas",
+    "Outros",
   ],
   Transferência: ["Transferência"],
   Investimento: ["Investimento"],
 };
 
 const subcategories: Record<string, string[]> = {
-  "Salário": ["Salário mensal", "Adiantamento", "Outros"],
-  "13º Salário": ["Primeira parcela", "Segunda parcela", "Integral", "Outros"],
+  Salário: ["Salário mensal", "Adiantamento", "Outros"],
+  "13º Salário": [
+    "Primeira parcela",
+    "Segunda parcela",
+    "Integral",
+    "Outros",
+  ],
   "Adiantamento Salarial": ["Adiantamento", "Outros"],
   "Horas Extras": ["Horas extras", "DSR", "Outros"],
-  "Comissões": ["Comissão", "Outros"],
+  Comissões: ["Comissão", "Outros"],
   "Trabalhos Extras": ["Serviços extras", "Freelance", "Outros"],
-  "Reembolsos": ["Reembolso de despesas", "Outros"],
+  Reembolsos: ["Reembolso de despesas", "Outros"],
   "Receitas Eventuais": ["Venda", "Presente", "Outros"],
-  "Rendimentos": ["Rendimento de conta", "Rendimento financeiro", "Outros"],
-  "Moradia": [
-    "Aluguel", "Condomínio", "Energia", "Água", "Internet",
-    "Gás", "Manutenção", "Móveis", "Casa", "Outros",
+  Rendimentos: [
+    "Rendimento de conta",
+    "Rendimento financeiro",
+    "Outros",
   ],
-  "Alimentação": [
-    "Mercado", "Restaurante", "iFood", "Keeta", "99 Food", "Lanches", "Outros",
+  Moradia: [
+    "Aluguel",
+    "Condomínio",
+    "Energia",
+    "Água",
+    "Internet",
+    "Gás",
+    "Manutenção",
+    "Móveis",
+    "Casa",
+    "Outros",
   ],
-  "Transporte": [
-    "Combustível", "Transporte público", "Aplicativos",
-    "Estacionamento", "Manutenção do veículo", "Carro", "Outros",
+  Alimentação: [
+    "Mercado",
+    "Restaurante",
+    "iFood",
+    "Keeta",
+    "99 Food",
+    "Lanches",
+    "Outros",
   ],
-  "Saúde": [
-    "Plano de saúde", "Consulta", "Exames", "Medicamentos", "Odontologia", "Outros",
+  Transporte: [
+    "Combustível",
+    "Transporte público",
+    "Aplicativos",
+    "Estacionamento",
+    "Manutenção do veículo",
+    "Carro",
+    "Outros",
   ],
-  "Educação": ["Cursos", "Material escolar", "Livros", "Notebook", "Outros"],
-  "Lazer": ["Viagem", "Cinema", "Passeios", "Eventos", "Televisão", "Outros"],
-  "Serviços": ["Telefonia", "Internet", "Manutenção", "Serviços domésticos", "Outros"],
-  "Assinaturas": ["Streaming", "Telefonia", "Aplicativos", "Outros"],
-  "Religião": ["Dízimo", "Oferta", "Doação", "Caixinha", "Outros"],
-  "Impostos": ["IPVA", "IPTU", "Imposto de renda", "Multas", "Outros"],
-  "Dívidas": [
-    "Empréstimo", "Cartão de crédito", "Financiamento", "Parcelamento", "Outros",
+  Saúde: [
+    "Plano de saúde",
+    "Consulta",
+    "Exames",
+    "Medicamentos",
+    "Odontologia",
+    "Outros",
   ],
-  "Outros": ["Notebook", "Televisão", "Carro", "Casa", "Viagem", "Outros"],
-  "Transferência": ["Entre contas"],
+  Educação: [
+    "Cursos",
+    "Material escolar",
+    "Livros",
+    "Notebook",
+    "Outros",
+  ],
+  Lazer: [
+    "Viagem",
+    "Cinema",
+    "Passeios",
+    "Eventos",
+    "Televisão",
+    "Outros",
+  ],
+  Serviços: [
+    "Telefonia",
+    "Internet",
+    "Manutenção",
+    "Serviços domésticos",
+    "Outros",
+  ],
+  Assinaturas: ["Streaming", "Telefonia", "Aplicativos", "Outros"],
+  Religião: ["Dízimo", "Oferta", "Doação", "Caixinha", "Outros"],
+  Impostos: ["IPVA", "IPTU", "Imposto de renda", "Multas", "Outros"],
+  Dívidas: [
+    "Empréstimo",
+    "Cartão de crédito",
+    "Financiamento",
+    "Parcelamento",
+    "Outros",
+  ],
+  Outros: [
+    "Notebook",
+    "Televisão",
+    "Carro",
+    "Casa",
+    "Viagem",
+    "Outros",
+  ],
+  Transferência: ["Entre contas"],
 };
 
 const investmentOptions = [
-  "CDB", "LCI", "LCA", "Tesouro Direto", "Ações",
-  "Fundos imobiliários (FIIs)", "Fundos de investimento",
-  "Renda fixa", "Renda variável", "Criptomoedas",
-  "Previdência privada", "Outros",
+  "CDB",
+  "LCI",
+  "LCA",
+  "Tesouro Direto",
+  "Ações",
+  "Fundos imobiliários (FIIs)",
+  "Fundos de investimento",
+  "Renda fixa",
+  "Renda variável",
+  "Criptomoedas",
+  "Previdência privada",
+  "Outros",
 ];
 
 const institutions = [
-  "Nubank", "Banco Inter", "Itaú", "Bradesco",
-  "Banco do Brasil", "Caixa Econômica Federal", "Santander",
-  "C6 Bank", "BTG Pactual", "XP Investimentos",
-  "Rico", "Clear", "Mercado Pago", "PicPay", "Outra instituição",
+  "Nubank",
+  "Banco Inter",
+  "Itaú",
+  "Bradesco",
+  "Banco do Brasil",
+  "Caixa Econômica Federal",
+  "Santander",
+  "C6 Bank",
+  "BTG Pactual",
+  "XP Investimentos",
+  "Rico",
+  "Clear",
+  "Mercado Pago",
+  "PicPay",
+  "Outra instituição",
 ];
 
 const movementTypes: FormMovementType[] = [
-  "Receita", "Despesa", "Transferência", "Investimento",
+  "Receita",
+  "Despesa",
+  "Transferência",
+  "Investimento",
 ];
 
 const accounts = [
-  "Conta Corrente", "Poupança",
-  "Dinheiro em Espécie", "Carteira Digital",
+  "Conta Corrente",
+  "Poupança",
+  "Dinheiro em Espécie",
+  "Carteira Digital",
 ];
 
 const paymentMethods = [
-  "Dinheiro", "Débito", "Crédito", "PIX", "Transferência", "Boleto",
+  "Dinheiro",
+  "Débito",
+  "Crédito",
+  "PIX",
+  "Transferência",
+  "Boleto",
 ];
 
 const statuses = [
-  "Prevista", "Pendente", "Recebida parcialmente",
-  "Paga parcialmente", "Recebida", "Pago", "Aplicado",
-  "Atrasada", "Cancelada",
+  "Prevista",
+  "Pendente",
+  "Recebida parcialmente",
+  "Paga parcialmente",
+  "Recebida",
+  "Pago",
+  "Aplicado",
+  "Atrasada",
+  "Cancelada",
 ];
 
 const recurrences = [
-  "Nenhuma", "Semanal", "Quinzenal", "Mensal",
-  "Bimestral", "Trimestral", "Semestral", "Anual",
+  "Nenhuma",
+  "Semanal",
+  "Quinzenal",
+  "Mensal",
+  "Bimestral",
+  "Trimestral",
+  "Semestral",
+  "Anual",
 ];
 
 function money(value: number) {
@@ -143,10 +251,13 @@ function money(value: number) {
 
 function parseAmount(value: string) {
   const normalized = value.trim().replace(/\s/g, "");
+
   if (!normalized) return NaN;
 
   if (normalized.includes(",")) {
-    return Number(normalized.replace(/\./g, "").replace(",", "."));
+    return Number(
+      normalized.replace(/\./g, "").replace(",", ".")
+    );
   }
 
   return Number(normalized);
@@ -157,7 +268,17 @@ function localDate() {
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
+
   return `${year}-${month}-${day}`;
+}
+
+function formatLongDate(date = new Date()) {
+  return date.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function SelectField({
@@ -174,9 +295,15 @@ function SelectField({
   return (
     <div className="finance-field">
       <label>{label}</label>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map((option) => (
-          <option key={option} value={option}>{option}</option>
+          <option key={option} value={option}>
+            {option}
+          </option>
         ))}
       </select>
     </div>
@@ -187,6 +314,7 @@ function getDefaultCategory(type: FormMovementType) {
   if (type === "Receita") return "Salário";
   if (type === "Despesa") return "Moradia";
   if (type === "Investimento") return "Investimento";
+
   return "Transferência";
 }
 
@@ -195,11 +323,17 @@ function getDefaultSubcategory(category: string) {
 }
 
 function isInvestmentApplied(item: Transaction) {
-  if (item.status === "Cancelada" || item.status === "Pendente") {
+  if (
+    item.status === "Cancelada" ||
+    item.status === "Pendente"
+  ) {
     return false;
   }
 
-  return item.type === "Investimento" || item.type === "Aplicação";
+  return (
+    item.type === "Investimento" ||
+    item.type === "Aplicação"
+  );
 }
 
 export default function FinanceiroPage() {
@@ -211,7 +345,8 @@ export default function FinanceiroPage() {
   const [subcategory, setSubcategory] = useState("Aluguel");
   const [date, setDate] = useState(localDate());
   const [account, setAccount] = useState("Conta Corrente");
-  const [destinationAccount, setDestinationAccount] = useState("Poupança");
+  const [destinationAccount, setDestinationAccount] =
+    useState("Poupança");
   const [paymentMethod, setPaymentMethod] = useState("PIX");
   const [status, setStatus] = useState("Pendente");
   const [recurrence, setRecurrence] = useState("Nenhuma");
@@ -222,19 +357,29 @@ export default function FinanceiroPage() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setTransactions(parsed);
+
+        if (Array.isArray(parsed)) {
+          setTransactions(parsed);
+        }
       }
     } catch {
-      console.error("Não foi possível carregar os lançamentos.");
+      console.error(
+        "Não foi possível carregar os lançamentos."
+      );
     }
+
     setLoaded(true);
   }, []);
 
   useEffect(() => {
     if (loaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(transactions)
+      );
     }
   }, [transactions, loaded]);
 
@@ -273,30 +418,46 @@ export default function FinanceiroPage() {
 
     const receitas = active
       .filter((item) => item.type === "Receita")
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      .reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      );
 
     const despesas = active
       .filter((item) => item.type === "Despesa")
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      .reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      );
 
     const investimentosAplicados = active
       .filter(isInvestmentApplied)
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      .reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      );
 
     return {
       receitas,
       despesas,
       investimentosAplicados,
-      resultado: receitas - despesas - investimentosAplicados,
+      resultado:
+        receitas - despesas - investimentosAplicados,
     };
   }, [transactions]);
 
   const filterOptions = useMemo(() => {
     const existingTypes = transactions
       .map((item) => item.type)
-      .filter((item) => item === "Aplicação" || item === "Reserva");
+      .filter(
+        (item) =>
+          item === "Aplicação" || item === "Reserva"
+      );
 
-    return [...movementTypes, ...Array.from(new Set(existingTypes))];
+    return [
+      ...movementTypes,
+      ...Array.from(new Set(existingTypes)),
+    ];
   }, [transactions]);
 
   const filtered = transactions.filter(
@@ -313,17 +474,29 @@ export default function FinanceiroPage() {
       !Number.isFinite(parsedAmount) ||
       parsedAmount <= 0
     ) {
-      alert("Preencha a descrição e informe um valor válido.");
+      alert(
+        "Preencha a descrição e informe um valor válido."
+      );
       return;
     }
 
-    if (type === "Transferência" && account === destinationAccount) {
-      alert("Escolha contas diferentes para origem e destino.");
+    if (
+      type === "Transferência" &&
+      account === destinationAccount
+    ) {
+      alert(
+        "Escolha contas diferentes para origem e destino."
+      );
       return;
     }
 
-    if (type === "Investimento" && !institution.trim()) {
-      alert("Selecione a instituição financeira do investimento.");
+    if (
+      type === "Investimento" &&
+      !institution.trim()
+    ) {
+      alert(
+        "Selecione a instituição financeira do investimento."
+      );
       return;
     }
 
@@ -339,11 +512,14 @@ export default function FinanceiroPage() {
       amount: parsedAmount,
       date,
       category:
-        type === "Transferência" || type === "Investimento"
+        type === "Transferência" ||
+        type === "Investimento"
           ? type
           : category,
       subcategory:
-        type === "Transferência" ? "Entre contas" : subcategory,
+        type === "Transferência"
+          ? "Entre contas"
+          : subcategory,
       account,
       destinationAccount:
         type === "Transferência"
@@ -352,11 +528,20 @@ export default function FinanceiroPage() {
       paymentMethod,
       status,
       recurrence,
-      investment: type === "Investimento" ? subcategory : undefined,
-      institution: type === "Investimento" ? institution : undefined,
+      investment:
+        type === "Investimento"
+          ? subcategory
+          : undefined,
+      institution:
+        type === "Investimento"
+          ? institution
+          : undefined,
     };
 
-    setTransactions((current) => [newTransaction, ...current]);
+    setTransactions((current) => [
+      newTransaction,
+      ...current,
+    ]);
 
     setDescription("");
     setAmount("");
@@ -369,15 +554,28 @@ export default function FinanceiroPage() {
   }
 
   function removeTransaction(id: number) {
-    if (!confirm("Deseja excluir este lançamento?")) return;
-    setTransactions((current) => current.filter((item) => item.id !== id));
+    if (!confirm("Deseja excluir este lançamento?")) {
+      return;
+    }
+
+    setTransactions((current) =>
+      current.filter((item) => item.id !== id)
+    );
   }
 
   function movementIcon(item: Transaction) {
     if (item.type === "Receita") return "↗";
     if (item.type === "Despesa") return "↙";
-    if (item.type === "Aplicação" || item.type === "Investimento") return "◈";
+
+    if (
+      item.type === "Aplicação" ||
+      item.type === "Investimento"
+    ) {
+      return "◈";
+    }
+
     if (item.type === "Reserva") return "▣";
+
     return "⇄";
   }
 
@@ -386,9 +584,12 @@ export default function FinanceiroPage() {
     if (item.type === "Despesa") return "-";
 
     if (
-      (item.type === "Investimento" || item.type === "Aplicação") &&
+      (item.type === "Investimento" ||
+        item.type === "Aplicação") &&
       isInvestmentApplied(item)
-    ) return "-";
+    ) {
+      return "-";
+    }
 
     return "";
   }
@@ -397,524 +598,634 @@ export default function FinanceiroPage() {
     if (item.type === "Receita") return "income";
     if (item.type === "Despesa") return "expense";
 
-    if (item.type === "Aplicação" || item.type === "Investimento") {
+    if (
+      item.type === "Aplicação" ||
+      item.type === "Investimento"
+    ) {
       return "investment-movement";
     }
 
-    if (item.type === "Reserva") return "reserve-movement";
+    if (item.type === "Reserva") {
+      return "reserve-movement";
+    }
+
     return "";
   }
 
   return (
-    <main className="finance-page finance-page-compact">
-      <header className="finance-header">
-        <div>
-          <Link href="/" className="finance-back">← Voltar ao início</Link>
-          <span className="finance-eyebrow">NEXO / GESTÃO FINANCEIRA</span>
-          <h1>Financeiro</h1>
-          <p>Controle suas receitas, despesas, transferências e investimentos.</p>
-        </div>
+    <main className="app-shell">
+      <MainNavigation />
 
-        <div className="finance-date">
-          {new Date().toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })}
-        </div>
-      </header>
-
-      <section className="finance-cards">
-        <article className="finance-card">
-          <span>Receitas lançadas</span>
-          <strong>{money(totals.receitas)}</strong>
-          <small>Total não cancelado</small>
-        </article>
-
-        <article className="finance-card">
-          <span>Despesas lançadas</span>
-          <strong>{money(totals.despesas)}</strong>
-          <small>Total não cancelado</small>
-        </article>
-
-        <article className="finance-card highlight">
-          <span>Saldo disponível</span>
-          <strong>{money(totals.resultado)}</strong>
-          <small>Receitas − despesas − investimentos aplicados</small>
-        </article>
-      </section>
-
-      <section className="finance-investment-summary">
-        <span>◈</span>
-        <div>
-          <strong>Total investido</strong>
-          <p>
-            {money(totals.investimentosAplicados)} retirados do saldo disponível
-            e destinados aos investimentos.
-          </p>
-        </div>
-      </section>
-
-      <nav className="finance-module-nav" aria-label="Navegação financeira">
-        {financeNavigation.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={
-              item.href === "/financeiro"
-                ? "finance-module-link active"
-                : "finance-module-link"
-            }
-            aria-current={item.href === "/financeiro" ? "page" : undefined}
-          >
-            <span className="finance-module-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-
-      <section className="finance-content finance-content-vertical">
-        <form className="finance-form finance-form-compact" onSubmit={addTransaction}>
-          <div className="finance-section-title">
-            <div>
-              <span className="finance-eyebrow">CADASTRO</span>
-              <h2>Novo lançamento</h2>
+      <section className="main-area">
+        <header className="topbar">
+          <div>
+            <div className="breadcrumb">
+              NEXO / FINANCEIRO / VISÃO GERAL
             </div>
+
+            <h1>Financeiro</h1>
           </div>
 
-          <div className="finance-fields-grid">
-            <div className="finance-field field-description">
-              <label>Descrição</label>
-              <input
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder={
-                  type === "Investimento"
-                    ? "Ex.: Aplicação em CDB"
-                    : "Ex.: Salário, aluguel, mercado..."
-                }
-                required
-              />
+          <div className="topbar-right">
+            <div className="date-display">
+              <span className="date-icon">◷</span>
+              {formatLongDate()}
             </div>
 
-            <SelectField
-              label="Tipo"
-              value={type}
-              onChange={changeType}
-              options={movementTypes}
-            />
+            <div className="profile-avatar">N</div>
+          </div>
+        </header>
 
-            <div className="finance-field">
-              <label>Valor (R$)</label>
-              <input
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                placeholder="0,00"
-                inputMode="decimal"
-                required
-              />
+        <div className="content finance-content-vertical">
+          <section className="finance-intro">
+            <div>
+              <span className="finance-eyebrow">
+                GESTÃO E CONTROLE FINANCEIRO
+              </span>
+
+              <h2>Organize sua vida financeira.</h2>
+
+              <p>
+                Acompanhe suas receitas, despesas,
+                transferências e investimentos em um só lugar.
+              </p>
+            </div>
+          </section>
+
+          {/* INDICADORES FINANCEIROS */}
+
+          <section className="finance-cards">
+            <article className="finance-card">
+              <span>Receitas lançadas</span>
+
+              <strong>{money(totals.receitas)}</strong>
+
+              <small>Total não cancelado</small>
+            </article>
+
+            <article className="finance-card">
+              <span>Despesas lançadas</span>
+
+              <strong>{money(totals.despesas)}</strong>
+
+              <small>Total não cancelado</small>
+            </article>
+
+            <article className="finance-card highlight">
+              <span>Saldo disponível</span>
+
+              <strong>{money(totals.resultado)}</strong>
+
+              <small>
+                Receitas − despesas − investimentos aplicados
+              </small>
+            </article>
+          </section>
+
+          {/* RESUMO DOS INVESTIMENTOS */}
+
+          <section className="finance-investment-summary">
+            <span>◈</span>
+
+            <div>
+              <strong>Total investido</strong>
+
+              <p>
+                {money(totals.investimentosAplicados)} retirados
+                do saldo disponível e destinados aos investimentos.
+              </p>
+            </div>
+          </section>
+
+          {/* NOVO LANÇAMENTO */}
+
+          <form
+            className="finance-form finance-form-compact"
+            onSubmit={addTransaction}
+          >
+            <div className="finance-section-title">
+              <div>
+                <span className="finance-eyebrow">
+                  CADASTRO
+                </span>
+
+                <h2>Novo lançamento</h2>
+              </div>
             </div>
 
-            {type !== "Transferência" && (
-              <>
-                {type === "Investimento" ? (
-                  <>
-                    <div className="finance-field">
-                      <label>Categoria</label>
-                      <input value="Investimento" readOnly />
-                    </div>
+            <div className="finance-fields-grid">
+              <div className="finance-field field-description">
+                <label>Descrição</label>
 
-                    <SelectField
-                      label="Tipo de investimento"
-                      value={subcategory}
-                      onChange={setSubcategory}
-                      options={investmentOptions}
-                    />
-
-                    <SelectField
-                      label="Banco / Instituição"
-                      value={institution}
-                      onChange={setInstitution}
-                      options={institutions}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <SelectField
-                      label="Categoria"
-                      value={category}
-                      onChange={changeCategory}
-                      options={availableCategories}
-                    />
-
-                    <SelectField
-                      label="Subcategoria"
-                      value={subcategory}
-                      onChange={setSubcategory}
-                      options={availableSubcategories}
-                    />
-                  </>
-                )}
-              </>
-            )}
-
-            <div className="finance-field">
-              <label>Data do lançamento</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-                required
-              />
-            </div>
-
-            <SelectField
-              label={
-                type === "Transferência" || type === "Investimento"
-                  ? "Conta de origem"
-                  : "Conta financeira"
-              }
-              value={account}
-              onChange={setAccount}
-              options={accounts}
-            />
-
-            {type === "Transferência" && (
-              <SelectField
-                label="Conta de destino"
-                value={destinationAccount}
-                onChange={setDestinationAccount}
-                options={accounts}
-              />
-            )}
-
-            {type === "Investimento" && (
-              <div className="finance-field investment-destination-field">
-                <label>Destino do valor</label>
                 <input
-                  value={`${subcategory} - ${institution}`}
-                  readOnly
+                  value={description}
+                  onChange={(event) =>
+                    setDescription(event.target.value)
+                  }
+                  placeholder={
+                    type === "Investimento"
+                      ? "Ex.: Aplicação em CDB"
+                      : "Ex.: Salário, aluguel, mercado..."
+                  }
+                  required
                 />
               </div>
-            )}
 
-            <SelectField
-              label="Forma de pagamento"
-              value={paymentMethod}
-              onChange={setPaymentMethod}
-              options={paymentMethods}
-            />
+              <SelectField
+                label="Tipo"
+                value={type}
+                onChange={changeType}
+                options={movementTypes}
+              />
 
-            <SelectField
-              label="Status"
-              value={status}
-              onChange={setStatus}
-              options={
-                type === "Investimento"
-                  ? ["Aplicado", "Pendente", "Cancelada"]
-                  : statuses
-              }
-            />
+              <div className="finance-field">
+                <label>Valor (R$)</label>
 
-            <SelectField
-              label="Recorrência"
-              value={recurrence}
-              onChange={setRecurrence}
-              options={recurrences}
-            />
-          </div>
-
-          {type === "Investimento" && (
-            <div className="investment-info">
-              <span className="investment-info-icon">◈</span>
-              <div>
-                <strong>Investimento — saída do saldo disponível</strong>
-                <p>
-                  Ao registrar como aplicado, o valor será descontado da conta
-                  de origem e do saldo disponível. Ele continuará registrado
-                  como patrimônio investido, sem ser contabilizado como despesa.
-                </p>
+                <input
+                  value={amount}
+                  onChange={(event) =>
+                    setAmount(event.target.value)
+                  }
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  required
+                />
               </div>
+
+              {type !== "Transferência" && (
+                <>
+                  {type === "Investimento" ? (
+                    <>
+                      <div className="finance-field">
+                        <label>Categoria</label>
+
+                        <input
+                          value="Investimento"
+                          readOnly
+                        />
+                      </div>
+
+                      <SelectField
+                        label="Tipo de investimento"
+                        value={subcategory}
+                        onChange={setSubcategory}
+                        options={investmentOptions}
+                      />
+
+                      <SelectField
+                        label="Banco / Instituição"
+                        value={institution}
+                        onChange={setInstitution}
+                        options={institutions}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <SelectField
+                        label="Categoria"
+                        value={category}
+                        onChange={changeCategory}
+                        options={availableCategories}
+                      />
+
+                      <SelectField
+                        label="Subcategoria"
+                        value={subcategory}
+                        onChange={setSubcategory}
+                        options={availableSubcategories}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+
+              <div className="finance-field">
+                <label>Data do lançamento</label>
+
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) =>
+                    setDate(event.target.value)
+                  }
+                  required
+                />
+              </div>
+
+              <SelectField
+                label={
+                  type === "Transferência" ||
+                  type === "Investimento"
+                    ? "Conta de origem"
+                    : "Conta financeira"
+                }
+                value={account}
+                onChange={setAccount}
+                options={accounts}
+              />
+
+              {type === "Transferência" && (
+                <SelectField
+                  label="Conta de destino"
+                  value={destinationAccount}
+                  onChange={setDestinationAccount}
+                  options={accounts}
+                />
+              )}
+
+              {type === "Investimento" && (
+                <div className="finance-field investment-destination-field">
+                  <label>Destino do valor</label>
+
+                  <input
+                    value={`${subcategory} - ${institution}`}
+                    readOnly
+                  />
+                </div>
+              )}
+
+              <SelectField
+                label="Forma de pagamento"
+                value={paymentMethod}
+                onChange={setPaymentMethod}
+                options={paymentMethods}
+              />
+
+              <SelectField
+                label="Status"
+                value={status}
+                onChange={setStatus}
+                options={
+                  type === "Investimento"
+                    ? ["Aplicado", "Pendente", "Cancelada"]
+                    : statuses
+                }
+              />
+
+              <SelectField
+                label="Recorrência"
+                value={recurrence}
+                onChange={setRecurrence}
+                options={recurrences}
+              />
             </div>
-          )}
 
-          <div className="finance-form-actions">
-            <button type="submit">
-              {type === "Investimento"
-                ? "+ Registrar investimento"
-                : "+ Adicionar lançamento"}
-            </button>
-          </div>
-        </form>
+            {type === "Investimento" && (
+              <div className="investment-info">
+                <span className="investment-info-icon">
+                  ◈
+                </span>
 
-        <section className="finance-history">
-          <div className="finance-section-title">
-            <div>
-              <span className="finance-eyebrow">HISTÓRICO</span>
-              <h2>Movimentações</h2>
-            </div>
-
-            <select
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-            >
-              <option value="Todos">Todos</option>
-              {filterOptions.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="finance-empty">
-              <span>◎</span>
-              <strong>Nenhum lançamento encontrado</strong>
-              <p>Cadastre uma receita, despesa, transferência ou investimento.</p>
-            </div>
-          ) : (
-            <div className="finance-list">
-              {filtered.map((item) => (
-                <article className="finance-item" key={item.id}>
-                  <div className="finance-item-icon">{movementIcon(item)}</div>
-
-                  <div className="finance-item-info">
-                    <strong>{item.description}</strong>
-
-                    <span>
-                      {item.type} · {item.category || "Sem categoria"}
-                      {item.subcategory ? ` / ${item.subcategory}` : ""}
-                    </span>
-
-                    <span>
-                      {item.account || "Sem conta"}
-                      {item.destinationAccount
-                        ? ` → ${item.destinationAccount}`
-                        : ""}
-                    </span>
-
-                    {(item.type === "Aplicação" ||
-                      item.type === "Investimento") && (
-                      <span>
-                        {item.investment || item.subcategory || "Investimento"}
-                        {" · "}
-                        {item.institution || "Instituição não informada"}
-                      </span>
-                    )}
-
-                    {item.type === "Reserva" && (
-                      <span>
-                        Reserva: {item.reserveType || "Não especificada"}
-                      </span>
-                    )}
-
-                    <span>
-                      {item.date
-                        ? new Date(item.date + "T12:00:00").toLocaleDateString("pt-BR")
-                        : "Sem data"}
-                      {" · "}
-                      {item.status || "Pendente"}
-                    </span>
-                  </div>
-
-                  <strong className={movementClass(item)}>
-                    {movementValue(item)}
-                    {money(Number(item.amount || 0))}
+                <div>
+                  <strong>
+                    Investimento — saída do saldo disponível
                   </strong>
 
-                  <button
-                    type="button"
-                    className="finance-delete"
-                    onClick={() => removeTransaction(item.id)}
-                    aria-label={`Excluir ${item.description}`}
-                  >
-                    ×
-                  </button>
-                </article>
-              ))}
+                  <p>
+                    Ao registrar como aplicado, o valor será
+                    descontado da conta de origem e do saldo
+                    disponível. Ele continuará registrado como
+                    patrimônio investido, sem ser contabilizado
+                    como despesa.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="finance-form-actions">
+              <button type="submit">
+                {type === "Investimento"
+                  ? "+ Registrar investimento"
+                  : "+ Adicionar lançamento"}
+              </button>
             </div>
-          )}
-        </section>
+          </form>
+
+          {/* HISTÓRICO DE MOVIMENTAÇÕES */}
+
+          <section className="finance-history">
+            <div className="finance-section-title">
+              <div>
+                <span className="finance-eyebrow">
+                  HISTÓRICO
+                </span>
+
+                <h2>Movimentações</h2>
+              </div>
+
+              <select
+                value={filter}
+                onChange={(event) =>
+                  setFilter(event.target.value)
+                }
+              >
+                <option value="Todos">Todos</option>
+
+                {filterOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="finance-empty">
+                <span>◎</span>
+
+                <strong>
+                  Nenhum lançamento encontrado
+                </strong>
+
+                <p>
+                  Cadastre uma receita, despesa,
+                  transferência ou investimento.
+                </p>
+              </div>
+            ) : (
+              <div className="finance-list">
+                {filtered.map((item) => (
+                  <article
+                    className="finance-item"
+                    key={item.id}
+                  >
+                    <div className="finance-item-icon">
+                      {movementIcon(item)}
+                    </div>
+
+                    <div className="finance-item-info">
+                      <strong>{item.description}</strong>
+
+                      <span>
+                        {item.type} ·{" "}
+                        {item.category || "Sem categoria"}
+
+                        {item.subcategory
+                          ? ` / ${item.subcategory}`
+                          : ""}
+                      </span>
+
+                      <span>
+                        {item.account || "Sem conta"}
+
+                        {item.destinationAccount
+                          ? ` → ${item.destinationAccount}`
+                          : ""}
+                      </span>
+
+                      {(item.type === "Aplicação" ||
+                        item.type === "Investimento") && (
+                        <span>
+                          {item.investment ||
+                            item.subcategory ||
+                            "Investimento"}
+
+                          {" · "}
+
+                          {item.institution ||
+                            "Instituição não informada"}
+                        </span>
+                      )}
+
+                      {item.type === "Reserva" && (
+                        <span>
+                          Reserva:{" "}
+                          {item.reserveType ||
+                            "Não especificada"}
+                        </span>
+                      )}
+
+                      <span>
+                        {item.date
+                          ? new Date(
+                              item.date + "T12:00:00"
+                            ).toLocaleDateString("pt-BR")
+                          : "Sem data"}
+
+                        {" · "}
+
+                        {item.status || "Pendente"}
+                      </span>
+                    </div>
+
+                    <strong className={movementClass(item)}>
+                      {movementValue(item)}
+                      {money(Number(item.amount || 0))}
+                    </strong>
+
+                    <button
+                      type="button"
+                      className="finance-delete"
+                      onClick={() =>
+                        removeTransaction(item.id)
+                      }
+                      aria-label={`Excluir ${item.description}`}
+                    >
+                      ×
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <footer className="routine-footer">
+            <span>© 2026 NEXO — GESTÃO PESSOAL</span>
+            <span>PLANEJE. ORGANIZE. CONQUISTE.</span>
+          </footer>
+        </div>
       </section>
 
-      <footer className="finance-footer">
-        NEXO · Planeje. Organize. Conquiste.
-      </footer>
-
       <style jsx global>{`
-        .finance-page-compact {
-          padding: 18px 28px !important;
-          gap: 9px !important;
-        }
+        /* CONTEÚDO FINANCEIRO */
 
-        .finance-page-compact .finance-header {
-          margin-bottom: 0 !important;
-          gap: 8px !important;
-        }
-
-        .finance-page-compact .finance-header h1 {
-          font-size: 25px !important;
-          margin: 4px 0 2px !important;
-        }
-
-        .finance-page-compact .finance-header p {
-          font-size: 12px !important;
-          margin: 0 !important;
-        }
-
-        .finance-page-compact .finance-back {
-          font-size: 11px !important;
-          margin-bottom: 5px !important;
-        }
-
-        .finance-page-compact .finance-eyebrow {
-          font-size: 9px !important;
-          letter-spacing: 1px !important;
-        }
-
-        .finance-page-compact .finance-cards {
-          gap: 9px !important;
-          margin: 0 !important;
-        }
-
-        .finance-page-compact .finance-card {
-          padding: 11px 15px !important;
-          min-height: 82px !important;
-          gap: 3px !important;
-        }
-
-        .finance-page-compact .finance-card span {
-          font-size: 11px !important;
-        }
-
-        .finance-page-compact .finance-card strong {
-          font-size: 19px !important;
-        }
-
-        .finance-page-compact .finance-card small {
-          font-size: 10px !important;
-        }
-
-        .finance-investment-summary {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 14px;
-          margin-top: 8px;
-          border: 1px solid #303034;
-          border-radius: 9px;
-          background: #151517;
-        }
-
-        .finance-investment-summary > span {
-          font-size: 20px;
-          color: #d0d3d9;
-        }
-
-        .finance-investment-summary strong {
-          display: block;
-          font-size: 11px;
-          color: #e6e7ea;
-        }
-
-        .finance-investment-summary p {
-          margin: 3px 0 0;
-          font-size: 10px;
-          color: #a5a5ad;
-        }
-
-        .finance-module-nav {
-          display: flex;
-          align-items: stretch;
-          flex-wrap: wrap;
-          gap: 8px;
-          width: 100%;
-          margin: 9px 0 0;
-          padding: 11px;
-          border: 1px solid #29292d;
-          border-radius: 11px;
-          background: #111113;
-          box-sizing: border-box;
-        }
-
-        .finance-module-link {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          min-height: 37px;
-          padding: 0 13px;
-          border: 1px solid #303034;
-          border-radius: 7px;
-          color: #a5a5ab;
-          background: #171719;
-          font-size: 11px;
-          font-weight: 600;
-          text-decoration: none;
-          white-space: nowrap;
-          transition: all 0.2s ease;
-        }
-
-        .finance-module-link:hover,
-        .finance-module-link.active {
-          color: #f5f5f6;
-          border-color: #777d87;
-          background: #29292d;
-        }
-
-        .finance-module-icon {
-          color: #c3c7ce;
-          font-size: 15px;
-          line-height: 1;
-        }
-
-        .finance-content.finance-content-vertical {
+        .finance-content-vertical {
           display: flex !important;
           flex-direction: column !important;
           align-items: stretch !important;
           justify-content: flex-start !important;
           width: 100% !important;
           max-width: none !important;
-          gap: 8px !important;
-          margin: 18px 0 0 !important;
+          gap: 12px !important;
+          box-sizing: border-box;
         }
 
-        .finance-content-vertical > .finance-form,
-        .finance-content-vertical > .finance-history {
+        .finance-intro {
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          min-height: 125px;
+          padding: 22px 25px;
+          border: 1px solid #35353a;
+          border-radius: 9px;
+          background: linear-gradient(
+            100deg,
+            #222326 0%,
+            #171719 60%,
+            #101012 100%
+          );
+        }
+
+        .finance-intro h2 {
+          margin: 8px 0 5px;
+          color: #f0f0f2;
+          font-family: var(--font-heading);
+          font-size: clamp(20px, 2.2vw, 27px);
+          font-weight: 800;
+          letter-spacing: -0.8px;
+        }
+
+        .finance-intro p {
+          margin: 0;
+          color: #a1a2a8;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        .finance-eyebrow {
+          color: #9298a2;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+        }
+
+        /* INDICADORES */
+
+        .finance-cards {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          width: 100%;
+          margin: 0;
+        }
+
+        .finance-card {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          min-width: 0;
+          min-height: 105px;
+          padding: 16px;
+          gap: 5px;
+          border: 1px solid #2c2c31;
+          border-radius: 8px;
+          background: linear-gradient(
+            145deg,
+            #1b1b1e,
+            #131315
+          );
+        }
+
+        .finance-card span {
+          color: #a5a6ac;
+          font-size: 11px;
+        }
+
+        .finance-card strong {
+          color: #f0f0f2;
+          font-family: var(--font-heading);
+          font-size: clamp(17px, 2vw, 22px);
+          font-weight: 700;
+          overflow-wrap: anywhere;
+        }
+
+        .finance-card small {
+          color: #777980;
+          font-size: 9px;
+        }
+
+        .finance-card.highlight {
+          border-color: #50545d;
+          background: linear-gradient(
+            145deg,
+            #24262b,
+            #17181b
+          );
+        }
+
+        /* RESUMO DE INVESTIMENTOS */
+
+        .finance-investment-summary {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 13px 16px;
+          border: 1px solid #303034;
+          border-radius: 8px;
+          background: #151517;
+        }
+
+        .finance-investment-summary > span {
+          color: #d0d3d9;
+          font-size: 21px;
+        }
+
+        .finance-investment-summary strong {
           display: block;
-          width: 100% !important;
-          max-width: none !important;
-          min-width: 0 !important;
-          flex: 0 0 auto !important;
+          color: #e6e7ea;
+          font-size: 11px;
+        }
+
+        .finance-investment-summary p {
+          margin: 4px 0 0;
+          color: #a5a5ad;
+          font-size: 10px;
+          line-height: 1.5;
+        }
+
+        /* FORMULÁRIO */
+
+        .finance-form {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          min-width: 0;
+          padding: 16px;
+          gap: 12px;
+          margin: 0;
+          border: 1px solid #2c2c31;
+          border-radius: 8px;
+          background: linear-gradient(
+            145deg,
+            #19191c,
+            #131315
+          );
           box-sizing: border-box;
         }
 
         .finance-form-compact {
-          padding: 10px 14px !important;
-          gap: 6px !important;
-          margin-bottom: 0 !important;
+          padding: 15px 16px;
         }
 
-        .finance-form-compact .finance-section-title {
-          margin-bottom: 0 !important;
+        .finance-section-title {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 4px;
         }
 
-        .finance-page-compact .finance-section-title h2 {
-          font-size: 15px !important;
-          margin: 2px 0 0 !important;
+        .finance-section-title h2 {
+          margin: 5px 0 0;
+          color: #f0f0f2;
+          font-family: var(--font-heading);
+          font-size: 15px;
+          font-weight: 700;
         }
 
         .finance-fields-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 6px 8px !important;
           align-items: end;
+          gap: 10px;
         }
 
         .finance-fields-grid .finance-field {
           display: flex;
           flex-direction: column;
-          gap: 2px !important;
           min-width: 0;
+          gap: 5px;
         }
 
         .finance-fields-grid .field-description {
@@ -924,21 +1235,34 @@ export default function FinanceiroPage() {
         .finance-fields-grid .finance-field label {
           display: block;
           margin: 0;
-          font-size: 10px !important;
+          color: #a7a8ae;
+          font-size: 10px;
           font-weight: 600;
-          letter-spacing: 0.2px;
         }
 
         .finance-fields-grid input,
         .finance-fields-grid select {
           width: 100%;
           min-width: 0;
-          height: 30px !important;
-          min-height: 30px !important;
-          padding: 0 8px !important;
-          font-size: 11px !important;
-          border-radius: 6px !important;
+          height: 34px;
+          min-height: 34px;
+          padding: 0 9px;
+          border: 1px solid #37373d;
+          border-radius: 6px;
+          outline: none;
+          background: #101012;
+          color: #f3f3f5;
+          font-family: inherit;
+          font-size: 11px;
+          color-scheme: dark;
           box-sizing: border-box;
+        }
+
+        .finance-fields-grid input:focus,
+        .finance-fields-grid select:focus {
+          border-color: #aeb4be;
+          box-shadow: 0 0 0 2px
+            rgba(190, 195, 205, 0.08);
         }
 
         .finance-fields-grid input[readonly] {
@@ -951,12 +1275,14 @@ export default function FinanceiroPage() {
           grid-column: span 2;
         }
 
+        /* INFORMAÇÃO DE INVESTIMENTO */
+
         .investment-info {
           display: flex;
           align-items: flex-start;
           gap: 10px;
-          margin-top: 5px;
-          padding: 10px 12px;
+          margin-top: 3px;
+          padding: 11px 13px;
           border: 1px solid #34343a;
           border-radius: 7px;
           background: #171719;
@@ -970,9 +1296,9 @@ export default function FinanceiroPage() {
 
         .investment-info strong {
           display: block;
+          margin-bottom: 4px;
           color: #e6e7ea;
           font-size: 11px;
-          margin-bottom: 3px;
         }
 
         .investment-info p {
@@ -985,173 +1311,274 @@ export default function FinanceiroPage() {
         .finance-form-actions {
           display: flex;
           justify-content: flex-end;
-          margin-top: 0 !important;
+          margin-top: 2px;
         }
 
         .finance-form-actions button {
-          min-height: 30px !important;
-          padding: 0 14px !important;
-          font-size: 11px !important;
-          border-radius: 6px !important;
+          min-height: 35px;
+          padding: 0 15px;
+          border: 1px solid #aeb3bc;
+          border-radius: 5px;
+          background: linear-gradient(
+            135deg,
+            #e1e3e7,
+            #9da3ad
+          );
+          color: #111214;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: var(--transition);
         }
 
+        .finance-form-actions button:hover {
+          filter: brightness(1.12);
+          transform: translateY(-1px);
+        }
+
+        /* HISTÓRICO */
+
         .finance-history {
-          padding: 12px 15px !important;
-          margin-top: 0 !important;
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          min-width: 0;
+          padding: 16px;
+          margin: 0;
+          border: 1px solid #2c2c31;
+          border-radius: 8px;
+          background: linear-gradient(
+            145deg,
+            #19191c,
+            #131315
+          );
+          box-sizing: border-box;
         }
 
         .finance-history .finance-section-title {
-          margin-bottom: 8px !important;
+          margin-bottom: 12px;
         }
 
         .finance-history .finance-section-title select {
-          height: 29px !important;
-          min-height: 29px !important;
-          padding: 0 8px !important;
-          font-size: 11px !important;
+          height: 32px;
+          min-height: 32px;
+          padding: 0 9px;
+          border: 1px solid #37373d;
+          border-radius: 6px;
+          outline: none;
+          background: #101012;
+          color: #f3f3f5;
+          font-family: inherit;
+          font-size: 10px;
+          color-scheme: dark;
         }
 
         .finance-list {
-          gap: 5px !important;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
         .finance-item {
-          padding: 8px 10px !important;
-          gap: 9px !important;
-          min-height: 0 !important;
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          min-height: 55px;
+          gap: 11px;
+          padding: 10px 11px;
+          border: 1px solid #29292e;
+          border-radius: 7px;
+          background: #151517;
         }
 
         .finance-item-icon {
-          width: 30px !important;
-          height: 30px !important;
-          min-width: 30px !important;
-          font-size: 14px !important;
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+          width: 34px;
+          height: 34px;
+          border: 1px solid #41444c;
+          border-radius: 7px;
+          background: #22242a;
+          color: #d2d5db;
+          font-size: 15px;
         }
 
         .finance-item-info {
-          gap: 2px !important;
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          min-width: 0;
+          gap: 3px;
         }
 
         .finance-item-info strong {
-          font-size: 12px !important;
-        }
-
-        .finance-item-info span {
-          font-size: 10px !important;
-          line-height: 1.3 !important;
-        }
-
-        .finance-item > strong {
-          font-size: 12px !important;
+          overflow: hidden;
+          color: #e1e3e7;
+          font-size: 11px;
+          font-weight: 600;
+          text-overflow: ellipsis;
           white-space: nowrap;
         }
 
-        .finance-delete {
-          width: 25px !important;
-          height: 25px !important;
-          font-size: 16px !important;
+        .finance-item-info span {
+          overflow: hidden;
+          color: #858b95;
+          font-size: 9px;
+          line-height: 1.4;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
+        .finance-item > strong {
+          flex-shrink: 0;
+          color: #d7d9de;
+          font-size: 11px;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .finance-item > strong.income {
+          color: #a8c7b3;
+        }
+
+        .finance-item > strong.expense,
+        .finance-item > strong.investment-movement {
+          color: #d18c8c;
+        }
+
+        .finance-item > strong.reserve-movement {
+          color: #c3c7ce;
+        }
+
+        .finance-delete {
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+          width: 27px;
+          height: 27px;
+          border: 1px solid #39393f;
+          border-radius: 5px;
+          background: transparent;
+          color: #999da5;
+          font-size: 17px;
+          cursor: pointer;
+          transition: var(--transition);
+        }
+
+        .finance-delete:hover {
+          border-color: #9c6262;
+          background: rgba(160, 70, 70, 0.12);
+          color: #e3a0a0;
+        }
+
+        /* ESTADO VAZIO */
+
         .finance-empty {
-          padding: 18px 12px !important;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 145px;
+          padding: 20px 12px;
+          text-align: center;
+          color: #777d87;
         }
 
         .finance-empty span {
-          font-size: 24px !important;
+          color: #b4bbc5;
+          font-size: 25px;
         }
 
         .finance-empty strong {
-          font-size: 12px !important;
+          margin-top: 8px;
+          color: #c5c9d0;
+          font-size: 11px;
+          font-weight: 500;
         }
 
         .finance-empty p {
-          font-size: 10px !important;
-          margin-top: 4px !important;
+          margin: 5px 0 0;
+          color: #858b95;
+          font-size: 9px;
         }
 
-        .finance-page-compact .finance-footer {
-          margin-top: 0 !important;
-          padding: 8px 0 !important;
-          font-size: 10px !important;
-        }
+        /* RESPONSIVIDADE */
 
-        @media (max-width: 900px) {
-          .finance-page-compact {
-            padding: 16px !important;
-          }
-
+        @media (max-width: 1100px) {
           .finance-fields-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
+        }
 
-          .finance-fields-grid .field-description {
+        @media (max-width: 760px) {
+          .finance-content-vertical {
+            gap: 10px !important;
+          }
+
+          .finance-intro {
+            min-height: 110px;
+            padding: 18px;
+          }
+
+          .finance-cards {
+            grid-template-columns: repeat(
+              2,
+              minmax(0, 1fr)
+            );
+          }
+
+          .finance-card.highlight {
             grid-column: span 2;
           }
 
-          .finance-module-nav {
-            gap: 7px;
+          .finance-fields-grid {
+            grid-template-columns: repeat(
+              2,
+              minmax(0, 1fr)
+            );
           }
         }
 
         @media (max-width: 520px) {
-          .finance-page-compact {
-            padding: 12px !important;
-            gap: 8px !important;
+          .finance-intro {
+            padding: 17px;
           }
 
-          .finance-page-compact .finance-header {
-            flex-direction: column;
-            align-items: flex-start !important;
+          .finance-intro h2 {
+            font-size: 20px;
           }
 
-          .finance-page-compact .finance-date {
-            font-size: 10px !important;
-          }
-
-          .finance-page-compact .finance-cards {
-            grid-template-columns: 1fr !important;
-          }
-
-          .finance-page-compact .finance-card {
-            min-height: 68px !important;
-          }
-
-          .finance-module-nav {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 7px;
-            padding: 9px;
-          }
-
-          .finance-module-link {
-            justify-content: flex-start;
-            min-width: 0;
-            padding: 0 9px;
+          .finance-intro p {
             font-size: 10px;
-            white-space: normal;
           }
 
-          .finance-module-icon {
-            flex-shrink: 0;
+          .finance-cards {
+            grid-template-columns: 1fr;
           }
 
-          .finance-content.finance-content-vertical {
-            gap: 7px !important;
+          .finance-card.highlight {
+            grid-column: span 1;
           }
 
-          .finance-form-compact,
-          .finance-history {
-            padding: 10px !important;
+          .finance-card {
+            min-height: 75px;
+            padding: 12px 14px;
           }
 
           .finance-fields-grid {
             grid-template-columns: 1fr;
-            gap: 7px !important;
+            gap: 9px;
           }
 
           .finance-fields-grid .field-description,
           .investment-destination-field {
             grid-column: span 1;
+          }
+
+          .finance-form,
+          .finance-history {
+            padding: 12px;
           }
 
           .finance-form-actions button {
@@ -1160,11 +1587,24 @@ export default function FinanceiroPage() {
 
           .finance-item {
             flex-wrap: wrap;
+            gap: 8px;
           }
 
           .finance-item-info {
             flex: 1;
             min-width: 0;
+          }
+
+          .finance-item > strong {
+            margin-left: 42px;
+          }
+
+          .finance-history .finance-section-title {
+            align-items: flex-start;
+          }
+
+          .finance-investment-summary {
+            align-items: flex-start;
           }
         }
       `}</style>
