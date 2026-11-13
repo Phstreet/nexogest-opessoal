@@ -36,15 +36,16 @@ export default function MainNavigation() {
   const [routineMenuOpen, setRoutineMenuOpen] = useState(isRoutineRoute);
 
   useEffect(() => {
-    if (isFinanceRoute) setFinanceMenuOpen(true);
-    if (isRoutineRoute) setRoutineMenuOpen(true);
+    if (isFinanceRoute) {
+      setFinanceMenuOpen(true);
+      setRoutineMenuOpen(false);
+    } else if (isRoutineRoute) {
+      setRoutineMenuOpen(true);
+      setFinanceMenuOpen(false);
+    }
   }, [pathname, isFinanceRoute, isRoutineRoute]);
 
   function isActive(href: string) {
-    if (href === "/") return pathname === "/";
-    if (href === "/financeiro" || href === "/rotina") {
-      return pathname === href;
-    }
     return pathname === href;
   }
 
@@ -101,8 +102,12 @@ export default function MainNavigation() {
             className={`nav-item nav-finance-parent ${
               isFinanceRoute ? "active" : ""
             }`}
-            onClick={() => setFinanceMenuOpen((current) => !current)}
+            onClick={() => {
+              setFinanceMenuOpen((current) => !current);
+              setRoutineMenuOpen(false);
+            }}
             aria-expanded={financeMenuOpen}
+            aria-controls="finance-submenu"
           >
             <span className="nav-icon">◈</span>
             <span className="nav-finance-label">Financeiro</span>
@@ -112,7 +117,7 @@ export default function MainNavigation() {
           </button>
 
           {financeMenuOpen && (
-            <div className="nav-submenu">
+            <div className="nav-submenu" id="finance-submenu">
               {financeMenuItems.map((item) => (
                 <Link
                   href={item.href}
@@ -136,8 +141,12 @@ export default function MainNavigation() {
             className={`nav-item nav-finance-parent ${
               isRoutineRoute ? "active" : ""
             }`}
-            onClick={() => setRoutineMenuOpen((current) => !current)}
+            onClick={() => {
+              setRoutineMenuOpen((current) => !current);
+              setFinanceMenuOpen(false);
+            }}
             aria-expanded={routineMenuOpen}
+            aria-controls="routine-submenu"
           >
             <span className="nav-icon">▤</span>
             <span className="nav-finance-label">Minha rotina</span>
@@ -147,7 +156,7 @@ export default function MainNavigation() {
           </button>
 
           {routineMenuOpen && (
-            <div className="nav-submenu">
+            <div className="nav-submenu" id="routine-submenu">
               {routineMenuItems.map((item) => (
                 <Link
                   href={item.href}
