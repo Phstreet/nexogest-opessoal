@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import MainNavigation from "../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -19,27 +20,6 @@ type Task = {
 };
 
 const TASKS_KEY = "nexo_tasks";
-
-const financeMenuItems = [
-  { label: "Visão geral financeira", href: "/financeiro" },
-  { label: "Contas", href: "/financeiro/contas" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber" },
-  { label: "Histórico financeiro", href: "/financeiro/historico" },
-  { label: "Investimentos", href: "/financeiro/investimentos" },
-  { label: "Reserva financeira", href: "/financeiro/reservas" },
-  { label: "Planejamento", href: "/financeiro/planejamento" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard" },
-];
-
-const routineMenuItems = [
-  { label: "Visão geral da rotina", href: "/rotina", icon: "⌂" },
-  { label: "Agenda diária", href: "/rotina/agenda", icon: "▦" },
-  { label: "Tarefas", href: "/rotina/tarefas", icon: "☑" },
-  { label: "Planejamento semanal", href: "/rotina/planejamento", icon: "▤" },
-  { label: "Hábitos", href: "/rotina/habitos", icon: "↻" },
-  { label: "Produtividade", href: "/rotina/produtividade", icon: "◷" },
-];
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -118,10 +98,6 @@ export default function RoutineDashboard() {
   const [taskPriority, setTaskPriority] = useState<Priority>("Média");
 
   const [showQuickForm, setShowQuickForm] = useState(false);
-
-  // Menus laterais
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
-  const [routineMenuOpen, setRoutineMenuOpen] = useState(true);
 
   const today = getLocalDate();
   const currentDate = new Date();
@@ -272,142 +248,9 @@ export default function RoutineDashboard() {
 
   return (
     <main className="app-shell">
-      {/* SIDEBAR PADRÃO NEXO */}
+      {/* NAVEGAÇÃO CENTRALIZADA NEXO */}
 
-      <aside className="sidebar">
-        <Link href="/" className="brand">
-          <svg
-            className="brand-symbol"
-            viewBox="0 0 40 40"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-label="NEXO"
-          >
-            <rect
-              x="1"
-              y="1"
-              width="38"
-              height="38"
-              rx="7"
-              stroke="#AEB4BE"
-              strokeWidth="1"
-            />
-            <path
-              d="M11 29V11L29 29V11"
-              stroke="#F5F5F6"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-
-          <div>
-            <div className="brand-name">NEXO</div>
-            <div className="brand-subtitle">GESTÃO PESSOAL</div>
-          </div>
-        </Link>
-
-        <div className="sidebar-section-label">
-          MENU PRINCIPAL
-        </div>
-
-        <nav className="navigation">
-          <Link href="/" className="nav-item">
-            <span className="nav-icon">⌂</span>
-            <span>Visão geral</span>
-          </Link>
-
-          {/* FINANCEIRO */}
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent"
-              onClick={() =>
-                setFinanceMenuOpen((current) => !current)
-              }
-              aria-expanded={financeMenuOpen}
-            >
-              <span className="nav-icon">◈</span>
-              <span className="nav-finance-label">Financeiro</span>
-              <span
-                className={`nav-chevron ${
-                  financeMenuOpen ? "open" : ""
-                }`}
-              >
-                ›
-              </span>
-            </button>
-
-            {financeMenuOpen && (
-              <div className="nav-submenu">
-                {financeMenuItems.map((item) => (
-                  <Link
-                    href={item.href}
-                    key={item.href}
-                    className="nav-subitem"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* MINHA ROTINA */}
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent active"
-              onClick={() =>
-                setRoutineMenuOpen((current) => !current)
-              }
-              aria-expanded={routineMenuOpen}
-            >
-              <span className="nav-icon">▤</span>
-              <span className="nav-finance-label">Minha rotina</span>
-              <span
-                className={`nav-chevron ${
-                  routineMenuOpen ? "open" : ""
-                }`}
-              >
-                ›
-              </span>
-            </button>
-
-            {routineMenuOpen && (
-              <div className="nav-submenu">
-                {routineMenuItems.map((item, index) => (
-                  <Link
-                    href={item.href}
-                    key={item.href}
-                    className={`nav-subitem ${
-                      index === 0 ? "nav-subitem-main" : ""
-                    }`}
-                  >
-                    <span style={{ marginRight: 7 }}>
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="sidebar-status">
-            <span className="status-dot" />
-            Sistema operacional
-          </div>
-
-          <div className="sidebar-version">
-            NEXO · VERSÃO 2.0
-          </div>
-        </div>
-      </aside>
+      <MainNavigation />
 
       {/* ÁREA PRINCIPAL */}
 

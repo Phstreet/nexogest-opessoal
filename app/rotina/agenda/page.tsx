@@ -2,7 +2,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import MainNavigation from "../../../components/navigation/MainNavigation";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -19,27 +19,6 @@ type Task = {
 };
 
 const TASKS_KEY = "nexo_tasks";
-
-const routineMenuItems = [
-  { label: "Visão geral da rotina", href: "/rotina", icon: "▤" },
-  { label: "Agenda diária", href: "/rotina/agenda", icon: "▦" },
-  { label: "Tarefas", href: "/rotina/tarefas", icon: "☑" },
-  { label: "Planejamento semanal", href: "/rotina/planejamento", icon: "▥" },
-  { label: "Hábitos", href: "/rotina/habitos", icon: "◉" },
-  { label: "Produtividade", href: "/rotina/produtividade", icon: "↗" },
-];
-
-const financeMenuItems = [
-  { label: "Visão geral financeira", href: "/financeiro" },
-  { label: "Contas", href: "/financeiro/contas" },
-  { label: "Contas a pagar", href: "/financeiro/contas-a-pagar" },
-  { label: "Contas a receber", href: "/financeiro/contas-a-receber" },
-  { label: "Histórico financeiro", href: "/financeiro/historico" },
-  { label: "Investimentos", href: "/financeiro/investimentos" },
-  { label: "Reserva financeira", href: "/financeiro/reservas" },
-  { label: "Planejamento", href: "/financeiro/planejamento" },
-  { label: "Dashboard financeiro", href: "/financeiro/dashboard" },
-];
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -112,8 +91,6 @@ export default function AgendaPage() {
   const [loaded, setLoaded] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(getLocalDate());
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
-  const [routineMenuOpen, setRoutineMenuOpen] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -177,10 +154,7 @@ export default function AgendaPage() {
   const today = getLocalDate();
 
   const overdueTasks = useMemo(
-    () =>
-      tasks.filter(
-        (task) => task.date && task.date < today && !task.done
-      ),
+    () => tasks.filter((task) => task.date && task.date < today && !task.done),
     [tasks, today]
   );
 
@@ -194,7 +168,7 @@ export default function AgendaPage() {
             !task.done
         )
         .sort((a, b) => {
-          const dateComparison = (a.date || "").localeCompare(b.date || "");
+          const dateComparison = (a.date || "").localeCompare(a.date || "");
           if (dateComparison !== 0) return dateComparison;
           return (a.time || "99:99").localeCompare(b.time || "99:99");
         })
@@ -322,87 +296,7 @@ export default function AgendaPage() {
 
   return (
     <main className="app-shell">
-      <aside className="sidebar">
-        <Link href="/" className="brand">
-          <span className="brand-symbol">N</span>
-          <span className="brand-name">NEXO</span>
-        </Link>
-
-        <div className="sidebar-section-label">MENU PRINCIPAL</div>
-
-        <nav className="navigation">
-          <Link href="/" className="nav-item">
-            <span className="nav-icon">⌂</span>
-            <span>Visão geral</span>
-          </Link>
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent"
-              onClick={() => setFinanceMenuOpen(!financeMenuOpen)}
-            >
-              <span className="nav-icon">◈</span>
-              <span className="nav-finance-label">Financeiro</span>
-              <span className={`nav-chevron ${financeMenuOpen ? "open" : ""}`}>
-                ›
-              </span>
-            </button>
-
-            {financeMenuOpen && (
-              <div className="nav-submenu">
-                {financeMenuItems.map((item) => (
-                  <Link
-                    href={item.href}
-                    className="nav-subitem"
-                    key={item.href}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="nav-group">
-            <button
-              type="button"
-              className="nav-item nav-finance-parent active"
-              onClick={() => setRoutineMenuOpen(!routineMenuOpen)}
-            >
-              <span className="nav-icon">▤</span>
-              <span className="nav-finance-label">Minha rotina</span>
-              <span className={`nav-chevron ${routineMenuOpen ? "open" : ""}`}>
-                ›
-              </span>
-            </button>
-
-            {routineMenuOpen && (
-              <div className="nav-submenu">
-                {routineMenuItems.map((item) => (
-                  <Link
-                    href={item.href}
-                    key={item.href}
-                    className={`nav-subitem ${
-                      item.href === "/rotina/agenda" ? "nav-subitem-main" : ""
-                    }`}
-                  >
-                    {item.icon} {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="sidebar-status">
-            <span className="status-dot" />
-            Sistema operacional
-          </div>
-          <div className="sidebar-version">NEXO · VERSÃO 2.0</div>
-        </div>
-      </aside>
+      <MainNavigation />
 
       <section className="main-area">
         <header className="topbar">
@@ -608,7 +502,9 @@ export default function AgendaPage() {
                     Cancelar
                   </button>
                   <button type="submit" className="primary-button">
-                    {editingId !== null ? "Salvar alterações" : "Cadastrar atividade"}
+                    {editingId !== null
+                      ? "Salvar alterações"
+                      : "Cadastrar atividade"}
                   </button>
                 </div>
               </form>
@@ -706,7 +602,11 @@ export default function AgendaPage() {
                         )}
 
                         <div className="task-actions">
-                          <span className={task.done ? "done-label" : "waiting-label"}>
+                          <span
+                            className={
+                              task.done ? "done-label" : "waiting-label"
+                            }
+                          >
                             {task.done ? "Concluída" : "Pendente"}
                           </span>
 
@@ -758,7 +658,9 @@ export default function AgendaPage() {
                         }}
                       >
                         <div className="upcoming-date">
-                          <strong>{task.date ? task.date.slice(8, 10) : "--"}</strong>
+                          <strong>
+                            {task.date ? task.date.slice(8, 10) : "--"}
+                          </strong>
                           <span>
                             {task.date
                               ? new Date(
