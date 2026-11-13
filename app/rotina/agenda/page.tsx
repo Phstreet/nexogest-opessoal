@@ -168,8 +168,10 @@ export default function AgendaPage() {
             !task.done
         )
         .sort((a, b) => {
-          const dateComparison = (a.date || "").localeCompare(a.date || "");
+          const dateComparison = (a.date || "").localeCompare(b.date || "");
+
           if (dateComparison !== 0) return dateComparison;
+
           return (a.time || "99:99").localeCompare(b.time || "99:99");
         })
         .slice(0, 5),
