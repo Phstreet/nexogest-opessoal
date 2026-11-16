@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 
-import type { Transaction } from "@/lib/finance/types";
+import type { Account, Transaction } from "@/lib/finance/types";
 
 import {
   FINANCE_STORAGE_KEYS,
+  getAccounts,
   loadTransactionsSafely,
   saveTransactions,
 } from "@/lib/finance/storage";
@@ -187,7 +188,7 @@ const movementTypes: FormMovementType[] = [
   "Investimento",
 ];
 
-const accounts = [
+const legacyAccounts = [
   "Conta Corrente",
   "Poupança",
   "Dinheiro em Espécie",
@@ -477,6 +478,7 @@ function downloadJson(filename: string, content: string) {
 
 export default function Page() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [registeredAccounts, setRegisteredAccounts] = useState<Account[]>([]);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [settledAmount, setSettledAmount] = useState("");
@@ -503,6 +505,7 @@ export default function Page() {
     const result = loadTransactionsSafely();
 
     setTransactions(result.transactions);
+    setRegisteredAccounts(getAccounts());
     setInvalidCount(result.invalidRecords.length);
     setSafeToSave(result.safeToSave);
     setStorageError(result.error);
@@ -542,6 +545,45 @@ export default function Page() {
       );
     }
   }, [transactions, loaded, safeToSave]);
+
+  const accountOptions = useMemo(() => {
+    const registeredNames = new Set(
+      registeredAccounts.map((item) => item.name)
+    );
+
+    const activeNames = registeredAccounts
+      .filter((item) => item.active)
+      .map((item) => item.name);
+
+    // Mantém acessíveis as contas antigas usadas em lançamentos,
+    // sem oferecer contas cadastradas que estejam inativas.
+    const legacyNames = transactions
+      .flatMap((item) => [item.account, item.destinationAccount])
+      .filter(
+        (name): name is string =>
+          Boolean(name) && !registeredNames.has(name as string)
+      );
+
+    const available = Array.from(
+      new Set([...activeNames, ...legacyNames])
+    );
+
+    return available.length > 0 ? available : legacyAccounts;
+  }, [registeredAccounts, transactions]);
+
+  useEffect(() => {
+    if (accountOptions.length === 0) return;
+
+    setAccount((current) =>
+      accountOptions.includes(current) ? current : accountOptions[0]
+    );
+
+    setDestinationAccount((current) =>
+      accountOptions.includes(current)
+        ? current
+        : accountOptions[1] ?? accountOptions[0]
+    );
+  }, [accountOptions]);
 
   const availableCategories = categoriesByType[type];
 
@@ -1295,7 +1337,7 @@ export default function Page() {
               }
               value={account}
               onChange={setAccount}
-              options={accounts}
+              options={accountOptions}
             />
 
             {type === "Transferência" && (
@@ -1359,7 +1401,7 @@ export default function Page() {
                           "Atrasada",
                           "Cancelada",
                         ]
-                      : ["Pendente", "Cancelada"]
+                      : ["Pendente", "Realizada", "Cancelada"]
               }
             />
 
