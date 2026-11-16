@@ -1,0 +1,333 @@
+
+import { test, expect, Page } from "@playwright/test";
+
+const financePages = [
+  "/financeiro",
+  "/financeiro/dashboard",
+  "/financeiro/contas",
+  "/financeiro/contas-a-pagar",
+  "/financeiro/contas-a-receber",
+  "/financeiro/historico",
+  "/financeiro/investimentos",
+  "/financeiro/reservas",
+  "/financeiro/planejamento"
+];
+
+const routinePages = [
+  "/rotina",
+  "/rotina/agenda",
+  "/rotina/tarefas",
+  "/rotina/habitos",
+  "/rotina/planejamento",
+  "/rotina/produtividade"
+];
+
+async function clearApplicationStorage(page: Page) {
+  await page.goto("/");
+
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+}
+
+test.beforeEach(async ({ page }) => {
+  await clearApplicationStorage(page);
+});
+
+// =====================================================
+// TESTES DE ABERTURA DAS PÁGINAS
+// =====================================================
+
+test.describe("NEXO - Navegação e carregamento", () => {
+  for (const route of [...financePages, ...routinePages]) {
+    test(`deve carregar ${route} sem erro de execução`, async ({ page }) => {
+      const pageErrors: string[] = [];
+
+      page.on("pageerror", (error) => {
+        pageErrors.push(error.message);
+      });
+
+      const response = await page.goto(route);
+
+      expect(response?.status()).toBeLessThan(400);
+
+      await expect(
+        page.locator("h1, h2").first()
+      ).toBeVisible();
+
+      expect(pageErrors).toEqual([]);
+    });
+  }
+});
+
+// =====================================================
+// FINANCEIRO - CONTAS
+// =====================================================
+
+test.describe("Financeiro - Cadastro de contas", () => {
+  test("deve cadastrar uma conta e salvar no armazenamento", async ({
+    page
+  }) => {
+    await page.goto("/financeiro/contas");
+
+    await page.getByLabel("Nome da conta").fill(
+      "Conta de teste NEXO"
+    );
+
+    await page.getByLabel("Banco / Instituição").selectOption({
+      label: "Nubank"
+    });
+
+    await page.getByLabel("Tipo de conta").selectOption({
+      label: "Conta corrente"
+    });
+
+    await page.getByLabel("Saldo inicial (R$)").fill("1500,00");
+
+    await page.getByRole("button", {
+      name: "Cadastrar conta"
+    }).click();
+
+    await expect(
+      page.getByText("Conta de teste NEXO")
+    ).toBeVisible();
+
+    const savedAccounts = await page.evaluate(() => {
+      return JSON.parse(
+        localStorage.getItem("nexo_accounts") || "[]"
+      );
+    });
+
+    expect(savedAccounts).toHaveLength(1);
+
+    expect(savedAccounts[0].name).toBe(
+      "Conta de teste NEXO"
+    );
+
+    expect(savedAccounts[0].initialBalance).toBe(1500);
+  });
+
+  test("deve manter a conta após atualizar a página", async ({
+    page
+  }) => {
+    await page.goto("/financeiro/contas");
+
+    await page.getByLabel("Nome da conta").fill(
+      "Conta persistente"
+    );
+
+    await page.getByLabel("Saldo inicial (R$)").fill("500");
+
+    await page.getByRole("button", {
+      name: "Cadastrar conta"
+    }).click();
+
+    await expect(
+      page.getByText("Conta persistente")
+    ).toBeVisible();
+
+    await page.reload();
+
+    await expect(
+      page.getByText("Conta persistente")
+    ).toBeVisible();
+  });
+});
+
+// =====================================================
+// ROTINA - TAREFAS
+// =====================================================
+
+test.describe("Rotina - Cadastro de tarefas", () => {
+  test("deve cadastrar uma tarefa", async ({ page }) => {
+    await page.goto("/rotina/tarefas");
+
+    await page.getByRole("button", {
+      name: /Nova tarefa/
+    }).click();
+
+    await page.getByLabel("Descrição da tarefa *").fill(
+      "Tarefa automatizada NEXO"
+    );
+
+    await page.getByRole("button", {
+      name: "Cadastrar tarefa"
+    }).click();
+
+    await expect(
+      page.getByText("Tarefa automatizada NEXO")
+    ).toBeVisible();
+
+    const savedTasks = await page.evaluate(() => {
+      return JSON.parse(
+        localStorage.getItem("nexo_tasks") || "[]"
+      );
+    });
+
+    expect(
+      savedTasks.some(
+        (task: { description: string }) =>
+          task.description === "Tarefa automatizada NEXO"
+      )
+    ).toBeTruthy();
+  });
+
+  test("deve preservar a tarefa após atualizar a página", async ({
+    page
+  }) => {
+    await page.goto("/rotina/tarefas");
+
+    await page.getByRole("button", {
+      name: /Nova tarefa/
+    }).click();
+
+    await page.getByLabel("Descrição da tarefa *").fill(
+      "Tarefa persistente"
+    );
+
+    await page.getByRole("button", {
+      name: "Cadastrar tarefa"
+    }).click();
+
+    await expect(
+      page.getByText("Tarefa persistente")
+    ).toBeVisible();
+
+    await page.reload();
+
+    await expect(
+      page.getByText("Tarefa persistente")
+    ).toBeVisible();
+  });
+});
+
+// =====================================================
+// ROTINA - HÁBITOS
+// =====================================================
+
+test.describe("Rotina - Cadastro de hábitos", () => {
+  test("deve cadastrar um hábito", async ({ page }) => {
+    await page.goto("/rotina/habitos");
+
+    await page.getByRole("button", {
+      name: /Novo hábito/
+    }).click();
+
+    await page.getByLabel("Nome do hábito *").fill(
+      "Hábito automatizado NEXO"
+    );
+
+    await page.getByRole("button", {
+      name: "Cadastrar hábito"
+    }).click();
+
+    await expect(
+      page.getByText("Hábito automatizado NEXO")
+    ).toBeVisible();
+
+    const savedHabits = await page.evaluate(() => {
+      return JSON.parse(
+        localStorage.getItem("nexo_habits") || "[]"
+      );
+    });
+
+    expect(
+      savedHabits.some(
+        (habit: { name: string }) =>
+          habit.name === "Hábito automatizado NEXO"
+      )
+    ).toBeTruthy();
+  });
+
+  test("deve manter o hábito após atualizar a página", async ({
+    page
+  }) => {
+    await page.goto("/rotina/habitos");
+
+    await page.getByRole("button", {
+      name: /Novo hábito/
+    }).click();
+
+    await page.getByLabel("Nome do hábito *").fill(
+      "Hábito persistente"
+    );
+
+    await page.getByRole("button", {
+      name: "Cadastrar hábito"
+    }).click();
+
+    await expect(
+      page.getByText("Hábito persistente")
+    ).toBeVisible();
+
+    await page.reload();
+
+    await expect(
+      page.getByText("Hábito persistente")
+    ).toBeVisible();
+  });
+});
+
+// =====================================================
+// VERIFICAÇÃO DE PERSISTÊNCIA DO FINANCEIRO
+// =====================================================
+
+test.describe("Financeiro - Proteção de dados", () => {
+  test("deve carregar a página financeira sem erro de JavaScript", async ({
+    page
+  }) => {
+    const errors: string[] = [];
+
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
+
+    await page.goto("/financeiro");
+
+    await expect(
+      page.locator("h1, h2").first()
+    ).toBeVisible();
+
+    expect(errors).toEqual([]);
+  });
+
+  test("deve preservar os lançamentos válidos existentes", async ({
+    page
+  }) => {
+    const testTransaction = {
+      id: "TESTE-001",
+      type: "Receita",
+      description: "Lançamento de teste",
+      amount: 100,
+      date: "2026-11-16",
+      category: "Salário",
+      status: "Pago"
+    };
+
+    await page.goto("/financeiro");
+
+    await page.evaluate((transaction) => {
+      localStorage.setItem(
+        "nexo_transactions",
+        JSON.stringify([transaction])
+      );
+    }, testTransaction);
+
+    await page.reload();
+
+    const transactions = await page.evaluate(() => {
+      return JSON.parse(
+        localStorage.getItem("nexo_transactions") || "[]"
+      );
+    });
+
+    expect(Array.isArray(transactions)).toBeTruthy();
+
+    expect(
+      transactions.some(
+        (item: { id: string }) => item.id === "TESTE-001"
+      )
+    ).toBeTruthy();
+  });
+});
