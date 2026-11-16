@@ -2,7 +2,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type ReserveCategory =
   | "Emergência"
@@ -182,16 +182,19 @@ export default function ReservasFinanceirasPage() {
 
     loadReserveData();
 
-    return subscribeFinanceUpdates((key) => {
+    function handleStorage(event: StorageEvent) {
       if (
-        key === null ||
-        key === FINANCE_STORAGE_KEYS.reserves ||
-        key === FINANCE_STORAGE_KEYS.reserveMovements ||
-        key === FINANCE_STORAGE_KEYS.accounts
+        event.key === null ||
+        event.key === FINANCE_STORAGE_KEYS.reserves ||
+        event.key === FINANCE_STORAGE_KEYS.reserveMovements ||
+        event.key === FINANCE_STORAGE_KEYS.accounts
       ) {
         loadReserveData();
       }
-    });
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   useEffect(() => {
