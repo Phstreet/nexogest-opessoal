@@ -88,8 +88,7 @@ test.describe("Rotina - Cadastro de tarefas", () => {
 
     await page.getByRole("button", { name: /Nova tarefa/ }).click();
 
-    // O formulário atual não associa o label ao input por htmlFor/id.
-    await page.locator("#task-form input[type='text']").fill("Tarefa automatizada NEXO");
+    await page.getByLabel("Descrição da tarefa *").fill("Tarefa automatizada NEXO");
 
     await page.getByRole("button", { name: "Cadastrar tarefa" }).click();
     await expect(page.getByText("Tarefa automatizada NEXO")).toBeVisible();
@@ -110,7 +109,7 @@ test.describe("Rotina - Cadastro de tarefas", () => {
     await page.goto("/rotina/tarefas");
 
     await page.getByRole("button", { name: /Nova tarefa/ }).click();
-    await page.locator("#task-form input[type='text']").fill("Tarefa persistente");
+    await page.getByLabel("Descrição da tarefa *").fill("Tarefa persistente");
 
     await page.getByRole("button", { name: "Cadastrar tarefa" }).click();
     await expect(page.getByText("Tarefa persistente")).toBeVisible();
@@ -127,8 +126,7 @@ test.describe("Rotina - Cadastro de hábitos", () => {
 
     await page.getByRole("button", { name: /Novo hábito/ }).click();
 
-    // O formulário atual não associa o label ao input por htmlFor/id.
-    await page.locator("#habit-form input[type='text']").fill("Hábito automatizado NEXO");
+    await page.getByLabel("Nome do hábito *").fill("Hábito automatizado NEXO");
 
     await page.getByRole("button", { name: "Cadastrar hábito" }).click();
     await expect(page.getByText("Hábito automatizado NEXO")).toBeVisible();
@@ -149,7 +147,7 @@ test.describe("Rotina - Cadastro de hábitos", () => {
     await page.goto("/rotina/habitos");
 
     await page.getByRole("button", { name: /Novo hábito/ }).click();
-    await page.locator("#habit-form input[type='text']").fill("Hábito persistente");
+    await page.getByLabel("Nome do hábito *").fill("Hábito persistente");
 
     await page.getByRole("button", { name: "Cadastrar hábito" }).click();
     await expect(page.getByText("Hábito persistente")).toBeVisible();
