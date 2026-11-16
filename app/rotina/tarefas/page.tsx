@@ -454,6 +454,7 @@ export default function TarefasPage() {
             <div className="form-field full-field">
               <label htmlFor="task-description">Descrição da tarefa *</label>
               <input
+                id="task-description"
                 type="text"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
