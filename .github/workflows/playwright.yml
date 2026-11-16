@@ -43,6 +43,15 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Validar vulnerabilidades
+        run: npm audit --audit-level=low
+
+      - name: Validar lint
+        run: npm run lint
+
+      - name: Validar build de produção
+        run: npm run build
+
       - name: Instalar Chromium e dependências do sistema
         run: npx playwright install --with-deps chromium
 

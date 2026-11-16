@@ -140,11 +140,6 @@ export default function ProdutividadePage() {
     habit.completedDates.includes(today)
   );
 
-  const taskRate =
-    activeTasks.length > 0
-      ? Math.round((completedTasks.length / activeTasks.length) * 100)
-      : 0;
-
   const habitRate =
     activeHabits.length > 0
       ? Math.round(

@@ -2,6 +2,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type ReserveCategory =
   | "Emergência"
@@ -46,10 +47,6 @@ type ReserveMovement = {
   description: string;
   createdAt: string;
 };
-
-const RESERVES_KEY = "nexo_reserves";
-const MOVEMENTS_KEY = "nexo_reserve_movements";
-const ACCOUNTS_KEY = "nexo_accounts";
 
 const categories: ReserveCategory[] = [
   "Emergência",
@@ -164,48 +161,49 @@ export default function ReservasFinanceirasPage() {
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
-    try {
-      const storedReserves = localStorage.getItem(RESERVES_KEY);
-      const storedMovements = localStorage.getItem(MOVEMENTS_KEY);
-      const storedAccounts = localStorage.getItem(ACCOUNTS_KEY);
-
-      if (storedReserves) {
-        const parsed = JSON.parse(storedReserves);
-        if (Array.isArray(parsed)) setReserves(parsed);
+    function loadReserveData() {
+      try {
+        setReserves(getReserves());
+        setMovements(getReserveMovements());
+        setAccounts(
+          getAccounts().map((account) => ({
+            id: Number(account.id),
+            name: account.name || "Conta sem nome",
+            institution: account.institution || "",
+            active: account.active !== false,
+          }))
+        );
+      } catch (error) {
+        console.error("Erro ao carregar reservas financeiras:", error);
+      } finally {
+        setLoaded(true);
       }
-
-      if (storedMovements) {
-        const parsed = JSON.parse(storedMovements);
-        if (Array.isArray(parsed)) setMovements(parsed);
-      }
-
-      if (storedAccounts) {
-        const parsed = JSON.parse(storedAccounts);
-
-        if (Array.isArray(parsed)) {
-          setAccounts(
-            parsed.map((account: Account) => ({
-              id: Number(account.id),
-              name: account.name || "Conta sem nome",
-              institution: account.institution || "",
-              active: account.active !== false,
-            }))
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao carregar reservas financeiras:", error);
-    } finally {
-      setLoaded(true);
     }
+
+    loadReserveData();
+
+    function handleStorage(event: StorageEvent) {
+      if (
+        event.key === null ||
+        event.key === FINANCE_STORAGE_KEYS.reserves ||
+        event.key === FINANCE_STORAGE_KEYS.reserveMovements ||
+        event.key === FINANCE_STORAGE_KEYS.accounts
+      ) {
+        loadReserveData();
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   useEffect(() => {
     if (!loaded) return;
 
     try {
-      localStorage.setItem(RESERVES_KEY, JSON.stringify(reserves));
-      localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(movements));
+      if (!saveReserves(reserves) || !saveReserveMovements(movements)) {
+        throw new Error("O armazenamento central recusou os dados.");
+      }
     } catch (error) {
       console.error("Erro ao salvar reservas financeiras:", error);
       setFeedback("Não foi possível salvar os dados no navegador.");
@@ -355,6 +353,7 @@ export default function ReservasFinanceirasPage() {
                 category: reserveForm.category,
                 description: reserveForm.description.trim(),
                 targetAmount,
+                initialBalance,
                 monthlyContribution,
                 startDate: reserveForm.startDate,
                 targetDate: reserveForm.targetDate,
@@ -761,25 +760,23 @@ export default function ReservasFinanceirasPage() {
                     />
                   </div>
 
-                  {editingReserveId === null && (
-                    <div className="field">
-                      <label htmlFor="reserve-initial">Saldo inicial</label>
-                      <input
-                        id="reserve-initial"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={reserveForm.initialBalance}
-                        onChange={(event) =>
-                          updateReserveField(
-                            "initialBalance",
-                            event.target.value
-                          )
-                        }
-                        placeholder="0,00"
-                      />
-                    </div>
-                  )}
+                  <div className="field">
+                    <label htmlFor="reserve-initial">Saldo inicial</label>
+                    <input
+                      id="reserve-initial"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={reserveForm.initialBalance}
+                      onChange={(event) =>
+                        updateReserveField(
+                          "initialBalance",
+                          event.target.value
+                        )
+                      }
+                      placeholder="0,00"
+                    />
+                  </div>
 
                   <div className="field">
                     <label htmlFor="reserve-monthly">

@@ -3,6 +3,13 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getAccounts, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import {
+  createAccount,
+  deleteAccount,
+  getAccountBalance,
+  setAccountActive,
+} from "@/lib/finance/accounts";
 
 type Account = {
   id: number;
@@ -13,8 +20,6 @@ type Account = {
   createdAt: string;
   active: boolean;
 };
-
-const STORAGE_KEY = "nexo_accounts";
 
 const accountTypes = [
   "Conta corrente",
@@ -59,18 +64,9 @@ function parseAmount(value: string) {
   return Number(normalized);
 }
 
-function localDate() {
-  const date = new Date();
-
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
 
 function formatDate(value: string) {
-  return new Date(value + "T12:00:00").toLocaleDateString("pt-BR");
+  return new Date(value.length === 10 ? value + "T12:00:00" : value).toLocaleDateString("pt-BR");
 }
 
 export default function ContasFinanceirasPage() {
@@ -81,43 +77,41 @@ export default function ContasFinanceirasPage() {
   const [initialBalance, setInitialBalance] = useState("");
   const [filter, setFilter] = useState("Todas");
   const [loaded, setLoaded] = useState(false);
+  const [, setBalanceVersion] = useState(0);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-
-      if (saved) {
-        const parsed = JSON.parse(saved);
-
-        if (Array.isArray(parsed)) {
-          setAccounts(parsed);
-        }
+    function loadAccounts() {
+      try {
+        setAccounts(getAccounts());
+        setBalanceVersion((version) => version + 1);
+      } catch {
+        console.error("Não foi possível carregar as contas.");
+      } finally {
+        setLoaded(true);
       }
-    } catch {
-      console.error("Não foi possível carregar as contas.");
     }
 
-    setLoaded(true);
+    loadAccounts();
+
+    return subscribeFinanceUpdates((key) => {
+      if (
+        key === null ||
+        key === FINANCE_STORAGE_KEYS.accounts ||
+        key === FINANCE_STORAGE_KEYS.transactions
+      ) {
+        loadAccounts();
+      }
+    });
   }, []);
-
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-    }
-  }, [accounts, loaded]);
 
   const activeAccounts = useMemo(
     () => accounts.filter((account) => account.active),
     [accounts]
   );
 
-  const totalInitialBalance = useMemo(
-    () =>
-      activeAccounts.reduce(
-        (sum, account) => sum + account.initialBalance,
-        0
-      ),
-    [activeAccounts]
+  const totalCurrentBalance = activeAccounts.reduce(
+    (sum, account) => sum + getAccountBalance(account),
+    0
   );
 
   const filteredAccounts = useMemo(
@@ -156,17 +150,20 @@ export default function ContasFinanceirasPage() {
       return;
     }
 
-    const newAccount: Account = {
-      id: Date.now(),
-      name: name.trim(),
-      institution,
-      type,
-      initialBalance: parsedBalance,
-      createdAt: localDate(),
-      active: true,
-    };
-
-    setAccounts((current) => [newAccount, ...current]);
+    try {
+      createAccount({
+        name: name.trim(),
+        institution,
+        type,
+        initialBalance: parsedBalance,
+        active: true,
+      });
+      setAccounts(getAccounts());
+      setBalanceVersion((version) => version + 1);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Não foi possível salvar a conta.");
+      return;
+    }
 
     setName("");
     setInstitution("Nubank");
@@ -175,13 +172,16 @@ export default function ContasFinanceirasPage() {
   }
 
   function toggleAccount(id: number) {
-    setAccounts((current) =>
-      current.map((account) =>
-        account.id === id
-          ? { ...account, active: !account.active }
-          : account
-      )
-    );
+    const account = accounts.find((item) => item.id === id);
+    if (!account) return;
+
+    try {
+      setAccountActive(id, !account.active);
+      setAccounts(getAccounts());
+      setBalanceVersion((version) => version + 1);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Não foi possível atualizar a conta.");
+    }
   }
 
   function removeAccount(id: number) {
@@ -191,9 +191,12 @@ export default function ContasFinanceirasPage() {
 
     if (!confirmed) return;
 
-    setAccounts((current) =>
-      current.filter((account) => account.id !== id)
-    );
+    try {
+      deleteAccount(id);
+      setAccounts(getAccounts());
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Não foi possível excluir a conta.");
+    }
   }
 
   return (
@@ -237,12 +240,12 @@ export default function ContasFinanceirasPage() {
 
         <article className="accounts-summary-card featured">
           <div className="accounts-summary-top">
-            <span>Saldo inicial total</span>
+            <span>Saldo atual total</span>
             <span className="accounts-summary-icon">R$</span>
           </div>
-          <strong>{money(totalInitialBalance)}</strong>
+          <strong>{money(totalCurrentBalance)}</strong>
           <small>
-            Soma dos saldos iniciais das contas ativas
+            Soma dos saldos atualizados das contas ativas
           </small>
         </article>
       </section>
@@ -390,9 +393,9 @@ export default function ContasFinanceirasPage() {
                 </div>
 
                 <div className="accounts-item-balance">
-                  <span>Saldo inicial</span>
+                  <span>Saldo atual</span>
                   <strong>
-                    {money(account.initialBalance)}
+                    {money(getAccountBalance(account))}
                   </strong>
                 </div>
 

@@ -347,6 +347,383 @@ test.describe("Rotina - Cadastro de hábitos", () => {
   });
 });
 
+test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
+  test("deve calcular corretamente o saldo restante de uma despesa parcialmente paga", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92001,
+        type: "Despesa",
+        description: "Despesa parcialmente paga",
+        amount: 1000,
+        settledAmount: 400,
+        date: "2026-12-20",
+        category: "Moradia",
+        status: "Paga parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas-a-pagar");
+
+    await expect(page.getByText(/600,00/).first()).toBeVisible();
+    await expect(page.getByText(/Pago:/)).toBeVisible();
+    await expect(page.getByText("Paga parcialmente")).toBeVisible();
+  });
+
+  test("deve calcular corretamente o saldo restante de uma receita parcialmente recebida", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92002,
+        type: "Receita",
+        description: "Receita parcialmente recebida",
+        amount: 1000,
+        settledAmount: 400,
+        date: "2026-12-20",
+        category: "Serviços",
+        status: "Recebida parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas-a-receber");
+
+    await expect(page.getByText(/600,00/).first()).toBeVisible();
+    await expect(page.getByText(/Recebido:/)).toBeVisible();
+    await expect(page.getByText("Recebida parcialmente")).toBeVisible();
+  });
+
+  test("deve registrar pagamento parcial pela tela de contas a pagar", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92003,
+        type: "Despesa",
+        description: "Pagamento parcial pela interface",
+        amount: 1000,
+        date: "2026-12-20",
+        category: "Moradia",
+        status: "Pendente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas-a-pagar");
+    page.once("dialog", async (dialog) => {
+      expect(dialog.type()).toBe("prompt");
+      await dialog.accept("400,00");
+    });
+    await page.getByRole("button", { name: "Registrar pagamento parcial" }).click();
+
+    await expect(page.getByText(/Pago:/)).toBeVisible();
+    await expect(page.getByText(/600,00/).first()).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_transactions") || "[]"));
+    expect(saved[0]).toMatchObject({ settledAmount: 400, status: "Paga parcialmente" });
+  });
+
+  test("deve registrar recebimento parcial pela tela de contas a receber", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92004,
+        type: "Receita",
+        description: "Recebimento parcial pela interface",
+        amount: 1000,
+        date: "2026-12-20",
+        category: "Serviços",
+        status: "Pendente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas-a-receber");
+    page.once("dialog", async (dialog) => {
+      expect(dialog.type()).toBe("prompt");
+      await dialog.accept("400,00");
+    });
+    await page.getByRole("button", { name: "Registrar recebimento parcial" }).click();
+
+    await expect(page.getByText(/Recebido:/)).toBeVisible();
+    await expect(page.getByText(/600,00/).first()).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_transactions") || "[]"));
+    expect(saved[0]).toMatchObject({ settledAmount: 400, status: "Recebida parcialmente" });
+  });
+
+  test("deve exibir o saldo atualizado da conta, e não somente o saldo inicial", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 92005,
+        name: "Conta com movimentação",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92006,
+        type: "Despesa",
+        description: "Despesa já paga",
+        amount: 250,
+        settledAmount: 250,
+        account: "Conta com movimentação",
+        date: "2026-11-16",
+        status: "Pago"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const account = page.locator(".accounts-item").filter({ hasText: "Conta com movimentação" });
+    await expect(account.getByText("Saldo atual")).toBeVisible();
+    await expect(account.getByText(/750,00/)).toBeVisible();
+  });
+
+  test("deve refletir o recebimento parcial no saldo da conta", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 92011,
+        name: "Conta recebimento parcial",
+        institution: "Banco",
+        type: "Conta corrente",
+        initialBalance: 500,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92012,
+        type: "Receita",
+        description: "Receita parcialmente recebida",
+        amount: 300,
+        settledAmount: 125,
+        account: "Conta recebimento parcial",
+        date: "2026-11-16",
+        status: "Recebida parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const account = page.locator(".accounts-item").filter({ hasText: "Conta recebimento parcial" });
+    await expect(account.getByText(/625,00/)).toBeVisible();
+  });
+
+  test("deve atualizar os saldos de origem e destino após uma transferência efetivada", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([
+        {
+          id: 92013,
+          name: "Conta origem transferência",
+          institution: "Banco A",
+          type: "Conta corrente",
+          initialBalance: 1000,
+          createdAt: "2026-11-16",
+          active: true
+        },
+        {
+          id: 92014,
+          name: "Conta destino transferência",
+          institution: "Banco B",
+          type: "Conta corrente",
+          initialBalance: 300,
+          createdAt: "2026-11-16",
+          active: true
+        }
+      ]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92015,
+        type: "Transferência",
+        description: "Transferência efetivada",
+        amount: 250,
+        account: "Conta origem transferência",
+        destinationAccount: "Conta destino transferência",
+        date: "2026-11-16",
+        status: "Realizada"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const source = page.locator(".accounts-item").filter({ hasText: "Conta origem transferência" });
+    const destination = page.locator(".accounts-item").filter({ hasText: "Conta destino transferência" });
+    await expect(source.getByText(/750,00/)).toBeVisible();
+    await expect(destination.getByText(/550,00/)).toBeVisible();
+  });
+
+  test("deve refletir somente o valor parcialmente pago no saldo da conta", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 92009,
+        name: "Conta pagamento parcial",
+        institution: "Banco",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92010,
+        type: "Despesa",
+        description: "Despesa parcialmente paga",
+        amount: 500,
+        settledAmount: 200,
+        account: "Conta pagamento parcial",
+        date: "2026-11-16",
+        status: "Paga parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const account = page.locator(".accounts-item").filter({ hasText: "Conta pagamento parcial" });
+    await expect(account.getByText(/800,00/)).toBeVisible();
+  });
+
+  test("deve aplicar a alteração do saldo inicial ao editar uma reserva", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_reserves", JSON.stringify([{
+        id: 92007,
+        name: "Reserva editável",
+        category: "Emergência",
+        description: "",
+        targetAmount: 2000,
+        initialBalance: 500,
+        monthlyContribution: 100,
+        startDate: "2026-11-01",
+        targetDate: "",
+        accountId: null,
+        institution: "",
+        status: "Ativa",
+        createdAt: "2026-11-16"
+      }]));
+      localStorage.setItem("nexo_reserve_movements", JSON.stringify([{
+        id: 92008,
+        reserveId: 92007,
+        type: "Aporte",
+        amount: 150,
+        date: "2026-11-16",
+        description: "Aporte anterior",
+        createdAt: "2026-11-16"
+      }]));
+    });
+
+    await page.goto("/financeiro/reservas");
+    const reserve = page.locator(".reserve-card").filter({ hasText: "Reserva editável" });
+    await reserve.getByRole("button", { name: "Editar" }).click();
+    await page.locator("#reserve-initial").fill("700");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    await expect(reserve.getByText(/850,00/)).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_reserves") || "[]"));
+    expect(saved[0].initialBalance).toBe(700);
+  });
+
+});
+
+test.describe("Financeiro - Proteção de vínculos e Dashboard", () => {
+  test("não deve permitir excluir conta com movimentações vinculadas", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 93001,
+        name: "Conta vinculada",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 93002,
+        type: "Despesa",
+        description: "Despesa vinculada",
+        amount: 100,
+        account: "Conta vinculada",
+        status: "Pago"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const accountItem = page.locator(".accounts-item").filter({ hasText: "Conta vinculada" });
+    await expect(accountItem).toBeVisible();
+
+    page.on("dialog", async (dialog) => {
+      if (dialog.type() === "confirm") {
+        await dialog.accept();
+      } else {
+        expect(dialog.message()).toContain("movimentações ou reservas vinculadas");
+        await dialog.accept();
+      }
+    });
+    await accountItem.getByRole("button", { name: "Excluir conta Conta vinculada" }).click();
+
+    await expect(accountItem).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_accounts") || "[]"));
+    expect(saved).toHaveLength(1);
+  });
+
+  test("deve calcular o resultado mensal somente com movimentações efetivadas", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      localStorage.setItem("nexo_transactions", JSON.stringify([
+        { id: 93101, type: "Receita", description: "Receita confirmada", amount: 500, settledAmount: 500, date, status: "Recebida" },
+        { id: 93102, type: "Despesa", description: "Despesa confirmada", amount: 200, settledAmount: 200, date, status: "Pago" },
+        { id: 93103, type: "Despesa", description: "Despesa pendente", amount: 1000, date, status: "Pendente" },
+        { id: 93104, type: "Investimento", description: "Investimento pendente", amount: 300, date, status: "Pendente" },
+        { id: 93105, type: "Reserva", description: "Reserva pendente", amount: 400, date, status: "Pendente" }
+      ]));
+    });
+
+    await page.goto("/financeiro/dashboard");
+    const resultCard = page.locator(".summary-card").filter({ hasText: "Resultado do mês" });
+    await expect(resultCard).toBeVisible();
+    await expect(resultCard.getByText(/300,00/)).toBeVisible();
+  });
+
+  test("deve apresentar no Dashboard o saldo real das reservas", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 93011,
+        name: "Conta do Dashboard",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 93012,
+        type: "Despesa",
+        description: "Despesa paga",
+        amount: 100,
+        settledAmount: 100,
+        account: "Conta do Dashboard",
+        status: "Pago",
+        date: "2026-11-16"
+      }]));
+      localStorage.setItem("nexo_reserves", JSON.stringify([{
+        id: 93013,
+        name: "Reserva de emergência",
+        category: "Emergência",
+        description: "",
+        targetAmount: 2000,
+        initialBalance: 500,
+        monthlyContribution: 100,
+        startDate: "2026-11-01",
+        targetDate: "",
+        accountId: 93011,
+        institution: "Nubank",
+        status: "Ativa",
+        createdAt: "2026-11-16"
+      }]));
+      localStorage.setItem("nexo_reserve_movements", JSON.stringify([{
+        id: 93014,
+        reserveId: 93013,
+        type: "Aporte",
+        amount: 150,
+        date: "2026-11-16",
+        description: "Aporte de teste",
+        createdAt: "2026-11-16"
+      }]));
+    });
+
+    await page.goto("/financeiro/dashboard");
+    const accountsPanel = page.locator(".account-panel");
+    await expect(accountsPanel.getByText("Saldo total das reservas ativas")).toBeVisible();
+    await expect(accountsPanel.getByText(/650,00/)).toBeVisible();
+    await expect(accountsPanel.getByText(/900,00/).first()).toBeVisible();
+  });
+});
+
 test.describe("Financeiro - Proteção de dados", () => {
   test("deve carregar a página financeira sem erro de JavaScript", async ({ page }) => {
     const errors: string[] = [];

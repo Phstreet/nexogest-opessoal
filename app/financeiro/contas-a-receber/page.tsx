@@ -3,12 +3,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type Transaction = {
   id: number;
   description: string;
-  type: "Receita" | "Despesa" | "Transferência" | "Aplicação" | "Reserva";
+  type: "Receita" | "Despesa" | "Transferência" | "Investimento" | "Aplicação" | "Reserva";
   amount: number;
+  settledAmount?: number;
   date?: string;
   category?: string;
   subcategory?: string;
@@ -26,7 +28,6 @@ type FilterType =
   | "Atrasadas"
   | "Canceladas";
 
-const STORAGE_KEY = "nexo_transactions";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -55,9 +56,25 @@ function getToday() {
   return `${year}-${month}-${day}`;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim().replace(/\s/g, "");
+  if (!normalized) return NaN;
+  return Number(normalized.includes(",")
+    ? normalized.replace(/\./g, "").replace(",", ".")
+    : normalized);
+}
+
 function isReceived(status?: string) {
   return status === "Recebida";
 }
+
+function getSettledAmount(transaction: Transaction) {
+  const amount = Math.max(0, Number(transaction.amount) || 0);
+  if (transaction.settledAmount !== undefined) return Math.min(amount, Math.max(0, Number(transaction.settledAmount) || 0));
+  return isReceived(transaction.status) ? amount : 0;
+}
+function getOpenAmount(transaction: Transaction) { return Math.max(0, Number(transaction.amount || 0) - getSettledAmount(transaction)); }
+function isPartiallyReceived(transaction: Transaction) { return getSettledAmount(transaction) > 0 && getOpenAmount(transaction) > 0; }
 
 function isCancelled(status?: string) {
   return status === "Cancelada";
@@ -66,7 +83,7 @@ function isCancelled(status?: string) {
 function isOverdue(transaction: Transaction) {
   if (
     !transaction.date ||
-    isReceived(transaction.status) ||
+    getOpenAmount(transaction) <= 0 ||
     isCancelled(transaction.status)
   ) {
     return false;
@@ -79,6 +96,7 @@ function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
   if (isReceived(transaction.status)) return "Recebida";
   if (isOverdue(transaction)) return "Atrasada";
+  if (isPartiallyReceived(transaction)) return "Recebida parcialmente";
 
   return transaction.status || "Pendente";
 }
@@ -91,10 +109,7 @@ export default function ContasAReceberPage() {
 
   const loadTransactions = useCallback(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-
-      setTransactions(Array.isArray(parsed) ? parsed : []);
+      setTransactions(getTransactions());
     } catch {
       setTransactions([]);
     } finally {
@@ -105,17 +120,11 @@ export default function ContasAReceberPage() {
   useEffect(() => {
     loadTransactions();
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
+    return subscribeFinanceUpdates((key) => {
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
         loadTransactions();
       }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
+    });
   }, [loadTransactions]);
 
   const revenues = useMemo(() => {
@@ -130,16 +139,14 @@ export default function ContasAReceberPage() {
   const totalOpen = useMemo(
     () =>
       activeRevenues
-        .filter((item) => !isReceived(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeRevenues]
   );
 
   const totalReceived = useMemo(
     () =>
       activeRevenues
-        .filter((item) => isReceived(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getSettledAmount(item), 0),
     [activeRevenues]
   );
 
@@ -147,7 +154,7 @@ export default function ContasAReceberPage() {
     () =>
       activeRevenues
         .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeRevenues]
   );
 
@@ -175,7 +182,7 @@ export default function ContasAReceberPage() {
 
         if (filter === "Em aberto") {
           matchesFilter =
-            !isReceived(item.status) && !isCancelled(item.status);
+            getOpenAmount(item) > 0 && !isCancelled(item.status);
         }
 
         if (filter === "Recebidas") {
@@ -202,26 +209,22 @@ export default function ContasAReceberPage() {
 
   function updateStatus(id: number, newStatus: string) {
     const updatedTransactions = transactions.map((item) =>
-      item.id === id ? { ...item, status: newStatus } : item
+      item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Recebida" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updatedTransactions)
-      );
-
-      setTransactions(updatedTransactions);
-    } catch {
-      alert("Não foi possível salvar a alteração.");
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
       loadTransactions();
+      return;
     }
+
+    setTransactions(updatedTransactions);
   }
 
   function markAsReceived(item: Transaction) {
     const confirmed = window.confirm(
-      `Confirma o recebimento de "${item.description}" no valor de ${formatCurrency(
-        Number(item.amount || 0)
+      `Confirma o recebimento do saldo restante de "${item.description}" no valor de ${formatCurrency(
+        getOpenAmount(item)
       )}?`
     );
 
@@ -238,6 +241,31 @@ export default function ContasAReceberPage() {
     if (confirmed) {
       updateStatus(item.id, "Pendente");
     }
+  }
+
+  function registerPartialReceipt(item: Transaction) {
+    const openAmount = getOpenAmount(item);
+    const entered = window.prompt(
+      `Informe quanto foi recebido agora. Saldo restante: ${formatCurrency(openAmount)}`,
+      ""
+    );
+    if (entered === null) return;
+    const receipt = parseCurrencyInput(entered);
+    if (!Number.isFinite(receipt) || receipt <= 0 || receipt > openAmount) {
+      alert("Informe um valor maior que zero e menor ou igual ao saldo pendente.");
+      return;
+    }
+    const settledAmount = getSettledAmount(item) + receipt;
+    const nextStatus = settledAmount >= Number(item.amount || 0) ? "Recebida" : "Recebida parcialmente";
+    const updatedTransactions = transactions.map((transaction) =>
+      transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
+    );
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível registrar o recebimento. Os dados anteriores foram preservados.");
+      loadTransactions();
+      return;
+    }
+    setTransactions(updatedTransactions);
   }
 
   return (
@@ -407,7 +435,8 @@ export default function ContasAReceberPage() {
                       <td>{item.account || "Não informada"}</td>
 
                       <td className="receivable-amount">
-                        {formatCurrency(Number(item.amount || 0))}
+                        <span>{formatCurrency(Number(item.amount || 0))}</span>
+                        {isPartiallyReceived(item) && <small style={{ display: "block", color: "#a8c7b3", marginTop: 4 }}>Recebido: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
                       </td>
 
                       <td>
@@ -427,15 +456,24 @@ export default function ContasAReceberPage() {
                       </td>
 
                       <td>
-                        {!isReceived(item.status) &&
+                        {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
+                          <>
                           <button
+                            type="button"
+                            className="receive-button"
+                            onClick={() => registerPartialReceipt(item)}
+                          >
+                            Registrar recebimento parcial
+                          </button>
+<button
                             type="button"
                             className="receive-button"
                             onClick={() => markAsReceived(item)}
                           >
                             Marcar recebida
                           </button>
+                          </>
                         ) : isReceived(item.status) ? (
                           <button
                             type="button"
@@ -466,11 +504,7 @@ export default function ContasAReceberPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredRevenues.reduce(
-                  (total, item) =>
-                    total + Number(item.amount || 0),
-                  0
-                )
+                filteredRevenues.reduce((total, item) => total + getOpenAmount(item), 0)
               )}
             </strong>
           </span>

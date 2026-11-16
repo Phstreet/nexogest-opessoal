@@ -6,14 +6,20 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   Account,
   Transaction,
+  Reserve,
+  ReserveMovement,
 } from "@/lib/finance/types";
 
 import {
   getAccounts,
   getTransactions,
+  getReserves,
+  getReserveMovements,
   subscribeFinanceUpdates,
   FINANCE_STORAGE_KEYS,
 } from "@/lib/finance/storage";
+import { getAccountBalance } from "@/lib/finance/accounts";
+import { calculateReserveBalance } from "@/lib/finance/reserves";
 
 // =====================================================
 // TIPOS
@@ -174,7 +180,11 @@ function getSettledAmount(
     status === "pago" ||
     status === "paga" ||
     status === "recebida" ||
-    status === "recebido"
+    status === "recebido" ||
+    status === "aplicado" ||
+    status === "aplicada" ||
+    status === "realizada" ||
+    status === "concluida"
   ) {
     return amount;
   }
@@ -209,6 +219,8 @@ function sumSettledTransactions(
 export function useFinanceDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [reserves, setReserves] = useState<Reserve[]>([]);
+  const [reserveMovements, setReserveMovements] = useState<ReserveMovement[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [period, setPeriod] = useState<"3" | "6">("6");
 
@@ -225,6 +237,8 @@ export function useFinanceDashboard() {
       try {
         setTransactions(getTransactions());
         setAccounts(getAccounts());
+        setReserves(getReserves());
+        setReserveMovements(getReserveMovements());
       } catch (error) {
         console.error(
           "[NEXO] Erro ao carregar dados do Dashboard Financeiro:",
@@ -241,7 +255,9 @@ export function useFinanceDashboard() {
       if (
         key === null ||
         key === FINANCE_STORAGE_KEYS.transactions ||
-        key === FINANCE_STORAGE_KEYS.accounts
+        key === FINANCE_STORAGE_KEYS.accounts ||
+        key === FINANCE_STORAGE_KEYS.reserves ||
+        key === FINANCE_STORAGE_KEYS.reserveMovements
       ) {
         loadData();
       }
@@ -308,7 +324,7 @@ export function useFinanceDashboard() {
   }, [currentMonthTransactions]);
 
   const currentInvestments = useMemo(() => {
-    return sumTransactions(
+    return sumSettledTransactions(
       currentMonthTransactions.filter(
         (transaction) =>
           transaction.type === "Investimento" ||
@@ -318,7 +334,7 @@ export function useFinanceDashboard() {
   }, [currentMonthTransactions]);
 
   const currentReserves = useMemo(() => {
-    return sumTransactions(
+    return sumSettledTransactions(
       currentMonthTransactions.filter(
         (transaction) => transaction.type === "Reserva"
       )
@@ -356,9 +372,11 @@ export function useFinanceDashboard() {
     currentConfirmedExpenses,
   ]);
 
+  // Resultado realizado: considera somente valores efetivamente
+  // recebidos/pagos, sem tratar compromissos pendentes como caixa.
   const currentBalance =
-    currentRevenue -
-    currentExpenses -
+    currentConfirmedRevenue -
+    currentConfirmedExpenses -
     currentInvestments -
     currentReserves;
 
@@ -404,12 +422,20 @@ export function useFinanceDashboard() {
   const accountBalance = useMemo(() => {
     return accounts
       .filter((account) => account.active)
-      .reduce(
-        (total, account) =>
-          total + parseAmount(account.initialBalance),
-        0
-      );
+      .reduce((total, account) => total + getAccountBalance(account), 0);
   }, [accounts]);
+
+  const reserveBalance = useMemo(
+    () =>
+      reserves
+        .filter((reserve) => reserve.status === "Ativa")
+        .reduce(
+          (total, reserve) =>
+            total + calculateReserveBalance(reserve, reserveMovements),
+          0
+        ),
+    [reserves, reserveMovements]
+  );
 
   // =====================================================
   // HISTÓRICO MENSAL
@@ -448,7 +474,7 @@ export function useFinanceDashboard() {
         )
       );
 
-      const investments = sumTransactions(
+      const investments = sumSettledTransactions(
         monthTransactions.filter(
           (transaction) =>
             transaction.type === "Investimento" ||
@@ -456,7 +482,7 @@ export function useFinanceDashboard() {
         )
       );
 
-      const reserves = sumTransactions(
+      const reserves = sumSettledTransactions(
         monthTransactions.filter(
           (transaction) => transaction.type === "Reserva"
         )
@@ -465,6 +491,12 @@ export function useFinanceDashboard() {
       const confirmedExpenses = sumSettledTransactions(
         monthTransactions.filter(
           (transaction) => transaction.type === "Despesa"
+        )
+      );
+
+      const confirmedRevenue = sumSettledTransactions(
+        monthTransactions.filter(
+          (transaction) => transaction.type === "Receita"
         )
       );
 
@@ -481,8 +513,8 @@ export function useFinanceDashboard() {
         investments,
         reserves,
         balance:
-          revenue -
-          expenses -
+          confirmedRevenue -
+          confirmedExpenses -
           investments -
           reserves,
         confirmedExpenses,
@@ -901,6 +933,7 @@ export function useFinanceDashboard() {
     expenseVariation,
 
     accountBalance,
+    reserveBalance,
 
     monthlyData,
     futureMonths,

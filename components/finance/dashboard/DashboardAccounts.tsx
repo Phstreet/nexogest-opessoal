@@ -3,21 +3,19 @@
 
 import Link from "next/link";
 import type { Account } from "@/lib/finance/types";
+import { getAccountBalance } from "@/lib/finance/accounts";
 
 type DashboardAccountsProps = {
   accounts: Account[];
   accountBalance: number;
+  reserveBalance: number;
   money: (value: number) => string;
 };
-
-function parseAmount(value: unknown): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 export default function DashboardAccounts({
   accounts,
   accountBalance,
+  reserveBalance,
   money,
 }: DashboardAccountsProps) {
   const activeAccounts = accounts
@@ -30,7 +28,7 @@ export default function DashboardAccounts({
         <div>
           <span className="section-eyebrow">CONTAS FINANCEIRAS</span>
           <h3>Contas cadastradas</h3>
-          <p>Resumo dos saldos iniciais informados.</p>
+          <p>Saldos atualizados pelas movimentações efetivadas.</p>
         </div>
 
         <Link href="/financeiro/contas" className="panel-link">
@@ -39,8 +37,13 @@ export default function DashboardAccounts({
       </div>
 
       <div className="account-total">
-        <span>Total de saldos iniciais</span>
+        <span>Saldo total das contas ativas</span>
         <strong>{money(accountBalance)}</strong>
+      </div>
+
+      <div className="account-total">
+        <span>Saldo total das reservas ativas</span>
+        <strong>{money(reserveBalance)}</strong>
       </div>
 
       {activeAccounts.length > 0 ? (
@@ -55,7 +58,7 @@ export default function DashboardAccounts({
               </div>
 
               <strong className="account-value">
-                {money(parseAmount(account.initialBalance))}
+                {money(getAccountBalance(account))}
               </strong>
             </div>
           ))}
@@ -64,7 +67,7 @@ export default function DashboardAccounts({
         <div className="empty-state compact">
           <strong>Nenhuma conta cadastrada</strong>
           <p>
-            Cadastre suas contas para visualizar os saldos iniciais.
+            Cadastre suas contas para acompanhar os saldos atualizados.
           </p>
         </div>
       )}

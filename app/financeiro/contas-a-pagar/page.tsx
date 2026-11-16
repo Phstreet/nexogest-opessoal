@@ -3,12 +3,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type Transaction = {
   id: number;
   description: string;
-  type: "Receita" | "Despesa" | "Transferência" | "Aplicação" | "Reserva";
+  type: "Receita" | "Despesa" | "Transferência" | "Investimento" | "Aplicação" | "Reserva";
   amount: number;
+  settledAmount?: number;
   date?: string;
   category?: string;
   subcategory?: string;
@@ -29,7 +31,6 @@ type FilterType =
   | "Atrasadas"
   | "Canceladas";
 
-const STORAGE_KEY = "nexo_transactions";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -57,9 +58,25 @@ function getToday() {
   return `${year}-${month}-${day}`;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim().replace(/\s/g, "");
+  if (!normalized) return NaN;
+  return Number(normalized.includes(",")
+    ? normalized.replace(/\./g, "").replace(",", ".")
+    : normalized);
+}
+
 function isPaid(status?: string) {
   return status === "Pago" || status === "Recebida";
 }
+
+function getSettledAmount(transaction: Transaction) {
+  const amount = Math.max(0, Number(transaction.amount) || 0);
+  if (transaction.settledAmount !== undefined) return Math.min(amount, Math.max(0, Number(transaction.settledAmount) || 0));
+  return isPaid(transaction.status) ? amount : 0;
+}
+function getOpenAmount(transaction: Transaction) { return Math.max(0, Number(transaction.amount || 0) - getSettledAmount(transaction)); }
+function isPartiallyPaid(transaction: Transaction) { return getSettledAmount(transaction) > 0 && getOpenAmount(transaction) > 0; }
 
 function isCancelled(status?: string) {
   return status === "Cancelada";
@@ -68,7 +85,7 @@ function isCancelled(status?: string) {
 function isOverdue(transaction: Transaction) {
   if (
     !transaction.date ||
-    isPaid(transaction.status) ||
+    getOpenAmount(transaction) <= 0 ||
     isCancelled(transaction.status)
   ) {
     return false;
@@ -81,6 +98,7 @@ function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
   if (isPaid(transaction.status)) return "Pago";
   if (isOverdue(transaction)) return "Atrasada";
+  if (isPartiallyPaid(transaction)) return "Paga parcialmente";
 
   return transaction.status || "Pendente";
 }
@@ -93,10 +111,7 @@ export default function ContasAPagarPage() {
 
   const loadTransactions = useCallback(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-
-      setTransactions(Array.isArray(parsed) ? parsed : []);
+      setTransactions(getTransactions());
     } catch {
       setTransactions([]);
     } finally {
@@ -107,17 +122,11 @@ export default function ContasAPagarPage() {
   useEffect(() => {
     loadTransactions();
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
+    return subscribeFinanceUpdates((key) => {
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
         loadTransactions();
       }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
+    });
   }, [loadTransactions]);
 
   const expenses = useMemo(
@@ -133,16 +142,14 @@ export default function ContasAPagarPage() {
   const totalOpen = useMemo(
     () =>
       activeExpenses
-        .filter((item) => !isPaid(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeExpenses]
   );
 
   const totalPaid = useMemo(
     () =>
       activeExpenses
-        .filter((item) => isPaid(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getSettledAmount(item), 0),
     [activeExpenses]
   );
 
@@ -150,7 +157,7 @@ export default function ContasAPagarPage() {
     () =>
       activeExpenses
         .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeExpenses]
   );
 
@@ -177,7 +184,7 @@ export default function ContasAPagarPage() {
         let matchesFilter = true;
 
         if (filter === "Em aberto") {
-          matchesFilter = !isPaid(item.status) && !isCancelled(item.status);
+          matchesFilter = getOpenAmount(item) > 0 && !isCancelled(item.status);
         }
 
         if (filter === "Pagas") {
@@ -204,20 +211,41 @@ export default function ContasAPagarPage() {
 
   function updateStatus(id: number, newStatus: string) {
     const updatedTransactions = transactions.map((item) =>
-      item.id === id ? { ...item, status: newStatus } : item
+      item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Pago" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
-    setTransactions(updatedTransactions);
-
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updatedTransactions)
-      );
-    } catch {
-      alert("Não foi possível salvar a alteração.");
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
       loadTransactions();
+      return;
     }
+
+    setTransactions(updatedTransactions);
+  }
+
+  function registerPartialPayment(item: Transaction) {
+    const openAmount = getOpenAmount(item);
+    const entered = window.prompt(
+      `Informe quanto foi pago agora. Saldo restante: ${formatCurrency(openAmount)}`,
+      ""
+    );
+    if (entered === null) return;
+    const payment = parseCurrencyInput(entered);
+    if (!Number.isFinite(payment) || payment <= 0 || payment > openAmount) {
+      alert("Informe um valor maior que zero e menor ou igual ao saldo pendente.");
+      return;
+    }
+    const settledAmount = getSettledAmount(item) + payment;
+    const nextStatus = settledAmount >= Number(item.amount || 0) ? "Pago" : "Paga parcialmente";
+    const updatedTransactions = transactions.map((transaction) =>
+      transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
+    );
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível registrar o pagamento. Os dados anteriores foram preservados.");
+      loadTransactions();
+      return;
+    }
+    setTransactions(updatedTransactions);
   }
 
   return (
@@ -388,7 +416,8 @@ export default function ContasAPagarPage() {
                       <td>{item.account || "Não informada"}</td>
 
                       <td className="payable-amount">
-                        {formatCurrency(Number(item.amount || 0))}
+                        <span>{formatCurrency(Number(item.amount || 0))}</span>
+                        {isPartiallyPaid(item) && <small style={{ display: "block", color: "#a8c7b3", marginTop: 4 }}>Pago: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
                       </td>
 
                       <td>
@@ -408,15 +437,23 @@ export default function ContasAPagarPage() {
                       </td>
 
                       <td>
-                        {!isPaid(item.status) &&
+                        {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
+                          <>
                           <button
+                            type="button"
+                            className="payable-action-button"
+                            onClick={() => registerPartialPayment(item)}
+                          >
+                            Registrar pagamento parcial
+                          </button>
+<button
                             type="button"
                             className="payable-action-button"
                             onClick={() => {
                               const confirmed = window.confirm(
-                                `Confirma o pagamento de "${item.description}" no valor de ${formatCurrency(
-                                  Number(item.amount || 0)
+                                `Confirma a quitação do saldo restante de "${item.description}" no valor de ${formatCurrency(
+                                  getOpenAmount(item)
                                 )}?`
                               );
 
@@ -427,6 +464,7 @@ export default function ContasAPagarPage() {
                           >
                             Marcar como pago
                           </button>
+                          </>
                         ) : isPaid(item.status) ? (
                           <button
                             type="button"
@@ -464,10 +502,7 @@ export default function ContasAPagarPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredExpenses.reduce(
-                  (total, item) => total + Number(item.amount || 0),
-                  0
-                )
+                filteredExpenses.reduce((total, item) => total + getOpenAmount(item), 0)
               )}
             </strong>
           </span>
