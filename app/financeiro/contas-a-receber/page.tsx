@@ -8,7 +8,7 @@ import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STO
 type Transaction = {
   id: number;
   description: string;
-  type: "Receita" | "Despesa" | "Transferência" | "Aplicação" | "Reserva";
+  type: "Receita" | "Despesa" | "Transferência" | "Investimento" | "Aplicação" | "Reserva";
   amount: number;
   settledAmount?: number;
   date?: string;
