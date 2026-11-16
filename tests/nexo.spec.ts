@@ -471,6 +471,34 @@ test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
     await expect(account.getByText(/750,00/)).toBeVisible();
   });
 
+  test("deve refletir somente o valor parcialmente pago no saldo da conta", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 92009,
+        name: "Conta pagamento parcial",
+        institution: "Banco",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92010,
+        type: "Despesa",
+        description: "Despesa parcialmente paga",
+        amount: 500,
+        settledAmount: 200,
+        account: "Conta pagamento parcial",
+        date: "2026-11-16",
+        status: "Paga parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const account = page.locator(".accounts-item").filter({ hasText: "Conta pagamento parcial" });
+    await expect(account.getByText(/800,00/)).toBeVisible();
+  });
+
   test("deve aplicar a alteração do saldo inicial ao editar uma reserva", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("nexo_reserves", JSON.stringify([{
