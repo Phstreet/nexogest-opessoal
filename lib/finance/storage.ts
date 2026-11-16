@@ -1,4 +1,3 @@
-
 /**
  * NEXO — Armazenamento central do módulo financeiro
  * Arquivo: lib/finance/storage.ts
@@ -45,6 +44,13 @@ const BACKUP_PREFIX = "nexo_finance_backup_";
 type RawStorageResult = {
   exists: boolean;
   raw: string | null;
+  error: string | null;
+};
+
+export type SafeTransactionsLoadResult = {
+  transactions: Transaction[];
+  invalidRecords: unknown[];
+  safeToSave: boolean;
   error: string | null;
 };
 
@@ -133,10 +139,21 @@ function createStorageBackup(
 
     const backupKey = `${BACKUP_PREFIX}${key}`;
 
+    const serializedBackup = JSON.stringify(backup);
+
     window.localStorage.setItem(
       backupKey,
-      JSON.stringify(backup)
+      serializedBackup
     );
+
+    // Mantém compatibilidade com a chave de backup utilizada
+    // anteriormente pela página de lançamentos.
+    if (key === FINANCE_STORAGE_KEYS.transactions) {
+      window.localStorage.setItem(
+        "nexo_transactions_backup",
+        serializedBackup
+      );
+    }
 
     return true;
   } catch (error) {
@@ -727,6 +744,126 @@ export function getTransactions(): Transaction[] {
     FINANCE_STORAGE_KEYS.transactions,
     isTransaction
   );
+}
+
+/**
+ * Carrega os lançamentos financeiros sem ocultar erros de leitura,
+ * JSON corrompido ou estruturas incompatíveis.
+ *
+ * Registros inválidos são preservados no backup original e separados
+ * em uma chave auxiliar antes de liberar novas gravações.
+ */
+export function loadTransactionsSafely(): SafeTransactionsLoadResult {
+  const key = FINANCE_STORAGE_KEYS.transactions;
+  const result = readRawStorage(key);
+
+  if (result.error) {
+    return {
+      transactions: [],
+      invalidRecords: [],
+      safeToSave: false,
+      error:
+        "Não foi possível acessar os lançamentos financeiros. Os dados originais foram preservados.",
+    };
+  }
+
+  if (!result.exists || result.raw === null) {
+    return {
+      transactions: [],
+      invalidRecords: [],
+      safeToSave: true,
+      error: null,
+    };
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(result.raw);
+  } catch (error) {
+    console.error(
+      "[NEXO] Não foi possível interpretar os lançamentos financeiros.",
+      error
+    );
+
+    return {
+      transactions: [],
+      invalidRecords: [],
+      safeToSave: false,
+      error:
+        "Os dados financeiros estão em formato inválido. O conteúdo original foi preservado e nenhuma gravação automática será realizada.",
+    };
+  }
+
+  if (!Array.isArray(parsed)) {
+    return {
+      transactions: [],
+      invalidRecords: [],
+      safeToSave: false,
+      error:
+        "A estrutura dos lançamentos financeiros não é uma lista válida. Os dados originais foram preservados.",
+    };
+  }
+
+  const transactions = parsed.filter(isTransaction);
+  const invalidRecords = parsed.filter(
+    (item) => !isTransaction(item)
+  );
+
+  if (invalidRecords.length === 0) {
+    return {
+      transactions,
+      invalidRecords: [],
+      safeToSave: true,
+      error: null,
+    };
+  }
+
+  // O backup original precisa existir antes de separar os inválidos.
+  const backupCreated = createStorageBackup(
+    key,
+    result.raw
+  );
+
+  if (!backupCreated) {
+    return {
+      transactions,
+      invalidRecords,
+      safeToSave: false,
+      error:
+        "Existem registros inválidos e não foi possível criar o backup de segurança. As gravações foram bloqueadas.",
+    };
+  }
+
+  try {
+    window.localStorage.setItem(
+      "nexo_transactions_invalid",
+      JSON.stringify({
+        createdAt: new Date().toISOString(),
+        records: invalidRecords,
+      })
+    );
+  } catch (error) {
+    console.error(
+      "[NEXO] Não foi possível preservar os registros inválidos.",
+      error
+    );
+
+    return {
+      transactions,
+      invalidRecords,
+      safeToSave: false,
+      error:
+        "O backup original foi preservado, mas não foi possível separar os registros inválidos. As gravações foram bloqueadas.",
+    };
+  }
+
+  return {
+    transactions,
+    invalidRecords,
+    safeToSave: true,
+    error: null,
+  };
 }
 
 export function getAccounts(): Account[] {

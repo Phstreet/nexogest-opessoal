@@ -1,8 +1,15 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
+
+import type { Transaction } from "@/lib/finance/types";
+
+import {
+  FINANCE_STORAGE_KEYS,
+  loadTransactionsSafely,
+  saveTransactions,
+} from "@/lib/finance/storage";
 
 type FormMovementType =
   | "Receita"
@@ -12,33 +19,7 @@ type FormMovementType =
 
 type MovementType = FormMovementType | "Aplicação" | "Reserva";
 
-type Transaction = {
-  id: number;
-  description: string;
-  type: MovementType;
-  amount: number;
-  settledAmount?: number;
-  date?: string;
-  category?: string;
-  subcategory?: string;
-  account?: string;
-  destinationAccount?: string;
-  paymentMethod?: string;
-  status?: string;
-  recurrence?: string;
-  reserveType?: string;
-  investment?: string;
-  institution?: string;
-};
-
-type LoadResult = {
-  transactions: Transaction[];
-  invalidRecords: unknown[];
-  safeToSave: boolean;
-  error: string | null;
-};
-
-const STORAGE_KEY = "nexo_transactions";
+const STORAGE_KEY = FINANCE_STORAGE_KEYS.transactions;
 const BACKUP_KEY = "nexo_transactions_backup";
 const INVALID_KEY = "nexo_transactions_invalid";
 
@@ -384,6 +365,30 @@ function isValidTransaction(value: unknown): value is Transaction {
     return false;
   }
 
+  const optionalStringFields = [
+    "category",
+    "subcategory",
+    "account",
+    "destinationAccount",
+    "paymentMethod",
+    "status",
+    "recurrence",
+    "reserveType",
+    "investment",
+    "institution",
+    "createdAt",
+    "updatedAt",
+  ];
+
+  for (const field of optionalStringFields) {
+    if (
+      item[field] !== undefined &&
+      typeof item[field] !== "string"
+    ) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -437,85 +442,6 @@ function createBackup(rawData: string) {
     BACKUP_KEY,
     JSON.stringify(backup)
   );
-}
-
-function loadStoredTransactions(): LoadResult {
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) {
-      return {
-        transactions: [],
-        invalidRecords: [],
-        safeToSave: true,
-        error: null,
-      };
-    }
-
-    const parsed: unknown = JSON.parse(saved);
-
-    if (!Array.isArray(parsed)) {
-      return {
-        transactions: [],
-        invalidRecords: [],
-        safeToSave: false,
-        error:
-          "O formato dos dados financeiros não é reconhecido. Os dados originais foram preservados.",
-      };
-    }
-
-    const validRecords = parsed.filter(isValidTransaction);
-    const invalidRecords = parsed.filter(
-      (item) => !isValidTransaction(item)
-    );
-
-    if (invalidRecords.length > 0) {
-      try {
-        window.localStorage.setItem(
-          INVALID_KEY,
-          JSON.stringify({
-            createdAt: new Date().toISOString(),
-            records: invalidRecords,
-          })
-        );
-
-        createBackup(saved);
-      } catch (backupError) {
-        console.error(
-          "Não foi possível proteger os registros inválidos.",
-          backupError
-        );
-
-        return {
-          transactions: validRecords,
-          invalidRecords,
-          safeToSave: false,
-          error:
-            "Existem lançamentos que precisam ser preservados, mas não foi possível criar o backup. Nenhuma gravação automática será realizada.",
-        };
-      }
-    }
-
-    return {
-      transactions: validRecords,
-      invalidRecords,
-      safeToSave: true,
-      error: null,
-    };
-  } catch (error) {
-    console.error(
-      "Não foi possível carregar os lançamentos.",
-      error
-    );
-
-    return {
-      transactions: [],
-      invalidRecords: [],
-      safeToSave: false,
-      error:
-        "Não foi possível interpretar os dados salvos. O conteúdo original foi preservado e não será sobrescrito automaticamente.",
-    };
-  }
 }
 
 function getNextTransactionId(transactions: Transaction[]) {
@@ -574,7 +500,7 @@ export default function Page() {
   useEffect(() => {
     setDate(localDate());
 
-    const result = loadStoredTransactions();
+    const result = loadTransactionsSafely();
 
     setTransactions(result.transactions);
     setInvalidCount(result.invalidRecords.length);
@@ -591,19 +517,20 @@ export default function Page() {
     if (!loaded || !safeToSave) return;
 
     try {
-      const currentData =
-        window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+      const saved = saveTransactions(transactions);
 
-      // A cópia anterior precisa ser salva antes de alterar os dados.
-      createBackup(currentData);
+      if (!saved) {
+        setStorageError(
+          "Não foi possível salvar os lançamentos. A camada de armazenamento bloqueou a gravação para proteger os dados existentes."
+        );
+        return;
+      }
 
-      // A gravação principal só acontece depois do backup.
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(transactions)
+      setBackupAvailable(
+        Boolean(window.localStorage.getItem(BACKUP_KEY))
       );
 
-      setBackupAvailable(true);
+      setStorageError(null);
     } catch (error) {
       console.error(
         "Não foi possível salvar os lançamentos com segurança.",
@@ -611,7 +538,7 @@ export default function Page() {
       );
 
       setStorageError(
-        "Falha ao salvar os dados. A gravação foi interrompida para evitar perda das informações. Verifique o espaço disponível no navegador."
+        "Falha ao salvar os dados. A gravação foi interrompida para evitar perda das informações."
       );
     }
   }, [transactions, loaded, safeToSave]);
