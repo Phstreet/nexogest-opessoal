@@ -153,7 +153,9 @@ export default function HabitosPage() {
   const today = getLocalDate();
 
   const loadData = useCallback(() => {
-    setHabits(loadHabits());
+    const result = loadHabits();
+    setHabits(result.habits);
+    setStorageCanSave(result.safeToSave);
     setLoaded(true);
   }, []);
 
@@ -174,7 +176,7 @@ export default function HabitosPage() {
   }, [loadData]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !storageCanSave) return;
 
     try {
       localStorage.setItem(HABITS_KEY, JSON.stringify(habits));
