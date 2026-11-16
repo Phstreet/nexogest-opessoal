@@ -47,8 +47,7 @@ jobs:
               ...(pkg.overrides?.sucrase || {}),
               minimatch: "11.0.8"
             },
-            "glob@10.4.5": "14.0.6",
-            "minimatch@3.1.5": {
+              "minimatch@3.1.5": {
               "brace-expansion": "1.1.21"
             }
           };
