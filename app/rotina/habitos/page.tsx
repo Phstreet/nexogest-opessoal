@@ -74,8 +74,10 @@ type HabitsLoadResult = {
 };
 
 function loadHabits(): HabitsLoadResult {
+  let saved: string | null = null;
+
   try {
-    const saved = localStorage.getItem(HABITS_KEY);
+    saved = localStorage.getItem(HABITS_KEY);
 
     if (saved === null) {
       return { habits: [], safeToSave: true };
@@ -93,6 +95,16 @@ function loadHabits(): HabitsLoadResult {
 
     return { habits: [], safeToSave: false };
   } catch (error) {
+    if (saved !== null) {
+      try {
+        if (localStorage.getItem(HABITS_BACKUP_KEY) === null) {
+          localStorage.setItem(HABITS_BACKUP_KEY, saved);
+        }
+      } catch (backupError) {
+        console.error("Não foi possível criar o backup dos hábitos:", backupError);
+      }
+    }
+
     console.error("Não foi possível carregar os hábitos. Os dados originais foram preservados.", error);
     return { habits: [], safeToSave: false };
   }
