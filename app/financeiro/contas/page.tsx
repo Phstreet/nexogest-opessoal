@@ -87,6 +87,7 @@ export default function ContasFinanceirasPage() {
     } catch {
       console.error("Não foi possível carregar as contas.");
     }
+  }, []);
 
   const activeAccounts = useMemo(
     () => accounts.filter((account) => account.active),
