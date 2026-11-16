@@ -470,6 +470,11 @@ export default function PlanejamentoFinanceiroPage() {
     event.preventDefault();
     setBudgetError("");
 
+    if (!storageCanSave) {
+      setBudgetError("O armazenamento está protegido. Verifique os dados e os backups antes de salvar alterações.");
+      return;
+    }
+
     const category = budgetForm.category.trim();
     const limit = parseAmount(budgetForm.limit);
 
@@ -558,6 +563,11 @@ export default function PlanejamentoFinanceiroPage() {
   function saveGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setGoalError("");
+
+    if (!storageCanSave) {
+      setGoalError("O armazenamento está protegido. Verifique os dados e os backups antes de salvar alterações.");
+      return;
+    }
 
     const name = goalForm.name.trim();
     const target = parseAmount(goalForm.target);
