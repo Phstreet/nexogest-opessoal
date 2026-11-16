@@ -60,7 +60,6 @@ type GoalForm = {
   category: string;
 };
 
-const TRANSACTIONS_KEY = "nexo_transactions";
 const BUDGETS_KEY = "nexo_planning_budgets";
 const GOALS_KEY = "nexo_planning_goals";
 
