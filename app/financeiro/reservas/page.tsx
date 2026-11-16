@@ -48,10 +48,6 @@ type ReserveMovement = {
   createdAt: string;
 };
 
-const RESERVES_KEY = "nexo_reserves";
-const MOVEMENTS_KEY = "nexo_reserve_movements";
-const ACCOUNTS_KEY = "nexo_accounts";
-
 const categories: ReserveCategory[] = [
   "Emergência",
   "Objetivo pessoal",
