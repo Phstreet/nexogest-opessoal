@@ -12,11 +12,6 @@ type DashboardAccountsProps = {
   money: (value: number) => string;
 };
 
-function parseAmount(value: unknown): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export default function DashboardAccounts({
   accounts,
   accountBalance,
