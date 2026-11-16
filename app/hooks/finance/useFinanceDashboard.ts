@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   Account,
   Transaction,
+  Reserve,
+  ReserveMovement,
 } from "@/lib/finance/types";
 
 import {
@@ -17,7 +19,7 @@ import {
   FINANCE_STORAGE_KEYS,
 } from "@/lib/finance/storage";
 import { getAccountBalance } from "@/lib/finance/accounts";
-import { getActiveReserveBalance } from "@/lib/finance/reserves";
+import { calculateReserveBalance } from "@/lib/finance/reserves";
 
 // =====================================================
 // TIPOS
@@ -213,8 +215,8 @@ function sumSettledTransactions(
 export function useFinanceDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [reserves, setReserves] = useState(getReserves);
-  const [reserveMovements, setReserveMovements] = useState(getReserveMovements);
+  const [reserves, setReserves] = useState<Reserve[]>([]);
+  const [reserveMovements, setReserveMovements] = useState<ReserveMovement[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [period, setPeriod] = useState<"3" | "6">("6");
 
@@ -420,7 +422,14 @@ export function useFinanceDashboard() {
   }, [accounts, transactions]);
 
   const reserveBalance = useMemo(
-    () => getActiveReserveBalance(),
+    () =>
+      reserves
+        .filter((reserve) => reserve.status === "Ativa")
+        .reduce(
+          (total, reserve) =>
+            total + calculateReserveBalance(reserve, reserveMovements),
+          0
+        ),
     [reserves, reserveMovements]
   );
 
