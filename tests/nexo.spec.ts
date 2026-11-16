@@ -347,6 +347,50 @@ test.describe("Rotina - Cadastro de hábitos", () => {
   });
 });
 
+test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
+  test("deve calcular corretamente o saldo restante de uma despesa parcialmente paga", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92001,
+        type: "Despesa",
+        description: "Despesa parcialmente paga",
+        amount: 1000,
+        settledAmount: 400,
+        date: "2026-12-20",
+        category: "Moradia",
+        status: "Paga parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas-a-pagar");
+
+    await expect(page.getByText("R$ 600,00").first()).toBeVisible();
+    await expect(page.getByText(/Pago:.*R\$ 400,00.*Pendente:.*R\$ 600,00/)).toBeVisible();
+    await expect(page.getByText("Paga parcialmente")).toBeVisible();
+  });
+
+  test("deve calcular corretamente o saldo restante de uma receita parcialmente recebida", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92002,
+        type: "Receita",
+        description: "Receita parcialmente recebida",
+        amount: 1000,
+        settledAmount: 400,
+        date: "2026-12-20",
+        category: "Serviços",
+        status: "Recebida parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas-a-receber");
+
+    await expect(page.getByText("R$ 600,00").first()).toBeVisible();
+    await expect(page.getByText(/Recebido:.*R\$ 400,00.*Pendente:.*R\$ 600,00/)).toBeVisible();
+    await expect(page.getByText("Recebida parcialmente")).toBeVisible();
+  });
+});
+
 test.describe("Financeiro - Proteção de dados", () => {
   test("deve carregar a página financeira sem erro de JavaScript", async ({ page }) => {
     const errors: string[] = [];
