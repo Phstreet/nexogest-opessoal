@@ -27,8 +27,8 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         launchOptions: {
           // Permite usar o Chrome já instalado no ambiente local.
-          // Em outros ambientes, informe PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-          // ou remova a variável para usar o Chromium instalado pelo Playwright.
+          // Em outros ambientes, ajuste PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+          // para o caminho do navegador instalado.
           executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || "/usr/local/bin/google-chrome"
         }
       }
