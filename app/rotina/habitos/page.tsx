@@ -442,7 +442,7 @@ export default function HabitosPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-field full-field">
-              <label>Nome do hábito *</label>
+              <label htmlFor="habit-name">Nome do hábito *</label>
               <input
                 type="text"
                 value={name}
