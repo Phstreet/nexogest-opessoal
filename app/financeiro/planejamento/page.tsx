@@ -13,6 +13,7 @@ type TransactionType =
   | "Receita"
   | "Despesa"
   | "Transferência"
+  | "Investimento"
   | "Aplicação"
   | "Reserva";
 
