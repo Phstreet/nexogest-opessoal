@@ -88,8 +88,8 @@ function isOverdue(transaction: Transaction) {
 function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
   if (isReceived(transaction.status)) return "Recebida";
-  if (isPartiallyReceived(transaction)) return "Recebida parcialmente";
   if (isOverdue(transaction)) return "Atrasada";
+  if (isPartiallyReceived(transaction)) return "Recebida parcialmente";
 
   return transaction.status || "Pendente";
 }
@@ -216,8 +216,8 @@ export default function ContasAReceberPage() {
 
   function markAsReceived(item: Transaction) {
     const confirmed = window.confirm(
-      `Confirma o recebimento de "${item.description}" no valor de ${formatCurrency(
-        Number(item.amount || 0)
+      `Confirma o recebimento do saldo restante de "${item.description}" no valor de ${formatCurrency(
+        getOpenAmount(item)
       )}?`
     );
 
