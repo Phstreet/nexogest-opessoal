@@ -9,6 +9,7 @@ type Transaction = {
   description: string;
   type: "Receita" | "Despesa" | "Transferência" | "Aplicação" | "Reserva";
   amount: number;
+  settledAmount?: number;
   date?: string;
   category?: string;
   subcategory?: string;
@@ -59,6 +60,14 @@ function isReceived(status?: string) {
   return status === "Recebida";
 }
 
+function getSettledAmount(transaction: Transaction) {
+  const amount = Math.max(0, Number(transaction.amount) || 0);
+  if (transaction.settledAmount !== undefined) return Math.min(amount, Math.max(0, Number(transaction.settledAmount) || 0));
+  return isReceived(transaction.status) ? amount : 0;
+}
+function getOpenAmount(transaction: Transaction) { return Math.max(0, Number(transaction.amount || 0) - getSettledAmount(transaction)); }
+function isPartiallyReceived(transaction: Transaction) { return getSettledAmount(transaction) > 0 && getOpenAmount(transaction) > 0; }
+
 function isCancelled(status?: string) {
   return status === "Cancelada";
 }
@@ -66,7 +75,7 @@ function isCancelled(status?: string) {
 function isOverdue(transaction: Transaction) {
   if (
     !transaction.date ||
-    isReceived(transaction.status) ||
+    getOpenAmount(transaction) <= 0 ||
     isCancelled(transaction.status)
   ) {
     return false;
@@ -78,6 +87,7 @@ function isOverdue(transaction: Transaction) {
 function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
   if (isReceived(transaction.status)) return "Recebida";
+  if (isPartiallyReceived(transaction)) return "Recebida parcialmente";
   if (isOverdue(transaction)) return "Atrasada";
 
   return transaction.status || "Pendente";
@@ -130,16 +140,14 @@ export default function ContasAReceberPage() {
   const totalOpen = useMemo(
     () =>
       activeRevenues
-        .filter((item) => !isReceived(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeRevenues]
   );
 
   const totalReceived = useMemo(
     () =>
       activeRevenues
-        .filter((item) => isReceived(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getSettledAmount(item), 0),
     [activeRevenues]
   );
 
@@ -147,7 +155,7 @@ export default function ContasAReceberPage() {
     () =>
       activeRevenues
         .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeRevenues]
   );
 
@@ -175,7 +183,7 @@ export default function ContasAReceberPage() {
 
         if (filter === "Em aberto") {
           matchesFilter =
-            !isReceived(item.status) && !isCancelled(item.status);
+            getOpenAmount(item) > 0 && !isCancelled(item.status);
         }
 
         if (filter === "Recebidas") {
@@ -202,7 +210,7 @@ export default function ContasAReceberPage() {
 
   function updateStatus(id: number, newStatus: string) {
     const updatedTransactions = transactions.map((item) =>
-      item.id === id ? { ...item, status: newStatus } : item
+      item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Recebida" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
     try {
@@ -407,7 +415,8 @@ export default function ContasAReceberPage() {
                       <td>{item.account || "Não informada"}</td>
 
                       <td className="receivable-amount">
-                        {formatCurrency(Number(item.amount || 0))}
+                        <span>{formatCurrency(Number(item.amount || 0))}</span>
+                        {isPartiallyReceived(item) && <small style={{ display: "block", color: "#a8c7b3", marginTop: 4 }}>Recebido: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
                       </td>
 
                       <td>
@@ -427,7 +436,7 @@ export default function ContasAReceberPage() {
                       </td>
 
                       <td>
-                        {!isReceived(item.status) &&
+                        {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
                           <button
                             type="button"
@@ -466,11 +475,7 @@ export default function ContasAReceberPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredRevenues.reduce(
-                  (total, item) =>
-                    total + Number(item.amount || 0),
-                  0
-                )
+                filteredRevenues.reduce((total, item) => total + getOpenAmount(item), 0)
               )}
             </strong>
           </span>
