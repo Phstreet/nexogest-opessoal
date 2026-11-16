@@ -217,13 +217,17 @@ test.describe("Financeiro - Integração de contas e transferências", () => {
 
     await page
       .locator(".finance-field")
-      .filter({ hasText: "Conta de origem" })
+      .filter({
+        has: page.locator("label", { hasText: /^Conta de origem$/ })
+      })
       .locator("select")
       .selectOption({ label: "Conta de origem NEXO" });
 
     await page
       .locator(".finance-field")
-      .filter({ hasText: "Conta de destino" })
+      .filter({
+        has: page.locator("label", { hasText: /^Conta de destino$/ })
+      })
       .locator("select")
       .selectOption({ label: "Conta de destino NEXO" });
 
