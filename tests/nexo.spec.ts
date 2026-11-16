@@ -471,6 +471,75 @@ test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
     await expect(account.getByText(/750,00/)).toBeVisible();
   });
 
+  test("deve refletir o recebimento parcial no saldo da conta", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 92011,
+        name: "Conta recebimento parcial",
+        institution: "Banco",
+        type: "Conta corrente",
+        initialBalance: 500,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92012,
+        type: "Receita",
+        description: "Receita parcialmente recebida",
+        amount: 300,
+        settledAmount: 125,
+        account: "Conta recebimento parcial",
+        date: "2026-11-16",
+        status: "Recebida parcialmente"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const account = page.locator(".accounts-item").filter({ hasText: "Conta recebimento parcial" });
+    await expect(account.getByText(/625,00/)).toBeVisible();
+  });
+
+  test("deve atualizar os saldos de origem e destino após uma transferência efetivada", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([
+        {
+          id: 92013,
+          name: "Conta origem transferência",
+          institution: "Banco A",
+          type: "Conta corrente",
+          initialBalance: 1000,
+          createdAt: "2026-11-16",
+          active: true
+        },
+        {
+          id: 92014,
+          name: "Conta destino transferência",
+          institution: "Banco B",
+          type: "Conta corrente",
+          initialBalance: 300,
+          createdAt: "2026-11-16",
+          active: true
+        }
+      ]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 92015,
+        type: "Transferência",
+        description: "Transferência efetivada",
+        amount: 250,
+        account: "Conta origem transferência",
+        destinationAccount: "Conta destino transferência",
+        date: "2026-11-16",
+        status: "Realizada"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const source = page.locator(".accounts-item").filter({ hasText: "Conta origem transferência" });
+    const destination = page.locator(".accounts-item").filter({ hasText: "Conta destino transferência" });
+    await expect(source.getByText(/750,00/)).toBeVisible();
+    await expect(destination.getByText(/550,00/)).toBeVisible();
+  });
+
   test("deve refletir somente o valor parcialmente pago no saldo da conta", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("nexo_accounts", JSON.stringify([{
