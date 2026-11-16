@@ -64,15 +64,6 @@ function parseAmount(value: string) {
   return Number(normalized);
 }
 
-function localDate() {
-  const date = new Date();
-
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
 
 function formatDate(value: string) {
   return new Date(value.length === 10 ? value + "T12:00:00" : value).toLocaleDateString("pt-BR");
@@ -169,7 +160,6 @@ export default function ContasFinanceirasPage() {
         institution,
         type,
         initialBalance: parsedBalance,
-        createdAt: localDate(),
         active: true,
       });
       setAccounts(getAccounts());
