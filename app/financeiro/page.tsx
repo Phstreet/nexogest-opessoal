@@ -558,7 +558,11 @@ export default function Page() {
     // Mantém acessíveis as contas antigas usadas em lançamentos,
     // sem oferecer contas cadastradas que estejam inativas.
     const legacyNames = transactions
-      .flatMap((item) => [item.account, item.destinationAccount])
+      .flatMap((item) =>
+        item.type === "Transferência"
+          ? [item.account, item.destinationAccount]
+          : [item.account]
+      )
       .filter(
         (name): name is string =>
           Boolean(name) && !registeredNames.has(name as string)
