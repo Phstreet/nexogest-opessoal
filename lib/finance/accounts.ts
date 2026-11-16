@@ -30,9 +30,7 @@ export function getAccountById(
 // =====================================================
 
 function generateAccountId(accounts: Account[]): number {
-  const existingIds = new Set(
-    accounts.map((account) => account.id)
-  );
+  const existingIds = new Set(accounts.map((account) => account.id));
 
   let id = Date.now();
 
@@ -51,7 +49,6 @@ export function createAccount(
   data: Omit<Account, "id" | "createdAt">
 ): Account {
   const accounts = getAccounts();
-
   const normalizedName = data.name.trim().toLowerCase();
 
   if (!normalizedName) {
@@ -308,9 +305,7 @@ function getEffectiveAmount(
     }
 
     if (status === "recebida parcialmente") {
-      const settled = Number(
-        transaction.settledAmount || 0
-      );
+      const settled = Number(transaction.settledAmount || 0);
 
       return Number.isFinite(settled)
         ? Math.min(Math.max(settled, 0), amount)
@@ -329,9 +324,7 @@ function getEffectiveAmount(
     }
 
     if (status === "paga parcialmente") {
-      const settled = Number(
-        transaction.settledAmount || 0
-      );
+      const settled = Number(transaction.settledAmount || 0);
 
       return Number.isFinite(settled)
         ? Math.min(Math.max(settled, 0), amount)
@@ -339,6 +332,20 @@ function getEffectiveAmount(
     }
 
     return 0;
+  }
+
+  // Investimentos só reduzem o saldo da conta
+  // quando possuem status explícito de aplicação.
+  if (
+    transaction.type === "Investimento" ||
+    transaction.type === "Aplicação"
+  ) {
+    return (
+      status === "aplicado" ||
+      status === "aplicada"
+    )
+      ? amount
+      : 0;
   }
 
   return 0;
@@ -379,9 +386,6 @@ function isBeforeInitialBalanceDate(
     return false;
   }
 
-  // Datas ISO YYYY-MM-DD permitem comparação textual.
-  // Movimentações anteriores ao saldo inicial não
-  // devem ser reaplicadas sobre esse saldo.
   return transaction.date.slice(0, 10) < initialDate;
 }
 
@@ -426,6 +430,18 @@ export function getAccountBalance(
     if (
       isSourceAccount &&
       transaction.type === "Despesa"
+    ) {
+      balance -= getEffectiveAmount(transaction);
+      continue;
+    }
+
+    // Investimentos efetivamente aplicados.
+    if (
+      isSourceAccount &&
+      (
+        transaction.type === "Investimento" ||
+        transaction.type === "Aplicação"
+      )
     ) {
       balance -= getEffectiveAmount(transaction);
       continue;
