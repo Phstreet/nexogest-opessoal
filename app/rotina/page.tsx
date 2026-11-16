@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
@@ -36,17 +36,46 @@ function formatDate(date: string) {
   return `${day}/${month}/${year}`;
 }
 
-function isValidTaskArray(value: unknown): value is Task[] {
+function isValidPriority(value: unknown): value is Priority {
   return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        item !== null &&
-        typeof item === "object" &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.done === "boolean"
-    )
+    value === "Baixa" ||
+    value === "Média" ||
+    value === "Alta" ||
+    value === "Urgente"
+  );
+}
+
+function isValidTask(value: unknown): value is Task {
+  if (!value || typeof value !== "object") return false;
+
+  const item = value as Record<string, unknown>;
+
+  const validDate =
+    item.date === undefined ||
+    item.date === "" ||
+    (typeof item.date === "string" &&
+      /^\\d{4}-\\d{2}-\\d{2}$/.test(item.date));
+
+  const validTime =
+    item.time === undefined ||
+    item.time === "" ||
+    (typeof item.time === "string" &&
+      /^([01]\\d|2[0-3]):[0-5]\\d$/.test(item.time));
+
+  const validPriority =
+    item.priority === undefined || isValidPriority(item.priority);
+
+  return (
+    typeof item.id === "number" &&
+    Number.isFinite(item.id) &&
+    typeof item.description === "string" &&
+    typeof item.done === "boolean" &&
+    validDate &&
+    validTime &&
+    validPriority &&
+    (item.category === undefined || typeof item.category === "string") &&
+    (item.notes === undefined || typeof item.notes === "string") &&
+    (item.createdAt === undefined || typeof item.createdAt === "string")
   );
 }
 
@@ -58,7 +87,8 @@ function loadTasks(): Task[] {
 
     const parsed: unknown = JSON.parse(saved);
 
-    return isValidTaskArray(parsed) ? parsed : [];
+    // Mantém os registros válidos mesmo se algum item estiver corrompido.
+    return Array.isArray(parsed) ? parsed.filter(isValidTask) : [];
   } catch (error) {
     console.error("Erro ao carregar tarefas:", error);
     return [];
@@ -178,14 +208,14 @@ export default function RoutineDashboard() {
 
   const tasksWithoutDate = pendingTasks.filter((task) => !task.date);
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-
-    if (hour < 12) return "Bom dia";
-    if (hour < 18) return "Boa tarde";
-
-    return "Boa noite";
-  }, []);
+  // Calculada durante a renderização para acompanhar o horário atual.
+  const currentHour = new Date().getHours();
+  const greeting =
+    currentHour < 12
+      ? "Bom dia"
+      : currentHour < 18
+        ? "Boa tarde"
+        : "Boa noite";
 
   // AÇÕES
 
@@ -197,18 +227,27 @@ export default function RoutineDashboard() {
       return;
     }
 
-    const newTask: Task = {
-      id: Date.now(),
-      description,
-      done: false,
-      date: taskDate || undefined,
-      time: taskTime || undefined,
-      priority: taskPriority,
-      category: "Pessoal",
-      createdAt: new Date().toISOString(),
-    };
+    setTasks((current) => {
+      // Evita colisão de ID caso duas atividades sejam cadastradas no mesmo milissegundo.
+      let nextId = Date.now();
 
-    setTasks((current) => [...current, newTask]);
+      while (current.some((task) => task.id === nextId)) {
+        nextId += 1;
+      }
+
+      const newTask: Task = {
+        id: nextId,
+        description,
+        done: false,
+        date: taskDate || undefined,
+        time: taskTime || undefined,
+        priority: taskPriority,
+        category: "Pessoal",
+        createdAt: new Date().toISOString(),
+      };
+
+      return [...current, newTask];
+    });
 
     setTaskName("");
     setTaskTime("");
