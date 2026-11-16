@@ -809,7 +809,7 @@ test.describe("NEXO - Proteção de dados da rotina", () => {
     ).toBe(original);
 
     const backup = await page.evaluate(() =>
-      localStorage.getItem("nexo_tasks_agenda_backup")
+      localStorage.getItem("nexo_tasks_backup")
     );
     expect(backup).toBe(original);
   });
