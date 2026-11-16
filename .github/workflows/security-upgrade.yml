@@ -32,7 +32,7 @@ jobs:
 
       - name: Atualizar Next.js, React e ferramentas compatíveis
         run: |
-          npm install --save-exact next@16.4.6 eslint-config-next@16.4.6 react@latest react-dom@latest @types/react@latest @types/react-dom@latest eslint@^9
+          npm install --save-exact next@16.4.6 eslint-config-next@16.4.6 react@latest react-dom@latest @types/react@latest @types/react-dom@latest eslint@^9 @types/node@22
           npm pkg set scripts.lint="eslint ."
 
       - name: Corrigir dependências transitivas específicas
