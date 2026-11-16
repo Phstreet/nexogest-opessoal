@@ -120,7 +120,9 @@ export default function AgendaPage() {
   const [notes, setNotes] = useState("");
 
   const loadData = useCallback(() => {
-    setTasks(loadTasks());
+    const result = loadTasks();
+    setTasks(result.tasks);
+    setStorageCanSave(result.safeToSave);
     setLoaded(true);
   }, []);
 
@@ -141,7 +143,7 @@ export default function AgendaPage() {
   }, [loadData]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !storageCanSave) return;
 
     try {
       localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
