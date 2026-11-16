@@ -59,6 +59,14 @@ function getToday() {
   return `${year}-${month}-${day}`;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim().replace(/\s/g, "");
+  if (!normalized) return NaN;
+  return Number(normalized.includes(",")
+    ? normalized.replace(/\./g, "").replace(",", ".")
+    : normalized);
+}
+
 function isPaid(status?: string) {
   return status === "Pago" || status === "Recebida";
 }
@@ -213,6 +221,31 @@ export default function ContasAPagarPage() {
       return;
     }
 
+    setTransactions(updatedTransactions);
+  }
+
+  function registerPartialPayment(item: Transaction) {
+    const openAmount = getOpenAmount(item);
+    const entered = window.prompt(
+      `Informe quanto foi pago agora. Saldo restante: ${formatCurrency(openAmount)}`,
+      ""
+    );
+    if (entered === null) return;
+    const payment = parseCurrencyInput(entered);
+    if (!Number.isFinite(payment) || payment <= 0 || payment > openAmount) {
+      alert("Informe um valor maior que zero e menor ou igual ao saldo pendente.");
+      return;
+    }
+    const settledAmount = getSettledAmount(item) + payment;
+    const nextStatus = settledAmount >= Number(item.amount || 0) ? "Pago" : "Paga parcialmente";
+    const updatedTransactions = transactions.map((transaction) =>
+      transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
+    );
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível registrar o pagamento. Os dados anteriores foram preservados.");
+      loadTransactions();
+      return;
+    }
     setTransactions(updatedTransactions);
   }
 
@@ -408,6 +441,13 @@ export default function ContasAPagarPage() {
                         {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
                           <button
+                            type="button"
+                            className="payable-action-button"
+                            onClick={() => registerPartialPayment(item)}
+                          >
+                            Registrar pagamento parcial
+                          </button>
+<button
                             type="button"
                             className="payable-action-button"
                             onClick={() => {
