@@ -9,6 +9,7 @@ type Transaction = {
   description: string;
   type: "Receita" | "Despesa" | "Transferência" | "Aplicação" | "Reserva";
   amount: number;
+  settledAmount?: number;
   date?: string;
   category?: string;
   subcategory?: string;
@@ -61,6 +62,14 @@ function isPaid(status?: string) {
   return status === "Pago" || status === "Recebida";
 }
 
+function getSettledAmount(transaction: Transaction) {
+  const amount = Math.max(0, Number(transaction.amount) || 0);
+  if (transaction.settledAmount !== undefined) return Math.min(amount, Math.max(0, Number(transaction.settledAmount) || 0));
+  return isPaid(transaction.status) ? amount : 0;
+}
+function getOpenAmount(transaction: Transaction) { return Math.max(0, Number(transaction.amount || 0) - getSettledAmount(transaction)); }
+function isPartiallyPaid(transaction: Transaction) { return getSettledAmount(transaction) > 0 && getOpenAmount(transaction) > 0; }
+
 function isCancelled(status?: string) {
   return status === "Cancelada";
 }
@@ -68,7 +77,7 @@ function isCancelled(status?: string) {
 function isOverdue(transaction: Transaction) {
   if (
     !transaction.date ||
-    isPaid(transaction.status) ||
+    getOpenAmount(transaction) <= 0 ||
     isCancelled(transaction.status)
   ) {
     return false;
@@ -80,6 +89,7 @@ function isOverdue(transaction: Transaction) {
 function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
   if (isPaid(transaction.status)) return "Pago";
+  if (isPartiallyPaid(transaction)) return "Paga parcialmente";
   if (isOverdue(transaction)) return "Atrasada";
 
   return transaction.status || "Pendente";
@@ -133,16 +143,14 @@ export default function ContasAPagarPage() {
   const totalOpen = useMemo(
     () =>
       activeExpenses
-        .filter((item) => !isPaid(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeExpenses]
   );
 
   const totalPaid = useMemo(
     () =>
       activeExpenses
-        .filter((item) => isPaid(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getSettledAmount(item), 0),
     [activeExpenses]
   );
 
@@ -150,7 +158,7 @@ export default function ContasAPagarPage() {
     () =>
       activeExpenses
         .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => total + getOpenAmount(item), 0),
     [activeExpenses]
   );
 
@@ -177,7 +185,7 @@ export default function ContasAPagarPage() {
         let matchesFilter = true;
 
         if (filter === "Em aberto") {
-          matchesFilter = !isPaid(item.status) && !isCancelled(item.status);
+          matchesFilter = getOpenAmount(item) > 0 && !isCancelled(item.status);
         }
 
         if (filter === "Pagas") {
@@ -204,7 +212,7 @@ export default function ContasAPagarPage() {
 
   function updateStatus(id: number, newStatus: string) {
     const updatedTransactions = transactions.map((item) =>
-      item.id === id ? { ...item, status: newStatus } : item
+      item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Pago" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
     setTransactions(updatedTransactions);
@@ -388,7 +396,8 @@ export default function ContasAPagarPage() {
                       <td>{item.account || "Não informada"}</td>
 
                       <td className="payable-amount">
-                        {formatCurrency(Number(item.amount || 0))}
+                        <span>{formatCurrency(Number(item.amount || 0))}</span>
+                        {isPartiallyPaid(item) && <small style={{ display: "block", color: "#a8c7b3", marginTop: 4 }}>Pago: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
                       </td>
 
                       <td>
@@ -408,7 +417,7 @@ export default function ContasAPagarPage() {
                       </td>
 
                       <td>
-                        {!isPaid(item.status) &&
+                        {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
                           <button
                             type="button"
@@ -464,10 +473,7 @@ export default function ContasAPagarPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredExpenses.reduce(
-                  (total, item) => total + Number(item.amount || 0),
-                  0
-                )
+                filteredExpenses.reduce((total, item) => total + getOpenAmount(item), 0)
               )}
             </strong>
           </span>
