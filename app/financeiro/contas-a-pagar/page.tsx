@@ -90,8 +90,8 @@ function isOverdue(transaction: Transaction) {
 function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
   if (isPaid(transaction.status)) return "Pago";
-  if (isPartiallyPaid(transaction)) return "Paga parcialmente";
   if (isOverdue(transaction)) return "Atrasada";
+  if (isPartiallyPaid(transaction)) return "Paga parcialmente";
 
   return transaction.status || "Pendente";
 }
@@ -206,8 +206,6 @@ export default function ContasAPagarPage() {
     const updatedTransactions = transactions.map((item) =>
       item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Pago" ? Number(item.amount || 0) : item.settledAmount } : item
     );
-
-    setTransactions(updatedTransactions);
 
     if (!saveTransactions(updatedTransactions)) {
       alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
@@ -414,8 +412,8 @@ export default function ContasAPagarPage() {
                             className="payable-action-button"
                             onClick={() => {
                               const confirmed = window.confirm(
-                                `Confirma o pagamento de "${item.description}" no valor de ${formatCurrency(
-                                  Number(item.amount || 0)
+                                `Confirma a quitação do saldo restante de "${item.description}" no valor de ${formatCurrency(
+                                  getOpenAmount(item)
                                 )}?`
                               );
 
