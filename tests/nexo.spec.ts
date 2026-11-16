@@ -141,6 +141,129 @@ test.describe("Financeiro - Cadastro de contas", () => {
   });
 });
 
+test.describe("Financeiro - Integração de contas e transferências", () => {
+  test("deve disponibilizar contas cadastradas no formulário de lançamentos", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "nexo_accounts",
+        JSON.stringify([
+          {
+            id: 91001,
+            name: "Conta principal NEXO",
+            institution: "Nubank",
+            type: "Conta corrente",
+            initialBalance: 1200,
+            createdAt: "2026-11-16",
+            active: true
+          }
+        ])
+      );
+    });
+
+    await page.goto("/financeiro");
+
+    const accountField = page
+      .locator(".finance-field")
+      .filter({ hasText: "Conta financeira" })
+      .locator("select");
+
+    await expect(accountField).toHaveValue("Conta principal NEXO");
+    await expect(
+      accountField.locator('option[value="Conta principal NEXO"]')
+    ).toHaveCount(1);
+  });
+
+  test("deve registrar uma transferência efetivada entre contas cadastradas", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "nexo_accounts",
+        JSON.stringify([
+          {
+            id: 91002,
+            name: "Conta de origem NEXO",
+            institution: "Nubank",
+            type: "Conta corrente",
+            initialBalance: 1500,
+            createdAt: "2026-11-16",
+            active: true
+          },
+          {
+            id: 91003,
+            name: "Conta de destino NEXO",
+            institution: "Banco Inter",
+            type: "Conta corrente",
+            initialBalance: 300,
+            createdAt: "2026-11-16",
+            active: true
+          }
+        ])
+      );
+    });
+
+    await page.goto("/financeiro");
+
+    await page
+      .locator(".finance-field")
+      .filter({ hasText: "Tipo" })
+      .locator("select")
+      .selectOption({ label: "Transferência" });
+
+    await page.locator(".field-description input").fill("Transferência entre minhas contas");
+    await page
+      .locator(".finance-field")
+      .filter({ hasText: "Valor (R$)" })
+      .locator("input")
+      .fill("250,00");
+
+    await page
+      .locator(".finance-field")
+      .filter({ hasText: "Conta de origem" })
+      .locator("select")
+      .selectOption({ label: "Conta de origem NEXO" });
+
+    await page
+      .locator(".finance-field")
+      .filter({ hasText: "Conta de destino" })
+      .locator("select")
+      .selectOption({ label: "Conta de destino NEXO" });
+
+    await page
+      .locator(".finance-field")
+      .filter({ hasText: "Status" })
+      .locator("select")
+      .selectOption({ label: "Realizada" });
+
+    await page.getByRole("button", { name: "Adicionar lançamento" }).click();
+
+    await expect.poll(
+      () => page.evaluate(() => {
+        const transactions = JSON.parse(
+          localStorage.getItem("nexo_transactions") || "[]"
+        );
+
+        return transactions.some((item: {
+          type: string;
+          description: string;
+          amount: number;
+          account: string;
+          destinationAccount: string;
+          status: string;
+        }) =>
+          item.type === "Transferência" &&
+          item.description === "Transferência entre minhas contas" &&
+          item.amount === 250 &&
+          item.account === "Conta de origem NEXO" &&
+          item.destinationAccount === "Conta de destino NEXO" &&
+          item.status === "Realizada"
+        );
+      }),
+      {
+        message: "A transferência efetivada deve ser salva com origem, destino, valor e status corretos."
+      }
+    ).toBe(true);
+  });
+});
+
 test.describe("Rotina - Cadastro de tarefas", () => {
   test("deve cadastrar uma tarefa", async ({ page }) => {
     await page.goto("/rotina/tarefas");
