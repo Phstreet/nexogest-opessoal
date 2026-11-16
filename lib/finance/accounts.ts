@@ -212,7 +212,7 @@ export function deleteAccount(id: number): boolean {
 
   if (hasMovements) {
     throw new Error(
-      "Esta conta possui movimentações vinculadas. Inative-a em vez de excluí-la."
+      "Esta conta possui movimentações ou reservas vinculadas. Inative-a em vez de excluí-la."
     );
   }
 
