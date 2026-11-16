@@ -1536,13 +1536,12 @@ export default function PlanejamentoFinanceiroPage() {
               <strong>Como funciona a integração</strong>
               <p>
                 Receitas e despesas são consultadas diretamente dos
-                lançamentos financeiros do NEXO. Somente movimentações com
-                status &quot;Recebida&quot; ou &quot;Pago&quot; entram como
-                realizadas. Movimentações parciais permanecem no total
-                previsto, pois o lançamento atual não possui um campo
-                separado para o valor efetivamente pago ou recebido.
-                Orçamentos e metas são armazenados separadamente e não
-                alteram suas contas ou movimentações.
+                lançamentos financeiros do NEXO. Os valores realizados
+                consideram pagamentos e recebimentos totais ou parciais,
+                usando o valor efetivamente pago ou recebido. Os valores
+                pendentes representam a diferença entre o previsto e o
+                realizado. Orçamentos e metas são armazenados separadamente
+                e não alteram suas contas ou movimentações.
               </p>
             </div>
           </section>
