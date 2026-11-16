@@ -77,7 +77,7 @@ export default function ContasFinanceirasPage() {
   const [initialBalance, setInitialBalance] = useState("");
   const [filter, setFilter] = useState("Todas");
   const [loaded, setLoaded] = useState(false);
-  const [balanceVersion, setBalanceVersion] = useState(0);
+  const [, setBalanceVersion] = useState(0);
 
   useEffect(() => {
     function loadAccounts() {
@@ -109,13 +109,9 @@ export default function ContasFinanceirasPage() {
     [accounts]
   );
 
-  const totalCurrentBalance = useMemo(
-    () =>
-      activeAccounts.reduce(
-        (sum, account) => sum + getAccountBalance(account),
-        0
-      ),
-    [activeAccounts, balanceVersion]
+  const totalCurrentBalance = activeAccounts.reduce(
+    (sum, account) => sum + getAccountBalance(account),
+    0
   );
 
   const filteredAccounts = useMemo(
