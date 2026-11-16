@@ -29,12 +29,13 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        launchOptions: {
-          // Permite usar o Chrome já instalado no ambiente local.
-          // Em outros ambientes, ajuste PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-          // para o caminho do navegador instalado.
-          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || "/usr/local/bin/google-chrome"
-        }
+        ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+          ? {
+              launchOptions: {
+                executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+              }
+            }
+          : {})
       }
     }
   ],
