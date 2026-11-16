@@ -186,7 +186,6 @@ export default function InvestimentosPage() {
       .filter((investment) => {
         const investmentType = getInvestmentType(investment);
         const institution = getInstitution(investment);
-        const status = getStatus(investment);
 
         const matchesType =
           typeFilter === "Todos" || investmentType === typeFilter;
@@ -510,8 +509,7 @@ export default function InvestimentosPage() {
         ) : (
           <div className="investment-list">
             {filteredInvestments.map((investment) => {
-              const status = getStatus(investment);
-              const cancelled = isCancelled(investment);
+                    const cancelled = isCancelled(investment);
               const pending =
                 status.toLowerCase() !== "aplicado" && !cancelled;
 
