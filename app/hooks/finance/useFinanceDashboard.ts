@@ -423,7 +423,7 @@ export function useFinanceDashboard() {
     return accounts
       .filter((account) => account.active)
       .reduce((total, account) => total + getAccountBalance(account), 0);
-  }, [accounts, transactions]);
+  }, [accounts]);
 
   const reserveBalance = useMemo(
     () =>
