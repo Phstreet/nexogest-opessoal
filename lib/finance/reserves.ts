@@ -101,33 +101,39 @@ import type {
     );
   }
   
+  export function calculateReserveBalance(
+    reserve: Reserve,
+    movements: ReserveMovement[]
+  ): number {
+    return movements
+      .filter((movement) => movement.reserveId === reserve.id)
+      .reduce((balance, movement) => {
+        switch (movement.type) {
+          case "Aporte":
+          case "Rendimento":
+          case "Ajuste":
+            return balance + movement.amount;
+          case "Resgate":
+            return balance - movement.amount;
+          default:
+            return balance;
+        }
+      }, reserve.initialBalance);
+  }
+
   export function getReserveBalance(reserveId: number): number {
     const reserve = getReserveById(reserveId);
-  
+
     if (!reserve) {
       throw new Error("Reserva não encontrada.");
     }
-  
-    const movements = getReserveMovementsById(reserveId);
-  
-    return movements.reduce((balance, movement) => {
-      switch (movement.type) {
-        case "Aporte":
-        case "Rendimento":
-          return balance + movement.amount;
-  
-        case "Resgate":
-          return balance - movement.amount;
-  
-        case "Ajuste":
-          return balance + movement.amount;
-  
-        default:
-          return balance;
-      }
-    }, reserve.initialBalance);
+
+    return calculateReserveBalance(
+      reserve,
+      getReserveMovementsById(reserveId)
+    );
   }
-  
+
   export function createReserveMovement(data: {
     reserveId: number;
     type: ReserveMovementType;
