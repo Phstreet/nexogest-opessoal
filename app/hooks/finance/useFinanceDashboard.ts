@@ -180,7 +180,11 @@ function getSettledAmount(
     status === "pago" ||
     status === "paga" ||
     status === "recebida" ||
-    status === "recebido"
+    status === "recebido" ||
+    status === "aplicado" ||
+    status === "aplicada" ||
+    status === "realizada" ||
+    status === "concluida"
   ) {
     return amount;
   }
@@ -320,7 +324,7 @@ export function useFinanceDashboard() {
   }, [currentMonthTransactions]);
 
   const currentInvestments = useMemo(() => {
-    return sumTransactions(
+    return sumSettledTransactions(
       currentMonthTransactions.filter(
         (transaction) =>
           transaction.type === "Investimento" ||
@@ -330,7 +334,7 @@ export function useFinanceDashboard() {
   }, [currentMonthTransactions]);
 
   const currentReserves = useMemo(() => {
-    return sumTransactions(
+    return sumSettledTransactions(
       currentMonthTransactions.filter(
         (transaction) => transaction.type === "Reserva"
       )
@@ -470,7 +474,7 @@ export function useFinanceDashboard() {
         )
       );
 
-      const investments = sumTransactions(
+      const investments = sumSettledTransactions(
         monthTransactions.filter(
           (transaction) =>
             transaction.type === "Investimento" ||
@@ -478,7 +482,7 @@ export function useFinanceDashboard() {
         )
       );
 
-      const reserves = sumTransactions(
+      const reserves = sumSettledTransactions(
         monthTransactions.filter(
           (transaction) => transaction.type === "Reserva"
         )
