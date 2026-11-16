@@ -2,7 +2,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements } from "@/lib/finance/storage";
+import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type ReserveCategory =
   | "Emergência"
@@ -161,22 +161,37 @@ export default function ReservasFinanceirasPage() {
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
-    try {
-      setReserves(getReserves());
-      setMovements(getReserveMovements());
-      setAccounts(
-        getAccounts().map((account) => ({
-          id: Number(account.id),
-          name: account.name || "Conta sem nome",
-          institution: account.institution || "",
-          active: account.active !== false,
-        }))
-      );
-    } catch (error) {
-      console.error("Erro ao carregar reservas financeiras:", error);
-    } finally {
-      setLoaded(true);
+    function loadReserveData() {
+      try {
+        setReserves(getReserves());
+        setMovements(getReserveMovements());
+        setAccounts(
+          getAccounts().map((account) => ({
+            id: Number(account.id),
+            name: account.name || "Conta sem nome",
+            institution: account.institution || "",
+            active: account.active !== false,
+          }))
+        );
+      } catch (error) {
+        console.error("Erro ao carregar reservas financeiras:", error);
+      } finally {
+        setLoaded(true);
+      }
     }
+
+    loadReserveData();
+
+    return subscribeFinanceUpdates((key) => {
+      if (
+        key === null ||
+        key === FINANCE_STORAGE_KEYS.reserves ||
+        key === FINANCE_STORAGE_KEYS.reserveMovements ||
+        key === FINANCE_STORAGE_KEYS.accounts
+      ) {
+        loadReserveData();
+      }
+    });
   }, []);
 
   useEffect(() => {
