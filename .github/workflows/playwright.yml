@@ -31,6 +31,18 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Gerar relatório detalhado de vulnerabilidades npm
+        run: npm audit --json > npm-audit-report.json || true
+
+      - name: Salvar relatório npm audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-npm-audit
+          path: npm-audit-report.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Instalar Chromium e dependências do sistema
         run: npx playwright install --with-deps chromium
 
