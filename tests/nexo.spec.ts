@@ -80,6 +80,65 @@ test.describe("Financeiro - Cadastro de contas", () => {
 
     await expect(page.getByText("Conta persistente")).toBeVisible();
   });
+
+  test("deve desativar uma conta sem excluí-la", async ({ page }) => {
+    await page.goto("/financeiro/contas");
+
+    await page.getByLabel("Nome da conta").fill("Conta para desativar");
+    await page.getByLabel("Saldo inicial (R$)").fill("800");
+    await page.getByRole("button", { name: "Cadastrar conta" }).click();
+
+    const accountItem = page.locator(".accounts-item").filter({
+      hasText: "Conta para desativar"
+    });
+
+    await expect(accountItem).toBeVisible();
+    await accountItem.getByRole("button", { name: "Desativar" }).click();
+
+    await expect(accountItem.getByText("Inativa")).toBeVisible();
+    await expect(
+      accountItem.getByRole("button", { name: "Ativar" })
+    ).toBeVisible();
+
+    const savedAccounts = await page.evaluate(() => {
+      return JSON.parse(localStorage.getItem("nexo_accounts") || "[]");
+    });
+
+    expect(savedAccounts).toHaveLength(1);
+    expect(savedAccounts[0].name).toBe("Conta para desativar");
+    expect(savedAccounts[0].active).toBe(false);
+  });
+
+  test("deve excluir uma conta somente após confirmação", async ({ page }) => {
+    await page.goto("/financeiro/contas");
+
+    await page.getByLabel("Nome da conta").fill("Conta para excluir");
+    await page.getByLabel("Saldo inicial (R$)").fill("250");
+    await page.getByRole("button", { name: "Cadastrar conta" }).click();
+
+    const accountItem = page.locator(".accounts-item").filter({
+      hasText: "Conta para excluir"
+    });
+
+    await expect(accountItem).toBeVisible();
+
+    page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toContain("excluir definitivamente");
+      await dialog.accept();
+    });
+
+    await accountItem.getByRole("button", {
+      name: "Excluir conta Conta para excluir"
+    }).click();
+
+    await expect(accountItem).toHaveCount(0);
+
+    const savedAccounts = await page.evaluate(() => {
+      return JSON.parse(localStorage.getItem("nexo_accounts") || "[]");
+    });
+
+    expect(savedAccounts).toHaveLength(0);
+  });
 });
 
 test.describe("Rotina - Cadastro de tarefas", () => {
