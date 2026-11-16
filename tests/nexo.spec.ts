@@ -97,7 +97,7 @@ test.describe("Financeiro - Cadastro de contas", () => {
 
     await expect(accountItem.getByText("Inativa")).toBeVisible();
     await expect(
-      accountItem.getByRole("button", { name: "Ativar" })
+      accountItem.getByRole("button", { name: "Ativar", exact: true })
     ).toBeVisible();
 
     const savedAccounts = await page.evaluate(() => {
