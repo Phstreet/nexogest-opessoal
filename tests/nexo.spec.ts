@@ -775,3 +775,83 @@ test.describe("Financeiro - Proteção de dados", () => {
     ).toBe(true);
   });
 });
+
+
+test.describe("NEXO - Proteção de dados da rotina", () => {
+  test("deve preservar hábitos quando o armazenamento estiver corrompido", async ({ page }) => {
+    const original = "{dados-incompletos";
+    await page.addInitScript((raw) => {
+      localStorage.setItem("nexo_habits", raw);
+    }, original);
+
+    await page.goto("/rotina/habitos");
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_habits"))
+    ).toBe(original);
+
+    const backup = await page.evaluate(() =>
+      localStorage.getItem("nexo_habits_backup")
+    );
+    expect(backup).toBe(original);
+  });
+
+  test("deve preservar tarefas da agenda quando o armazenamento estiver corrompido", async ({ page }) => {
+    const original = "{tarefas-incompletas";
+    await page.addInitScript((raw) => {
+      localStorage.setItem("nexo_tasks", raw);
+    }, original);
+
+    await page.goto("/rotina/agenda");
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
+    ).toBe(original);
+
+    const backup = await page.evaluate(() =>
+      localStorage.getItem("nexo_tasks_agenda_backup")
+    );
+    expect(backup).toBe(original);
+  });
+});
+
+test.describe("Financeiro - Planejamento com valores parciais", () => {
+  test("deve considerar somente o valor efetivamente recebido e pago", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
+      localStorage.setItem("nexo_transactions", JSON.stringify([
+        {
+          id: 94001,
+          type: "Receita",
+          description: "Receita parcialmente recebida no planejamento",
+          amount: 1000,
+          settledAmount: 400,
+          date,
+          category: "Salário",
+          status: "Recebida parcialmente"
+        },
+        {
+          id: 94002,
+          type: "Despesa",
+          description: "Despesa parcialmente paga no planejamento",
+          amount: 800,
+          settledAmount: 250,
+          date,
+          category: "Moradia",
+          status: "Paga parcialmente"
+        }
+      ]));
+    });
+
+    await page.goto("/financeiro/planejamento");
+
+    const income = page.locator(".comparison-item").filter({ hasText: "Receitas" });
+    const expenses = page.locator(".comparison-item").filter({ hasText: "Despesas" });
+
+    await expect(income.getByText(/400,00/)).toBeVisible();
+    await expect(expenses.getByText(/250,00/)).toBeVisible();
+    await expect(page.getByText(/600,00/).first()).toBeVisible();
+    await expect(page.getByText(/550,00/).first()).toBeVisible();
+  });
+});
