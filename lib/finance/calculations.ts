@@ -1,4 +1,3 @@
-
 import type {
   FinancialSummary,
   Transaction,
@@ -34,39 +33,6 @@ function isCancelled(item: Transaction): boolean {
   );
 }
 
-function isPaid(item: Transaction): boolean {
-  const status = normalizeStatus(item);
-
-  return (
-    item.type === "Despesa" &&
-    (
-      status === "pago" ||
-      status === "paga"
-    )
-  );
-}
-
-function isReceived(item: Transaction): boolean {
-  const status = normalizeStatus(item);
-
-  return (
-    item.type === "Receita" &&
-    (
-      status === "recebida" ||
-      status === "recebido"
-    )
-  );
-}
-
-function isApplied(item: Transaction): boolean {
-  const status = normalizeStatus(item);
-
-  return (
-    status === "aplicado" ||
-    status === "aplicada"
-  );
-}
-
 function isValidAmount(amount: unknown): amount is number {
   return (
     typeof amount === "number" &&
@@ -83,9 +49,136 @@ function getAmount(item: Transaction): number {
     : 0;
 }
 
+/**
+ * Retorna o valor efetivamente recebido ou pago.
+ *
+ * Compatibilidade:
+ * lançamentos antigos sem status continuam sendo
+ * considerados integralmente efetivados.
+ */
+function getSettledAmount(item: Transaction): number {
+  if (isCancelled(item)) {
+    return 0;
+  }
+
+  const amount = getAmount(item);
+
+  if (amount <= 0) {
+    return 0;
+  }
+
+  const status = normalizeStatus(item);
+
+  // Compatibilidade com lançamentos antigos.
+  if (!status) {
+    if (
+      item.type === "Receita" ||
+      item.type === "Despesa"
+    ) {
+      return amount;
+    }
+
+    if (
+      item.type === "Investimento" ||
+      item.type === "Aplicação"
+    ) {
+      return amount;
+    }
+
+    return 0;
+  }
+
+  if (item.type === "Receita") {
+    if (
+      status === "recebida" ||
+      status === "recebido"
+    ) {
+      return amount;
+    }
+
+    if (status === "recebida parcialmente") {
+      const settled = Number(item.settledAmount || 0);
+
+      return Number.isFinite(settled)
+        ? Math.min(Math.max(settled, 0), amount)
+        : 0;
+    }
+
+    return 0;
+  }
+
+  if (item.type === "Despesa") {
+    if (
+      status === "pago" ||
+      status === "paga"
+    ) {
+      return amount;
+    }
+
+    if (status === "paga parcialmente") {
+      const settled = Number(item.settledAmount || 0);
+
+      return Number.isFinite(settled)
+        ? Math.min(Math.max(settled, 0), amount)
+        : 0;
+    }
+
+    return 0;
+  }
+
+  if (
+    item.type === "Investimento" ||
+    item.type === "Aplicação"
+  ) {
+    return (
+      status === "aplicado" ||
+      status === "aplicada"
+    )
+      ? amount
+      : 0;
+  }
+
+  return 0;
+}
+
+/**
+ * Calcula o valor que ainda falta receber ou pagar.
+ */
+function getOutstandingAmount(item: Transaction): number {
+  if (isCancelled(item)) {
+    return 0;
+  }
+
+  if (
+    item.type !== "Receita" &&
+    item.type !== "Despesa"
+  ) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    getAmount(item) - getSettledAmount(item)
+  );
+}
+
 function sum(items: Transaction[]): number {
   return items.reduce(
     (total, item) => total + getAmount(item),
+    0
+  );
+}
+
+function sumSettled(items: Transaction[]): number {
+  return items.reduce(
+    (total, item) => total + getSettledAmount(item),
+    0
+  );
+}
+
+function sumOutstanding(items: Transaction[]): number {
+  return items.reduce(
+    (total, item) => total + getOutstandingAmount(item),
     0
   );
 }
@@ -152,36 +245,28 @@ export function getFinancialSummary(): FinancialSummary {
         item.type === "Investimento" ||
         item.type === "Aplicação"
       ) &&
-      isApplied(item)
+      getSettledAmount(item) > 0
   );
 
-  // Receitas efetivamente recebidas.
-  const totalIncome = sum(
-    incomes.filter(isReceived)
-  );
+  // Valores efetivamente recebidos.
+  const totalIncome = sumSettled(incomes);
 
-  // Despesas efetivamente pagas.
-  const totalExpenses = sum(
-    expenses.filter(isPaid)
-  );
+  // Valores efetivamente pagos.
+  const totalExpenses = sumSettled(expenses);
 
   // Aplicações efetivamente realizadas.
-  // Este valor representa aplicações acumuladas,
-  // não o patrimônio atualizado dos investimentos.
+  // Representa aplicações acumuladas, não o
+  // patrimônio atualizado dos investimentos.
   const totalInvestments = sum(investments);
 
   // Saldo atual calculado das reservas.
   const totalReserves = getTotalReserveBalance();
 
-  // Valores ainda não recebidos.
-  const payable = sum(
-    expenses.filter((item) => !isPaid(item))
-  );
+  // Somente o valor que ainda falta pagar.
+  const payable = sumOutstanding(expenses);
 
-  // Valores ainda não recebidos.
-  const receivable = sum(
-    incomes.filter((item) => !isReceived(item))
-  );
+  // Somente o valor que ainda falta receber.
+  const receivable = sumOutstanding(incomes);
 
   // Saldo das contas bancárias e carteiras ativas.
   const accountsBalance = getTotalAccountsBalance();
@@ -190,7 +275,7 @@ export function getFinancialSummary(): FinancialSummary {
   const realizedBalance =
     totalIncome - totalExpenses;
 
-  // Resultado considerando recebimentos e pagamentos pendentes.
+  // Resultado considerando valores ainda pendentes.
   const projectedBalance =
     realizedBalance + receivable - payable;
 
@@ -282,24 +367,17 @@ export function getMonthlySummary(
     (item) => item.type === "Despesa"
   );
 
+  // Valores totais lançados no período.
   const totalIncome = sum(income);
   const totalExpenses = sum(expenses);
 
-  const received = sum(
-    income.filter(isReceived)
-  );
+  // Valores efetivamente recebidos e pagos.
+  const received = sumSettled(income);
+  const paid = sumSettled(expenses);
 
-  const paid = sum(
-    expenses.filter(isPaid)
-  );
-
-  const pendingIncome = sum(
-    income.filter((item) => !isReceived(item))
-  );
-
-  const pendingExpenses = sum(
-    expenses.filter((item) => !isPaid(item))
-  );
+  // Saldo que ainda falta receber e pagar.
+  const pendingIncome = sumOutstanding(income);
+  const pendingExpenses = sumOutstanding(expenses);
 
   return {
     income: totalIncome,

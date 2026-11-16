@@ -1,20 +1,24 @@
+
 import type { ReactNode } from "react";
 import MainNavigation from "../navigation/MainNavigation";
 import Header from "./Header";
 
+type AppLayoutProps = {
+  children: ReactNode;
+  header?: ReactNode;
+};
+
 export default function AppLayout({
   children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
+  header,
+}: Readonly<AppLayoutProps>) {
   return (
     <main className="app-shell">
       <MainNavigation />
 
       <section className="main-area">
-        <Header />
-
-        <div className="nexo-layout-content">{children}</div>
+        {header ?? <Header />}
+        {children}
       </section>
     </main>
   );

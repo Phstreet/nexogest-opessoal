@@ -1,4 +1,3 @@
-
 /**
  * NEXO — Tipos centrais do módulo financeiro
  * Arquivo: lib/finance/types.ts
@@ -20,6 +19,8 @@ export type TransactionStatus =
   | "Pago"
   | "Recebida"
   | "Parcial"
+  | "Recebida parcialmente"
+  | "Paga parcialmente"
   | "Cancelada"
   | "Aplicado"
   | "Prevista";
@@ -38,6 +39,13 @@ export type Transaction = {
   description: string;
   type: MovementType;
   amount: number;
+
+  /**
+   * Valor efetivamente recebido ou pago.
+   * Quando não informado, o sistema mantém
+   * a compatibilidade com lançamentos antigos.
+   */
+  settledAmount?: number;
 
   date?: string;
   category?: string;

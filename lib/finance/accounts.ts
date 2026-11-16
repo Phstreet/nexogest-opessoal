@@ -74,6 +74,13 @@ export function createAccount(
     throw new Error("Informe um saldo inicial válido.");
   }
 
+  if (
+    data.initialBalanceDate &&
+    !isValidDate(data.initialBalanceDate)
+  ) {
+    throw new Error("Informe uma data válida para o saldo inicial.");
+  }
+
   const account: Account = {
     ...data,
     name: data.name.trim(),
@@ -139,6 +146,14 @@ export function updateAccount(
     )
   ) {
     throw new Error("Informe um saldo inicial válido.");
+  }
+
+  if (
+    changes.initialBalanceDate !== undefined &&
+    changes.initialBalanceDate !== "" &&
+    !isValidDate(changes.initialBalanceDate)
+  ) {
+    throw new Error("Informe uma data válida para o saldo inicial.");
   }
 
   const updated: Account = {
@@ -214,58 +229,160 @@ export function deleteAccount(id: number): boolean {
 }
 
 // =====================================================
-// IDENTIFICAÇÃO DE MOVIMENTAÇÕES EFETIVADAS
+// TRATAMENTO DE DATAS
 // =====================================================
 
-function isEffectiveIncome(
-  transaction: Transaction
-): boolean {
-  const status = (transaction.status ?? "")
-    .trim()
-    .toLowerCase();
+function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
 
   return (
-    transaction.type === "Receita" &&
-    (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+// =====================================================
+// NORMALIZAÇÃO DE STATUS
+// =====================================================
+
+function normalizeStatus(transaction: Transaction): string {
+  return (transaction.status ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isCancelled(transaction: Transaction): boolean {
+  const status = normalizeStatus(transaction);
+
+  return (
+    status === "cancelada" ||
+    status === "cancelado"
+  );
+}
+
+// =====================================================
+// VALOR EFETIVAMENTE MOVIMENTADO
+// =====================================================
+
+function getEffectiveAmount(
+  transaction: Transaction
+): number {
+  if (isCancelled(transaction)) {
+    return 0;
+  }
+
+  const amount = Number(transaction.amount);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 0;
+  }
+
+  const status = normalizeStatus(transaction);
+
+  // Compatibilidade com lançamentos antigos sem status.
+  if (!status) {
+    if (
+      transaction.type === "Receita" ||
+      transaction.type === "Despesa"
+    ) {
+      return amount;
+    }
+
+    return 0;
+  }
+
+  if (transaction.type === "Receita") {
+    if (
       status === "recebida" ||
       status === "recebido"
-    )
-  );
-}
+    ) {
+      return amount;
+    }
 
-function isEffectiveExpense(
-  transaction: Transaction
-): boolean {
-  const status = (transaction.status ?? "")
-    .trim()
-    .toLowerCase();
+    if (status === "recebida parcialmente") {
+      const settled = Number(
+        transaction.settledAmount || 0
+      );
 
-  return (
-    transaction.type === "Despesa" &&
-    (
+      return Number.isFinite(settled)
+        ? Math.min(Math.max(settled, 0), amount)
+        : 0;
+    }
+
+    return 0;
+  }
+
+  if (transaction.type === "Despesa") {
+    if (
       status === "pago" ||
       status === "paga"
-    )
-  );
+    ) {
+      return amount;
+    }
+
+    if (status === "paga parcialmente") {
+      const settled = Number(
+        transaction.settledAmount || 0
+      );
+
+      return Number.isFinite(settled)
+        ? Math.min(Math.max(settled, 0), amount)
+        : 0;
+    }
+
+    return 0;
+  }
+
+  return 0;
 }
+
+// =====================================================
+// IDENTIFICAÇÃO DE TRANSFERÊNCIAS
+// =====================================================
 
 function isEffectiveTransfer(
   transaction: Transaction
 ): boolean {
-  const status = (transaction.status ?? "")
-    .trim()
-    .toLowerCase();
+  const status = normalizeStatus(transaction);
 
   return (
     transaction.type === "Transferência" &&
+    !isCancelled(transaction) &&
     (
       status === "pago" ||
       status === "paga" ||
       status === "realizada" ||
-      status === "concluída" ||
       status === "concluida"
     )
   );
+}
+
+// =====================================================
+// DATA DE REFERÊNCIA DO SALDO INICIAL
+// =====================================================
+
+function isBeforeInitialBalanceDate(
+  transaction: Transaction,
+  account: Account
+): boolean {
+  const initialDate = account.initialBalanceDate;
+
+  if (!initialDate || !transaction.date) {
+    return false;
+  }
+
+  // Datas ISO YYYY-MM-DD permitem comparação textual.
+  // Movimentações anteriores ao saldo inicial não
+  // devem ser reaplicadas sobre esse saldo.
+  return transaction.date.slice(0, 10) < initialDate;
 }
 
 // =====================================================
@@ -277,12 +394,14 @@ export function getAccountBalance(
 ): number {
   const transactions = getTransactions();
 
-  let balance = account.initialBalance;
+  let balance = Number(account.initialBalance) || 0;
 
   for (const transaction of transactions) {
-    const amount = Number(transaction.amount);
+    if (isCancelled(transaction)) {
+      continue;
+    }
 
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (isBeforeInitialBalanceDate(transaction, account)) {
       continue;
     }
 
@@ -292,26 +411,34 @@ export function getAccountBalance(
     const isDestinationAccount =
       transaction.destinationAccount === account.name;
 
-    // Receitas efetivamente recebidas.
+    // Receitas efetivamente recebidas,
+    // incluindo recebimentos parciais.
     if (
       isSourceAccount &&
-      isEffectiveIncome(transaction)
+      transaction.type === "Receita"
     ) {
-      balance += amount;
+      balance += getEffectiveAmount(transaction);
       continue;
     }
 
-    // Despesas efetivamente pagas.
+    // Despesas efetivamente pagas,
+    // incluindo pagamentos parciais.
     if (
       isSourceAccount &&
-      isEffectiveExpense(transaction)
+      transaction.type === "Despesa"
     ) {
-      balance -= amount;
+      balance -= getEffectiveAmount(transaction);
       continue;
     }
 
     // Transferências efetivamente realizadas.
     if (isEffectiveTransfer(transaction)) {
+      const amount = Number(transaction.amount);
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        continue;
+      }
+
       if (isSourceAccount) {
         balance -= amount;
       }
