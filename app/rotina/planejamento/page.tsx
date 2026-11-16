@@ -330,14 +330,6 @@ export default function WeeklyPlanningPage() {
     );
   }
 
-  function deleteTask(id: number) {
-    if (!window.confirm("Deseja realmente excluir esta atividade?")) return;
-
-    setTasks((current) => current.filter((task) => task.id !== id));
-
-    if (editingId === id) resetForm();
-  }
-
   return (
     <div className="content weekly-page-content">
       <div className="weekly-content">
