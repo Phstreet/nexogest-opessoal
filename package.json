@@ -12,7 +12,7 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
-    "@types/node": "20.6.2",
+    "@types/node": "22",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vercel/analytics": "^2.0.1",
@@ -27,8 +27,7 @@
     "typescript": "5.2.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0",
-    "@types/node": "22"
+    "@playwright/test": "^1.56.0"
   },
   "overrides": {
     "sucrase": {
