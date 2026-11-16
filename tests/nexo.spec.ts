@@ -790,10 +790,9 @@ test.describe("NEXO - Proteção de dados da rotina", () => {
       () => page.evaluate(() => localStorage.getItem("nexo_habits"))
     ).toBe(original);
 
-    const backup = await page.evaluate(() =>
-      localStorage.getItem("nexo_habits_backup")
-    );
-    expect(backup).toBe(original);
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_habits_backup"))
+    ).toBe(original);
   });
 
   test("deve preservar tarefas da agenda quando o armazenamento estiver corrompido", async ({ page }) => {
@@ -808,10 +807,9 @@ test.describe("NEXO - Proteção de dados da rotina", () => {
       () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
     ).toBe(original);
 
-    const backup = await page.evaluate(() =>
-      localStorage.getItem("nexo_tasks_backup")
-    );
-    expect(backup).toBe(original);
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))
+    ).toBe(original);
   });
 });
 
