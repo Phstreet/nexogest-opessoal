@@ -2,6 +2,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements } from "@/lib/finance/storage";
 
 type ReserveCategory =
   | "Emergência"
@@ -165,34 +166,16 @@ export default function ReservasFinanceirasPage() {
 
   useEffect(() => {
     try {
-      const storedReserves = localStorage.getItem(RESERVES_KEY);
-      const storedMovements = localStorage.getItem(MOVEMENTS_KEY);
-      const storedAccounts = localStorage.getItem(ACCOUNTS_KEY);
-
-      if (storedReserves) {
-        const parsed = JSON.parse(storedReserves);
-        if (Array.isArray(parsed)) setReserves(parsed);
-      }
-
-      if (storedMovements) {
-        const parsed = JSON.parse(storedMovements);
-        if (Array.isArray(parsed)) setMovements(parsed);
-      }
-
-      if (storedAccounts) {
-        const parsed = JSON.parse(storedAccounts);
-
-        if (Array.isArray(parsed)) {
-          setAccounts(
-            parsed.map((account: Account) => ({
-              id: Number(account.id),
-              name: account.name || "Conta sem nome",
-              institution: account.institution || "",
-              active: account.active !== false,
-            }))
-          );
-        }
-      }
+      setReserves(getReserves());
+      setMovements(getReserveMovements());
+      setAccounts(
+        getAccounts().map((account) => ({
+          id: Number(account.id),
+          name: account.name || "Conta sem nome",
+          institution: account.institution || "",
+          active: account.active !== false,
+        }))
+      );
     } catch (error) {
       console.error("Erro ao carregar reservas financeiras:", error);
     } finally {
@@ -204,8 +187,9 @@ export default function ReservasFinanceirasPage() {
     if (!loaded) return;
 
     try {
-      localStorage.setItem(RESERVES_KEY, JSON.stringify(reserves));
-      localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(movements));
+      if (!saveReserves(reserves) || !saveReserveMovements(movements)) {
+        throw new Error("O armazenamento central recusou os dados.");
+      }
     } catch (error) {
       console.error("Erro ao salvar reservas financeiras:", error);
       setFeedback("Não foi possível salvar os dados no navegador.");
@@ -355,6 +339,7 @@ export default function ReservasFinanceirasPage() {
                 category: reserveForm.category,
                 description: reserveForm.description.trim(),
                 targetAmount,
+                initialBalance,
                 monthlyContribution,
                 startDate: reserveForm.startDate,
                 targetDate: reserveForm.targetDate,
