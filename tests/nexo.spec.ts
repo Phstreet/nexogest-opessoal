@@ -421,7 +421,7 @@ test.describe("Financeiro - Proteção de vínculos e Dashboard", () => {
       if (dialog.type() === "confirm") {
         await dialog.accept();
       } else {
-        expect(dialog.message()).toContain("movimentações vinculadas");
+        expect(dialog.message()).toContain("movimentações ou reservas vinculadas");
         await dialog.accept();
       }
     });
