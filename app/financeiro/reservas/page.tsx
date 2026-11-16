@@ -742,25 +742,23 @@ export default function ReservasFinanceirasPage() {
                     />
                   </div>
 
-                  {editingReserveId === null && (
-                    <div className="field">
-                      <label htmlFor="reserve-initial">Saldo inicial</label>
-                      <input
-                        id="reserve-initial"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={reserveForm.initialBalance}
-                        onChange={(event) =>
-                          updateReserveField(
-                            "initialBalance",
-                            event.target.value
-                          )
-                        }
-                        placeholder="0,00"
-                      />
-                    </div>
-                  )}
+                  <div className="field">
+                    <label htmlFor="reserve-initial">Saldo inicial</label>
+                    <input
+                      id="reserve-initial"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={reserveForm.initialBalance}
+                      onChange={(event) =>
+                        updateReserveField(
+                          "initialBalance",
+                          event.target.value
+                        )
+                      }
+                      placeholder="0,00"
+                    />
+                  </div>
 
                   <div className="field">
                     <label htmlFor="reserve-monthly">
