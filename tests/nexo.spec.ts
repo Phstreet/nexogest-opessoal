@@ -553,6 +553,25 @@ test.describe("Financeiro - Proteção de vínculos e Dashboard", () => {
     expect(saved).toHaveLength(1);
   });
 
+  test("deve calcular o resultado mensal somente com movimentações efetivadas", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      localStorage.setItem("nexo_transactions", JSON.stringify([
+        { id: 93101, type: "Receita", description: "Receita confirmada", amount: 500, settledAmount: 500, date, status: "Recebida" },
+        { id: 93102, type: "Despesa", description: "Despesa confirmada", amount: 200, settledAmount: 200, date, status: "Pago" },
+        { id: 93103, type: "Despesa", description: "Despesa pendente", amount: 1000, date, status: "Pendente" },
+        { id: 93104, type: "Investimento", description: "Investimento pendente", amount: 300, date, status: "Pendente" },
+        { id: 93105, type: "Reserva", description: "Reserva pendente", amount: 400, date, status: "Pendente" }
+      ]));
+    });
+
+    await page.goto("/financeiro/dashboard");
+    const resultCard = page.locator(".summary-card").filter({ hasText: "Resultado do mês" });
+    await expect(resultCard).toBeVisible();
+    await expect(resultCard.getByText(/300,00/)).toBeVisible();
+  });
+
   test("deve apresentar no Dashboard o saldo real das reservas", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("nexo_accounts", JSON.stringify([{
