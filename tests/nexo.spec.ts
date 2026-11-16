@@ -93,7 +93,7 @@ test.describe("Financeiro - Cadastro de contas", () => {
     });
 
     await expect(accountItem).toBeVisible();
-    await accountItem.getByRole("button", { name: "Desativar" }).click();
+    await accountItem.getByRole("button", { name: "Desativar", exact: true }).click();
 
     await expect(accountItem.getByText("Inativa")).toBeVisible();
     await expect(
