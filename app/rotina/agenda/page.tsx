@@ -18,7 +18,7 @@ type Task = {
 };
 
 const TASKS_KEY = "nexo_tasks";
-const TASKS_BACKUP_KEY = "nexo_tasks_agenda_backup";
+const TASKS_BACKUP_KEY = "nexo_tasks_backup";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
