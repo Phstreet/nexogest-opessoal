@@ -391,6 +391,101 @@ test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
   });
 });
 
+test.describe("Financeiro - Proteção de vínculos e Dashboard", () => {
+  test("não deve permitir excluir conta com movimentações vinculadas", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 93001,
+        name: "Conta vinculada",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 93002,
+        type: "Despesa",
+        description: "Despesa vinculada",
+        amount: 100,
+        account: "Conta vinculada",
+        status: "Pago"
+      }]));
+    });
+
+    await page.goto("/financeiro/contas");
+    const accountItem = page.locator(".accounts-item").filter({ hasText: "Conta vinculada" });
+    await expect(accountItem).toBeVisible();
+
+    page.once("dialog", async (dialog) => {
+      await dialog.accept();
+    });
+    page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toContain("movimentações vinculadas");
+      await dialog.accept();
+    });
+    await accountItem.getByRole("button", { name: "Excluir conta Conta vinculada" }).click();
+
+    await expect(accountItem).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_accounts") || "[]"));
+    expect(saved).toHaveLength(1);
+  });
+
+  test("deve apresentar no Dashboard o saldo real das reservas", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("nexo_accounts", JSON.stringify([{
+        id: 93011,
+        name: "Conta do Dashboard",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: "2026-11-16",
+        active: true
+      }]));
+      localStorage.setItem("nexo_transactions", JSON.stringify([{
+        id: 93012,
+        type: "Despesa",
+        description: "Despesa paga",
+        amount: 100,
+        settledAmount: 100,
+        account: "Conta do Dashboard",
+        status: "Pago",
+        date: "2026-11-16"
+      }]));
+      localStorage.setItem("nexo_reserves", JSON.stringify([{
+        id: 93013,
+        name: "Reserva de emergência",
+        category: "Emergência",
+        description: "",
+        targetAmount: 2000,
+        initialBalance: 500,
+        monthlyContribution: 100,
+        startDate: "2026-11-01",
+        targetDate: "",
+        accountId: 93011,
+        institution: "Nubank",
+        status: "Ativa",
+        createdAt: "2026-11-16"
+      }]));
+      localStorage.setItem("nexo_reserve_movements", JSON.stringify([{
+        id: 93014,
+        reserveId: 93013,
+        type: "Aporte",
+        amount: 150,
+        date: "2026-11-16",
+        description: "Aporte de teste",
+        createdAt: "2026-11-16"
+      }]));
+    });
+
+    await page.goto("/financeiro/dashboard");
+    const accountsPanel = page.locator(".account-panel");
+    await expect(accountsPanel.getByText("Saldo total das reservas ativas")).toBeVisible();
+    await expect(accountsPanel.getByText("R$ 650,00")).toBeVisible();
+    await expect(accountsPanel.getByText("R$ 900,00")).toBeVisible();
+  });
+});
+
 test.describe("Financeiro - Proteção de dados", () => {
   test("deve carregar a página financeira sem erro de JavaScript", async ({ page }) => {
     const errors: string[] = [];
