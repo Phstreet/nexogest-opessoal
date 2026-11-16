@@ -440,6 +440,7 @@ export default function ContasAPagarPage() {
                       <td>
                         {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
+                          <>
                           <button
                             type="button"
                             className="payable-action-button"
@@ -464,6 +465,7 @@ export default function ContasAPagarPage() {
                           >
                             Marcar como pago
                           </button>
+                          </>
                         ) : isPaid(item.status) ? (
                           <button
                             type="button"
