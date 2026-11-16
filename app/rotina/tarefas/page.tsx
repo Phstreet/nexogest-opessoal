@@ -452,7 +452,7 @@ export default function TarefasPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-field full-field">
-              <label>Descrição da tarefa *</label>
+              <label htmlFor="task-description">Descrição da tarefa *</label>
               <input
                 type="text"
                 value={description}
