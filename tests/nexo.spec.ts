@@ -417,12 +417,13 @@ test.describe("Financeiro - Proteção de vínculos e Dashboard", () => {
     const accountItem = page.locator(".accounts-item").filter({ hasText: "Conta vinculada" });
     await expect(accountItem).toBeVisible();
 
-    page.once("dialog", async (dialog) => {
-      await dialog.accept();
-    });
-    page.once("dialog", async (dialog) => {
-      expect(dialog.message()).toContain("movimentações vinculadas");
-      await dialog.accept();
+    page.on("dialog", async (dialog) => {
+      if (dialog.type() === "confirm") {
+        await dialog.accept();
+      } else {
+        expect(dialog.message()).toContain("movimentações vinculadas");
+        await dialog.accept();
+      }
     });
     await accountItem.getByRole("button", { name: "Excluir conta Conta vinculada" }).click();
 
