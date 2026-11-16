@@ -27,7 +27,8 @@
     "typescript": "5.2.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0"
+    "@playwright/test": "^1.56.0",
+    "@types/node": "22"
   },
   "overrides": {
     "sucrase": {
