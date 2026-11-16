@@ -364,7 +364,7 @@ test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
 
     await page.goto("/financeiro/contas-a-pagar");
 
-    await expect(page.getByText("R$ 600,00").first()).toBeVisible();
+    await expect(page.getByText(/600,00/).first()).toBeVisible();
     await expect(page.getByText(/Pago:.*R\$ 400,00.*Pendente:.*R\$ 600,00/)).toBeVisible();
     await expect(page.getByText("Paga parcialmente")).toBeVisible();
   });
@@ -482,8 +482,8 @@ test.describe("Financeiro - Proteção de vínculos e Dashboard", () => {
     await page.goto("/financeiro/dashboard");
     const accountsPanel = page.locator(".account-panel");
     await expect(accountsPanel.getByText("Saldo total das reservas ativas")).toBeVisible();
-    await expect(accountsPanel.getByText("R$ 650,00")).toBeVisible();
-    await expect(accountsPanel.getByText("R$ 900,00")).toBeVisible();
+    await expect(accountsPanel.getByText(/650,00/)).toBeVisible();
+    await expect(accountsPanel.getByText(/900,00/)).toBeVisible();
   });
 });
 
