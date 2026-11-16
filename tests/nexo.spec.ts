@@ -184,6 +184,7 @@ test.describe("Rotina - Cadastro de hábitos", () => {
     await page.goto("/rotina/habitos");
 
     await page.getByRole("button", { name: /Novo hábito/ }).click();
+    await expect(page.locator("#habit-form")).toBeVisible();
 
     await page.locator("#habit-name").fill("Hábito automatizado NEXO");
 
@@ -206,6 +207,8 @@ test.describe("Rotina - Cadastro de hábitos", () => {
     await page.goto("/rotina/habitos");
 
     await page.getByRole("button", { name: /Novo hábito/ }).click();
+    await expect(page.locator("#habit-form")).toBeVisible();
+
     await page.locator("#habit-name").fill("Hábito persistente");
 
     await page.getByRole("button", { name: "Cadastrar hábito" }).click();
@@ -250,20 +253,21 @@ test.describe("Financeiro - Proteção de dados", () => {
 
     await expect(page.getByText("Lançamento de teste")).toBeVisible();
 
-    const transactions = await page.evaluate(() => {
-      return JSON.parse(localStorage.getItem("nexo_transactions") || "[]");
-    });
+    await expect.poll(
+      () =>
+        page.evaluate(() => {
+          const saved = JSON.parse(
+            localStorage.getItem("nexo_transactions") || "[]"
+          );
 
-    expect(Array.isArray(transactions)).toBeTruthy();
-    await expect.poll(() =>
-      page.evaluate(() => {
-        const saved = JSON.parse(
-          localStorage.getItem("nexo_transactions") || "[]"
-        );
-
-        return Array.isArray(saved) &&
-          saved.some((item: { id: number }) => item.id === 999001);
-      })
+          return (
+            Array.isArray(saved) &&
+            saved.some((item: { id: number }) => item.id === 999001)
+          );
+        }),
+      {
+        message: "O lançamento válido deve permanecer no LocalStorage após o carregamento."
+      }
     ).toBe(true);
   });
 });
