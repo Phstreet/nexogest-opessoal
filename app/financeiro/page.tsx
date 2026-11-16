@@ -1345,7 +1345,7 @@ export default function Page() {
                 label="Conta de destino"
                 value={destinationAccount}
                 onChange={setDestinationAccount}
-                options={accounts}
+                options={accountOptions}
               />
             )}
 
