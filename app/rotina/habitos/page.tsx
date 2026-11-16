@@ -444,6 +444,7 @@ export default function HabitosPage() {
             <div className="form-field full-field">
               <label htmlFor="habit-name">Nome do hábito *</label>
               <input
+                id="habit-name"
                 type="text"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
