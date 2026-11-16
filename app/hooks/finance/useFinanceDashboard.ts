@@ -55,8 +55,15 @@ function money(value: number): string {
 
 function parseAmount(value: unknown): number {
   const parsed = Number(value);
-
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeStatus(status?: string): string {
+  return (status ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function getMonthKey(date: Date): string {
@@ -121,20 +128,24 @@ function getMonthStart(date: Date): Date {
 function isCancelled(
   transaction: Transaction
 ): boolean {
-  return transaction.status?.trim().toLowerCase() ===
-    "cancelada";
+  const status = normalizeStatus(transaction.status);
+
+  return (
+    status === "cancelada" ||
+    status === "cancelado"
+  );
 }
 
 /**
  * Retorna o valor efetivamente recebido ou pago.
  *
  * Regras:
- * - Se settledAmount estiver informado, ele prevalece.
- * - Se o status for Pago ou Recebida e não existir
- *   settledAmount, considera o valor integral.
- * - Se o status indicar pagamento parcial sem
- *   settledAmount, não presume quitação integral.
- * - O resultado nunca ultrapassa o valor do lançamento.
+ * - settledAmount informado prevalece.
+ * - Pago/Paga/Recebida/Recebido sem settledAmount
+ *   representam quitação integral.
+ * - Status parcial sem settledAmount não presume
+ *   quitação integral.
+ * - O valor nunca ultrapassa o lançamento.
  */
 function getSettledAmount(
   transaction: Transaction
@@ -157,13 +168,13 @@ function getSettledAmount(
     );
   }
 
-  const status = transaction.status
-    ?.trim()
-    .toLowerCase();
+  const status = normalizeStatus(transaction.status);
 
   if (
     status === "pago" ||
-    status === "recebida"
+    status === "paga" ||
+    status === "recebida" ||
+    status === "recebido"
   ) {
     return amount;
   }
@@ -332,8 +343,8 @@ export function useFinanceDashboard() {
     );
   }, [currentMonthTransactions]);
 
-  // O total de despesas continua representando
-  // os compromissos cadastrados no mês.
+  // Despesas pendentes representam a diferença
+  // entre o valor cadastrado e o valor efetivamente pago.
 
   const currentPendingExpenses = useMemo(() => {
     return Math.max(

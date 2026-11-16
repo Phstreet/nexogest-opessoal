@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useFinanceDashboard } from "@/hooks/finance/useFinanceDashboard";
+import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
 import DashboardHeader from "@/components/finance/dashboard/DashboardHeader";
 import DashboardSummary from "@/components/finance/dashboard/DashboardSummary";
 import DashboardCharts from "@/components/finance/dashboard/DashboardCharts";
