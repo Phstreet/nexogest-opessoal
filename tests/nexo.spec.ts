@@ -183,13 +183,13 @@ test.describe("Financeiro - Proteção de dados", () => {
       status: "Recebida"
     };
 
-    await page.goto("/financeiro");
-
-    await page.evaluate((transaction) => {
+    await page.addInitScript((transaction) => {
       localStorage.setItem("nexo_transactions", JSON.stringify([transaction]));
     }, testTransaction);
 
-    await page.reload();
+    await page.goto("/financeiro");
+
+    await expect(page.getByText("Lançamento de teste")).toBeVisible();
 
     const transactions = await page.evaluate(() => {
       return JSON.parse(localStorage.getItem("nexo_transactions") || "[]");
