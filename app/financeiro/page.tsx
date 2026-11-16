@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ChangeEvent } from "react";
 
 type FormMovementType =
   | "Receita"
@@ -16,6 +17,7 @@ type Transaction = {
   description: string;
   type: MovementType;
   amount: number;
+  settledAmount?: number;
   date?: string;
   category?: string;
   subcategory?: string;
@@ -29,18 +31,43 @@ type Transaction = {
   institution?: string;
 };
 
+type LoadResult = {
+  transactions: Transaction[];
+  invalidRecords: unknown[];
+  safeToSave: boolean;
+  error: string | null;
+};
+
 const STORAGE_KEY = "nexo_transactions";
+const BACKUP_KEY = "nexo_transactions_backup";
+const INVALID_KEY = "nexo_transactions_invalid";
 
 const categoriesByType: Record<FormMovementType, string[]> = {
   Receita: [
-    "Salário", "13º Salário", "Adiantamento Salarial",
-    "Horas Extras", "Comissões", "Trabalhos Extras",
-    "Reembolsos", "Receitas Eventuais", "Rendimentos", "Outros",
+    "Salário",
+    "13º Salário",
+    "Adiantamento Salarial",
+    "Horas Extras",
+    "Comissões",
+    "Trabalhos Extras",
+    "Reembolsos",
+    "Receitas Eventuais",
+    "Rendimentos",
+    "Outros",
   ],
   Despesa: [
-    "Moradia", "Alimentação", "Transporte", "Saúde",
-    "Educação", "Lazer", "Serviços", "Assinaturas",
-    "Religião", "Impostos", "Dívidas", "Outros",
+    "Moradia",
+    "Alimentação",
+    "Transporte",
+    "Saúde",
+    "Educação",
+    "Lazer",
+    "Serviços",
+    "Assinaturas",
+    "Religião",
+    "Impostos",
+    "Dívidas",
+    "Outros",
   ],
   Transferência: ["Transferência"],
   Investimento: ["Investimento"],
@@ -48,81 +75,162 @@ const categoriesByType: Record<FormMovementType, string[]> = {
 
 const subcategories: Record<string, string[]> = {
   Salário: ["Salário mensal", "Adiantamento", "Outros"],
-  "13º Salário": ["Primeira parcela", "Segunda parcela", "Integral", "Outros"],
+  "13º Salário": [
+    "Primeira parcela",
+    "Segunda parcela",
+    "Integral",
+    "Outros",
+  ],
   "Adiantamento Salarial": ["Adiantamento", "Outros"],
   "Horas Extras": ["Horas extras", "DSR", "Outros"],
   Comissões: ["Comissão", "Outros"],
   "Trabalhos Extras": ["Serviços extras", "Freelance", "Outros"],
   Reembolsos: ["Reembolso de despesas", "Outros"],
   "Receitas Eventuais": ["Venda", "Presente", "Outros"],
-  Rendimentos: ["Rendimento de conta", "Rendimento financeiro", "Outros"],
+  Rendimentos: [
+    "Rendimento de conta",
+    "Rendimento financeiro",
+    "Outros",
+  ],
   Moradia: [
-    "Aluguel", "Condomínio", "Energia", "Água", "Internet",
-    "Gás", "Manutenção", "Móveis", "Casa", "Outros",
+    "Aluguel",
+    "Condomínio",
+    "Energia",
+    "Água",
+    "Internet",
+    "Gás",
+    "Manutenção",
+    "Móveis",
+    "Casa",
+    "Outros",
   ],
   Alimentação: [
-    "Mercado", "Restaurante", "iFood", "Keeta",
-    "99 Food", "Lanches", "Outros",
+    "Mercado",
+    "Restaurante",
+    "iFood",
+    "Keeta",
+    "99 Food",
+    "Lanches",
+    "Outros",
   ],
   Transporte: [
-    "Combustível", "Transporte público", "Aplicativos",
-    "Estacionamento", "Manutenção do veículo", "Carro", "Outros",
+    "Combustível",
+    "Transporte público",
+    "Aplicativos",
+    "Estacionamento",
+    "Manutenção do veículo",
+    "Carro",
+    "Outros",
   ],
   Saúde: [
-    "Plano de saúde", "Consulta", "Exames",
-    "Medicamentos", "Odontologia", "Outros",
+    "Plano de saúde",
+    "Consulta",
+    "Exames",
+    "Medicamentos",
+    "Odontologia",
+    "Outros",
   ],
-  Educação: ["Cursos", "Material escolar", "Livros", "Notebook", "Outros"],
-  Lazer: ["Viagem", "Cinema", "Passeios", "Eventos", "Televisão", "Outros"],
-  Serviços: ["Telefonia", "Internet", "Manutenção", "Serviços domésticos", "Outros"],
+  Educação: [
+    "Cursos",
+    "Material escolar",
+    "Livros",
+    "Notebook",
+    "Outros",
+  ],
+  Lazer: [
+    "Viagem",
+    "Cinema",
+    "Passeios",
+    "Eventos",
+    "Televisão",
+    "Outros",
+  ],
+  Serviços: [
+    "Telefonia",
+    "Internet",
+    "Manutenção",
+    "Serviços domésticos",
+    "Outros",
+  ],
   Assinaturas: ["Streaming", "Telefonia", "Aplicativos", "Outros"],
   Religião: ["Dízimo", "Oferta", "Doação", "Caixinha", "Outros"],
   Impostos: ["IPVA", "IPTU", "Imposto de renda", "Multas", "Outros"],
   Dívidas: [
-    "Empréstimo", "Cartão de crédito",
-    "Financiamento", "Parcelamento", "Outros",
+    "Empréstimo",
+    "Cartão de crédito",
+    "Financiamento",
+    "Parcelamento",
+    "Outros",
   ],
   Outros: ["Notebook", "Televisão", "Carro", "Casa", "Viagem", "Outros"],
   Transferência: ["Entre contas"],
 };
 
 const investmentOptions = [
-  "CDB", "LCI", "LCA", "Tesouro Direto", "Ações",
-  "Fundos imobiliários (FIIs)", "Fundos de investimento",
-  "Renda fixa", "Renda variável", "Criptomoedas",
-  "Previdência privada", "Outros",
+  "CDB",
+  "LCI",
+  "LCA",
+  "Tesouro Direto",
+  "Ações",
+  "Fundos imobiliários (FIIs)",
+  "Fundos de investimento",
+  "Renda fixa",
+  "Renda variável",
+  "Criptomoedas",
+  "Previdência privada",
+  "Outros",
 ];
 
 const institutions = [
-  "Nubank", "Banco Inter", "Itaú", "Bradesco",
-  "Banco do Brasil", "Caixa Econômica Federal",
-  "Santander", "C6 Bank", "BTG Pactual",
-  "XP Investimentos", "Rico", "Clear",
-  "Mercado Pago", "PicPay", "Outra instituição",
+  "Nubank",
+  "Banco Inter",
+  "Itaú",
+  "Bradesco",
+  "Banco do Brasil",
+  "Caixa Econômica Federal",
+  "Santander",
+  "C6 Bank",
+  "BTG Pactual",
+  "XP Investimentos",
+  "Rico",
+  "Clear",
+  "Mercado Pago",
+  "PicPay",
+  "Outra instituição",
 ];
 
 const movementTypes: FormMovementType[] = [
-  "Receita", "Despesa", "Transferência", "Investimento",
+  "Receita",
+  "Despesa",
+  "Transferência",
+  "Investimento",
 ];
 
 const accounts = [
-  "Conta Corrente", "Poupança",
-  "Dinheiro em Espécie", "Carteira Digital",
+  "Conta Corrente",
+  "Poupança",
+  "Dinheiro em Espécie",
+  "Carteira Digital",
 ];
 
 const paymentMethods = [
-  "Dinheiro", "Débito", "Crédito", "PIX", "Transferência", "Boleto",
-];
-
-const statuses = [
-  "Prevista", "Pendente", "Recebida parcialmente",
-  "Paga parcialmente", "Recebida", "Pago",
-  "Aplicado", "Atrasada", "Cancelada",
+  "Dinheiro",
+  "Débito",
+  "Crédito",
+  "PIX",
+  "Transferência",
+  "Boleto",
 ];
 
 const recurrences = [
-  "Nenhuma", "Semanal", "Quinzenal", "Mensal",
-  "Bimestral", "Trimestral", "Semestral", "Anual",
+  "Nenhuma",
+  "Semanal",
+  "Quinzenal",
+  "Mensal",
+  "Bimestral",
+  "Trimestral",
+  "Semestral",
+  "Anual",
 ];
 
 function money(value: number) {
@@ -138,7 +246,13 @@ function parseAmount(value: string) {
   if (!normalized) return NaN;
 
   if (normalized.includes(",")) {
-    return Number(normalized.replace(/\./g, "").replace(",", "."));
+    return Number(
+      normalized.replace(/\./g, "").replace(",", ".")
+    );
+  }
+
+  if (/^-?\d{1,3}(\.\d{3})+$/.test(normalized)) {
+    return Number(normalized.replace(/\./g, ""));
   }
 
   return Number(normalized);
@@ -151,6 +265,21 @@ function localDate() {
   const day = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+function isValidDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }
 
 function SelectField({
@@ -194,17 +323,237 @@ function getDefaultSubcategory(category: string) {
 }
 
 function isInvestmentApplied(item: Transaction) {
-  if (item.status === "Cancelada" || item.status === "Pendente") {
+  const isInvestment =
+    item.type === "Investimento" || item.type === "Aplicação";
+
+  if (!isInvestment || item.status === "Cancelada") {
     return false;
   }
 
-  return item.type === "Investimento" || item.type === "Aplicação";
+  return item.status === "Aplicado" || !item.status;
+}
+
+function isValidTransaction(value: unknown): value is Transaction {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const item = value as Record<string, unknown>;
+
+  const validTypes: MovementType[] = [
+    "Receita",
+    "Despesa",
+    "Transferência",
+    "Investimento",
+    "Aplicação",
+    "Reserva",
+  ];
+
+  if (
+    typeof item.id !== "number" ||
+    !Number.isFinite(item.id) ||
+    typeof item.description !== "string" ||
+    !item.description.trim() ||
+    !validTypes.includes(item.type as MovementType) ||
+    typeof item.amount !== "number" ||
+    !Number.isFinite(item.amount) ||
+    item.amount <= 0
+  ) {
+    return false;
+  }
+
+  if (
+    item.settledAmount !== undefined &&
+    (
+      typeof item.settledAmount !== "number" ||
+      !Number.isFinite(item.settledAmount) ||
+      item.settledAmount < 0 ||
+      item.settledAmount > item.amount
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    item.date !== undefined &&
+    (
+      typeof item.date !== "string" ||
+      !isValidDate(item.date)
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function getSettledAmount(item: Transaction) {
+  if (item.status === "Cancelada") {
+    return 0;
+  }
+
+  if (item.type === "Receita") {
+    if (item.status === "Recebida") {
+      return item.amount;
+    }
+
+    if (item.status === "Recebida parcialmente") {
+      return Math.min(
+        Number(item.settledAmount || 0),
+        item.amount
+      );
+    }
+
+    return item.status ? 0 : item.amount;
+  }
+
+  if (item.type === "Despesa") {
+    if (item.status === "Pago") {
+      return item.amount;
+    }
+
+    if (item.status === "Paga parcialmente") {
+      return Math.min(
+        Number(item.settledAmount || 0),
+        item.amount
+      );
+    }
+
+    return item.status ? 0 : item.amount;
+  }
+
+  return isInvestmentApplied(item) ? item.amount : 0;
+}
+
+function createBackup(rawData: string) {
+  const backup = {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    storageKey: STORAGE_KEY,
+    rawData,
+  };
+
+  window.localStorage.setItem(
+    BACKUP_KEY,
+    JSON.stringify(backup)
+  );
+}
+
+function loadStoredTransactions(): LoadResult {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) {
+      return {
+        transactions: [],
+        invalidRecords: [],
+        safeToSave: true,
+        error: null,
+      };
+    }
+
+    const parsed: unknown = JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) {
+      return {
+        transactions: [],
+        invalidRecords: [],
+        safeToSave: false,
+        error:
+          "O formato dos dados financeiros não é reconhecido. Os dados originais foram preservados.",
+      };
+    }
+
+    const validRecords = parsed.filter(isValidTransaction);
+    const invalidRecords = parsed.filter(
+      (item) => !isValidTransaction(item)
+    );
+
+    if (invalidRecords.length > 0) {
+      try {
+        window.localStorage.setItem(
+          INVALID_KEY,
+          JSON.stringify({
+            createdAt: new Date().toISOString(),
+            records: invalidRecords,
+          })
+        );
+
+        createBackup(saved);
+      } catch (backupError) {
+        console.error(
+          "Não foi possível proteger os registros inválidos.",
+          backupError
+        );
+
+        return {
+          transactions: validRecords,
+          invalidRecords,
+          safeToSave: false,
+          error:
+            "Existem lançamentos que precisam ser preservados, mas não foi possível criar o backup. Nenhuma gravação automática será realizada.",
+        };
+      }
+    }
+
+    return {
+      transactions: validRecords,
+      invalidRecords,
+      safeToSave: true,
+      error: null,
+    };
+  } catch (error) {
+    console.error(
+      "Não foi possível carregar os lançamentos.",
+      error
+    );
+
+    return {
+      transactions: [],
+      invalidRecords: [],
+      safeToSave: false,
+      error:
+        "Não foi possível interpretar os dados salvos. O conteúdo original foi preservado e não será sobrescrito automaticamente.",
+    };
+  }
+}
+
+function getNextTransactionId(transactions: Transaction[]) {
+  const usedIds = new Set(
+    transactions.map((item) => item.id)
+  );
+
+  let id = Date.now();
+
+  while (usedIds.has(id)) {
+    id += 1;
+  }
+
+  return id;
+}
+
+function downloadJson(filename: string, content: string) {
+  const blob = new Blob([content], {
+    type: "application/json;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
 }
 
 export default function Page() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [settledAmount, setSettledAmount] = useState("");
   const [type, setType] = useState<FormMovementType>("Despesa");
   const [category, setCategory] = useState("Moradia");
   const [subcategory, setSubcategory] = useState("Aluguel");
@@ -217,39 +566,55 @@ export default function Page() {
   const [institution, setInstitution] = useState("Nubank");
   const [filter, setFilter] = useState("Todos");
   const [loaded, setLoaded] = useState(false);
+  const [safeToSave, setSafeToSave] = useState(false);
+  const [invalidCount, setInvalidCount] = useState(0);
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const [backupAvailable, setBackupAvailable] = useState(false);
 
   useEffect(() => {
     setDate(localDate());
 
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+    const result = loadStoredTransactions();
 
-      if (saved) {
-        const parsed: unknown = JSON.parse(saved);
+    setTransactions(result.transactions);
+    setInvalidCount(result.invalidRecords.length);
+    setSafeToSave(result.safeToSave);
+    setStorageError(result.error);
+    setBackupAvailable(
+      Boolean(window.localStorage.getItem(BACKUP_KEY))
+    );
 
-        if (Array.isArray(parsed)) {
-          setTransactions(parsed as Transaction[]);
-        }
-      }
-    } catch (error) {
-      console.error("Não foi possível carregar os lançamentos.", error);
-    } finally {
-      setLoaded(true);
-    }
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !safeToSave) return;
 
     try {
+      const currentData =
+        window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+
+      // A cópia anterior precisa ser salva antes de alterar os dados.
+      createBackup(currentData);
+
+      // A gravação principal só acontece depois do backup.
       window.localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(transactions)
       );
+
+      setBackupAvailable(true);
     } catch (error) {
-      console.error("Não foi possível salvar os lançamentos.", error);
+      console.error(
+        "Não foi possível salvar os lançamentos com segurança.",
+        error
+      );
+
+      setStorageError(
+        "Falha ao salvar os dados. A gravação foi interrompida para evitar perda das informações. Verifique o espaço disponível no navegador."
+      );
     }
-  }, [transactions, loaded]);
+  }, [transactions, loaded, safeToSave]);
 
   const availableCategories = categoriesByType[type];
 
@@ -264,6 +629,7 @@ export default function Page() {
 
     setType(newType);
     setCategory(newCategory);
+    setSettledAmount("");
 
     if (newType === "Investimento") {
       setSubcategory(investmentOptions[0]);
@@ -286,21 +652,49 @@ export default function Page() {
 
     const receitas = active
       .filter((item) => item.type === "Receita")
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      .reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      );
 
     const despesas = active
       .filter((item) => item.type === "Despesa")
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      .reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      );
+
+    const receitasRealizadas = active
+      .filter((item) => item.type === "Receita")
+      .reduce(
+        (sum, item) => sum + getSettledAmount(item),
+        0
+      );
+
+    const despesasRealizadas = active
+      .filter((item) => item.type === "Despesa")
+      .reduce(
+        (sum, item) => sum + getSettledAmount(item),
+        0
+      );
 
     const investimentosAplicados = active
       .filter(isInvestmentApplied)
-      .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      .reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      );
 
     return {
       receitas,
       despesas,
+      receitasRealizadas,
+      despesasRealizadas,
       investimentosAplicados,
-      resultado: receitas - despesas - investimentosAplicados,
+      resultado:
+        receitasRealizadas -
+        despesasRealizadas -
+        investimentosAplicados,
     };
   }, [transactions]);
 
@@ -308,10 +702,14 @@ export default function Page() {
     const existingTypes = transactions
       .map((item) => item.type)
       .filter(
-        (item) => item === "Aplicação" || item === "Reserva"
+        (item) =>
+          item === "Aplicação" || item === "Reserva"
       );
 
-    return [...movementTypes, ...Array.from(new Set(existingTypes))];
+    return [
+      ...movementTypes,
+      ...Array.from(new Set(existingTypes)),
+    ];
   }, [transactions]);
 
   const filtered = transactions.filter(
@@ -321,6 +719,13 @@ export default function Page() {
   function addTransaction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!safeToSave) {
+      window.alert(
+        "O armazenamento está protegido contra gravações porque há um problema com os dados existentes. Faça a recuperação ou verifique o backup antes de continuar."
+      );
+      return;
+    }
+
     const parsedAmount = parseAmount(amount);
 
     if (
@@ -328,17 +733,73 @@ export default function Page() {
       !Number.isFinite(parsedAmount) ||
       parsedAmount <= 0
     ) {
-      window.alert("Preencha a descrição e informe um valor válido.");
+      window.alert(
+        "Preencha a descrição e informe um valor válido."
+      );
       return;
     }
 
-    if (type === "Transferência" && account === destinationAccount) {
-      window.alert("Escolha contas diferentes para origem e destino.");
+    if (!isValidDate(date)) {
+      window.alert("Informe uma data válida.");
+      return;
+    }
+
+    const isPartialStatus =
+      status === "Recebida parcialmente" ||
+      status === "Paga parcialmente";
+
+    const parsedSettledAmount = isPartialStatus
+      ? parseAmount(settledAmount)
+      : undefined;
+
+    if (
+      isPartialStatus &&
+      (
+        !Number.isFinite(parsedSettledAmount) ||
+        Number(parsedSettledAmount) <= 0 ||
+        Number(parsedSettledAmount) >= parsedAmount
+      )
+    ) {
+      window.alert(
+        "Informe um valor parcial maior que zero e menor que o valor total."
+      );
+      return;
+    }
+
+    if (
+      type === "Receita" &&
+      status === "Paga parcialmente"
+    ) {
+      window.alert(
+        "Para receitas, selecione 'Recebida parcialmente'."
+      );
+      return;
+    }
+
+    if (
+      type === "Despesa" &&
+      status === "Recebida parcialmente"
+    ) {
+      window.alert(
+        "Para despesas, selecione 'Paga parcialmente'."
+      );
+      return;
+    }
+
+    if (
+      type === "Transferência" &&
+      account === destinationAccount
+    ) {
+      window.alert(
+        "Escolha contas diferentes para origem e destino."
+      );
       return;
     }
 
     if (type === "Investimento" && !institution.trim()) {
-      window.alert("Selecione a instituição financeira do investimento.");
+      window.alert(
+        "Selecione a instituição financeira do investimento."
+      );
       return;
     }
 
@@ -348,17 +809,20 @@ export default function Page() {
         : undefined;
 
     const newTransaction: Transaction = {
-      id: Date.now(),
+      id: getNextTransactionId(transactions),
       description: description.trim(),
       type,
       amount: parsedAmount,
-      date: date || localDate(),
+      settledAmount: parsedSettledAmount,
+      date,
       category:
         type === "Transferência" || type === "Investimento"
           ? type
           : category,
       subcategory:
-        type === "Transferência" ? "Entre contas" : subcategory,
+        type === "Transferência"
+          ? "Entre contas"
+          : subcategory,
       account,
       destinationAccount:
         type === "Transferência"
@@ -367,14 +831,20 @@ export default function Page() {
       paymentMethod,
       status,
       recurrence,
-      investment: type === "Investimento" ? subcategory : undefined,
-      institution: type === "Investimento" ? institution : undefined,
+      investment:
+        type === "Investimento" ? subcategory : undefined,
+      institution:
+        type === "Investimento" ? institution : undefined,
     };
 
-    setTransactions((current) => [newTransaction, ...current]);
+    setTransactions((current) => [
+      newTransaction,
+      ...current,
+    ]);
 
     setDescription("");
     setAmount("");
+    setSettledAmount("");
     setType("Despesa");
     setCategory("Moradia");
     setSubcategory("Aluguel");
@@ -384,18 +854,236 @@ export default function Page() {
   }
 
   function removeTransaction(id: number) {
-    if (!window.confirm("Deseja excluir este lançamento?")) return;
+    if (!safeToSave) {
+      window.alert(
+        "A exclusão está bloqueada enquanto o armazenamento estiver em modo de proteção."
+      );
+      return;
+    }
+
+    if (!window.confirm("Deseja excluir este lançamento?")) {
+      return;
+    }
 
     setTransactions((current) =>
       current.filter((item) => item.id !== id)
     );
   }
 
+  function exportBackup() {
+    try {
+      const rawData =
+        window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+
+      const invalidData =
+        window.localStorage.getItem(INVALID_KEY);
+
+      const backup = {
+        application: "NEXO — Gestão Pessoal",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        storageKey: STORAGE_KEY,
+        transactions: JSON.parse(rawData),
+        invalidRecords: invalidData
+          ? JSON.parse(invalidData)
+          : null,
+      };
+
+      downloadJson(
+        `nexo-backup-financeiro-${localDate()}.json`,
+        JSON.stringify(backup, null, 2)
+      );
+    } catch (error) {
+      console.error("Erro ao exportar backup:", error);
+      window.alert(
+        "Não foi possível exportar os dados financeiros."
+      );
+    }
+  }
+
+  function restoreLocalBackup() {
+    const savedBackup =
+      window.localStorage.getItem(BACKUP_KEY);
+
+    if (!savedBackup) {
+      window.alert("Nenhum backup local foi encontrado.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Deseja restaurar o último backup? Os lançamentos atuais serão substituídos pela versão salva no backup."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const parsedBackup: unknown = JSON.parse(savedBackup);
+
+      if (
+        !parsedBackup ||
+        typeof parsedBackup !== "object" ||
+        !("rawData" in parsedBackup) ||
+        typeof parsedBackup.rawData !== "string"
+      ) {
+        throw new Error("Formato de backup inválido.");
+      }
+
+      const parsedData: unknown = JSON.parse(
+        parsedBackup.rawData
+      );
+
+      if (!Array.isArray(parsedData)) {
+        throw new Error("O backup não contém uma lista válida.");
+      }
+
+      const validRecords = parsedData.filter(isValidTransaction);
+      const invalidRecords = parsedData.filter(
+        (item) => !isValidTransaction(item)
+      );
+
+      // Mantém o backup disponível até a restauração terminar.
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        parsedBackup.rawData
+      );
+
+      if (invalidRecords.length > 0) {
+        window.localStorage.setItem(
+          INVALID_KEY,
+          JSON.stringify({
+            createdAt: new Date().toISOString(),
+            records: invalidRecords,
+          })
+        );
+      }
+
+      setTransactions(validRecords);
+      setInvalidCount(invalidRecords.length);
+      setSafeToSave(true);
+      setStorageError(null);
+
+      window.alert(
+        `Backup restaurado. ${validRecords.length} lançamento(s) válido(s) recuperado(s).`
+      );
+    } catch (error) {
+      console.error("Erro ao restaurar backup:", error);
+      window.alert(
+        "Não foi possível restaurar o backup. Os dados atuais foram mantidos."
+      );
+    }
+  }
+
+  function importBackup(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!safeToSave) {
+      window.alert(
+        "A importação está bloqueada enquanto o armazenamento estiver em modo de proteção."
+      );
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      try {
+        const content = String(reader.result || "");
+        const parsed: unknown = JSON.parse(content);
+
+        let records: unknown;
+
+        if (Array.isArray(parsed)) {
+          records = parsed;
+        } else if (
+          parsed &&
+          typeof parsed === "object" &&
+          "transactions" in parsed
+        ) {
+          records = parsed.transactions;
+        }
+
+        if (!Array.isArray(records)) {
+          throw new Error("Formato de arquivo não reconhecido.");
+        }
+
+        const validRecords = records.filter(isValidTransaction);
+        const invalidRecords = records.filter(
+          (item) => !isValidTransaction(item)
+        );
+
+        if (validRecords.length === 0 && records.length > 0) {
+          throw new Error(
+            "Nenhum lançamento válido foi encontrado no arquivo."
+          );
+        }
+
+        if (
+          !window.confirm(
+            `Foram encontrados ${validRecords.length} lançamento(s) válido(s) e ${invalidRecords.length} registro(s) inválido(s). Deseja substituir os dados atuais?`
+          )
+        ) {
+          return;
+        }
+
+        const currentData =
+          window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+
+        createBackup(currentData);
+
+        if (invalidRecords.length > 0) {
+          window.localStorage.setItem(
+            INVALID_KEY,
+            JSON.stringify({
+              createdAt: new Date().toISOString(),
+              records: invalidRecords,
+            })
+          );
+        }
+
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(validRecords)
+        );
+
+        setTransactions(validRecords);
+        setInvalidCount(invalidRecords.length);
+        setStorageError(null);
+        setBackupAvailable(true);
+
+        window.alert(
+          `Importação concluída. ${validRecords.length} lançamento(s) recuperado(s).`
+        );
+      } catch (error) {
+        console.error("Erro ao importar backup:", error);
+        window.alert(
+          "Não foi possível importar o arquivo. Os dados atuais foram preservados."
+        );
+      } finally {
+        event.target.value = "";
+      }
+    };
+
+    reader.onerror = () => {
+      window.alert("Não foi possível ler o arquivo selecionado.");
+      event.target.value = "";
+    };
+
+    reader.readAsText(file);
+  }
+
   function movementIcon(item: Transaction) {
     if (item.type === "Receita") return "↗";
     if (item.type === "Despesa") return "↙";
 
-    if (item.type === "Aplicação" || item.type === "Investimento") {
+    if (
+      item.type === "Aplicação" ||
+      item.type === "Investimento"
+    ) {
       return "◈";
     }
 
@@ -409,7 +1097,10 @@ export default function Page() {
     if (item.type === "Despesa") return "-";
 
     if (
-      (item.type === "Investimento" || item.type === "Aplicação") &&
+      (
+        item.type === "Investimento" ||
+        item.type === "Aplicação"
+      ) &&
       isInvestmentApplied(item)
     ) {
       return "-";
@@ -422,7 +1113,10 @@ export default function Page() {
     if (item.type === "Receita") return "income";
     if (item.type === "Despesa") return "expense";
 
-    if (item.type === "Aplicação" || item.type === "Investimento") {
+    if (
+      item.type === "Aplicação" ||
+      item.type === "Investimento"
+    ) {
       return "investment-movement";
     }
 
@@ -439,7 +1133,9 @@ export default function Page() {
             <span className="finance-eyebrow">
               GESTÃO E CONTROLE FINANCEIRO
             </span>
+
             <h2>Organize sua vida financeira.</h2>
+
             <p>
               Acompanhe suas receitas, despesas, transferências e
               investimentos em um só lugar.
@@ -447,36 +1143,113 @@ export default function Page() {
           </div>
         </section>
 
+        {storageError && (
+          <section className="finance-storage-alert" role="alert">
+            <strong>Proteção dos dados ativada</strong>
+            <p>{storageError}</p>
+            <span>
+              Não atualize nem limpe os dados do navegador antes de
+              verificar as opções de recuperação.
+            </span>
+
+            <div className="finance-storage-actions">
+              <button type="button" onClick={exportBackup}>
+                Exportar dados atuais
+              </button>
+
+              {backupAvailable && (
+                <button
+                  type="button"
+                  onClick={restoreLocalBackup}
+                >
+                  Restaurar último backup
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {invalidCount > 0 && (
+          <section className="finance-storage-warning">
+            <strong>
+              {invalidCount} registro(s) precisam de verificação
+            </strong>
+            <p>
+              Esses registros foram preservados em uma área separada
+              e não foram incluídos nos cálculos. O backup original
+              também foi protegido.
+            </p>
+          </section>
+        )}
+
         <section className="finance-cards">
           <article className="finance-card">
             <span>Receitas lançadas</span>
             <strong>{money(totals.receitas)}</strong>
-            <small>Total não cancelado</small>
+            <small>Total cadastrado, inclusive pendente</small>
           </article>
 
           <article className="finance-card">
             <span>Despesas lançadas</span>
             <strong>{money(totals.despesas)}</strong>
-            <small>Total não cancelado</small>
+            <small>Total cadastrado, inclusive pendente</small>
           </article>
 
           <article className="finance-card highlight">
             <span>Saldo disponível</span>
             <strong>{money(totals.resultado)}</strong>
             <small>
-              Receitas − despesas − investimentos aplicados
+              Recebido − pago − investimentos efetivamente aplicados
             </small>
           </article>
         </section>
 
         <section className="finance-investment-summary">
           <span>◈</span>
+
           <div>
             <strong>Total investido</strong>
+
             <p>
-              {money(totals.investimentosAplicados)} retirados do saldo
-              disponível e destinados aos investimentos.
+              {money(totals.investimentosAplicados)} efetivamente
+              aplicados. Investimentos pendentes não reduzem o saldo
+              disponível.
             </p>
+          </div>
+        </section>
+
+        <section className="finance-backup-panel">
+          <div>
+            <strong>Segurança dos dados</strong>
+            <span>
+              Backup local e recuperação dos lançamentos financeiros.
+            </span>
+          </div>
+
+          <div className="finance-backup-actions">
+            <button
+              type="button"
+              onClick={exportBackup}
+            >
+              Exportar backup
+            </button>
+
+            <label className="finance-import-button">
+              Importar backup
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={importBackup}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={restoreLocalBackup}
+              disabled={!backupAvailable}
+            >
+              Restaurar último backup
+            </button>
           </div>
         </section>
 
@@ -494,9 +1267,12 @@ export default function Page() {
           <div className="finance-fields-grid">
             <div className="finance-field field-description">
               <label>Descrição</label>
+
               <input
                 value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                onChange={(event) =>
+                  setDescription(event.target.value)
+                }
                 placeholder={
                   type === "Investimento"
                     ? "Ex.: Aplicação em CDB"
@@ -515,9 +1291,12 @@ export default function Page() {
 
             <div className="finance-field">
               <label>Valor (R$)</label>
+
               <input
                 value={amount}
-                onChange={(event) => setAmount(event.target.value)}
+                onChange={(event) =>
+                  setAmount(event.target.value)
+                }
                 placeholder="0,00"
                 inputMode="decimal"
                 required
@@ -569,17 +1348,21 @@ export default function Page() {
 
             <div className="finance-field">
               <label>Data do lançamento</label>
+
               <input
                 type="date"
                 value={date}
-                onChange={(event) => setDate(event.target.value)}
+                onChange={(event) =>
+                  setDate(event.target.value)
+                }
                 required
               />
             </div>
 
             <SelectField
               label={
-                type === "Transferência" || type === "Investimento"
+                type === "Transferência" ||
+                type === "Investimento"
                   ? "Conta de origem"
                   : "Conta financeira"
               }
@@ -600,6 +1383,7 @@ export default function Page() {
             {type === "Investimento" && (
               <div className="finance-field investment-destination-field">
                 <label>Destino do valor</label>
+
                 <input
                   value={`${subcategory} - ${institution}`}
                   readOnly
@@ -617,13 +1401,61 @@ export default function Page() {
             <SelectField
               label="Status"
               value={status}
-              onChange={setStatus}
+              onChange={(value) => {
+                setStatus(value);
+
+                if (
+                  value !== "Recebida parcialmente" &&
+                  value !== "Paga parcialmente"
+                ) {
+                  setSettledAmount("");
+                }
+              }}
               options={
                 type === "Investimento"
                   ? ["Aplicado", "Pendente", "Cancelada"]
-                  : statuses
+                  : type === "Receita"
+                    ? [
+                        "Prevista",
+                        "Pendente",
+                        "Recebida parcialmente",
+                        "Recebida",
+                        "Atrasada",
+                        "Cancelada",
+                      ]
+                    : type === "Despesa"
+                      ? [
+                          "Prevista",
+                          "Pendente",
+                          "Paga parcialmente",
+                          "Pago",
+                          "Atrasada",
+                          "Cancelada",
+                        ]
+                      : ["Pendente", "Cancelada"]
               }
             />
+
+            {(status === "Recebida parcialmente" ||
+              status === "Paga parcialmente") && (
+              <div className="finance-field">
+                <label>
+                  {status === "Recebida parcialmente"
+                    ? "Valor já recebido (R$)"
+                    : "Valor já pago (R$)"}
+                </label>
+
+                <input
+                  value={settledAmount}
+                  onChange={(event) =>
+                    setSettledAmount(event.target.value)
+                  }
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  required
+                />
+              </div>
+            )}
 
             <SelectField
               label="Recorrência"
@@ -636,22 +1468,24 @@ export default function Page() {
           {type === "Investimento" && (
             <div className="investment-info">
               <span className="investment-info-icon">◈</span>
+
               <div>
                 <strong>
                   Investimento — saída do saldo disponível
                 </strong>
+
                 <p>
                   Ao registrar como aplicado, o valor será descontado
                   da conta de origem e do saldo disponível. Ele continuará
-                  registrado como patrimônio investido, sem ser contabilizado
-                  como despesa.
+                  registrado como patrimônio investido, sem ser
+                  contabilizado como despesa.
                 </p>
               </div>
             </div>
           )}
 
           <div className="finance-form-actions">
-            <button type="submit">
+            <button type="submit" disabled={!safeToSave}>
               {type === "Investimento"
                 ? "+ Registrar investimento"
                 : "+ Adicionar lançamento"}
@@ -671,6 +1505,7 @@ export default function Page() {
               onChange={(event) => setFilter(event.target.value)}
             >
               <option value="Todos">Todos</option>
+
               {filterOptions.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -682,9 +1517,12 @@ export default function Page() {
           {filtered.length === 0 ? (
             <div className="finance-empty">
               <span>◎</span>
+
               <strong>Nenhum lançamento encontrado</strong>
+
               <p>
-                Cadastre uma receita, despesa, transferência ou investimento.
+                Cadastre uma receita, despesa, transferência ou
+                investimento.
               </p>
             </div>
           ) : (
@@ -697,10 +1535,14 @@ export default function Page() {
 
                   <div className="finance-item-info">
                     <strong>{item.description}</strong>
+
                     <span>
                       {item.type} · {item.category || "Sem categoria"}
-                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                      {item.subcategory
+                        ? ` / ${item.subcategory}`
+                        : ""}
                     </span>
+
                     <span>
                       {item.account || "Sem conta"}
                       {item.destinationAccount
@@ -715,7 +1557,8 @@ export default function Page() {
                           item.subcategory ||
                           "Investimento"}
                         {" · "}
-                        {item.institution || "Instituição não informada"}
+                        {item.institution ||
+                          "Instituição não informada"}
                       </span>
                     )}
 
@@ -726,14 +1569,26 @@ export default function Page() {
                     )}
 
                     <span>
-                      {item.date
+                      {item.date && isValidDate(item.date)
                         ? new Date(
-                            item.date + "T12:00:00"
+                            `${item.date}T12:00:00`
                           ).toLocaleDateString("pt-BR")
                         : "Sem data"}
                       {" · "}
                       {item.status || "Pendente"}
                     </span>
+
+                    {(item.status === "Recebida parcialmente" ||
+                      item.status === "Paga parcialmente") && (
+                      <span>
+                        {item.status === "Recebida parcialmente"
+                          ? "Recebido: "
+                          : "Pago: "}
+                        {money(Number(item.settledAmount || 0))}
+                        {" de "}
+                        {money(item.amount)}
+                      </span>
+                    )}
                   </div>
 
                   <strong className={movementClass(item)}>
@@ -746,6 +1601,7 @@ export default function Page() {
                     className="finance-delete"
                     onClick={() => removeTransaction(item.id)}
                     aria-label={`Excluir ${item.description}`}
+                    disabled={!safeToSave}
                   >
                     ×
                   </button>
@@ -782,7 +1638,12 @@ export default function Page() {
           padding: 22px 25px;
           border: 1px solid #35353a;
           border-radius: 9px;
-          background: linear-gradient(100deg, #222326 0%, #171719 60%, #101012 100%);
+          background: linear-gradient(
+            100deg,
+            #222326 0%,
+            #171719 60%,
+            #101012 100%
+          );
         }
 
         .finance-intro h2 {
@@ -878,6 +1739,126 @@ export default function Page() {
           color: #a5a5ad;
           font-size: 10px;
           line-height: 1.5;
+        }
+
+        .finance-storage-alert,
+        .finance-storage-warning {
+          padding: 14px 16px;
+          border: 1px solid #765d42;
+          border-radius: 8px;
+          background: #211c17;
+        }
+
+        .finance-storage-alert strong,
+        .finance-storage-warning strong {
+          display: block;
+          color: #e8c99f;
+          font-size: 12px;
+        }
+
+        .finance-storage-alert p,
+        .finance-storage-warning p {
+          margin: 6px 0;
+          color: #c5b49e;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .finance-storage-alert > span {
+          display: block;
+          color: #b8a58e;
+          font-size: 10px;
+        }
+
+        .finance-storage-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 12px;
+        }
+
+        .finance-storage-actions button {
+          min-height: 32px;
+          padding: 0 12px;
+          border: 1px solid #78654f;
+          border-radius: 5px;
+          background: #30271e;
+          color: #ead8bd;
+          font-size: 10px;
+          cursor: pointer;
+        }
+
+        .finance-storage-warning {
+          border-color: #5d5d65;
+          background: #1c1c20;
+        }
+
+        .finance-storage-warning strong {
+          color: #d5d7dd;
+        }
+
+        .finance-storage-warning p {
+          margin-bottom: 0;
+          color: #aeb1ba;
+        }
+
+        .finance-backup-panel {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+          padding: 12px 15px;
+          border: 1px solid #303034;
+          border-radius: 8px;
+          background: #151517;
+        }
+
+        .finance-backup-panel > div:first-child {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .finance-backup-panel strong {
+          color: #dedfe3;
+          font-size: 11px;
+        }
+
+        .finance-backup-panel span {
+          color: #92949c;
+          font-size: 10px;
+        }
+
+        .finance-backup-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+        }
+
+        .finance-backup-actions button,
+        .finance-import-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 31px;
+          padding: 0 10px;
+          border: 1px solid #414149;
+          border-radius: 5px;
+          background: #222226;
+          color: #d8dae0;
+          font-family: inherit;
+          font-size: 10px;
+          cursor: pointer;
+        }
+
+        .finance-backup-actions button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .finance-import-button input {
+          display: none;
         }
 
         .finance-form {
@@ -1029,6 +2010,12 @@ export default function Page() {
           transform: translateY(-1px);
         }
 
+        .finance-form-actions button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          transform: none;
+        }
+
         .finance-history {
           display: flex;
           flex-direction: column;
@@ -1159,6 +2146,11 @@ export default function Page() {
           color: #e3a0a0;
         }
 
+        .finance-delete:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
         .finance-empty {
           display: flex;
           flex-direction: column;
@@ -1282,6 +2274,20 @@ export default function Page() {
 
           .finance-investment-summary {
             align-items: flex-start;
+          }
+
+          .finance-backup-panel {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .finance-backup-actions {
+            width: 100%;
+          }
+
+          .finance-backup-actions button,
+          .finance-import-button {
+            flex: 1;
           }
         }
       `}</style>
