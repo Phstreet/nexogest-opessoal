@@ -80,6 +80,7 @@ export default function ContasFinanceirasPage() {
   const [type, setType] = useState("Conta corrente");
   const [initialBalance, setInitialBalance] = useState("");
   const [filter, setFilter] = useState("Todas");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     try {
