@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type Transaction = {
   id: number;
@@ -103,10 +104,7 @@ export default function ContasAPagarPage() {
 
   const loadTransactions = useCallback(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-
-      setTransactions(Array.isArray(parsed) ? parsed : []);
+      setTransactions(getTransactions());
     } catch {
       setTransactions([]);
     } finally {
@@ -117,17 +115,11 @@ export default function ContasAPagarPage() {
   useEffect(() => {
     loadTransactions();
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
+    return subscribeFinanceUpdates((key) => {
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
         loadTransactions();
       }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
+    });
   }, [loadTransactions]);
 
   const expenses = useMemo(
@@ -217,15 +209,13 @@ export default function ContasAPagarPage() {
 
     setTransactions(updatedTransactions);
 
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updatedTransactions)
-      );
-    } catch {
-      alert("Não foi possível salvar a alteração.");
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
       loadTransactions();
+      return;
     }
+
+    setTransactions(updatedTransactions);
   }
 
   return (
