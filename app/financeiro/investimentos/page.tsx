@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { FINANCE_STORAGE_KEYS, subscribeFinanceUpdates } from "@/lib/finance/storage";
 
 type InvestmentTransaction = {
   id: number | string;
@@ -111,11 +112,13 @@ export default function InvestimentosPage() {
 
     loadInvestments();
 
-    window.addEventListener("storage", loadInvestments);
+    const unsubscribe = subscribeFinanceUpdates((key) => {
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
+        loadInvestments();
+      }
+    });
 
-    return () => {
-      window.removeEventListener("storage", loadInvestments);
-    };
+    return unsubscribe;
   }, []);
 
   const activeInvestments = useMemo(

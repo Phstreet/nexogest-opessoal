@@ -749,14 +749,16 @@ export function useFinanceDashboard() {
     recommendedSpendingLimit - currentExpenses
   );
 
+  // A taxa de economia usa somente entradas e saídas efetivadas,
+  // mantendo coerência com o resultado realizado do mês.
   const savingsRate =
-    currentRevenue > 0
+    currentConfirmedRevenue > 0
       ? (
-          (currentRevenue -
-            currentExpenses -
+          (currentConfirmedRevenue -
+            currentConfirmedExpenses -
             currentInvestments -
             currentReserves) /
-          currentRevenue
+          currentConfirmedRevenue
         ) * 100
       : 0;
 

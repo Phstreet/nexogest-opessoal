@@ -20,6 +20,7 @@ type Habit = {
 type HabitFilter = "Todos" | "Concluídos" | "Pendentes";
 
 const HABITS_KEY = "nexo_habits";
+const HABITS_BACKUP_KEY = "nexo_habits_backup";
 
 const CATEGORIES = [
   "Trabalho",
@@ -67,17 +68,45 @@ function isValidHabitArray(value: unknown): value is Habit[] {
   );
 }
 
-function loadHabits(): Habit[] {
-  try {
-    const saved = localStorage.getItem(HABITS_KEY);
+type HabitsLoadResult = {
+  habits: Habit[];
+  safeToSave: boolean;
+};
 
-    if (!saved) return [];
+function loadHabits(): HabitsLoadResult {
+  let saved: string | null = null;
+
+  try {
+    saved = localStorage.getItem(HABITS_KEY);
+
+    if (saved === null) {
+      return { habits: [], safeToSave: true };
+    }
 
     const parsed: unknown = JSON.parse(saved);
 
-    return isValidHabitArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    if (isValidHabitArray(parsed)) {
+      return { habits: parsed, safeToSave: true };
+    }
+
+    if (localStorage.getItem(HABITS_BACKUP_KEY) === null) {
+      localStorage.setItem(HABITS_BACKUP_KEY, saved);
+    }
+
+    return { habits: [], safeToSave: false };
+  } catch (error) {
+    if (saved !== null) {
+      try {
+        if (localStorage.getItem(HABITS_BACKUP_KEY) === null) {
+          localStorage.setItem(HABITS_BACKUP_KEY, saved);
+        }
+      } catch (backupError) {
+        console.error("Não foi possível criar o backup dos hábitos:", backupError);
+      }
+    }
+
+    console.error("Não foi possível carregar os hábitos. Os dados originais foram preservados.", error);
+    return { habits: [], safeToSave: false };
   }
 }
 
@@ -118,6 +147,7 @@ function getWeekProgress(habit: Habit, today: string) {
 export default function HabitosPage() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [storageCanSave, setStorageCanSave] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -135,7 +165,9 @@ export default function HabitosPage() {
   const today = getLocalDate();
 
   const loadData = useCallback(() => {
-    setHabits(loadHabits());
+    const result = loadHabits();
+    setHabits(result.habits);
+    setStorageCanSave(result.safeToSave);
     setLoaded(true);
   }, []);
 
@@ -156,14 +188,14 @@ export default function HabitosPage() {
   }, [loadData]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !storageCanSave) return;
 
     try {
       localStorage.setItem(HABITS_KEY, JSON.stringify(habits));
     } catch (error) {
       console.error("Erro ao salvar hábitos:", error);
     }
-  }, [habits, loaded]);
+  }, [habits, loaded, storageCanSave]);
 
   const activeHabits = useMemo(
     () => habits.filter((habit) => habit.active),
