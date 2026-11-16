@@ -459,6 +459,7 @@ export default function ContasAReceberPage() {
                       <td>
                         {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
+                          <>
                           <button
                             type="button"
                             className="receive-button"
@@ -473,6 +474,7 @@ export default function ContasAReceberPage() {
                           >
                             Marcar recebida
                           </button>
+                          </>
                         ) : isReceived(item.status) ? (
                           <button
                             type="button"
