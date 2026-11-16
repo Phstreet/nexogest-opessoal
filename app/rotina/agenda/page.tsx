@@ -18,6 +18,7 @@ type Task = {
 };
 
 const TASKS_KEY = "nexo_tasks";
+const TASKS_BACKUP_KEY = "nexo_tasks_agenda_backup";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -58,17 +59,33 @@ function isValidTaskArray(value: unknown): value is Task[] {
   );
 }
 
-function loadTasks(): Task[] {
+type TasksLoadResult = {
+  tasks: Task[];
+  safeToSave: boolean;
+};
+
+function loadTasks(): TasksLoadResult {
   try {
     const stored = localStorage.getItem(TASKS_KEY);
 
-    if (!stored) return [];
+    if (stored === null) {
+      return { tasks: [], safeToSave: true };
+    }
 
     const parsed: unknown = JSON.parse(stored);
 
-    return isValidTaskArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    if (isValidTaskArray(parsed)) {
+      return { tasks: parsed, safeToSave: true };
+    }
+
+    if (localStorage.getItem(TASKS_BACKUP_KEY) === null) {
+      localStorage.setItem(TASKS_BACKUP_KEY, stored);
+    }
+
+    return { tasks: [], safeToSave: false };
+  } catch (error) {
+    console.error("Não foi possível carregar as tarefas. Os dados originais foram preservados.", error);
+    return { tasks: [], safeToSave: false };
   }
 }
 
@@ -88,6 +105,7 @@ function priorityClass(priority?: Priority) {
 export default function AgendaPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [storageCanSave, setStorageCanSave] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(getLocalDate());
 
@@ -130,7 +148,7 @@ export default function AgendaPage() {
     } catch (error) {
       console.error("Não foi possível salvar as tarefas:", error);
     }
-  }, [tasks, loaded]);
+  }, [tasks, loaded, storageCanSave]);
 
   const selectedTasks = useMemo(() => {
     return tasks
