@@ -16,8 +16,6 @@ type Account = {
   active: boolean;
 };
 
-const STORAGE_KEY = "nexo_accounts";
-
 const accountTypes = [
   "Conta corrente",
   "Conta poupança",
@@ -82,7 +80,6 @@ export default function ContasFinanceirasPage() {
   const [type, setType] = useState("Conta corrente");
   const [initialBalance, setInitialBalance] = useState("");
   const [filter, setFilter] = useState("Todas");
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -90,14 +87,6 @@ export default function ContasFinanceirasPage() {
     } catch {
       console.error("Não foi possível carregar as contas.");
     }
-
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    // A persistência ocorre explicitamente pelos serviços centrais,
-    // que validam os dados, criam backup e notificam as demais telas.
-  }, [accounts, loaded]);
 
   const activeAccounts = useMemo(
     () => accounts.filter((account) => account.active),
