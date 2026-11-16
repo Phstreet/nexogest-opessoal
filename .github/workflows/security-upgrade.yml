@@ -1,0 +1,72 @@
+name: Corrigir vulnerabilidades de dependências
+
+on:
+  push:
+    branches:
+      - security/corrigir-vulnerabilidades
+    paths:
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  security-upgrade:
+    name: Atualizar dependências e validar o NEXO
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          ref: security/corrigir-vulnerabilidades
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Atualizar Next.js, React e ferramentas compatíveis
+        run: |
+          npm install --save-exact next@16.4.6 eslint-config-next@16.4.6 react@latest react-dom@latest @types/react@latest @types/react-dom@latest eslint@^9
+          npm pkg set scripts.lint="eslint ."
+
+      - name: Corrigir dependências transitivas sem forçar versões principais
+        run: npm audit fix
+
+      - name: Publicar package.json e package-lock.json atualizados na branch
+        run: |
+          if ! git diff --quiet -- package.json package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json package-lock.json
+            git commit -m "security: atualizar dependências vulneráveis [skip ci]"
+            git push origin security/corrigir-vulnerabilidades
+          fi
+
+      - name: Gerar auditoria final
+        run: |
+          npm audit --json > npm-audit-final.json || true
+          node -e "const r=require('./npm-audit-final.json'); const v=r.metadata?.vulnerabilities || {}; console.log('Vulnerabilidades finais:', JSON.stringify(v)); if ((v.total || 0) !== 0) process.exit(1)"
+
+      - name: Salvar relatório de segurança
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-seguranca-final
+          path: npm-audit-final.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Validar build de produção
+        run: npm run build
+
+      - name: Instalar Chromium e dependências do sistema
+        run: npx playwright install --with-deps chromium
+
+      - name: Executar testes E2E
+        run: npm run test:e2e
