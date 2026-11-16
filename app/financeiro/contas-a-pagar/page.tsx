@@ -31,7 +31,6 @@ type FilterType =
   | "Atrasadas"
   | "Canceladas";
 
-const STORAGE_KEY = "nexo_transactions";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
