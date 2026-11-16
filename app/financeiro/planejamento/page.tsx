@@ -3,6 +3,11 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  loadTransactionsSafely,
+  subscribeFinanceUpdates,
+  FINANCE_STORAGE_KEYS,
+} from "@/lib/finance/storage";
 
 type TransactionType =
   | "Receita"
@@ -16,6 +21,7 @@ type Transaction = {
   description: string;
   type: TransactionType;
   amount: number;
+  settledAmount?: number;
   date?: string;
   category?: string;
   subcategory?: string;
@@ -133,18 +139,96 @@ function getMonthName(month: string) {
   });
 }
 
-function isPaidTransaction(transaction: Transaction) {
-  const status = (transaction.status || "").toLowerCase().trim();
+function getSettledAmount(transaction: Transaction): number {
+  const amount = Number(transaction.amount) || 0;
+  const status = (transaction.status || "")
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "");
+
+  if (status.includes("cancel")) return 0;
 
   if (transaction.type === "Receita") {
-    return status === "recebida";
+    if (status === "recebida" || status === "recebido" || !status) {
+      return amount;
+    }
+
+    if (status === "recebida parcialmente") {
+      return Math.min(Math.max(Number(transaction.settledAmount) || 0, 0), amount);
+    }
   }
 
   if (transaction.type === "Despesa") {
-    return status === "pago";
+    if (status === "pago" || status === "paga" || !status) {
+      return amount;
+    }
+
+    if (status === "paga parcialmente") {
+      return Math.min(Math.max(Number(transaction.settledAmount) || 0, 0), amount);
+    }
   }
 
-  return false;
+  return 0;
+}
+
+function isValidBudget(value: unknown): value is Budget {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.id === "number" &&
+    typeof item.category === "string" &&
+    item.category.trim().length > 0 &&
+    typeof item.limit === "number" &&
+    Number.isFinite(item.limit) &&
+    item.limit > 0 &&
+    typeof item.month === "string" &&
+    /^\\d{4}-\\d{2}$/.test(item.month)
+  );
+}
+
+function isValidGoal(value: unknown): value is FinancialGoal {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.id === "number" &&
+    typeof item.name === "string" &&
+    item.name.trim().length > 0 &&
+    typeof item.target === "number" &&
+    Number.isFinite(item.target) &&
+    item.target > 0 &&
+    typeof item.current === "number" &&
+    Number.isFinite(item.current) &&
+    item.current >= 0 &&
+    typeof item.deadline === "string" &&
+    typeof item.category === "string" &&
+    typeof item.createdAt === "string"
+  );
+}
+
+function readPlanningList<T>(
+  key: string,
+  backupKey: string,
+  validator: (value: unknown) => value is T
+): { items: T[]; safeToSave: boolean } {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return { items: [], safeToSave: true };
+
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every(validator)) {
+      return { items: parsed, safeToSave: true };
+    }
+
+    if (localStorage.getItem(backupKey) === null) {
+      localStorage.setItem(backupKey, raw);
+    }
+
+    return { items: [], safeToSave: false };
+  } catch (error) {
+    console.error(`Não foi possível ler ${key}; os dados originais foram preservados.`, error);
+    return { items: [], safeToSave: false };
+  }
 }
 
 function isCanceled(transaction: Transaction) {
@@ -159,6 +243,7 @@ export default function PlanejamentoFinanceiroPage() {
 
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [loading, setLoading] = useState(true);
+  const [storageCanSave, setStorageCanSave] = useState(false);
 
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -173,52 +258,61 @@ export default function PlanejamentoFinanceiroPage() {
   const [goalError, setGoalError] = useState("");
 
   useEffect(() => {
-    try {
-      const savedTransactions = localStorage.getItem(TRANSACTIONS_KEY);
-      const savedBudgets = localStorage.getItem(BUDGETS_KEY);
-      const savedGoals = localStorage.getItem(GOALS_KEY);
+    function loadData() {
+      const transactionResult = loadTransactionsSafely();
+      const budgetResult = readPlanningList(BUDGETS_KEY, "nexo_planning_budgets_backup", isValidBudget);
+      const goalResult = readPlanningList(GOALS_KEY, "nexo_planning_goals_backup", isValidGoal);
 
-      if (savedTransactions) {
-        const parsed = JSON.parse(savedTransactions);
-
-        if (Array.isArray(parsed)) {
-          setTransactions(parsed);
-        }
-      }
-
-      if (savedBudgets) {
-        const parsed = JSON.parse(savedBudgets);
-
-        if (Array.isArray(parsed)) {
-          setBudgets(parsed);
-        }
-      }
-
-      if (savedGoals) {
-        const parsed = JSON.parse(savedGoals);
-
-        if (Array.isArray(parsed)) {
-          setGoals(parsed);
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao carregar planejamento financeiro:", error);
-    } finally {
+      setTransactions(transactionResult.transactions);
+      setBudgets(budgetResult.items);
+      setGoals(goalResult.items);
+      setStorageCanSave(
+        transactionResult.safeToSave &&
+        budgetResult.safeToSave &&
+        goalResult.safeToSave
+      );
       setLoading(false);
     }
+
+    loadData();
+
+    const unsubscribe = subscribeFinanceUpdates((key) => {
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
+        loadData();
+      }
+    });
+
+    const handlePlanningStorage = (event: StorageEvent) => {
+      if (event.key === BUDGETS_KEY || event.key === GOALS_KEY) {
+        loadData();
+      }
+    };
+
+    window.addEventListener("storage", handlePlanningStorage);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("storage", handlePlanningStorage);
+    };
   }, []);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading || !storageCanSave) return;
+    try {
       localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
+    } catch (error) {
+      console.error("Erro ao salvar orçamentos:", error);
     }
-  }, [budgets, loading]);
+  }, [budgets, loading, storageCanSave]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading || !storageCanSave) return;
+    try {
       localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
+    } catch (error) {
+      console.error("Erro ao salvar metas financeiras:", error);
     }
-  }, [goals, loading]);
+  }, [goals, loading, storageCanSave]);
 
   const monthTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
@@ -246,17 +340,13 @@ export default function PlanejamentoFinanceiroPage() {
       if (transaction.type === "Receita") {
         plannedIncome += amount;
 
-        if (isPaidTransaction(transaction)) {
-          realizedIncome += amount;
-        }
+        realizedIncome += getSettledAmount(transaction);
       }
 
       if (transaction.type === "Despesa") {
         plannedExpenses += amount;
 
-        if (isPaidTransaction(transaction)) {
-          realizedExpenses += amount;
-        }
+        realizedExpenses += getSettledAmount(transaction);
       }
     });
 
@@ -285,7 +375,7 @@ export default function PlanejamentoFinanceiroPage() {
       const category = transaction.category || "Sem categoria";
 
       result[category] =
-        (result[category] || 0) + (Number(transaction.amount) || 0);
+        (result[category] || 0) + getSettledAmount(transaction);
     });
 
     return result;
