@@ -502,7 +502,7 @@ test.describe("Financeiro - Pagamentos e recebimentos parciais", () => {
     await page.goto("/financeiro/reservas");
     const reserve = page.locator(".reserve-card").filter({ hasText: "Reserva editável" });
     await reserve.getByRole("button", { name: "Editar" }).click();
-    await page.getByLabel("Saldo inicial").fill("700");
+    await page.locator("#reserve-initial").fill("700");
     await page.getByRole("button", { name: "Salvar alterações" }).click();
 
     await expect(reserve.getByText(/850,00/)).toBeVisible();
