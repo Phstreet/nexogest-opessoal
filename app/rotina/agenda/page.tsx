@@ -65,8 +65,10 @@ type TasksLoadResult = {
 };
 
 function loadTasks(): TasksLoadResult {
+  let stored: string | null = null;
+
   try {
-    const stored = localStorage.getItem(TASKS_KEY);
+    stored = localStorage.getItem(TASKS_KEY);
 
     if (stored === null) {
       return { tasks: [], safeToSave: true };
@@ -84,6 +86,16 @@ function loadTasks(): TasksLoadResult {
 
     return { tasks: [], safeToSave: false };
   } catch (error) {
+    if (stored !== null) {
+      try {
+        if (localStorage.getItem(TASKS_BACKUP_KEY) === null) {
+          localStorage.setItem(TASKS_BACKUP_KEY, stored);
+        }
+      } catch (backupError) {
+        console.error("Não foi possível criar o backup das tarefas:", backupError);
+      }
+    }
+
     console.error("Não foi possível carregar as tarefas. Os dados originais foram preservados.", error);
     return { tasks: [], safeToSave: false };
   }
