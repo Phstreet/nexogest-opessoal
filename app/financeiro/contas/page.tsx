@@ -87,6 +87,8 @@ export default function ContasFinanceirasPage() {
       setAccounts(getAccounts());
     } catch {
       console.error("Não foi possível carregar as contas.");
+    } finally {
+      setLoaded(true);
     }
   }, []);
 
