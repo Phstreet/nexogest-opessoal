@@ -119,8 +119,10 @@ function isValidTask(value: unknown): value is Task {
 
 function backupRawTasks(raw: string) {
   try {
-    // Guarda o conteúdo bruto antes de qualquer tentativa de normalização.
-    localStorage.setItem(TASKS_BACKUP_KEY, raw);
+    // Preserva a primeira cópia automática; o backup manual pode ser atualizado pelo usuário.
+    if (localStorage.getItem(TASKS_BACKUP_KEY) === null) {
+      localStorage.setItem(TASKS_BACKUP_KEY, raw);
+    }
   } catch (error) {
     console.error("Erro ao criar backup das tarefas:", error);
   }
@@ -176,7 +178,7 @@ function loadTasks(): LoadResult {
         canSave: true,
         notice:
           invalid.length > 0
-            ? \`\${invalid.length} registro(s) não reconhecido(s) foram preservados sem exclusão. Uma cópia integral foi criada no backup local.\`
+            ? invalid.length + " registro(s) não reconhecido(s) foram preservados sem exclusão. Uma cópia integral foi criada no backup local."
             : "",
       };
     } catch (error) {
@@ -501,7 +503,7 @@ export default function RoutineDashboard() {
       setStorageCanSave(true);
       setLoaded(true);
       setDataNotice(
-        \`Backup restaurado. \${valid.length} atividade(s) reconhecida(s) e \${invalid.length} registro(s) preservado(s).\`
+        "Backup restaurado. " + valid.length + " atividade(s) reconhecida(s) e " + invalid.length + " registro(s) preservado(s)."
       );
     } catch (error) {
       console.error("Erro ao restaurar backup:", error);
