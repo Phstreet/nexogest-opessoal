@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type Transaction = {
   id: number;
@@ -101,10 +102,7 @@ export default function ContasAReceberPage() {
 
   const loadTransactions = useCallback(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-
-      setTransactions(Array.isArray(parsed) ? parsed : []);
+      setTransactions(getTransactions());
     } catch {
       setTransactions([]);
     } finally {
@@ -115,17 +113,11 @@ export default function ContasAReceberPage() {
   useEffect(() => {
     loadTransactions();
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
+    return subscribeFinanceUpdates((key) => {
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
         loadTransactions();
       }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
+    });
   }, [loadTransactions]);
 
   const revenues = useMemo(() => {
@@ -213,17 +205,13 @@ export default function ContasAReceberPage() {
       item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Recebida" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updatedTransactions)
-      );
-
-      setTransactions(updatedTransactions);
-    } catch {
-      alert("Não foi possível salvar a alteração.");
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
       loadTransactions();
+      return;
     }
+
+    setTransactions(updatedTransactions);
   }
 
   function markAsReceived(item: Transaction) {
