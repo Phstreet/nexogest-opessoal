@@ -27,6 +27,7 @@ export default function FinancialDashboardPage() {
     currentConfirmedRevenue,
     currentBalance,
     accountBalance,
+    reserveBalance,
     monthlyData,
     maxChartValue,
     categoryExpenses,
@@ -140,6 +141,7 @@ export default function FinancialDashboardPage() {
         <DashboardAccounts
           accounts={accounts}
           accountBalance={accountBalance}
+          reserveBalance={reserveBalance}
           money={money}
         />
       </section>
@@ -150,8 +152,7 @@ export default function FinancialDashboardPage() {
           <strong>Sobre os indicadores:</strong> os valores são calculados
           com base nos lançamentos cadastrados no NEXO. Quando o lançamento
           possui valor efetivamente pago ou recebido, esse valor é considerado
-          nos indicadores de confirmação. O saldo inicial das contas é exibido
-          separadamente e não representa o saldo bancário atualizado.
+          nos indicadores de confirmação. Os saldos das contas consideram movimentações efetivadas. As reservas são apresentadas separadamente.
         </p>
       </section>
 
