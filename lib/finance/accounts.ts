@@ -6,6 +6,7 @@ import {
   getTransactions,
   getReserves,
   saveAccounts,
+  saveTransactions,
 } from "./storage";
 
 // =====================================================
@@ -166,9 +167,37 @@ export function updateAccount(
     updatedAt: new Date().toISOString(),
   };
 
+  const nameChanged = updatedName !== currentAccount.name;
+  const originalTransactions = nameChanged ? getTransactions() : null;
+
+  // Como os lançamentos legados armazenam o nome da conta,
+  // atualiza as referências para preservar o histórico após renomear.
+  if (nameChanged && originalTransactions) {
+    const renamedTransactions = originalTransactions.map((transaction) => ({
+      ...transaction,
+      account:
+        transaction.account === currentAccount.name
+          ? updatedName
+          : transaction.account,
+      destinationAccount:
+        transaction.destinationAccount === currentAccount.name
+          ? updatedName
+          : transaction.destinationAccount,
+    }));
+
+    if (!saveTransactions(renamedTransactions)) {
+      throw new Error("Não foi possível atualizar os vínculos dos lançamentos da conta.");
+    }
+  }
+
   accounts[index] = updated;
 
   if (!saveAccounts(accounts)) {
+    // Reverte as referências dos lançamentos caso a conta não seja salva.
+    if (originalTransactions) {
+      saveTransactions(originalTransactions);
+    }
+
     throw new Error("Não foi possível atualizar a conta.");
   }
 
