@@ -57,6 +57,14 @@ function getToday() {
   return `${year}-${month}-${day}`;
 }
 
+function parseCurrencyInput(value: string): number {
+  const normalized = value.trim().replace(/\s/g, "");
+  if (!normalized) return NaN;
+  return Number(normalized.includes(",")
+    ? normalized.replace(/\./g, "").replace(",", ".")
+    : normalized);
+}
+
 function isReceived(status?: string) {
   return status === "Recebida";
 }
@@ -234,6 +242,31 @@ export default function ContasAReceberPage() {
     if (confirmed) {
       updateStatus(item.id, "Pendente");
     }
+  }
+
+  function registerPartialReceipt(item: Transaction) {
+    const openAmount = getOpenAmount(item);
+    const entered = window.prompt(
+      `Informe quanto foi recebido agora. Saldo restante: ${formatCurrency(openAmount)}`,
+      ""
+    );
+    if (entered === null) return;
+    const receipt = parseCurrencyInput(entered);
+    if (!Number.isFinite(receipt) || receipt <= 0 || receipt > openAmount) {
+      alert("Informe um valor maior que zero e menor ou igual ao saldo pendente.");
+      return;
+    }
+    const settledAmount = getSettledAmount(item) + receipt;
+    const nextStatus = settledAmount >= Number(item.amount || 0) ? "Recebida" : "Recebida parcialmente";
+    const updatedTransactions = transactions.map((transaction) =>
+      transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
+    );
+    if (!saveTransactions(updatedTransactions)) {
+      alert("Não foi possível registrar o recebimento. Os dados anteriores foram preservados.");
+      loadTransactions();
+      return;
+    }
+    setTransactions(updatedTransactions);
   }
 
   return (
@@ -427,6 +460,13 @@ export default function ContasAReceberPage() {
                         {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
                           <button
+                            type="button"
+                            className="receive-button"
+                            onClick={() => registerPartialReceipt(item)}
+                          >
+                            Registrar recebimento parcial
+                          </button>
+<button
                             type="button"
                             className="receive-button"
                             onClick={() => markAsReceived(item)}
