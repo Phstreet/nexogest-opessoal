@@ -4,6 +4,7 @@ import type { Account, Transaction } from "./types";
 import {
   getAccounts,
   getTransactions,
+  getReserves,
   saveAccounts,
 } from "./storage";
 
@@ -201,12 +202,13 @@ export function deleteAccount(id: number): boolean {
   }
 
   const transactions = getTransactions();
+  const reserves = getReserves();
 
   const hasMovements = transactions.some(
     (transaction) =>
       transaction.account === account.name ||
       transaction.destinationAccount === account.name
-  );
+  ) || reserves.some((reserve) => reserve.accountId === id);
 
   if (hasMovements) {
     throw new Error(
