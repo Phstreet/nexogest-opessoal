@@ -3,6 +3,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getAccounts, saveAccounts } from "@/lib/finance/storage";
+import { deleteAccount } from "@/lib/finance/accounts";
 
 type Account = {
   id: number;
@@ -84,15 +86,7 @@ export default function ContasFinanceirasPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-
-      if (saved) {
-        const parsed = JSON.parse(saved);
-
-        if (Array.isArray(parsed)) {
-          setAccounts(parsed);
-        }
-      }
+      setAccounts(getAccounts());
     } catch {
       console.error("Não foi possível carregar as contas.");
     }
@@ -101,9 +95,8 @@ export default function ContasFinanceirasPage() {
   }, []);
 
   useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-    }
+    // A persistência ocorre explicitamente pelos serviços centrais,
+    // que validam os dados, criam backup e notificam as demais telas.
   }, [accounts, loaded]);
 
   const activeAccounts = useMemo(
@@ -166,7 +159,12 @@ export default function ContasFinanceirasPage() {
       active: true,
     };
 
-    setAccounts((current) => [newAccount, ...current]);
+    const updatedAccounts = [newAccount, ...accounts];
+    if (!saveAccounts(updatedAccounts)) {
+      alert("Não foi possível salvar a conta. Os dados anteriores foram preservados.");
+      return;
+    }
+    setAccounts(updatedAccounts);
 
     setName("");
     setInstitution("Nubank");
@@ -175,13 +173,16 @@ export default function ContasFinanceirasPage() {
   }
 
   function toggleAccount(id: number) {
-    setAccounts((current) =>
-      current.map((account) =>
-        account.id === id
-          ? { ...account, active: !account.active }
-          : account
-      )
+    const updatedAccounts = accounts.map((account) =>
+      account.id === id
+        ? { ...account, active: !account.active }
+        : account
     );
+    if (!saveAccounts(updatedAccounts)) {
+      alert("Não foi possível atualizar a conta.");
+      return;
+    }
+    setAccounts(updatedAccounts);
   }
 
   function removeAccount(id: number) {
@@ -191,9 +192,12 @@ export default function ContasFinanceirasPage() {
 
     if (!confirmed) return;
 
-    setAccounts((current) =>
-      current.filter((account) => account.id !== id)
-    );
+    try {
+      deleteAccount(id);
+      setAccounts(getAccounts());
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Não foi possível excluir a conta.");
+    }
   }
 
   return (
