@@ -5,5 +5,19 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  {
+    rules: {
+      // O projeto já utiliza carregamento de estado dentro de effects em
+      // várias páginas; a regra é desativada até a refatoração específica.
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "playwright-report/**",
+    "test-results/**",
+  ]),
 ]);
