@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
@@ -19,6 +19,8 @@ type Task = {
 };
 
 const TASKS_KEY = "nexo_tasks";
+const TASKS_BACKUP_KEY = "nexo_tasks_backup";
+const TASKS_PRE_RESTORE_BACKUP_KEY = "nexo_tasks_backup_before_restore";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -28,12 +30,49 @@ function getLocalDate(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+function addDays(date: string, days: number) {
+  const [year, month, day] = date.split("-").map(Number);
+
+  return getLocalDate(new Date(year, month - 1, day + days));
+}
+
+type Clock = {
+  date: string;
+  hour: number;
+};
+
+function readClock(): Clock {
+  const now = new Date();
+
+  return { date: getLocalDate(now), hour: now.getHours() };
+}
 function formatDate(date: string) {
   if (!date) return "Sem data";
 
   const [year, month, day] = date.split("-");
 
   return `${day}/${month}/${year}`;
+}
+
+function isValidDateString(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return false;
+  }
+
+  // Evita diferenças de fuso e o tratamento especial dos anos 0000–0099.
+  const parsed = new Date(0);
+  parsed.setUTCHours(0, 0, 0, 0);
+  parsed.setUTCFullYear(year, month - 1, day);
+
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
 }
 
 function isValidPriority(value: unknown): value is Priority {
@@ -53,14 +92,13 @@ function isValidTask(value: unknown): value is Task {
   const validDate =
     item.date === undefined ||
     item.date === "" ||
-    (typeof item.date === "string" &&
-      /^\\d{4}-\\d{2}-\\d{2}$/.test(item.date));
+    (typeof item.date === "string" && isValidDateString(item.date));
 
   const validTime =
     item.time === undefined ||
     item.time === "" ||
     (typeof item.time === "string" &&
-      /^([01]\\d|2[0-3]):[0-5]\\d$/.test(item.time));
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time));
 
   const validPriority =
     item.priority === undefined || isValidPriority(item.priority);
@@ -79,22 +117,89 @@ function isValidTask(value: unknown): value is Task {
   );
 }
 
-function loadTasks(): Task[] {
+function backupRawTasks(raw: string) {
   try {
-    const saved = localStorage.getItem(TASKS_KEY);
-
-    if (!saved) return [];
-
-    const parsed: unknown = JSON.parse(saved);
-
-    // Mantém os registros válidos mesmo se algum item estiver corrompido.
-    return Array.isArray(parsed) ? parsed.filter(isValidTask) : [];
+    // Guarda o conteúdo bruto antes de qualquer tentativa de normalização.
+    localStorage.setItem(TASKS_BACKUP_KEY, raw);
   } catch (error) {
-    console.error("Erro ao carregar tarefas:", error);
-    return [];
+    console.error("Erro ao criar backup das tarefas:", error);
   }
 }
 
+type LoadResult = {
+  valid: Task[];
+  invalid: unknown[];
+  canSave: boolean;
+  notice: string;
+};
+
+function loadTasks(): LoadResult {
+  const empty: LoadResult = {
+    valid: [],
+    invalid: [],
+    canSave: true,
+    notice: "",
+  };
+
+  try {
+    const saved = localStorage.getItem(TASKS_KEY);
+
+    if (!saved) return empty;
+
+    try {
+      const parsed: unknown = JSON.parse(saved);
+
+      if (!Array.isArray(parsed)) {
+        backupRawTasks(saved);
+        return {
+          valid: [],
+          invalid: [],
+          canSave: false,
+          notice:
+            "Os dados salvos estão em um formato inesperado. O salvamento automático foi pausado para evitar sobrescrever suas informações. A cópia original foi preservada no backup local.",
+        };
+      }
+
+      const valid: Task[] = [];
+      const invalid: unknown[] = [];
+
+      parsed.forEach((item) => {
+        if (isValidTask(item)) valid.push(item);
+        else invalid.push(item);
+      });
+
+      if (invalid.length > 0) backupRawTasks(saved);
+
+      return {
+        valid,
+        invalid,
+        canSave: true,
+        notice:
+          invalid.length > 0
+            ? \`\${invalid.length} registro(s) não reconhecido(s) foram preservados sem exclusão. Uma cópia integral foi criada no backup local.\`
+            : "",
+      };
+    } catch (error) {
+      console.error("Erro ao interpretar tarefas:", error);
+      backupRawTasks(saved);
+      return {
+        valid: [],
+        invalid: [],
+        canSave: false,
+        notice:
+          "Não foi possível interpretar os dados salvos. O salvamento automático foi pausado e o conteúdo original foi preservado no backup local.",
+      };
+    }
+  } catch (error) {
+    console.error("Erro ao carregar tarefas:", error);
+    return {
+      ...empty,
+      canSave: false,
+      notice:
+        "Não foi possível acessar o armazenamento local. Nenhum dado será sobrescrito nesta sessão.",
+    };
+  }
+}
 function priorityClass(priority?: Priority) {
   switch (priority) {
     case "Urgente":
@@ -111,20 +216,61 @@ function priorityClass(priority?: Priority) {
 export default function RoutineDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [storageCanSave, setStorageCanSave] = useState(false);
+  const [dataNotice, setDataNotice] = useState("");
+
+  // Registros desconhecidos são preservados junto com as tarefas reconhecidas.
+  const unknownItemsRef = useRef<unknown[]>([]);
+
+  // Relógio inicializado somente no navegador para evitar divergência de hidratação.
+  const [clock, setClock] = useState<Clock | null>(null);
 
   const [taskName, setTaskName] = useState("");
-  const [taskDate, setTaskDate] = useState(getLocalDate());
+  const [taskDate, setTaskDate] = useState("");
   const [taskTime, setTaskTime] = useState("");
   const [taskPriority, setTaskPriority] = useState<Priority>("Média");
 
   const [showQuickForm, setShowQuickForm] = useState(false);
 
-  const today = getLocalDate();
-  const currentDate = new Date();
+  const today = clock?.date ?? "";
 
   const loadData = useCallback(() => {
-    setTasks(loadTasks());
+    const result = loadTasks();
+
+    unknownItemsRef.current = result.invalid;
+    setTasks(result.valid);
+    setStorageCanSave(result.canSave);
+    setDataNotice(result.notice);
     setLoaded(true);
+  }, []);
+
+  // RELÓGIO LOCAL E VIRADA DO DIA
+
+  useEffect(() => {
+    function updateClock() {
+      const next = readClock();
+
+      setClock((previous) =>
+        previous &&
+        previous.date === next.date &&
+        previous.hour === next.hour
+          ? previous
+          : next
+      );
+    }
+
+    updateClock();
+    setTaskDate((current) => current || getLocalDate());
+
+    const interval = window.setInterval(updateClock, 60000);
+    window.addEventListener("focus", updateClock);
+    document.addEventListener("visibilitychange", updateClock);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", updateClock);
+      document.removeEventListener("visibilitychange", updateClock);
+    };
   }, []);
 
   // CARREGAMENTO E SINCRONIZAÇÃO
@@ -145,17 +291,27 @@ export default function RoutineDashboard() {
     };
   }, [loadData]);
 
-  // SALVAMENTO
+  // SALVAMENTO PROTEGIDO
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !storageCanSave) return;
 
     try {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+      const next = JSON.stringify([
+        ...tasks,
+        ...unknownItemsRef.current,
+      ]);
+
+      if (localStorage.getItem(TASKS_KEY) !== next) {
+        localStorage.setItem(TASKS_KEY, next);
+      }
     } catch (error) {
       console.error("Erro ao salvar tarefas:", error);
+      setDataNotice(
+        "Não foi possível salvar as alterações no armazenamento local."
+      );
     }
-  }, [tasks, loaded]);
+  }, [tasks, loaded, storageCanSave]);
 
   // INDICADORES
 
@@ -169,13 +325,7 @@ export default function RoutineDashboard() {
     (task) => task.date && task.date < today
   );
 
-  const nextSevenDays = getLocalDate(
-    new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate() + 7
-    )
-  );
+  const nextSevenDays = today ? addDays(today, 7) : "";
 
   const upcomingTasks = pendingTasks
     .filter(
@@ -208,18 +358,24 @@ export default function RoutineDashboard() {
 
   const tasksWithoutDate = pendingTasks.filter((task) => !task.date);
 
-  // Calculada durante a renderização para acompanhar o horário atual.
-  const currentHour = new Date().getHours();
-  const greeting =
-    currentHour < 12
+  const greeting = !clock
+    ? "Olá"
+    : clock.hour < 12
       ? "Bom dia"
-      : currentHour < 18
+      : clock.hour < 18
         ? "Boa tarde"
         : "Boa noite";
 
   // AÇÕES
 
   function addTask() {
+    if (!storageCanSave) {
+      alert(
+        "O salvamento está pausado para proteger seus dados. Restaure um backup válido antes de cadastrar novas atividades."
+      );
+      return;
+    }
+
     const description = taskName.trim();
 
     if (!description) {
@@ -227,11 +383,34 @@ export default function RoutineDashboard() {
       return;
     }
 
+    if (taskDate && !isValidDateString(taskDate)) {
+      alert("Informe uma data válida.");
+      return;
+    }
+
+    if (taskTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(taskTime)) {
+      alert("Informe um horário válido.");
+      return;
+    }
+
+    const createdAt = new Date().toISOString();
+
     setTasks((current) => {
-      // Evita colisão de ID caso duas atividades sejam cadastradas no mesmo milissegundo.
+      const unknownIds = unknownItemsRef.current
+        .filter(
+          (item): item is Record<string, unknown> =>
+            !!item && typeof item === "object"
+        )
+        .map((item) => item.id)
+        .filter((id): id is number => typeof id === "number");
+
+      // Preserva o padrão numérico já usado pelo NEXO e evita colisões.
       let nextId = Date.now();
 
-      while (current.some((task) => task.id === nextId)) {
+      while (
+        current.some((task) => task.id === nextId) ||
+        unknownIds.includes(nextId)
+      ) {
         nextId += 1;
       }
 
@@ -243,7 +422,7 @@ export default function RoutineDashboard() {
         time: taskTime || undefined,
         priority: taskPriority,
         category: "Pessoal",
-        createdAt: new Date().toISOString(),
+        createdAt,
       };
 
       return [...current, newTask];
@@ -252,8 +431,84 @@ export default function RoutineDashboard() {
     setTaskName("");
     setTaskTime("");
     setTaskPriority("Média");
-    setTaskDate(today);
+    setTaskDate(today || getLocalDate());
     setShowQuickForm(false);
+  }
+
+  function createLocalBackup() {
+    try {
+      const currentRaw = localStorage.getItem(TASKS_KEY);
+      const content =
+        currentRaw ??
+        JSON.stringify([...tasks, ...unknownItemsRef.current]);
+
+      localStorage.setItem(TASKS_BACKUP_KEY, content);
+      setDataNotice(
+        "Backup local criado com sucesso. A cópia está armazenada neste navegador."
+      );
+    } catch (error) {
+      console.error("Erro ao criar backup local:", error);
+      setDataNotice(
+        "Não foi possível criar o backup. Verifique o espaço disponível no armazenamento do navegador."
+      );
+    }
+  }
+
+  function restoreLocalBackup() {
+    try {
+      const backup = localStorage.getItem(TASKS_BACKUP_KEY);
+
+      if (!backup) {
+        setDataNotice("Nenhum backup local foi encontrado neste navegador.");
+        return;
+      }
+
+      const parsed: unknown = JSON.parse(backup);
+
+      if (!Array.isArray(parsed)) {
+        setDataNotice(
+          "O backup não contém uma lista válida. Os dados atuais foram mantidos."
+        );
+        return;
+      }
+
+      if (
+        !window.confirm(
+          "A restauração substituirá a lista atual pelo backup. Antes disso, uma cópia dos dados atuais será preservada. Deseja continuar?"
+        )
+      ) {
+        return;
+      }
+
+      const currentRaw = localStorage.getItem(TASKS_KEY);
+      if (currentRaw !== null) {
+        localStorage.setItem(
+          TASKS_PRE_RESTORE_BACKUP_KEY,
+          currentRaw
+        );
+      }
+
+      const valid: Task[] = [];
+      const invalid: unknown[] = [];
+
+      parsed.forEach((item) => {
+        if (isValidTask(item)) valid.push(item);
+        else invalid.push(item);
+      });
+
+      unknownItemsRef.current = invalid;
+      setTasks(valid);
+      setStorageCanSave(true);
+      setLoaded(true);
+      setDataNotice(
+        \`Backup restaurado. \${valid.length} atividade(s) reconhecida(s) e \${invalid.length} registro(s) preservado(s).\`
+      );
+    } catch (error) {
+      console.error("Erro ao restaurar backup:", error);
+      setDataNotice(
+        "Não foi possível restaurar o backup. Os dados atuais foram mantidos."
+      );
+    }
   }
 
   function toggleTask(id: number) {
@@ -311,6 +566,38 @@ export default function RoutineDashboard() {
 
           <div className="routine-welcome-index">
             01 — ORGANIZAÇÃO
+          </div>
+        </section>
+
+        {/* PROTEÇÃO DOS DADOS */}
+
+        <section className="routine-storage-tools">
+          <div className="routine-storage-copy">
+            <strong>Proteção dos dados</strong>
+            <span>
+              Backup e recuperação das atividades armazenadas neste navegador.
+            </span>
+            {dataNotice && (
+              <small role="status" aria-live="polite">
+                {dataNotice}
+              </small>
+            )}
+          </div>
+          <div className="routine-storage-actions">
+            <button
+              type="button"
+              className="routine-secondary-button"
+              onClick={createLocalBackup}
+            >
+              Criar backup
+            </button>
+            <button
+              type="button"
+              className="routine-secondary-button"
+              onClick={restoreLocalBackup}
+            >
+              Restaurar backup
+            </button>
           </div>
         </section>
 
@@ -478,7 +765,7 @@ export default function RoutineDashboard() {
             <div className="routine-panel-heading">
               <div>
                 <div className="routine-kicker">
-                  {formatDate(today)}
+                  {today ? formatDate(today) : ""}
                 </div>
                 <h3>Atividades de hoje</h3>
               </div>
@@ -1518,6 +1805,48 @@ export default function RoutineDashboard() {
           text-align: right;
         }
 
+        .routine-storage-tools {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin-top: 12px;
+          padding: 12px 15px;
+          background: #171719;
+          border: 1px solid #2c2c31;
+          border-radius: 8px;
+        }
+
+        .routine-storage-copy {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .routine-storage-copy strong {
+          color: #dfe2e7;
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .routine-storage-copy span,
+        .routine-storage-copy small {
+          color: #858b95;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .routine-storage-copy small {
+          color: #c5cbd4;
+        }
+
+        .routine-storage-actions {
+          display: flex;
+          flex-shrink: 0;
+          gap: 8px;
+        }
+
         .quick-form {
           margin-top: 17px;
         }
@@ -1627,6 +1956,19 @@ export default function RoutineDashboard() {
 
           .routine-updated {
             display: none;
+          }
+
+          .routine-storage-tools {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .routine-storage-actions {
+            width: 100%;
+          }
+
+          .routine-storage-actions button {
+            flex: 1;
           }
         }
 
