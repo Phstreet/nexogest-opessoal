@@ -21,12 +21,12 @@ export type RoutineHabit = {
   id: number;
   name: string;
   category: string;
-  frequency: RoutineHabitFrequency;
+  frequency?: RoutineHabitFrequency;
   time?: string;
   notes?: string;
   completedDates: string[];
   active: boolean;
-  createdAt: string;
+  createdAt?: string;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
