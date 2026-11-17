@@ -3,31 +3,9 @@
 
 import { useMemo } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
+import { isValidRoutineHabit as isValidHabit, isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import type { RoutineHabit as Habit, RoutineTask as Task } from "@/lib/routine/types";
 import Link from "next/link";
-
-type Task = {
-  id: number;
-  description: string;
-  done: boolean;
-  date?: string;
-  time?: string;
-  priority?: string;
-  category?: string;
-  notes?: string;
-  createdAt?: string;
-};
-
-type Habit = {
-  id: number;
-  name: string;
-  category: string;
-  frequency: string;
-  time?: string;
-  notes?: string;
-  completedDates: string[];
-  active: boolean;
-  createdAt: string;
-};
 
 type DayData = {
   date: string;
@@ -55,36 +33,6 @@ function formatDate(value: string) {
     day: "2-digit",
     month: "2-digit",
   });
-}
-
-function isValidTask(value: unknown): value is Task {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const task = value as Record<string, unknown>;
-
-  return (
-    typeof task.id === "number" &&
-    typeof task.description === "string" &&
-    typeof task.done === "boolean"
-  );
-}
-
-function isValidHabit(value: unknown): value is Habit {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const habit = value as Record<string, unknown>;
-
-  return (
-    typeof habit.id === "number" &&
-    typeof habit.name === "string" &&
-    typeof habit.category === "string" &&
-    Array.isArray(habit.completedDates) &&
-    typeof habit.active === "boolean"
-  );
 }
 
 export default function ProdutividadePage() {
