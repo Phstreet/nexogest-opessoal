@@ -75,6 +75,7 @@ export default function ConfiguracoesPage() {
     event.preventDefault();
     try {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      window.dispatchEvent(new Event("nexo:profile-updated"));
       setMessage("Personalização salva.");
       setError("");
     } catch {
