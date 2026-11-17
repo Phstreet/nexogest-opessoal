@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   clearSessionCookies, fetchSupabaseUser, getSupabaseConfig,
-  getValidAccessToken, setSessionCookies,
+  getValidAccessToken, setSessionCookies, hasValidOrigin,
 } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!hasValidOrigin(request)) return NextResponse.json({ error: "Origem da solicitação não autorizada." }, { status: 403 });
   let body: Record<string, unknown>;
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Requisição inválida." }, { status: 400 }); }
