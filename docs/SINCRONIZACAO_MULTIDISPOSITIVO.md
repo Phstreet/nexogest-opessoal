@@ -110,3 +110,10 @@ A autenticação e as rotas de sincronização estão implementadas na branch, m
 5. Revisão dos conflitos e da restauração antes de mesclar a PR.
 
 Até concluir esses itens, o sistema mantém o modo local disponível e a PR não deve ser tratada como liberação de produção.
+
+
+## Isolamento local entre contas
+
+O navegador mantém um identificador de proprietário para as coleções locais. Quando uma conta diferente entra no mesmo navegador, os dados ativos da conta anterior são arquivados sob um identificador separado, as coleções ativas são limpas e, se existir, o arquivo local da nova conta é restaurado. A tela é recarregada para limpar estados React em memória. Se não for possível preservar o arquivo anterior, a troca é bloqueada.
+
+Ao resolver um conflito, a versão que será substituída também é preservada em uma chave de backup local por conta e coleção. Esses arquivos podem ser incluídos na exportação de backup da conta correspondente; os arquivos arquivados de outras contas são excluídos da exportação comum.
