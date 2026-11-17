@@ -7,6 +7,7 @@ import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import AgendaMetrics from "@/components/routine/agenda/AgendaMetrics";
 import AgendaForm from "@/components/routine/agenda/AgendaForm";
 import AgendaTimeline from "@/components/routine/agenda/AgendaTimeline";
+import { getOverdueRoutineTasks, getRoutineTasksForDate, getUpcomingRoutineTasks } from "@/lib/routine/task-queries";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 function getLocalDate(date = new Date()) {
@@ -35,19 +36,6 @@ function formatLongDate(date: string) {
   });
 }
 
-function priorityClass(priority?: Priority) {
-  switch (priority) {
-    case "Urgente":
-      return "urgent";
-    case "Alta":
-      return "high";
-    case "Média":
-      return "medium";
-    default:
-      return "low";
-  }
-}
-
 export default function AgendaPage() {
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
@@ -63,16 +51,7 @@ export default function AgendaPage() {
   const [category, setCategory] = useState("Pessoal");
   const [notes, setNotes] = useState("");
 
-  const selectedTasks = useMemo(() => {
-    return tasks
-      .filter((task) => task.date === selectedDate)
-      .sort((a, b) => {
-        if (!a.time && !b.time) return 0;
-        if (!a.time) return 1;
-        if (!b.time) return -1;
-        return a.time.localeCompare(b.time);
-      });
-  }, [tasks, selectedDate]);
+  const selectedTasks = useMemo(() => getRoutineTasksForDate(tasks, selectedDate), [tasks, selectedDate]);
 
   const completedTasks = selectedTasks.filter((task) => task.done);
   const pendingTasks = selectedTasks.filter((task) => !task.done);
@@ -83,30 +62,9 @@ export default function AgendaPage() {
 
   const today = getLocalDate();
 
-  const overdueTasks = useMemo(
-    () => tasks.filter((task) => task.date && task.date < today && !task.done),
-    [tasks, today]
-  );
+  const overdueTasks = useMemo(() => getOverdueRoutineTasks(tasks, today), [tasks, today]);
 
-  const upcomingTasks = useMemo(
-    () =>
-      tasks
-        .filter(
-          (task) =>
-            task.date &&
-            task.date > selectedDate &&
-            !task.done
-        )
-        .sort((a, b) => {
-          const dateComparison = (a.date || "").localeCompare(b.date || "");
-
-          if (dateComparison !== 0) return dateComparison;
-
-          return (a.time || "99:99").localeCompare(b.time || "99:99");
-        })
-        .slice(0, 5),
-    [tasks, selectedDate]
-  );
+  const upcomingTasks = useMemo(() => getUpcomingRoutineTasks(tasks, selectedDate), [tasks, selectedDate]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
