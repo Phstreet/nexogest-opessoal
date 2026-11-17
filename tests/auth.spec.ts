@@ -118,8 +118,8 @@ test.describe("NEXO - Autenticação e recuperação de acesso", () => {
     await page.goto("/redefinir-senha#access_token=token-acesso-teste&refresh_token=token-renovacao-teste&expires_in=3600");
 
     await expect(page.getByRole("heading", { name: "Nova senha" })).toBeVisible();
-    await page.getByLabel("Nova senha").fill("NovaSenhaSegura123");
-    await page.getByLabel("Confirmar nova senha").fill("NovaSenhaSegura123");
+    await page.locator('input[type="password"]').nth(0).fill("NovaSenhaSegura123");
+    await page.locator('input[type="password"]').nth(1).fill("NovaSenhaSegura123");
     await page.getByRole("button", { name: "Salvar nova senha" }).click();
 
     await expect(page).toHaveURL("http://127.0.0.1:3001/");
@@ -136,7 +136,7 @@ test.describe("NEXO - Autenticação e recuperação de acesso", () => {
     await page.getByLabel("Senha").fill("SenhaErrada123");
     await page.getByRole("button", { name: "Entrar" }).click();
 
-    await expect(page.getByRole("alert")).toHaveText("E-mail ou senha inválidos.");
+    await expect(page.locator(".nexo-auth-feedback.error")).toHaveText("E-mail ou senha inválidos.");
     await expect(page).toHaveURL(/\/entrar$/);
   });
 });
