@@ -4,7 +4,12 @@
 import { useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
-import { isValidRoutineTask, type RoutineTask } from "@/lib/routine/types";
+import {
+  isValidRoutineTask,
+  isValidRoutineHabit,
+  type RoutineTask,
+  type RoutineHabit,
+} from "@/lib/routine/types";
 import Link from "next/link";
 import AppLayout from "../components/layout/AppLayout";
 
@@ -41,6 +46,36 @@ export default function Home() {
     currentBalance: balance,
   } = useFinanceDashboard();
 
+  const {
+    items: habits,
+    setItems: setHabits,
+    safeToSave: habitsSafeToSave,
+    storageError: habitsStorageError,
+  } = useRoutineCollection<RoutineHabit>("nexo_habits", isValidRoutineHabit);
+
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const todayTasks = tasks.filter((task) => !task.done && task.date === todayKey);
+  const activeHabits = habits.filter((habit) => habit.active);
+  const completedHabitsToday = activeHabits.filter((habit) => habit.completedDates.includes(todayKey));
+
+  function toggleHabitToday(id: number) {
+    if (!habitsSafeToSave) return;
+
+    setHabits((current) =>
+      current.map((habit) => {
+        if (habit.id !== id) return habit;
+        const completed = habit.completedDates.includes(todayKey);
+        return {
+          ...habit,
+          completedDates: completed
+            ? habit.completedDates.filter((date) => date !== todayKey)
+            : [...habit.completedDates, todayKey],
+        };
+      })
+    );
+  }
+
   // =====================================================
   // PRODUTIVIDADE
   // =====================================================
@@ -61,7 +96,7 @@ export default function Home() {
   // FUNÇÕES DAS TAREFAS
   // =====================================================
 
-  function addTask() {
+  function addTask(date?: string) {
     if (!safeToSave) return;
 
     const description = taskName.trim();
@@ -75,6 +110,7 @@ export default function Home() {
       id: Date.now(),
       description,
       done: false,
+      ...(date ? { date } : {}),
     };
 
     setTasks((current) => [...current, newTask]);
@@ -110,7 +146,7 @@ export default function Home() {
   // =====================================================
 
   const pageTitles: Record<Tab, string> = {
-    dashboard: "Visão geral",
+    dashboard: "Central do Dia",
     rotina: "Minha rotina",
   };
 
@@ -148,11 +184,17 @@ export default function Home() {
         </header>
       }
     >
-      <div className="content">
+      <div className="content daily-home-content">
         {storageError && (
           <div role="alert" className="storage-protection-message">
-            <strong>Armazenamento protegido:</strong> {storageError}
+            <strong>Armazenamento protegido — tarefas:</strong> {storageError}
             {!safeToSave && " As alterações de tarefas foram bloqueadas para proteger seus dados."}
+          </div>
+        )}
+        {habitsStorageError && (
+          <div role="alert" className="storage-protection-message">
+            <strong>Armazenamento protegido — hábitos:</strong> {habitsStorageError}
+            {!habitsSafeToSave && " As alterações de hábitos foram bloqueadas para proteger seus dados."}
           </div>
         )}
 
@@ -185,7 +227,7 @@ export default function Home() {
                 onClick={() => setTab("dashboard")}
                 aria-pressed={tab === "dashboard"}
               >
-                Visão geral
+                Central do Dia
               </button>
 
               <button
@@ -333,6 +375,97 @@ export default function Home() {
                 </div>
 
                 <div className="metric-line light-line" />
+              </div>
+            </section>
+
+            <section className="panel task-form-panel daily-quick-entry">
+              <div className="section-kicker">CADASTRO RÁPIDO</div>
+              <h3>O que você precisa resolver hoje?</h3>
+              <div className="task-entry">
+                <input
+                  className="form-input"
+                  placeholder="Digite uma tarefa para hoje..."
+                  value={taskName}
+                  onChange={(event) => setTaskName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") addTask(todayKey);
+                  }}
+                  aria-label="Nova tarefa para hoje"
+                />
+                <button type="button" className="primary-button" onClick={() => addTask(todayKey)}>
+                  + Adicionar à agenda de hoje
+                </button>
+              </div>
+              <div className="daily-quick-links">
+                <Link href="/financeiro">Nova movimentação financeira ↗</Link>
+                <Link href="/rotina/agenda">Organizar agenda ↗</Link>
+                <Link href="/rotina/habitos">Acompanhar hábitos ↗</Link>
+              </div>
+            </section>
+
+            <section className="dashboard-bottom daily-overview-grid">
+              <div className="panel activity-panel">
+                <div className="panel-heading">
+                  <div>
+                    <div className="section-kicker">AGENDA DE HOJE</div>
+                    <h3>Atividades programadas</h3>
+                  </div>
+                  <Link href="/rotina/agenda" className="small-outline-button">Abrir agenda</Link>
+                </div>
+                {todayTasks.length ? (
+                  <div className="activity-list">
+                    {todayTasks.slice(0, 5).map((task) => (
+                      <div className="activity-item" key={task.id}>
+                        <span className="activity-bullet" />
+                        <span>{task.time ? `${task.time} · ` : ""}{task.description}</span>
+                        <button type="button" className="activity-check" onClick={() => toggleTask(task.id)} aria-label={`Concluir ${task.description}`}>✓</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>Nenhuma tarefa programada para hoje.</p>
+                    <Link href="/rotina/agenda">Organizar minha agenda</Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="panel summary-panel">
+                <div className="panel-heading">
+                  <div>
+                    <div className="section-kicker">HÁBITOS</div>
+                    <h3>Meu progresso de hoje</h3>
+                  </div>
+                  <Link href="/rotina/habitos" className="small-outline-button">Ver hábitos</Link>
+                </div>
+                {activeHabits.length ? (
+                  <>
+                    <div className="progress-label">
+                      <span>{completedHabitsToday.length} de {activeHabits.length} concluídos</span>
+                      <strong>{Math.round((completedHabitsToday.length / activeHabits.length) * 100)}%</strong>
+                    </div>
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{ width: `${Math.round((completedHabitsToday.length / activeHabits.length) * 100)}%` }} />
+                    </div>
+                    <div className="activity-list">
+                      {activeHabits.slice(0, 5).map((habit) => {
+                        const completed = habit.completedDates.includes(todayKey);
+                        return (
+                          <div className="activity-item" key={habit.id}>
+                            <span className="activity-bullet" />
+                            <span className={completed ? "daily-completed" : ""}>{habit.name}</span>
+                            <button type="button" className="activity-check" onClick={() => toggleHabitToday(habit.id)} aria-label={completed ? `Desmarcar ${habit.name}` : `Concluir ${habit.name}`}>{completed ? "✓" : "○"}</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <p>Você ainda não cadastrou hábitos.</p>
+                    <Link href="/rotina/habitos">Criar primeiro hábito</Link>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -500,7 +633,7 @@ export default function Home() {
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={addTask}
+                  onClick={() => addTask()}
                 >
                   + Adicionar tarefa
                 </button>
@@ -578,6 +711,19 @@ export default function Home() {
             </section>
           </>
         )}
+
+        <style jsx>{`
+          .daily-quick-links { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+          .daily-quick-links a { color:#aaa; font-size:10px; text-decoration:none; }
+          .daily-quick-links a:hover { color:#fff; text-decoration:underline; }
+          .daily-overview-grid { margin-top:18px; }
+          .daily-completed { color:#888; text-decoration:line-through; }
+          @media(max-width:700px) {
+            .daily-quick-links { flex-direction:column; gap:10px; }
+            .daily-quick-entry .task-entry { align-items:stretch; flex-direction:column; }
+            .daily-quick-entry .task-entry button { width:100%; }
+          }
+        `}</style>
 
         <footer className="footer">
           <span>
