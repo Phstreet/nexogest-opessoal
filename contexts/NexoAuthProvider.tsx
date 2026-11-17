@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  getStoredSession, refreshSession, signInWithPassword, signOutSession,
-  signUpWithPassword, requestPasswordReset, updatePassword, storeSession,
+  getCurrentSession, signInWithPassword, signOutSession, signUpWithPassword,
+  requestPasswordReset, updatePassword, setRecoverySession,
   type NexoSession,
 } from "@/lib/supabase/client";
 
@@ -23,64 +23,43 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<NexoSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const syncSession = useCallback(() => setSession(getStoredSession()), []);
+  const loadSession = useCallback(async () => {
+    try { setSession(await getCurrentSession()); }
+    catch { setSession(null); }
+    finally { setLoading(false); }
+  }, []);
 
   useEffect(() => {
-    const stored = getStoredSession();
-    if (stored) {
-      if (stored.expires_at <= Math.floor(Date.now() / 1000) + 60) {
-        refreshSession(stored).then(setSession).catch(() => {
-          storeSession(null);
-          setSession(null);
-        }).finally(() => setLoading(false));
-      } else {
-        setSession(stored);
-        setLoading(false);
-      }
-    } else {
-      // Links de recuperação do Supabase retornam tokens no fragmento da URL.
+    let active = true;
+    async function initialize() {
       const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hash.get("access_token");
       const refreshToken = hash.get("refresh_token");
       if (accessToken && refreshToken) {
-        const expiresIn = Number(hash.get("expires_in") || 3600);
-        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mmwkpwspyjvxsennvhic.supabase.co"}/auth/v1/user`, {
-          headers: {
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_-TkcxAdmwC_Mt-bLwUPQvw_x9JwKDyk",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }).then((response) => response.ok ? response.json() : Promise.reject(new Error("Sessão de recuperação inválida.")))
-          .then((user) => {
-            const next: NexoSession = {
-              access_token: accessToken, refresh_token: refreshToken, token_type: "bearer",
-              expires_in: expiresIn, expires_at: Math.floor(Date.now() / 1000) + expiresIn, user,
-            };
-            storeSession(next);
-            setSession(next);
-            window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-          }).catch(() => setSession(null)).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
+        try {
+          const recovered = await setRecoverySession(accessToken, refreshToken, Number(hash.get("expires_in") || 3600));
+          if (active) setSession(recovered);
+          window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+        } catch {
+          if (active) setSession(null);
+        } finally {
+          if (active) setLoading(false);
+        }
+        return;
       }
+      await loadSession();
     }
-    window.addEventListener("nexo:auth-changed", syncSession);
-    window.addEventListener("storage", syncSession);
-    return () => {
-      window.removeEventListener("nexo:auth-changed", syncSession);
-      window.removeEventListener("storage", syncSession);
-    };
-  }, [syncSession]);
+    void initialize();
+    const refreshOnFocus = () => { if (document.visibilityState === "visible") void loadSession(); };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => { active = false; window.removeEventListener("focus", refreshOnFocus); };
+  }, [loadSession]);
 
   useEffect(() => {
     if (!session) return;
-    const timer = window.setInterval(async () => {
-      const current = getStoredSession();
-      if (!current || current.expires_at > Math.floor(Date.now() / 1000) + 180) return;
-      try { setSession(await refreshSession(current)); }
-      catch { storeSession(null); setSession(null); }
-    }, 60_000);
+    const timer = window.setInterval(() => { void loadSession(); }, 4 * 60 * 1000);
     return () => window.clearInterval(timer);
-  }, [session]);
+  }, [session, loadSession]);
 
   const value = useMemo<AuthContextValue>(() => ({
     session,
@@ -92,13 +71,13 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
       return result.confirmationRequired;
     },
     async signOut() {
-      if (session) await signOutSession(session);
-      setSession(null);
+      try { await signOutSession(); }
+      finally { setSession(null); }
     },
     sendPasswordReset: requestPasswordReset,
     async changePassword(password) {
       if (!session) throw new Error("Entre na sua conta para alterar a senha.");
-      await updatePassword(session, password);
+      await updatePassword(password);
     },
   }), [session, loading]);
 
