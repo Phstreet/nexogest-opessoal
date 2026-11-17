@@ -49,6 +49,8 @@ export default function Home() {
   const {
     items: habits,
     setItems: setHabits,
+    safeToSave: habitsSafeToSave,
+    storageError: habitsStorageError,
   } = useRoutineCollection<RoutineHabit>("nexo_habits", isValidRoutineHabit);
 
   const now = new Date();
@@ -58,6 +60,8 @@ export default function Home() {
   const completedHabitsToday = activeHabits.filter((habit) => habit.completedDates.includes(todayKey));
 
   function toggleHabitToday(id: number) {
+    if (!habitsSafeToSave) return;
+
     setHabits((current) =>
       current.map((habit) => {
         if (habit.id !== id) return habit;
@@ -183,8 +187,14 @@ export default function Home() {
       <div className="content daily-home-content">
         {storageError && (
           <div role="alert" className="storage-protection-message">
-            <strong>Armazenamento protegido:</strong> {storageError}
+            <strong>Armazenamento de tarefas protegido:</strong> {storageError}
             {!safeToSave && " As alterações de tarefas foram bloqueadas para proteger seus dados."}
+          </div>
+        )}
+        {habitsStorageError && (
+          <div role="alert" className="storage-protection-message">
+            <strong>Armazenamento de hábitos protegido:</strong> {habitsStorageError}
+            {!habitsSafeToSave && " As alterações de hábitos foram bloqueadas para proteger seus dados."}
           </div>
         )}
 
