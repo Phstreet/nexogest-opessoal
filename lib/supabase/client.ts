@@ -24,6 +24,7 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_pub
 const SESSION_KEY = "nexo_auth_session";
 
 function headers(token?: string) {
+  assertConfigured();
   return {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${token || SUPABASE_KEY}`,
@@ -83,7 +84,7 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 export async function signUpWithPassword(email: string, password: string, displayName: string) {
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(window.location.origin)}`, {
     method: "POST", headers: headers(),
     body: JSON.stringify({ email, password, data: { display_name: displayName } }),
   });
@@ -132,6 +133,7 @@ export async function updatePassword(session: NexoSession, password: string) {
 }
 
 export async function fetchRemoteCollections(session: NexoSession): Promise<RemoteCollection[]> {
+  assertConfigured();
   const query = new URLSearchParams({
     select: "data_key,payload,revision,updated_at",
     user_id: `eq.${session.user.id}`,
@@ -146,6 +148,7 @@ export async function fetchRemoteCollections(session: NexoSession): Promise<Remo
 export async function saveRemoteCollection(
   session: NexoSession, dataKey: string, payload: unknown, expectedRevision: number
 ): Promise<{ saved: boolean; current_revision: number | null; current_updated_at: string | null }> {
+  assertConfigured();
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/save_nexo_user_data`, {
     method: "POST", headers: headers(session.access_token),
     body: JSON.stringify({ p_data_key: dataKey, p_payload: payload, p_expected_revision: expectedRevision }),
