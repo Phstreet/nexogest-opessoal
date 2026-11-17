@@ -984,3 +984,103 @@ test.describe("NEXO - Componentização de Tarefas e Agenda", () => {
   });
 });
 
+
+
+test.describe("NEXO - Proteção e resumo da página inicial", () => {
+  test("deve preservar tarefas corrompidas ao abrir a página inicial", async ({ page }) => {
+    const original = "{tarefas-corrompidas-na-home";
+
+    await page.addInitScript((raw) => {
+      localStorage.setItem("nexo_tasks", raw);
+    }, original);
+
+    await page.goto("/");
+
+    await expect(page.getByRole("alert")).toContainText("Armazenamento protegido");
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
+    ).toBe(original);
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))
+    ).toBe(original);
+
+    await page.reload();
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
+    ).toBe(original);
+  });
+
+  test("deve exibir no resumo inicial somente valores realizados do mês", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
+
+      localStorage.setItem("nexo_transactions", JSON.stringify([
+        {
+          id: 995001,
+          type: "Receita",
+          description: "Receita parcialmente recebida",
+          amount: 1000,
+          settledAmount: 400,
+          date,
+          status: "Recebida parcialmente"
+        },
+        {
+          id: 995002,
+          type: "Receita",
+          description: "Receita pendente",
+          amount: 500,
+          date,
+          status: "Pendente"
+        },
+        {
+          id: 995003,
+          type: "Receita",
+          description: "Receita cancelada",
+          amount: 900,
+          settledAmount: 900,
+          date,
+          status: "Cancelada"
+        },
+        {
+          id: 995004,
+          type: "Despesa",
+          description: "Despesa parcialmente paga",
+          amount: 600,
+          settledAmount: 150,
+          date,
+          status: "Paga parcialmente"
+        },
+        {
+          id: 995005,
+          type: "Despesa",
+          description: "Despesa quitada legada",
+          amount: 100,
+          date,
+          status: "Pago"
+        },
+        {
+          id: 995006,
+          type: "Despesa",
+          description: "Despesa pendente",
+          amount: 700,
+          date,
+          status: "Pendente"
+        }
+      ]));
+    });
+
+    await page.goto("/");
+
+    const incomeCard = page.locator(".metric-card").filter({ hasText: "Receitas" });
+    const expenseCard = page.locator(".metric-card").filter({ hasText: "Despesas" });
+    const balanceCard = page.locator(".metric-card").filter({ hasText: "Saldo disponível" });
+
+    await expect(incomeCard.locator(".metric-value")).toContainText("400,00");
+    await expect(expenseCard.locator(".metric-value")).toContainText("250,00");
+    await expect(balanceCard.locator(".metric-value")).toContainText("150,00");
+  });
+});
