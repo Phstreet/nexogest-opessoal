@@ -220,6 +220,12 @@ export default function ProdutividadePage() {
 
   return (
     <div className="content productivity-page-content">
+      {storageError && (
+        <div className="form-card" role="alert">
+          <strong>Armazenamento protegido</strong>
+          <p>{storageError}</p>
+        </div>
+      )}
       <div className="page-heading">
         <div>
           <div className="eyebrow">DESEMPENHO PESSOAL</div>
