@@ -3,20 +3,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
-
-type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
-
-type Task = {
-  id: number;
-  description: string;
-  done: boolean;
-  date?: string;
-  time?: string;
-  priority?: Priority;
-  category?: string;
-  notes?: string;
-  createdAt?: string;
-};
+import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -42,20 +30,6 @@ function formatLongDate(date: string) {
     month: "long",
     year: "numeric",
   });
-}
-
-function isValidTask(value: unknown): value is Task {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const task = value as Record<string, unknown>;
-
-  return (
-    typeof task.id === "number" &&
-    typeof task.description === "string" &&
-    typeof task.done === "boolean"
-  );
 }
 
 function priorityClass(priority?: Priority) {
