@@ -33,12 +33,7 @@ export default function TaskList(props: TaskListProps) {
     
                   <button
                     className="secondary-button"
-                    onClick={() => {
-                      setFilter("Todas");
-                      setCategoryFilter("Todas");
-                      setPriorityFilter("Todas");
-                      setSearch("");
-                    }}
+                    onClick={onClearFilters}
                     type="button"
                   >
                     Limpar filtros
