@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import {
   financeMenuItems,
@@ -19,6 +19,7 @@ const SIDEBAR_STORAGE_KEY = "nexo_navigation_collapsed";
 
 export default function MainNavigation() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const isFinanceRoute = pathname.startsWith("/financeiro");
   const isRoutineRoute = pathname.startsWith("/rotina");
@@ -152,7 +153,13 @@ export default function MainNavigation() {
   );
 
   function isActive(href: string) {
-    return pathname === href.split("?")[0];
+    const [targetPath, targetQuery] = href.split("?");
+    if (pathname !== targetPath) return false;
+    if (!targetQuery) return true;
+
+    const params = new URLSearchParams(targetQuery);
+    const tab = params.get("tab");
+    return !tab || searchParams.get("tab") === tab;
   }
 
   function toggleFavorite(href: string) {
