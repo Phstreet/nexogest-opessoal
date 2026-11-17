@@ -33,10 +33,10 @@ function dateToString(date: Date) {
   return getLocalDate(date);
 }
 
-function getWeekStart(date: Date) {
+function getWeekStart(date: Date, weekStartsOn: "monday" | "sunday" = "monday") {
   const result = new Date(date);
   const day = result.getDay();
-  const difference = day === 0 ? -6 : 1 - day;
+  const difference = weekStartsOn === "sunday" ? -day : day === 0 ? -6 : 1 - day;
 
   result.setDate(result.getDate() + difference);
   result.setHours(12, 0, 0, 0);
@@ -75,9 +75,24 @@ function priorityClass(priority?: Priority) {
 export default function WeeklyPlanningPage() {
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
+  const [weekStartsOn, setWeekStartsOn] = useState<"monday" | "sunday">("monday");
   const [weekStart, setWeekStart] = useState(() =>
     getWeekStart(new Date())
   );
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("nexo_preferences");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { weekStartsOn?: unknown };
+      if (parsed.weekStartsOn === "monday" || parsed.weekStartsOn === "sunday") {
+        setWeekStartsOn(parsed.weekStartsOn);
+        setWeekStart(getWeekStart(new Date(), parsed.weekStartsOn));
+      }
+    } catch (error) {
+      console.error("Não foi possível carregar as preferências do NEXO:", error);
+    }
+  }, []);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
