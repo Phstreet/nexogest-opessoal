@@ -41,11 +41,6 @@ export default function TaskList(props: TaskListProps) {
                 </div>
               ) : (
                 filteredTasks.map((task) => {
-                  const overdue =
-                    !task.done && !!task.date && task.date < today;
-    
-                  const expanded = expandedTask === task.id;
-    
                   return (
                     <TaskItem
                       key={task.id}
