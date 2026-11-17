@@ -2019,13 +2019,14 @@ textarea {
    NEXO — CONTA, AUTENTICAÇÃO E SINCRONIZAÇÃO
 ===================================================== */
 .nexo-account-access {
-  position: fixed; top: 14px; right: 22px; z-index: 180;
+  position: static; z-index: 180;
   display: inline-flex; align-items: center; gap: 9px;
   min-height: 32px; padding: 5px 10px;
   color: #d8d8dc; background: #19191d; border: 1px solid #3a3a40;
   border-radius: 7px; font-size: 10px; text-decoration: none;
 }
 .nexo-account-access:hover { border-color: #777; color: #fff; }
+.nexo-account-slot { display:flex; justify-content:flex-end; padding:8px 22px 0; background:#101012; }
 .nexo-account-access a,.nexo-account-access button { color: #eee; background: transparent; border: 0; font: inherit; text-decoration: underline; cursor: pointer; }
 .nexo-account-connected { padding-left: 10px; }
 .nexo-account-indicator,.nexo-sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #8a8a8a; flex: 0 0 auto; }
@@ -2061,7 +2062,7 @@ textarea {
 .nexo-auth-links { display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:20px; color:#999; font-size:10px; }
 .nexo-auth-links a,.nexo-auth-back { color:#e2e2e2; text-decoration:underline; }
 .nexo-auth-back { display:block; margin-top:24px; color:#888; font-size:10px; text-align:center; text-decoration:none; }
-@media(max-width:760px) { .nexo-account-access { top:auto; right:12px; bottom:12px; max-width:calc(100vw - 24px); } .nexo-account-access>span:nth-child(2) { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .nexo-sync-widget { bottom:58px; right:12px; } }
+@media(max-width:760px) { .nexo-account-slot { padding:8px 13px 0; } .nexo-account-access { max-width:100%; } .nexo-account-access>span:nth-child(2) { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .nexo-sync-widget { bottom:12px; right:12px; } }
 @media(max-width:480px) { .nexo-auth-card { padding:25px 20px; } }
 
 .secondary-button { display:inline-flex; align-items:center; justify-content:center; min-height:36px; padding:9px 13px; color:#ddd; background:#202020; border:1px solid #393939; border-radius:7px; font-size:11px; text-decoration:none; cursor:pointer; }
