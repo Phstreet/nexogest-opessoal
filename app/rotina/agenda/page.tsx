@@ -4,6 +4,10 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import AgendaMetrics from "@/components/routine/agenda/AgendaMetrics";
+import AgendaForm from "@/components/routine/agenda/AgendaForm";
+import AgendaTimeline from "@/components/routine/agenda/AgendaTimeline";
+import { getOverdueRoutineTasks, getRoutineTasksForDate, getUpcomingRoutineTasks } from "@/lib/routine/task-queries";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 function getLocalDate(date = new Date()) {
@@ -32,19 +36,6 @@ function formatLongDate(date: string) {
   });
 }
 
-function priorityClass(priority?: Priority) {
-  switch (priority) {
-    case "Urgente":
-      return "urgent";
-    case "Alta":
-      return "high";
-    case "Média":
-      return "medium";
-    default:
-      return "low";
-  }
-}
-
 export default function AgendaPage() {
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
@@ -60,16 +51,7 @@ export default function AgendaPage() {
   const [category, setCategory] = useState("Pessoal");
   const [notes, setNotes] = useState("");
 
-  const selectedTasks = useMemo(() => {
-    return tasks
-      .filter((task) => task.date === selectedDate)
-      .sort((a, b) => {
-        if (!a.time && !b.time) return 0;
-        if (!a.time) return 1;
-        if (!b.time) return -1;
-        return a.time.localeCompare(b.time);
-      });
-  }, [tasks, selectedDate]);
+  const selectedTasks = useMemo(() => getRoutineTasksForDate(tasks, selectedDate), [tasks, selectedDate]);
 
   const completedTasks = selectedTasks.filter((task) => task.done);
   const pendingTasks = selectedTasks.filter((task) => !task.done);
@@ -80,30 +62,9 @@ export default function AgendaPage() {
 
   const today = getLocalDate();
 
-  const overdueTasks = useMemo(
-    () => tasks.filter((task) => task.date && task.date < today && !task.done),
-    [tasks, today]
-  );
+  const overdueTasks = useMemo(() => getOverdueRoutineTasks(tasks, today), [tasks, today]);
 
-  const upcomingTasks = useMemo(
-    () =>
-      tasks
-        .filter(
-          (task) =>
-            task.date &&
-            task.date > selectedDate &&
-            !task.done
-        )
-        .sort((a, b) => {
-          const dateComparison = (a.date || "").localeCompare(b.date || "");
-
-          if (dateComparison !== 0) return dateComparison;
-
-          return (a.time || "99:99").localeCompare(b.time || "99:99");
-        })
-        .slice(0, 5),
-    [tasks, selectedDate]
-  );
+  const upcomingTasks = useMemo(() => getUpcomingRoutineTasks(tasks, selectedDate), [tasks, selectedDate]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -281,146 +242,26 @@ export default function AgendaPage() {
         </button>
       </section>
 
-      <section className="agenda-metrics">
-        <div className="agenda-metric-card">
-          <span className="metric-label">ATIVIDADES DO DIA</span>
-          <strong>{selectedTasks.length}</strong>
-          <span className="metric-description">Total programado</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">PENDENTES</span>
-          <strong>{pendingTasks.length}</strong>
-          <span className="metric-description">Aguardando conclusão</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">CONCLUÍDAS</span>
-          <strong>{completedTasks.length}</strong>
-          <span className="metric-description">Atividades realizadas</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">ATRASADAS</span>
-          <strong className={overdueTasks.length ? "metric-danger" : ""}>
-            {overdueTasks.length}
-          </strong>
-          <span className="metric-description">Precisam de atenção</span>
-        </div>
-      </section>
+            <AgendaMetrics total={selectedTasks.length} pending={pendingTasks.length} completed={completedTasks.length} overdue={overdueTasks.length} />
 
       {showForm && (
-        <section className="agenda-form-panel">
-          <div className="panel-heading">
-            <div>
-              <span className="eyebrow">
-                {editingId !== null ? "EDIÇÃO" : "CADASTRO"}
-              </span>
-              <h2>
-                {editingId !== null
-                  ? "Editar atividade"
-                  : "Nova atividade"}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="close-button"
-              onClick={resetForm}
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label className="form-field field-wide">
-                <span>Nome da atividade *</span>
-                <input
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Ex.: Reunião, academia, estudar..."
-                  required
-                />
-              </label>
-
-              <label className="form-field">
-                <span>Data</span>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  required
-                />
-              </label>
-
-              <label className="form-field">
-                <span>Horário</span>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(event) => setTime(event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
-                <span>Prioridade</span>
-                <select
-                  value={priority}
-                  onChange={(event) =>
-                    setPriority(event.target.value as Priority)
-                  }
-                >
-                  <option value="Baixa">Baixa</option>
-                  <option value="Média">Média</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Urgente">Urgente</option>
-                </select>
-              </label>
-
-              <label className="form-field">
-                <span>Categoria</span>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  <option value="Pessoal">Pessoal</option>
-                  <option value="Trabalho">Trabalho</option>
-                  <option value="Saúde">Saúde</option>
-                  <option value="Estudos">Estudos</option>
-                  <option value="Financeiro">Financeiro</option>
-                  <option value="Lazer">Lazer</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </label>
-
-              <label className="form-field field-wide">
-                <span>Observações</span>
-                <textarea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Adicione detalhes sobre esta atividade..."
-                  rows={3}
-                />
-              </label>
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancelar
-              </button>
-              <button type="submit" className="primary-button">
-                {editingId !== null
-                  ? "Salvar alterações"
-                  : "Cadastrar atividade"}
-              </button>
-            </div>
-          </form>
-        </section>
+        <AgendaForm
+          editingId={editingId}
+          description={description}
+          setDescription={setDescription}
+          date={date}
+          setDate={setDate}
+          time={time}
+          setTime={setTime}
+          priority={priority}
+          setPriority={setPriority}
+          category={category}
+          setCategory={setCategory}
+          notes={notes}
+          setNotes={setNotes}
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        />
       )}
 
       <div className="agenda-layout">
@@ -462,86 +303,7 @@ export default function AgendaPage() {
               </button>
             </div>
           ) : (
-            <div className="timeline">
-              {selectedTasks.map((task) => (
-                <div
-                  className={`timeline-item ${task.done ? "completed" : ""}`}
-                  key={task.id}
-                >
-                  <div className="timeline-time">
-                    {task.time || "--:--"}
-                  </div>
-
-                  <div className="timeline-marker">
-                    <span />
-                  </div>
-
-                  <div className="timeline-card">
-                    <div className="timeline-card-top">
-                      <div className="task-title-area">
-                        <button
-                          type="button"
-                          className={`task-check ${task.done ? "checked" : ""}`}
-                          onClick={() => toggleTask(task.id)}
-                          aria-label={
-                            task.done
-                              ? "Marcar como pendente"
-                              : "Concluir atividade"
-                          }
-                        >
-                          {task.done ? "✓" : ""}
-                        </button>
-
-                        <div>
-                          <h3>{task.description}</h3>
-                          <span className="task-category">
-                            {task.category || "Pessoal"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`priority-badge ${priorityClass(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority || "Baixa"}
-                      </span>
-                    </div>
-
-                    {task.notes && (
-                      <p className="task-notes">{task.notes}</p>
-                    )}
-
-                    <div className="task-actions">
-                      <span
-                        className={
-                          task.done ? "done-label" : "waiting-label"
-                        }
-                      >
-                        {task.done ? "Concluída" : "Pendente"}
-                      </span>
-
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => editTask(task)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="delete-action"
-                          onClick={() => deleteTask(task.id)}
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                          <AgendaTimeline selectedTasks={selectedTasks} toggleTask={toggleTask} editTask={editTask} deleteTask={deleteTask} />
           )}
         </section>
 
@@ -634,7 +396,7 @@ export default function AgendaPage() {
         <span>Organize seu tempo. Evolua todos os dias.</span>
       </footer>
 
-      <style jsx>{`
+      <style jsx global>{`
         .agenda-content {
           width: 100%;
           max-width: 1600px;
@@ -643,7 +405,7 @@ export default function AgendaPage() {
           color: #f1f1f1;
         }
 
-        .eyebrow {
+        .agenda-content .eyebrow {
           display: block;
           color: #929292;
           font-size: 10px;
@@ -652,7 +414,7 @@ export default function AgendaPage() {
           margin-bottom: 9px;
         }
 
-        .agenda-welcome {
+        .agenda-content .agenda-welcome {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -660,23 +422,23 @@ export default function AgendaPage() {
           margin-bottom: 25px;
         }
 
-        .agenda-welcome h1 {
+        .agenda-content .agenda-welcome h1 {
           margin: 0;
           font-size: clamp(23px, 3vw, 30px);
           font-weight: 650;
           letter-spacing: -0.8px;
         }
 
-        .agenda-welcome p {
+        .agenda-content .agenda-welcome p {
           margin: 9px 0 0;
           color: #929292;
           font-size: 13px;
           line-height: 1.6;
         }
 
-        .primary-button,
-        .secondary-button,
-        .today-button {
+        .agenda-content .primary-button,
+        .agenda-content .secondary-button,
+        .agenda-content .today-button {
           border: 1px solid transparent;
           border-radius: 8px;
           padding: 11px 16px;
@@ -686,27 +448,27 @@ export default function AgendaPage() {
           transition: 0.2s;
         }
 
-        .primary-button {
+        .agenda-content .primary-button {
           background: #ededed;
           color: #111;
         }
 
-        .primary-button:hover {
+        .agenda-content .primary-button:hover {
           background: #fff;
           transform: translateY(-1px);
         }
 
-        .secondary-button {
+        .agenda-content .secondary-button {
           background: #242424;
           border-color: #393939;
           color: #ddd;
         }
 
-        .secondary-button:hover {
+        .agenda-content .secondary-button:hover {
           background: #303030;
         }
 
-        .agenda-date-panel {
+        .agenda-content .agenda-date-panel {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -718,13 +480,13 @@ export default function AgendaPage() {
           border-radius: 12px;
         }
 
-        .date-navigation {
+        .agenda-content .date-navigation {
           display: flex;
           align-items: center;
           gap: 16px;
         }
 
-        .date-arrow {
+        .agenda-content .date-arrow {
           width: 34px;
           height: 34px;
           border: 1px solid #363636;
@@ -735,46 +497,46 @@ export default function AgendaPage() {
           cursor: pointer;
         }
 
-        .date-arrow:hover {
+        .agenda-content .date-arrow:hover {
           background: #303030;
         }
 
-        .selected-date {
+        .agenda-content .selected-date {
           display: flex;
           flex-direction: column;
           gap: 4px;
         }
 
-        .selected-date-day {
+        .agenda-content .selected-date-day {
           color: #f0f0f0;
           font-size: 14px;
           font-weight: 650;
           text-transform: capitalize;
         }
 
-        .selected-date-number {
+        .agenda-content .selected-date-number {
           color: #858585;
           font-size: 11px;
         }
 
-        .today-button {
+        .agenda-content .today-button {
           background: transparent;
           color: #ddd;
           border-color: #424242;
         }
 
-        .today-button:hover {
+        .agenda-content .today-button:hover {
           background: #242424;
         }
 
-        .agenda-metrics {
+        .agenda-content .agenda-metrics {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 13px;
           margin-bottom: 20px;
         }
 
-        .agenda-metric-card {
+        .agenda-content .agenda-metric-card {
           min-height: 112px;
           padding: 17px;
           background: #171717;
@@ -786,43 +548,43 @@ export default function AgendaPage() {
           gap: 7px;
         }
 
-        .metric-label {
+        .agenda-content .metric-label {
           color: #888;
           font-size: 9px;
           font-weight: 700;
           letter-spacing: 1.1px;
         }
 
-        .agenda-metric-card strong {
+        .agenda-content .agenda-metric-card strong {
           color: #f2f2f2;
           font-size: 27px;
           font-weight: 650;
           line-height: 1;
         }
 
-        .agenda-metric-card .metric-danger {
+        .agenda-content .agenda-metric-card .metric-danger {
           color: #e17c7c;
         }
 
-        .metric-description {
+        .agenda-content .metric-description {
           color: #777;
           font-size: 10px;
         }
 
-        .agenda-form-panel,
-        .agenda-main-panel,
-        .side-panel {
+        .agenda-content .agenda-form-panel,
+        .agenda-content .agenda-main-panel,
+        .agenda-content .side-panel {
           background: #171717;
           border: 1px solid #292929;
           border-radius: 12px;
         }
 
-        .agenda-form-panel {
+        .agenda-content .agenda-form-panel {
           padding: 21px;
           margin-bottom: 20px;
         }
 
-        .panel-heading {
+        .agenda-content .panel-heading {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -830,18 +592,18 @@ export default function AgendaPage() {
           margin-bottom: 19px;
         }
 
-        .panel-heading h2 {
+        .agenda-content .panel-heading h2 {
           margin: 0;
           color: #f0f0f0;
           font-size: 16px;
           font-weight: 650;
         }
 
-        .panel-heading .eyebrow {
+        .agenda-content .panel-heading .eyebrow {
           margin-bottom: 5px;
         }
 
-        .close-button {
+        .agenda-content .close-button {
           width: 32px;
           height: 32px;
           border: 1px solid #393939;
@@ -852,31 +614,31 @@ export default function AgendaPage() {
           cursor: pointer;
         }
 
-        .form-grid {
+        .agenda-content .form-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 15px;
         }
 
-        .form-field {
+        .agenda-content .form-field {
           display: flex;
           flex-direction: column;
           gap: 7px;
         }
 
-        .field-wide {
+        .agenda-content .field-wide {
           grid-column: 1 / -1;
         }
 
-        .form-field span {
+        .agenda-content .form-field span {
           color: #a5a5a5;
           font-size: 11px;
           font-weight: 600;
         }
 
-        .form-field input,
-        .form-field select,
-        .form-field textarea {
+        .agenda-content .form-field input,
+        .agenda-content .form-field select,
+        .agenda-content .form-field textarea {
           width: 100%;
           min-width: 0;
           padding: 11px 12px;
@@ -890,41 +652,41 @@ export default function AgendaPage() {
           color-scheme: dark;
         }
 
-        .form-field input:focus,
-        .form-field select:focus,
-        .form-field textarea:focus {
+        .agenda-content .form-field input:focus,
+        .agenda-content .form-field select:focus,
+        .agenda-content .form-field textarea:focus {
           border-color: #888;
         }
 
-        .form-field textarea {
+        .agenda-content .form-field textarea {
           resize: vertical;
         }
 
-        .form-actions {
+        .agenda-content .form-actions {
           display: flex;
           justify-content: flex-end;
           gap: 9px;
           margin-top: 18px;
         }
 
-        .agenda-layout {
+        .agenda-content .agenda-layout {
           display: grid;
           grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
           align-items: start;
           gap: 17px;
         }
 
-        .agenda-main-panel,
-        .side-panel {
+        .agenda-content .agenda-main-panel,
+        .agenda-content .side-panel {
           padding: 21px;
         }
 
-        .task-counter {
+        .agenda-content .task-counter {
           color: #858585;
           font-size: 10px;
         }
 
-        .day-progress {
+        .agenda-content .day-progress {
           padding: 13px;
           margin-bottom: 19px;
           background: #202020;
@@ -932,7 +694,7 @@ export default function AgendaPage() {
           border-radius: 8px;
         }
 
-        .day-progress-heading {
+        .agenda-content .day-progress-heading {
           display: flex;
           justify-content: space-between;
           margin-bottom: 10px;
@@ -940,62 +702,62 @@ export default function AgendaPage() {
           font-size: 11px;
         }
 
-        .day-progress-heading strong {
+        .agenda-content .day-progress-heading strong {
           color: #eee;
         }
 
-        .progress-track {
+        .agenda-content .progress-track {
           height: 5px;
           overflow: hidden;
           background: #383838;
           border-radius: 20px;
         }
 
-        .progress-fill {
+        .agenda-content .progress-fill {
           height: 100%;
           background: #bcbcbc;
           border-radius: 20px;
           transition: width 0.3s;
         }
 
-        .empty-state {
+        .agenda-content .empty-state {
           padding: 45px 15px;
           text-align: center;
           color: #888;
         }
 
-        .empty-icon {
+        .agenda-content .empty-icon {
           margin-bottom: 12px;
           color: #777;
           font-size: 30px;
         }
 
-        .empty-state h3 {
+        .agenda-content .empty-state h3 {
           margin: 0 0 8px;
           color: #ddd;
           font-size: 14px;
         }
 
-        .empty-state p {
+        .agenda-content .empty-state p {
           margin: 0 0 18px;
           color: #858585;
           font-size: 11px;
         }
 
-        .timeline {
+        .agenda-content .timeline {
           display: flex;
           flex-direction: column;
           gap: 12px;
         }
 
-        .timeline-item {
+        .agenda-content .timeline-item {
           display: grid;
           grid-template-columns: 52px 14px minmax(0, 1fr);
           gap: 10px;
           align-items: stretch;
         }
 
-        .timeline-time {
+        .agenda-content .timeline-time {
           padding-top: 17px;
           color: #a5a5a5;
           font-size: 11px;
@@ -1003,14 +765,14 @@ export default function AgendaPage() {
           text-align: right;
         }
 
-        .timeline-marker {
+        .agenda-content .timeline-marker {
           position: relative;
           display: flex;
           justify-content: center;
           padding-top: 19px;
         }
 
-        .timeline-marker::after {
+        .agenda-content .timeline-marker::after {
           position: absolute;
           top: 27px;
           bottom: -24px;
@@ -1019,11 +781,11 @@ export default function AgendaPage() {
           content: "";
         }
 
-        .timeline-item:last-child .timeline-marker::after {
+        .agenda-content .timeline-item:last-child .timeline-marker::after {
           display: none;
         }
 
-        .timeline-marker span {
+        .agenda-content .timeline-marker span {
           z-index: 1;
           width: 8px;
           height: 8px;
@@ -1032,7 +794,7 @@ export default function AgendaPage() {
           background: #171717;
         }
 
-        .timeline-card {
+        .agenda-content .timeline-card {
           min-width: 0;
           padding: 14px;
           background: #202020;
@@ -1040,21 +802,21 @@ export default function AgendaPage() {
           border-radius: 9px;
         }
 
-        .timeline-card-top {
+        .agenda-content .timeline-card-top {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
           gap: 10px;
         }
 
-        .task-title-area {
+        .agenda-content .task-title-area {
           display: flex;
           align-items: flex-start;
           gap: 10px;
           min-width: 0;
         }
 
-        .task-check {
+        .agenda-content .task-check {
           flex-shrink: 0;
           width: 17px;
           height: 17px;
@@ -1067,12 +829,12 @@ export default function AgendaPage() {
           cursor: pointer;
         }
 
-        .task-check.checked {
+        .agenda-content .task-check.checked {
           background: #d6d6d6;
           border-color: #d6d6d6;
         }
 
-        .task-title-area h3 {
+        .agenda-content .task-title-area h3 {
           margin: 0 0 5px;
           color: #eee;
           font-size: 12px;
@@ -1080,12 +842,12 @@ export default function AgendaPage() {
           overflow-wrap: anywhere;
         }
 
-        .task-category {
+        .agenda-content .task-category {
           color: #888;
           font-size: 10px;
         }
 
-        .priority-badge {
+        .agenda-content .priority-badge {
           flex-shrink: 0;
           padding: 5px 8px;
           border-radius: 5px;
@@ -1093,27 +855,27 @@ export default function AgendaPage() {
           font-weight: 650;
         }
 
-        .priority-badge.low {
+        .agenda-content .priority-badge.low {
           background: #303030;
           color: #aaa;
         }
 
-        .priority-badge.medium {
+        .agenda-content .priority-badge.medium {
           background: #39352a;
           color: #d7c28c;
         }
 
-        .priority-badge.high {
+        .agenda-content .priority-badge.high {
           background: #422f2b;
           color: #e6a18d;
         }
 
-        .priority-badge.urgent {
+        .agenda-content .priority-badge.urgent {
           background: #482b2b;
           color: #ed9393;
         }
 
-        .task-notes {
+        .agenda-content .task-notes {
           margin: 12px 0 0 27px;
           color: #969696;
           font-size: 11px;
@@ -1122,7 +884,7 @@ export default function AgendaPage() {
           overflow-wrap: anywhere;
         }
 
-        .task-actions {
+        .agenda-content .task-actions {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1132,7 +894,7 @@ export default function AgendaPage() {
           border-top: 1px solid #343434;
         }
 
-        .task-actions button {
+        .agenda-content .task-actions button {
           padding: 4px 7px;
           border: 0;
           background: transparent;
@@ -1141,57 +903,57 @@ export default function AgendaPage() {
           cursor: pointer;
         }
 
-        .task-actions button:hover {
+        .agenda-content .task-actions button:hover {
           color: #fff;
         }
 
-        .task-actions .delete-action:hover {
+        .agenda-content .task-actions .delete-action:hover {
           color: #e18b8b;
         }
 
-        .done-label,
-        .waiting-label {
+        .agenda-content .done-label,
+        .agenda-content .waiting-label {
           font-size: 10px;
         }
 
-        .done-label {
+        .agenda-content .done-label {
           color: #91b89c;
         }
 
-        .waiting-label {
+        .agenda-content .waiting-label {
           color: #b9a979;
         }
 
-        .timeline-item.completed .task-title-area h3 {
+        .agenda-content .timeline-item.completed .task-title-area h3 {
           color: #898989;
           text-decoration: line-through;
         }
 
-        .timeline-item.completed .timeline-marker span {
+        .agenda-content .timeline-item.completed .timeline-marker span {
           border-color: #83a58d;
           background: #83a58d;
         }
 
-        .side-panel {
+        .agenda-content .side-panel {
           margin-bottom: 16px;
         }
 
-        .side-panel .panel-heading {
+        .agenda-content .side-panel .panel-heading {
           margin-bottom: 15px;
         }
 
-        .side-empty {
+        .agenda-content .side-empty {
           color: #858585;
           font-size: 11px;
           line-height: 1.6;
         }
 
-        .upcoming-list {
+        .agenda-content .upcoming-list {
           display: flex;
           flex-direction: column;
         }
 
-        .upcoming-item {
+        .agenda-content .upcoming-item {
           display: flex;
           align-items: center;
           gap: 10px;
@@ -1205,15 +967,15 @@ export default function AgendaPage() {
           cursor: pointer;
         }
 
-        .upcoming-item:last-child {
+        .agenda-content .upcoming-item:last-child {
           border-bottom: 0;
         }
 
-        .upcoming-item:hover .upcoming-info strong {
+        .agenda-content .upcoming-item:hover .upcoming-info strong {
           color: #fff;
         }
 
-        .upcoming-date {
+        .agenda-content .upcoming-date {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1226,18 +988,18 @@ export default function AgendaPage() {
           background: #222;
         }
 
-        .upcoming-date strong {
+        .agenda-content .upcoming-date strong {
           color: #eee;
           font-size: 15px;
         }
 
-        .upcoming-date span {
+        .agenda-content .upcoming-date span {
           color: #888;
           font-size: 9px;
           text-transform: capitalize;
         }
 
-        .upcoming-info {
+        .agenda-content .upcoming-info {
           display: flex;
           flex: 1;
           min-width: 0;
@@ -1245,7 +1007,7 @@ export default function AgendaPage() {
           gap: 5px;
         }
 
-        .upcoming-info strong {
+        .agenda-content .upcoming-info strong {
           color: #d8d8d8;
           font-size: 10px;
           overflow: hidden;
@@ -1253,17 +1015,17 @@ export default function AgendaPage() {
           white-space: nowrap;
         }
 
-        .upcoming-info span {
+        .agenda-content .upcoming-info span {
           color: #858585;
           font-size: 9px;
         }
 
-        .upcoming-arrow {
+        .agenda-content .upcoming-arrow {
           color: #777;
           font-size: 19px;
         }
 
-        .summary-row {
+        .agenda-content .summary-row {
           display: flex;
           justify-content: space-between;
           padding: 11px 0;
@@ -1272,11 +1034,11 @@ export default function AgendaPage() {
           font-size: 11px;
         }
 
-        .summary-row strong {
+        .agenda-content .summary-row strong {
           color: #eee;
         }
 
-        .summary-message {
+        .agenda-content .summary-message {
           padding: 12px;
           margin-top: 14px;
           border: 1px solid #343434;
@@ -1287,7 +1049,7 @@ export default function AgendaPage() {
           line-height: 1.6;
         }
 
-        .agenda-footer {
+        .agenda-content .agenda-footer {
           display: flex;
           justify-content: space-between;
           gap: 10px;
@@ -1300,17 +1062,17 @@ export default function AgendaPage() {
           letter-spacing: 1px;
         }
 
-        .agenda-footer span {
+        .agenda-content .agenda-footer span {
           font-weight: 400;
           letter-spacing: 0;
         }
 
         @media (max-width: 1050px) {
-          .agenda-layout {
+          .agenda-content .agenda-layout {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          .agenda-side-column {
+          .agenda-content .agenda-side-column {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 15px;
@@ -1322,65 +1084,65 @@ export default function AgendaPage() {
             padding: 22px 15px;
           }
 
-          .agenda-welcome {
+          .agenda-content .agenda-welcome {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .agenda-welcome .primary-button {
+          .agenda-content .agenda-welcome .primary-button {
             width: 100%;
           }
 
-          .agenda-metrics {
+          .agenda-content .agenda-metrics {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .agenda-date-panel {
+          .agenda-content .agenda-date-panel {
             padding: 14px;
           }
 
-          .selected-date-day {
+          .agenda-content .selected-date-day {
             font-size: 12px;
           }
 
-          .agenda-side-column {
+          .agenda-content .agenda-side-column {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          .form-grid {
+          .agenda-content .form-grid {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          .field-wide {
+          .agenda-content .field-wide {
             grid-column: auto;
           }
 
-          .timeline-item {
+          .agenda-content .timeline-item {
             grid-template-columns: 42px 10px minmax(0, 1fr);
             gap: 7px;
           }
 
-          .timeline-time {
+          .agenda-content .timeline-time {
             font-size: 10px;
           }
 
-          .timeline-card {
+          .agenda-content .timeline-card {
             padding: 11px;
           }
 
-          .timeline-card-top {
+          .agenda-content .timeline-card-top {
             flex-direction: column;
           }
 
-          .form-actions {
+          .agenda-content .form-actions {
             flex-direction: column-reverse;
           }
 
-          .form-actions button {
+          .agenda-content .form-actions button {
             width: 100%;
           }
 
-          .agenda-footer {
+          .agenda-content .agenda-footer {
             flex-direction: column;
           }
         }

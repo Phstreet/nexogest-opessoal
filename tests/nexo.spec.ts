@@ -928,3 +928,159 @@ test.describe("NEXO - Armazenamento central da rotina", () => {
     await agendaPage.close();
   });
 });
+
+test.describe("NEXO - Componentização de Tarefas e Agenda", () => {
+  test("deve cadastrar, editar e concluir uma tarefa pela lista componentizada", async ({ page }) => {
+    await page.goto("/rotina/tarefas");
+
+    await page.getByRole("button", { name: /Nova tarefa/ }).click();
+    await page.locator("#task-description").fill("Tarefa de teste componente");
+    await page.getByRole("button", { name: "Cadastrar tarefa" }).click();
+
+    let task = page.locator(".task-item").filter({ hasText: "Tarefa de teste componente" });
+    await expect(task).toBeVisible();
+
+    await task.locator(".icon-action").click();
+    await task.getByRole("button", { name: /Editar/ }).click();
+    await page.locator("#task-description").fill("Tarefa editada pelo componente");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    task = page.locator(".task-item").filter({ hasText: "Tarefa editada pelo componente" });
+    await expect(task).toBeVisible();
+    await task.getByRole("button", { name: "Concluir tarefa" }).click();
+    await expect(task).toHaveClass(/task-completed/);
+
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_tasks") || "[]"));
+    expect(saved).toEqual(expect.arrayContaining([
+      expect.objectContaining({ description: "Tarefa editada pelo componente", done: true })
+    ]));
+  });
+
+  test("deve renderizar e atualizar uma atividade na linha do tempo da Agenda", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      localStorage.setItem("nexo_tasks", JSON.stringify([{
+        id: 991001,
+        description: "Atividade da linha do tempo",
+        done: false,
+        date,
+        time: "10:30",
+        priority: "Alta",
+        category: "Pessoal",
+        notes: "Atividade criada para validar o componente"
+      }]));
+    });
+
+    await page.goto("/rotina/agenda");
+    const item = page.locator(".timeline-item").filter({ hasText: "Atividade da linha do tempo" });
+    await expect(item).toBeVisible();
+
+    await item.getByRole("button", { name: "Concluir atividade" }).click();
+    await expect(item).toHaveClass(/completed/);
+
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_tasks") || "[]"));
+    expect(saved[0]).toMatchObject({ id: 991001, done: true });
+  });
+});
+
+
+
+test.describe("NEXO - Proteção e resumo da página inicial", () => {
+  test("deve preservar tarefas corrompidas ao abrir a página inicial", async ({ page }) => {
+    const original = "{tarefas-corrompidas-na-home";
+
+    await page.addInitScript((raw) => {
+      localStorage.setItem("nexo_tasks", raw);
+    }, original);
+
+    await page.goto("/");
+
+    await expect(page.locator(".storage-protection-message")).toContainText("Armazenamento protegido");
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
+    ).toBe(original);
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))
+    ).toBe(original);
+
+    await page.reload();
+
+    await expect.poll(
+      () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
+    ).toBe(original);
+  });
+
+  test("deve exibir no resumo inicial somente valores realizados do mês", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
+
+      localStorage.setItem("nexo_transactions", JSON.stringify([
+        {
+          id: 995001,
+          type: "Receita",
+          description: "Receita parcialmente recebida",
+          amount: 1000,
+          settledAmount: 400,
+          date,
+          status: "Recebida parcialmente"
+        },
+        {
+          id: 995002,
+          type: "Receita",
+          description: "Receita pendente",
+          amount: 500,
+          date,
+          status: "Pendente"
+        },
+        {
+          id: 995003,
+          type: "Receita",
+          description: "Receita cancelada",
+          amount: 900,
+          settledAmount: 900,
+          date,
+          status: "Cancelada"
+        },
+        {
+          id: 995004,
+          type: "Despesa",
+          description: "Despesa parcialmente paga",
+          amount: 600,
+          settledAmount: 150,
+          date,
+          status: "Paga parcialmente"
+        },
+        {
+          id: 995005,
+          type: "Despesa",
+          description: "Despesa quitada legada",
+          amount: 100,
+          date,
+          status: "Pago"
+        },
+        {
+          id: 995006,
+          type: "Despesa",
+          description: "Despesa pendente",
+          amount: 700,
+          date,
+          status: "Pendente"
+        }
+      ]));
+    });
+
+    await page.goto("/");
+
+    const incomeCard = page.locator(".metric-card").filter({ hasText: "Receitas" });
+    const expenseCard = page.locator(".metric-card").filter({ hasText: "Despesas" });
+    const balanceCard = page.locator(".metric-card").filter({ hasText: "Saldo disponível" });
+
+    await expect(incomeCard.locator(".metric-value")).toContainText("400,00");
+    await expect(expenseCard.locator(".metric-value")).toContainText("250,00");
+    await expect(balanceCard.locator(".metric-value")).toContainText("150,00");
+  });
+});

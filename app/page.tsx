@@ -1,44 +1,14 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
+import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
+import { isValidRoutineTask, type RoutineTask } from "@/lib/routine/types";
 import Link from "next/link";
 import AppLayout from "../components/layout/AppLayout";
 
-type Transaction = {
-  id: number;
-  description: string;
-  type:
-    | "Receita"
-    | "Despesa"
-    | "Transferência"
-    | "Investimento"
-    | "Aplicação"
-    | "Reserva";
-  amount: number;
-  date?: string;
-  category?: string;
-  subcategory?: string;
-  account?: string;
-  destinationAccount?: string;
-  paymentMethod?: string;
-  status?: string;
-  recurrence?: string;
-  reserveType?: string;
-  investment?: string;
-  institution?: string;
-};
-
-type Task = {
-  id: number;
-  description: string;
-  done: boolean;
-};
-
 type Tab = "dashboard" | "rotina";
-
-const TRANSACTIONS_KEY = "nexo_transactions";
-const TASKS_KEY = "nexo_tasks";
 
 function money(value: number) {
   const safeValue = Number.isFinite(value) ? value : 0;
@@ -49,144 +19,27 @@ function money(value: number) {
   });
 }
 
-function loadLocalData<T>(
-  key: string,
-  fallback: T,
-  validator: (value: unknown) => value is T
-): T {
-  try {
-    const saved = localStorage.getItem(key);
-
-    if (!saved) return fallback;
-
-    const parsed: unknown = JSON.parse(saved);
-
-    return validator(parsed) ? parsed : fallback;
-  } catch (error) {
-    console.error(`Erro ao carregar ${key}:`, error);
-    return fallback;
-  }
-}
-
-function isValidTransactionArray(
-  value: unknown
-): value is Transaction[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        item !== null &&
-        typeof item === "object" &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.type === "string" &&
-        typeof item.amount === "number"
-    )
-  );
-}
-
-function isValidTaskArray(value: unknown): value is Task[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        item !== null &&
-        typeof item === "object" &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.done === "boolean"
-    )
-  );
-}
-
 export default function Home() {
   const [tab, setTab] = useState<Tab>("dashboard");
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  const [loaded, setLoaded] = useState(false);
   const [taskName, setTaskName] = useState("");
 
-  // =====================================================
-  // CARREGAMENTO DOS DADOS
-  // =====================================================
+  // Usa o armazenamento centralizado para preservar dados inválidos
+  // e impedir gravações quando a coleção não puder ser validada.
+  const {
+    items: tasks,
+    setItems: setTasks,
+    safeToSave,
+    storageError,
+  } = useRoutineCollection<RoutineTask>("nexo_tasks", isValidRoutineTask);
 
-  useEffect(() => {
-    function loadData() {
-      const savedTransactions = loadLocalData(
-        TRANSACTIONS_KEY,
-        [],
-        isValidTransactionArray
-      );
-
-      const savedTasks = loadLocalData(
-        TASKS_KEY,
-        [],
-        isValidTaskArray
-      );
-
-      setTransactions(savedTransactions);
-      setTasks(savedTasks);
-      setLoaded(true);
-    }
-
-    loadData();
-
-    function handleStorage(event: StorageEvent) {
-      if (
-        event.key === TRANSACTIONS_KEY ||
-        event.key === TASKS_KEY ||
-        event.key === null
-      ) {
-        loadData();
-      }
-    }
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  // =====================================================
-  // SALVAMENTO DAS TAREFAS
-  // =====================================================
-
-  useEffect(() => {
-    if (!loaded) return;
-
-    try {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Erro ao salvar as tarefas:", error);
-    }
-  }, [tasks, loaded]);
-
-  // =====================================================
-  // RESUMO FINANCEIRO
-  // =====================================================
-
-  const activeTransactions = transactions.filter(
-    (item) => item.status !== "Cancelada"
-  );
-
-  const income = activeTransactions
-    .filter((item) => item.type === "Receita")
-    .reduce(
-      (sum, item) => sum + (Number(item.amount) || 0),
-      0
-    );
-
-  const expenses = activeTransactions
-    .filter((item) => item.type === "Despesa")
-    .reduce(
-      (sum, item) => sum + (Number(item.amount) || 0),
-      0
-    );
-
-  const balance = income - expenses;
+  // Mantém o resumo alinhado ao Dashboard Financeiro:
+  // somente valores efetivamente recebidos e pagos no mês atual.
+  const {
+    currentConfirmedRevenue: income,
+    currentConfirmedExpenses: expenses,
+    currentBalance: balance,
+  } = useFinanceDashboard();
 
   // =====================================================
   // PRODUTIVIDADE
@@ -209,6 +62,8 @@ export default function Home() {
   // =====================================================
 
   function addTask() {
+    if (!safeToSave) return;
+
     const description = taskName.trim();
 
     if (!description) {
@@ -216,7 +71,7 @@ export default function Home() {
       return;
     }
 
-    const newTask: Task = {
+    const newTask: RoutineTask = {
       id: Date.now(),
       description,
       done: false,
@@ -227,6 +82,8 @@ export default function Home() {
   }
 
   function toggleTask(id: number) {
+    if (!safeToSave) return;
+
     setTasks((current) =>
       current.map((task) =>
         task.id === id
@@ -237,6 +94,8 @@ export default function Home() {
   }
 
   function deleteTask(id: number) {
+    if (!safeToSave) return;
+
     if (!confirm("Deseja excluir esta atividade?")) {
       return;
     }
@@ -290,6 +149,13 @@ export default function Home() {
       }
     >
       <div className="content">
+        {storageError && (
+          <div role="alert" className="storage-protection-message">
+            <strong>Armazenamento protegido:</strong> {storageError}
+            {!safeToSave && " As alterações de tarefas foram bloqueadas para proteger seus dados."}
+          </div>
+        )}
+
         {/* ALTERNÂNCIA ENTRE AS ABAS */}
 
         <div
@@ -411,7 +277,7 @@ export default function Home() {
                 </div>
 
                 <div className="metric-caption">
-                  Total de entradas cadastradas
+                  Valor efetivamente recebido neste mês
                 </div>
 
                 <div className="metric-line silver-line" />
@@ -428,7 +294,7 @@ export default function Home() {
                 </div>
 
                 <div className="metric-caption">
-                  Total de saídas cadastradas
+                  Valor efetivamente pago neste mês
                 </div>
 
                 <div className="metric-line dark-line" />
@@ -445,7 +311,7 @@ export default function Home() {
                 </div>
 
                 <div className="metric-caption">
-                  Receitas menos despesas
+                  Resultado realizado do mês
                 </div>
 
                 <div className="metric-line silver-line" />

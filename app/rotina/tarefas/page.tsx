@@ -4,6 +4,10 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import TaskMetrics from "@/components/routine/tasks/TaskMetrics";
+import TaskForm from "@/components/routine/tasks/TaskForm";
+import TaskList from "@/components/routine/tasks/TaskList";
+import { filterAndSortRoutineTasks, getRoutineTaskMetrics } from "@/lib/routine/task-queries";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
@@ -26,29 +30,6 @@ function getLocalDate() {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-function formatDate(value?: string) {
-  if (!value) return "Sem data";
-
-  const [year, month, day] = value.split("-");
-  if (!year || !month || !day) return value;
-
-  return `${day}/${month}/${year}`;
-}
-
-
-function priorityClass(priority?: Priority) {
-  switch (priority) {
-    case "Urgente":
-      return "priority-urgent";
-    case "Alta":
-      return "priority-high";
-    case "Média":
-      return "priority-medium";
-    default:
-      return "priority-low";
-  }
 }
 
 export default function TarefasPage() {
@@ -74,103 +55,12 @@ export default function TarefasPage() {
 
   const today = getLocalDate();
 
-  const metrics = useMemo(() => {
-    const completed = tasks.filter((task) => task.done).length;
-    const pending = tasks.filter((task) => !task.done).length;
+  const metrics = useMemo(() => getRoutineTaskMetrics(tasks, today), [tasks, today]);
 
-    const overdue = tasks.filter(
-      (task) => !task.done && task.date && task.date < today
-    ).length;
-
-    const todayTasks = tasks.filter((task) => task.date === today);
-
-    const percentage =
-      tasks.length > 0
-        ? Math.round((completed / tasks.length) * 100)
-        : 0;
-
-    return {
-      total: tasks.length,
-      completed,
-      pending,
-      overdue,
-      today: todayTasks.length,
-      percentage,
-    };
-  }, [tasks, today]);
-
-  const filteredTasks = useMemo(() => {
-    return tasks
-      .filter((task) => {
-        if (filter === "Hoje" && task.date !== today) return false;
-
-        if (filter === "Pendentes" && task.done) return false;
-
-        if (filter === "Concluídas" && !task.done) return false;
-
-        if (
-          filter === "Atrasadas" &&
-          (task.done || !task.date || task.date >= today)
-        ) {
-          return false;
-        }
-
-        if (
-          categoryFilter !== "Todas" &&
-          task.category !== categoryFilter
-        ) {
-          return false;
-        }
-
-        if (
-          priorityFilter !== "Todas" &&
-          task.priority !== priorityFilter
-        ) {
-          return false;
-        }
-
-        if (
-          search.trim() &&
-          !task.description
-            .toLowerCase()
-            .includes(search.trim().toLowerCase()) &&
-          !(task.notes || "")
-            .toLowerCase()
-            .includes(search.trim().toLowerCase())
-        ) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-
-        const dateA = a.date || "9999-12-31";
-        const dateB = b.date || "9999-12-31";
-
-        if (dateA !== dateB) return dateA.localeCompare(dateB);
-
-        const priorityOrder: Record<Priority, number> = {
-          Urgente: 0,
-          Alta: 1,
-          Média: 2,
-          Baixa: 3,
-        };
-
-        return (
-          priorityOrder[a.priority || "Média"] -
-          priorityOrder[b.priority || "Média"]
-        );
-      });
-  }, [
-    tasks,
-    filter,
-    categoryFilter,
-    priorityFilter,
-    search,
-    today,
-  ]);
+  const filteredTasks = useMemo(
+    () => filterAndSortRoutineTasks(tasks, { filter, categoryFilter, priorityFilter, search, today }),
+    [tasks, filter, categoryFilter, priorityFilter, search, today]
+  );
 
   const resetForm = () => {
     setDescription("");
@@ -272,7 +162,7 @@ export default function TarefasPage() {
   ];
 
   return (
-    <div className="content">
+    <div className="content tasks-page">
       {storageError && (
         <div className="form-card" role="alert">
           <strong>Armazenamento protegido</strong>
@@ -294,189 +184,30 @@ export default function TarefasPage() {
         </button>
       </section>
 
-      <section className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Total de tarefas</span>
-            <span className="metric-icon">▤</span>
-          </div>
-          <div className="metric-value">{metrics.total}</div>
-          <div className="metric-description">Atividades cadastradas</div>
-        </div>
+            <TaskMetrics metrics={metrics} />
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Pendentes</span>
-            <span className="metric-icon">◷</span>
-          </div>
-          <div className="metric-value">{metrics.pending}</div>
-          <div className="metric-description">Aguardando conclusão</div>
-        </div>
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Concluídas</span>
-            <span className="metric-icon">✓</span>
-          </div>
-          <div className="metric-value">{metrics.completed}</div>
-          <div className="metric-description">Atividades finalizadas</div>
-        </div>
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Atrasadas</span>
-            <span className="metric-icon">!</span>
-          </div>
-          <div className="metric-value overdue-value">
-            {metrics.overdue}
-          </div>
-          <div className="metric-description">Precisam de atenção</div>
-        </div>
-      </section>
-
-      <section className="progress-section">
-        <div className="progress-info">
-          <div>
-            <span className="section-label">SEU DESEMPENHO</span>
-            <h2>Progresso geral</h2>
-            <p>
-              Você concluiu {metrics.completed} de {metrics.total} tarefas.
-            </p>
-          </div>
-
-          <div className="progress-percentage">
-            {metrics.percentage}%
-          </div>
-        </div>
-
-        <div className="progress-track">
-          <div
-            className="progress-fill"
-            style={{ width: `${metrics.percentage}%` }}
-          />
-        </div>
-
-        <div className="progress-footer">
-          <span>{metrics.completed} concluídas</span>
-          <span>{metrics.pending} pendentes</span>
-        </div>
-      </section>
+      
 
       {showForm && (
-        <section className="form-card" id="task-form">
-          <div className="form-heading">
-            <div>
-              <span className="section-label">
-                {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
-              </span>
-              <h2>
-                {editingId !== null
-                  ? "Editar tarefa"
-                  : "Cadastrar tarefa"}
-              </h2>
-            </div>
-
-            <button
-              className="close-button"
-              onClick={resetForm}
-              type="button"
-              aria-label="Fechar formulário"
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-field full-field">
-              <label htmlFor="task-description">Descrição da tarefa *</label>
-              <input
-                id="task-description"
-                type="text"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Ex.: Finalizar relatório financeiro"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div className="form-grid">
-              <div className="form-field">
-                <label>Data prevista</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Horário</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(event) => setTime(event.target.value)}
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Prioridade</label>
-                <select
-                  value={priority}
-                  onChange={(event) =>
-                    setPriority(event.target.value as Priority)
-                  }
-                >
-                  {PRIORITIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-field">
-                <label>Categoria</label>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  {CATEGORIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-field full-field">
-              <label>Observações</label>
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Adicione detalhes ou informações importantes..."
-                rows={3}
-              />
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancelar
-              </button>
-
-              <button type="submit" className="primary-button">
-                {editingId !== null
-                  ? "Salvar alterações"
-                  : "Cadastrar tarefa"}
-              </button>
-            </div>
-          </form>
-        </section>
+        <TaskForm
+          editingId={editingId}
+          description={description}
+          setDescription={setDescription}
+          date={date}
+          setDate={setDate}
+          time={time}
+          setTime={setTime}
+          priority={priority}
+          setPriority={setPriority}
+          category={category}
+          setCategory={setCategory}
+          notes={notes}
+          setNotes={setNotes}
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        />
       )}
 
       <section className="tasks-section">
@@ -564,149 +295,17 @@ export default function TarefasPage() {
           </div>
         </div>
 
-        <div className="task-list">
-          {!loaded ? (
-            <div className="empty-state">
-              <div className="empty-icon">◷</div>
-              <h3>Carregando tarefas...</h3>
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">▤</div>
-              <h3>Nenhuma tarefa encontrada</h3>
-              <p>
-                Não existem tarefas para os filtros selecionados.
-                Cadastre uma nova atividade ou altere os filtros.
-              </p>
-
-              <button
-                className="secondary-button"
-                onClick={() => {
-                  setFilter("Todas");
-                  setCategoryFilter("Todas");
-                  setPriorityFilter("Todas");
-                  setSearch("");
-                }}
-                type="button"
-              >
-                Limpar filtros
-              </button>
-            </div>
-          ) : (
-            filteredTasks.map((task) => {
-              const overdue =
-                !task.done && !!task.date && task.date < today;
-
-              const expanded = expandedTask === task.id;
-
-              return (
-                <article
-                  className={`task-item ${
-                    task.done ? "task-completed" : ""
-                  }`}
-                  key={task.id}
-                >
-                  <div className="task-main">
-                    <button
-                      className={`task-checkbox ${
-                        task.done ? "checked" : ""
-                      }`}
-                      onClick={() => toggleTask(task.id)}
-                      aria-label={
-                        task.done
-                          ? "Reabrir tarefa"
-                          : "Concluir tarefa"
-                      }
-                      type="button"
-                    >
-                      {task.done ? "✓" : ""}
-                    </button>
-
-                    <div className="task-content">
-                      <div className="task-title-row">
-                        <h3>{task.description}</h3>
-
-                        {overdue && (
-                          <span className="overdue-tag">Atrasada</span>
-                        )}
-                      </div>
-
-                      <div className="task-meta">
-                        <span>{task.category || "Pessoal"}</span>
-                        <span className="meta-separator">•</span>
-                        <span>{formatDate(task.date)}</span>
-
-                        {task.time && (
-                          <>
-                            <span className="meta-separator">•</span>
-                            <span>{task.time}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="task-actions">
-                      <span
-                        className={`priority-badge ${priorityClass(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority || "Média"}
-                      </span>
-
-                      <button
-                        className="icon-action"
-                        onClick={() =>
-                          setExpandedTask(expanded ? null : task.id)
-                        }
-                        title="Mais opções"
-                        type="button"
-                      >
-                        ⋯
-                      </button>
-                    </div>
-                  </div>
-
-                  {expanded && (
-                    <div className="task-details">
-                      {task.notes ? (
-                        <p>{task.notes}</p>
-                      ) : (
-                        <p className="no-notes">
-                          Nenhuma observação adicionada.
-                        </p>
-                      )}
-
-                      <div className="task-detail-actions">
-                        <button
-                          onClick={() => editTask(task)}
-                          type="button"
-                        >
-                          ✎ Editar
-                        </button>
-
-                        <button
-                          onClick={() => toggleTask(task.id)}
-                          type="button"
-                        >
-                          {task.done ? "↺ Reabrir" : "✓ Concluir"}
-                        </button>
-
-                        <button
-                          className="delete-action"
-                          onClick={() => deleteTask(task.id)}
-                          type="button"
-                        >
-                          × Excluir
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })
-          )}
-        </div>
+              <TaskList
+                filteredTasks={filteredTasks}
+                loaded={loaded}
+                onClearFilters={() => { setFilter("Todas"); setCategoryFilter("Todas"); setPriorityFilter("Todas"); setSearch(""); }}
+                toggleTask={toggleTask}
+                editTask={editTask}
+                deleteTask={deleteTask}
+                expandedTask={expandedTask}
+                setExpandedTask={setExpandedTask}
+                today={today}
+              />
       </section>
 
       <footer className="page-footer">
@@ -714,13 +313,13 @@ export default function TarefasPage() {
         <span>Organização que gera resultados.</span>
       </footer>
 
-      <style jsx>{`
-        button {
+      <style jsx global>{`
+        .tasks-page button {
           font-family: inherit;
           cursor: pointer;
         }
 
-        .page-heading {
+        .tasks-page .page-heading {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -728,19 +327,19 @@ export default function TarefasPage() {
           margin-bottom: 28px;
         }
 
-        .eyebrow,
-        .section-label {
+        .tasks-page .eyebrow,
+        .tasks-page .section-label {
           color: #777f8b;
           font-size: 10px;
           font-weight: 750;
           letter-spacing: 1.5px;
         }
 
-        .eyebrow {
+        .tasks-page .eyebrow {
           margin-bottom: 9px;
         }
 
-        .page-heading h1 {
+        .tasks-page .page-heading h1 {
           margin: 0;
           color: #f0f1f3;
           font-size: 27px;
@@ -748,15 +347,15 @@ export default function TarefasPage() {
           letter-spacing: -0.7px;
         }
 
-        .page-heading p,
-        .tasks-heading p {
+        .tasks-page .page-heading p,
+        .tasks-page .tasks-heading p {
           margin: 8px 0 0;
           color: #858d98;
           font-size: 12px;
           line-height: 1.6;
         }
 
-        .primary-button {
+        .tasks-page .primary-button {
           min-height: 39px;
           padding: 0 16px;
           display: inline-flex;
@@ -772,24 +371,24 @@ export default function TarefasPage() {
           transition: 0.2s;
         }
 
-        .primary-button:hover {
+        .tasks-page .primary-button:hover {
           background: #fff;
           border-color: #fff;
         }
 
-        .primary-button span {
+        .tasks-page .primary-button span {
           font-size: 17px;
           line-height: 1;
         }
 
-        .metrics-grid {
+        .tasks-page .metrics-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 15px;
           margin-bottom: 18px;
         }
 
-        .metric-card {
+        .tasks-page .metric-card {
           min-height: 120px;
           padding: 18px;
           background: #12161b;
@@ -797,18 +396,18 @@ export default function TarefasPage() {
           border-radius: 8px;
         }
 
-        .metric-top {
+        .tasks-page .metric-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
 
-        .metric-label {
+        .tasks-page .metric-label {
           color: #a0a7b1;
           font-size: 11px;
         }
 
-        .metric-icon {
+        .tasks-page .metric-icon {
           width: 27px;
           height: 27px;
           display: grid;
@@ -819,24 +418,24 @@ export default function TarefasPage() {
           font-size: 14px;
         }
 
-        .metric-value {
+        .tasks-page .metric-value {
           margin-top: 12px;
           color: #f2f3f5;
           font-size: 25px;
           font-weight: 650;
         }
 
-        .overdue-value {
+        .tasks-page .overdue-value {
           color: #e38b83;
         }
 
-        .metric-description {
+        .tasks-page .metric-description {
           margin-top: 3px;
           color: #727b87;
           font-size: 10px;
         }
 
-        .progress-section {
+        .tasks-page .progress-section {
           padding: 21px 22px;
           margin-bottom: 22px;
           background: #12161b;
@@ -844,34 +443,34 @@ export default function TarefasPage() {
           border-radius: 8px;
         }
 
-        .progress-info {
+        .tasks-page .progress-info {
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
 
-        .progress-info h2,
-        .tasks-heading h2,
-        .form-heading h2 {
+        .tasks-page .progress-info h2,
+        .tasks-page .tasks-heading h2,
+        .tasks-page .form-heading h2 {
           margin: 7px 0 0;
           color: #e9ebee;
           font-size: 15px;
           font-weight: 650;
         }
 
-        .progress-info p {
+        .tasks-page .progress-info p {
           margin: 5px 0 0;
           color: #858d98;
           font-size: 11px;
         }
 
-        .progress-percentage {
+        .tasks-page .progress-percentage {
           color: #e8e9ec;
           font-size: 23px;
           font-weight: 650;
         }
 
-        .progress-track {
+        .tasks-page .progress-track {
           height: 6px;
           margin-top: 19px;
           overflow: hidden;
@@ -879,14 +478,14 @@ export default function TarefasPage() {
           border-radius: 10px;
         }
 
-        .progress-fill {
+        .tasks-page .progress-fill {
           height: 100%;
           background: #aeb6c1;
           border-radius: 10px;
           transition: width 0.3s;
         }
 
-        .progress-footer {
+        .tasks-page .progress-footer {
           display: flex;
           justify-content: space-between;
           margin-top: 9px;
@@ -894,7 +493,7 @@ export default function TarefasPage() {
           font-size: 10px;
         }
 
-        .form-card {
+        .tasks-page .form-card {
           padding: 23px;
           margin-bottom: 22px;
           background: #12161b;
@@ -914,14 +513,14 @@ export default function TarefasPage() {
           }
         }
 
-        .form-heading {
+        .tasks-page .form-heading {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 22px;
         }
 
-        .close-button {
+        .tasks-page .close-button {
           width: 30px;
           height: 30px;
           border: 1px solid #333a44;
@@ -931,33 +530,33 @@ export default function TarefasPage() {
           font-size: 20px;
         }
 
-        .form-grid {
+        .tasks-page .form-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 15px;
           margin-top: 15px;
         }
 
-        .form-field {
+        .tasks-page .form-field {
           display: flex;
           flex-direction: column;
           gap: 8px;
         }
 
-        .full-field {
+        .tasks-page .full-field {
           margin-top: 15px;
         }
 
-        .form-field label {
+        .tasks-page .form-field label {
           color: #aeb5bf;
           font-size: 11px;
           font-weight: 550;
         }
 
-        .form-field input,
-        .form-field select,
-        .form-field textarea,
-        .select-filters select {
+        .tasks-page .form-field input,
+        .tasks-page .form-field select,
+        .tasks-page .form-field textarea,
+        .tasks-page .select-filters select {
           width: 100%;
           min-height: 39px;
           padding: 0 11px;
@@ -970,33 +569,33 @@ export default function TarefasPage() {
           outline: none;
         }
 
-        .form-field textarea {
+        .tasks-page .form-field textarea {
           min-height: 75px;
           padding: 11px;
           resize: vertical;
         }
 
-        .form-field input:focus,
-        .form-field select:focus,
-        .form-field textarea:focus,
-        .select-filters select:focus,
-        .search-container input:focus {
+        .tasks-page .form-field input:focus,
+        .tasks-page .form-field select:focus,
+        .tasks-page .form-field textarea:focus,
+        .tasks-page .select-filters select:focus,
+        .tasks-page .search-container input:focus {
           border-color: #727e8c;
         }
 
-        .form-field input::-webkit-calendar-picker-indicator {
+        .tasks-page .form-field input::-webkit-calendar-picker-indicator {
           filter: invert(0.8);
           cursor: pointer;
         }
 
-        .form-actions {
+        .tasks-page .form-actions {
           display: flex;
           justify-content: flex-end;
           gap: 9px;
           margin-top: 20px;
         }
 
-        .secondary-button {
+        .tasks-page .secondary-button {
           min-height: 37px;
           padding: 0 14px;
           border: 1px solid #343c46;
@@ -1007,18 +606,18 @@ export default function TarefasPage() {
           font-weight: 600;
         }
 
-        .secondary-button:hover {
+        .tasks-page .secondary-button:hover {
           background: #252c35;
         }
 
-        .tasks-section {
+        .tasks-page .tasks-section {
           padding: 23px;
           background: #12161b;
           border: 1px solid #252b33;
           border-radius: 8px;
         }
 
-        .tasks-heading {
+        .tasks-page .tasks-heading {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1026,7 +625,7 @@ export default function TarefasPage() {
           margin-bottom: 20px;
         }
 
-        .task-count {
+        .tasks-page .task-count {
           padding: 7px 10px;
           background: #20262e;
           border: 1px solid #303741;
@@ -1035,21 +634,21 @@ export default function TarefasPage() {
           font-size: 10px;
         }
 
-        .search-container {
+        .tasks-page .search-container {
           position: relative;
           display: flex;
           align-items: center;
           margin-bottom: 17px;
         }
 
-        .search-icon {
+        .tasks-page .search-icon {
           position: absolute;
           left: 12px;
           color: #8d96a2;
           font-size: 20px;
         }
 
-        .search-container input {
+        .tasks-page .search-container input {
           width: 100%;
           height: 40px;
           padding: 0 38px;
@@ -1061,11 +660,11 @@ export default function TarefasPage() {
           outline: none;
         }
 
-        .search-container input::placeholder {
+        .tasks-page .search-container input::placeholder {
           color: #626c78;
         }
 
-        .clear-search {
+        .tasks-page .clear-search {
           position: absolute;
           right: 10px;
           background: transparent;
@@ -1074,7 +673,7 @@ export default function TarefasPage() {
           font-size: 18px;
         }
 
-        .filters-row {
+        .tasks-page .filters-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1084,13 +683,13 @@ export default function TarefasPage() {
           border-bottom: 1px solid #272e36;
         }
 
-        .filter-tabs {
+        .tasks-page .filter-tabs {
           display: flex;
           flex-wrap: wrap;
           gap: 5px;
         }
 
-        .filter-tab {
+        .tasks-page .filter-tab {
           min-height: 31px;
           padding: 0 10px;
           border: 1px solid transparent;
@@ -1101,29 +700,29 @@ export default function TarefasPage() {
           transition: 0.2s;
         }
 
-        .filter-tab:hover {
+        .tasks-page .filter-tab:hover {
           color: #e5e8ec;
           background: #20262e;
         }
 
-        .filter-tab.selected {
+        .tasks-page .filter-tab.selected {
           background: #282f38;
           border-color: #3c4652;
           color: #f0f1f3;
         }
 
-        .filter-number {
+        .tasks-page .filter-number {
           margin-left: 5px;
           color: #e18e85;
           font-weight: 700;
         }
 
-        .select-filters {
+        .tasks-page .select-filters {
           display: flex;
           gap: 8px;
         }
 
-        .select-filters select {
+        .tasks-page .select-filters select {
           width: auto;
           min-width: 135px;
           min-height: 32px;
@@ -1131,20 +730,20 @@ export default function TarefasPage() {
           font-size: 10px;
         }
 
-        .task-list {
+        .tasks-page .task-list {
           display: flex;
           flex-direction: column;
         }
 
-        .task-item {
+        .tasks-page .task-item {
           border-bottom: 1px solid #272e36;
         }
 
-        .task-item:last-child {
+        .tasks-page .task-item:last-child {
           border-bottom: 0;
         }
 
-        .task-main {
+        .tasks-page .task-main {
           min-height: 76px;
           display: flex;
           align-items: center;
@@ -1152,7 +751,7 @@ export default function TarefasPage() {
           padding: 12px 2px;
         }
 
-        .task-checkbox {
+        .tasks-page .task-checkbox {
           width: 19px;
           height: 19px;
           min-width: 19px;
@@ -1166,28 +765,28 @@ export default function TarefasPage() {
           font-weight: 800;
         }
 
-        .task-checkbox:hover {
+        .tasks-page .task-checkbox:hover {
           border-color: #c1c8d0;
         }
 
-        .task-checkbox.checked {
+        .tasks-page .task-checkbox.checked {
           background: #aeb8c4;
           border-color: #aeb8c4;
         }
 
-        .task-content {
+        .tasks-page .task-content {
           flex: 1;
           min-width: 0;
         }
 
-        .task-title-row {
+        .tasks-page .task-title-row {
           display: flex;
           align-items: center;
           gap: 9px;
           flex-wrap: wrap;
         }
 
-        .task-title-row h3 {
+        .tasks-page .task-title-row h3 {
           margin: 0;
           color: #e2e5e9;
           font-size: 12px;
@@ -1196,12 +795,12 @@ export default function TarefasPage() {
           overflow-wrap: anywhere;
         }
 
-        .task-completed .task-title-row h3 {
+        .tasks-page .task-completed .task-title-row h3 {
           color: #737c87;
           text-decoration: line-through;
         }
 
-        .task-meta {
+        .tasks-page .task-meta {
           display: flex;
           align-items: center;
           flex-wrap: wrap;
@@ -1211,17 +810,17 @@ export default function TarefasPage() {
           font-size: 10px;
         }
 
-        .meta-separator {
+        .tasks-page .meta-separator {
           color: #4f5965;
         }
 
-        .task-actions {
+        .tasks-page .task-actions {
           display: flex;
           align-items: center;
           gap: 10px;
         }
 
-        .priority-badge {
+        .tasks-page .priority-badge {
           padding: 5px 8px;
           border-radius: 4px;
           font-size: 9px;
@@ -1229,27 +828,27 @@ export default function TarefasPage() {
           white-space: nowrap;
         }
 
-        .priority-urgent {
+        .tasks-page .priority-urgent {
           background: #472a2b;
           color: #efaaa4;
         }
 
-        .priority-high {
+        .tasks-page .priority-high {
           background: #42342a;
           color: #e8b88c;
         }
 
-        .priority-medium {
+        .tasks-page .priority-medium {
           background: #333943;
           color: #c4ccd6;
         }
 
-        .priority-low {
+        .tasks-page .priority-low {
           background: #25372f;
           color: #a2cbb1;
         }
 
-        .overdue-tag {
+        .tasks-page .overdue-tag {
           padding: 4px 7px;
           border-radius: 4px;
           background: #452829;
@@ -1258,7 +857,7 @@ export default function TarefasPage() {
           font-weight: 650;
         }
 
-        .icon-action {
+        .tasks-page .icon-action {
           width: 29px;
           height: 29px;
           border: 1px solid transparent;
@@ -1268,18 +867,18 @@ export default function TarefasPage() {
           font-size: 19px;
         }
 
-        .icon-action:hover {
+        .tasks-page .icon-action:hover {
           background: #252c34;
           border-color: #39424e;
         }
 
-        .task-details {
+        .tasks-page .task-details {
           padding: 12px 15px 15px 34px;
           background: #0e1216;
           border-top: 1px solid #242b33;
         }
 
-        .task-details p {
+        .tasks-page .task-details p {
           margin: 0 0 13px;
           color: #a2aab4;
           font-size: 11px;
@@ -1288,18 +887,18 @@ export default function TarefasPage() {
           overflow-wrap: anywhere;
         }
 
-        .task-details p.no-notes {
+        .tasks-page .task-details p.no-notes {
           color: #69727d;
           font-style: italic;
         }
 
-        .task-detail-actions {
+        .tasks-page .task-detail-actions {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
         }
 
-        .task-detail-actions button {
+        .tasks-page .task-detail-actions button {
           padding: 6px 9px;
           border: 1px solid #343c46;
           border-radius: 4px;
@@ -1308,21 +907,21 @@ export default function TarefasPage() {
           font-size: 10px;
         }
 
-        .task-detail-actions button:hover {
+        .tasks-page .task-detail-actions button:hover {
           background: #29313b;
         }
 
-        .task-detail-actions .delete-action {
+        .tasks-page .task-detail-actions .delete-action {
           color: #e19a94;
           border-color: #553536;
         }
 
-        .empty-state {
+        .tasks-page .empty-state {
           padding: 55px 20px;
           text-align: center;
         }
 
-        .empty-icon {
+        .tasks-page .empty-icon {
           width: 45px;
           height: 45px;
           display: grid;
@@ -1335,13 +934,13 @@ export default function TarefasPage() {
           font-size: 21px;
         }
 
-        .empty-state h3 {
+        .tasks-page .empty-state h3 {
           margin: 0;
           color: #e3e6ea;
           font-size: 13px;
         }
 
-        .empty-state p {
+        .tasks-page .empty-state p {
           max-width: 370px;
           margin: 8px auto 16px;
           color: #818b97;
@@ -1349,7 +948,7 @@ export default function TarefasPage() {
           line-height: 1.6;
         }
 
-        .page-footer {
+        .tasks-page .page-footer {
           display: flex;
           justify-content: space-between;
           gap: 15px;
@@ -1360,113 +959,113 @@ export default function TarefasPage() {
         }
 
         @media (max-width: 1100px) {
-          .content {
+          .tasks-page .content {
             padding: 28px 24px;
           }
 
-          .form-grid {
+          .tasks-page .form-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .metrics-grid {
+          .tasks-page .metrics-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 760px) {
-          .content {
+          .tasks-page .content {
             padding: 25px 16px;
           }
 
-          .page-heading {
+          .tasks-page .page-heading {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .metrics-grid {
+          .tasks-page .metrics-grid {
             gap: 9px;
           }
 
-          .metric-card {
+          .tasks-page .metric-card {
             padding: 14px;
           }
 
-          .filters-row {
+          .tasks-page .filters-row {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .select-filters {
+          .tasks-page .select-filters {
             width: 100%;
           }
 
-          .select-filters select {
+          .tasks-page .select-filters select {
             flex: 1;
             min-width: 0;
           }
 
-          .tasks-section {
+          .tasks-page .tasks-section {
             padding: 16px;
           }
 
-          .task-main {
+          .tasks-page .task-main {
             gap: 9px;
           }
 
-          .task-actions {
+          .tasks-page .task-actions {
             gap: 5px;
           }
 
-          .priority-badge {
+          .tasks-page .priority-badge {
             font-size: 8px;
             padding: 4px 6px;
           }
 
-          .page-footer {
+          .tasks-page .page-footer {
             flex-direction: column;
           }
         }
 
         @media (max-width: 480px) {
-          .page-heading h1 {
+          .tasks-page .page-heading h1 {
             font-size: 23px;
           }
 
-          .metric-card {
+          .tasks-page .metric-card {
             min-height: 105px;
           }
 
-          .metric-value {
+          .tasks-page .metric-value {
             font-size: 22px;
           }
 
-          .form-grid {
+          .tasks-page .form-grid {
             grid-template-columns: 1fr;
           }
 
-          .task-meta {
+          .tasks-page .task-meta {
             gap: 5px;
           }
 
-          .task-main {
+          .tasks-page .task-main {
             align-items: flex-start;
             padding: 15px 0;
           }
 
-          .task-checkbox {
+          .tasks-page .task-checkbox {
             margin-top: 2px;
           }
 
-          .task-actions {
+          .tasks-page .task-actions {
             flex-direction: column;
             align-items: flex-end;
           }
 
-          .tasks-heading {
+          .tasks-page .tasks-heading {
             align-items: flex-start;
           }
 
-          .task-details {
+          .tasks-page .task-details {
             padding-left: 12px;
           }
         }
