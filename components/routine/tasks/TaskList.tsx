@@ -1,20 +1,20 @@
 "use client";
-import type { Dispatch, SetStateAction } from "react";
 import type { RoutineTask } from "@/lib/routine/types";
 import TaskItem from "@/components/routine/tasks/TaskItem";
-type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
 type Task = RoutineTask;
 interface TaskListProps {
-  filteredTasks: Task[]; loaded: boolean; search: string; setSearch: (value: string) => void;
-  filters: Filter[]; filter: Filter; setFilter: (value: Filter) => void;
-  categoryFilter: string; setCategoryFilter: (value: string) => void;
-  priorityFilter: string; setPriorityFilter: (value: string) => void; overdueCount: number;
-  toggleTask: (id: number) => void; editTask: (task: Task) => void; deleteTask: (id: number) => void;
-  expandedTask: number | null; setExpandedTask: Dispatch<SetStateAction<number | null>>;
-  today: string; onClearFilters: () => void;
+  filteredTasks: Task[];
+  loaded: boolean;
+  onClearFilters: () => void;
+  toggleTask: (id: number) => void;
+  editTask: (task: Task) => void;
+  deleteTask: (id: number) => void;
+  expandedTask: number | null;
+  setExpandedTask: (value: number | null) => void;
+  today: string;
 }
 export default function TaskList(props: TaskListProps) {
-  const { filteredTasks, loaded, search, setSearch, filters, filter, setFilter, categoryFilter, setCategoryFilter, priorityFilter, setPriorityFilter, overdueCount, toggleTask, editTask, deleteTask, expandedTask, setExpandedTask, today, onClearFilters } = props;
+  const { filteredTasks, loaded, onClearFilters, toggleTask, editTask, deleteTask, expandedTask, setExpandedTask, today } = props;
   return (
     <div className="task-list">
               {!loaded ? (
