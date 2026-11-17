@@ -296,26 +296,16 @@ export default function TarefasPage() {
         </div>
 
               <TaskList
-        filteredTasks={filteredTasks}
-        loaded={loaded}
-        search={search}
-        setSearch={setSearch}
-        filters={filters}
-        filter={filter}
-        setFilter={setFilter}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        priorityFilter={priorityFilter}
-        setPriorityFilter={setPriorityFilter}
-        overdueCount={metrics.overdue}
-        toggleTask={toggleTask}
-        editTask={editTask}
-        deleteTask={deleteTask}
-        expandedTask={expandedTask}
-        setExpandedTask={setExpandedTask}
-        today={today}
-        onClearFilters={() => { setFilter("Todas"); setCategoryFilter("Todas"); setPriorityFilter("Todas"); setSearch(""); }}
-      />
+                filteredTasks={filteredTasks}
+                loaded={loaded}
+                onClearFilters={() => { setFilter("Todas"); setCategoryFilter("Todas"); setPriorityFilter("Todas"); setSearch(""); }}
+                toggleTask={toggleTask}
+                editTask={editTask}
+                deleteTask={deleteTask}
+                expandedTask={expandedTask}
+                setExpandedTask={setExpandedTask}
+                today={today}
+              />
       </section>
 
       <footer className="page-footer">
