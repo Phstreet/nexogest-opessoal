@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -25,17 +26,40 @@ export default function Header() {
   const [date, setDate] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
     setGreeting(getGreeting());
     setDate(getFormattedDate());
+
+    function loadProfile() {
+      try {
+        const raw = window.localStorage.getItem("nexo_profile");
+        if (!raw) {
+          setDisplayName("");
+          return;
+        }
+        const parsed = JSON.parse(raw) as { displayName?: unknown };
+        setDisplayName(typeof parsed.displayName === "string" ? parsed.displayName : "");
+      } catch {
+        setDisplayName("");
+      }
+    }
+
+    loadProfile();
+    window.addEventListener("storage", loadProfile);
+    window.addEventListener("nexo:profile-updated", loadProfile);
+    return () => {
+      window.removeEventListener("storage", loadProfile);
+      window.removeEventListener("nexo:profile-updated", loadProfile);
+    };
   }, []);
 
   return (
     <header className="nexo-header">
       <div className="nexo-header-left">
         <span className="nexo-header-greeting">{greeting}</span>
-        <strong>Bem-vindo ao NEXO.</strong>
+        <strong>{displayName.trim() ? `Bem-vindo, ${displayName.trim()}.` : "Bem-vindo ao NEXO."}</strong>
         <span className="nexo-header-date">{date}</span>
       </div>
 
@@ -76,16 +100,17 @@ export default function Header() {
               setNotificationsOpen(false);
             }}
           >
-            <span className="nexo-profile-avatar">N</span>
-            <span className="nexo-profile-label">Perfil</span>
+            <span className="nexo-profile-avatar">{displayName.trim().charAt(0).toUpperCase() || "N"}</span>
+            <span className="nexo-profile-label">{displayName.trim() || "Perfil"}</span>
             <span className="nexo-profile-chevron">⌄</span>
           </button>
 
           {profileOpen && (
             <div className="nexo-header-dropdown profile-dropdown">
-              <strong>NEXO</strong>
-              <span>Área de perfil</span>
-              <p>As configurações de perfil serão disponibilizadas aqui.</p>
+              <strong>{displayName.trim() || "NEXO"}</strong>
+              <span>Perfil pessoal</span>
+              <p>Gerencie seu nome de exibição e suas preferências.</p>
+              <Link href="/configuracoes?tab=personalizacao" className="profile-settings-link" onClick={() => setProfileOpen(false)}>Editar perfil</Link>
             </div>
           )}
         </div>
@@ -218,6 +243,7 @@ export default function Header() {
           line-height: 1.6;
         }
 
+        .profile-settings-link { display:inline-block; margin-top:12px; color:#dedede; font-size:10px; text-decoration:underline; }
         .nexo-header-dropdown > span {
           display: block;
           margin-top: 5px;
