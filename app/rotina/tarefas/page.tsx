@@ -6,6 +6,7 @@ import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 import TaskMetrics from "@/components/routine/tasks/TaskMetrics";
+import TaskForm from "@/components/routine/tasks/TaskForm";
 
 type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
 
@@ -298,120 +299,23 @@ export default function TarefasPage() {
       <TaskMetrics metrics={metrics} />
 
       {showForm && (
-        <section className="form-card" id="task-form">
-          <div className="form-heading">
-            <div>
-              <span className="section-label">
-                {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
-              </span>
-              <h2>
-                {editingId !== null
-                  ? "Editar tarefa"
-                  : "Cadastrar tarefa"}
-              </h2>
-            </div>
-
-            <button
-              className="close-button"
-              onClick={resetForm}
-              type="button"
-              aria-label="Fechar formulário"
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-field full-field">
-              <label htmlFor="task-description">Descrição da tarefa *</label>
-              <input
-                id="task-description"
-                type="text"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Ex.: Finalizar relatório financeiro"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div className="form-grid">
-              <div className="form-field">
-                <label>Data prevista</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Horário</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(event) => setTime(event.target.value)}
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Prioridade</label>
-                <select
-                  value={priority}
-                  onChange={(event) =>
-                    setPriority(event.target.value as Priority)
-                  }
-                >
-                  {PRIORITIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-field">
-                <label>Categoria</label>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  {CATEGORIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-field full-field">
-              <label>Observações</label>
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Adicione detalhes ou informações importantes..."
-                rows={3}
-              />
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancelar
-              </button>
-
-              <button type="submit" className="primary-button">
-                {editingId !== null
-                  ? "Salvar alterações"
-                  : "Cadastrar tarefa"}
-              </button>
-            </div>
-          </form>
-        </section>
+        <TaskForm
+          editingId={editingId}
+          description={description}
+          setDescription={setDescription}
+          date={date}
+          setDate={setDate}
+          time={time}
+          setTime={setTime}
+          priority={priority}
+          setPriority={setPriority}
+          category={category}
+          setCategory={setCategory}
+          notes={notes}
+          setNotes={setNotes}
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        />
       )}
 
       <section className="tasks-section">
