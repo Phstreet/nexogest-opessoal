@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: nexogest-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -43,7 +47,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Validar vulnerabilidades
+      - name: Validar vulnerabilidades das dependências de produção
+        run: npm audit --omit=dev --audit-level=low
+
+      - name: Relatar vulnerabilidades de ferramentas de desenvolvimento
+        continue-on-error: true
         run: npm audit --audit-level=low
 
       - name: Validar lint

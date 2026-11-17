@@ -84,6 +84,7 @@ export function writeRoutineRaw(
 
     if (raw !== currentRaw) {
       window.localStorage.setItem(key, raw);
+      window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key } }));
     }
 
     return {
