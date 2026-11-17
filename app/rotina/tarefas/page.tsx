@@ -188,33 +188,7 @@ export default function TarefasPage() {
 
 
 
-      <section className="progress-section">
-        <div className="progress-info">
-          <div>
-            <span className="section-label">SEU DESEMPENHO</span>
-            <h2>Progresso geral</h2>
-            <p>
-              Você concluiu {metrics.completed} de {metrics.total} tarefas.
-            </p>
-          </div>
-
-          <div className="progress-percentage">
-            {metrics.percentage}%
-          </div>
-        </div>
-
-        <div className="progress-track">
-          <div
-            className="progress-fill"
-            style={{ width: `${metrics.percentage}%` }}
-          />
-        </div>
-
-        <div className="progress-footer">
-          <span>{metrics.completed} concluídas</span>
-          <span>{metrics.pending} pendentes</span>
-        </div>
-      </section>
+      
 
       {showForm && (
         <TaskForm
