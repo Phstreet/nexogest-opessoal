@@ -91,7 +91,7 @@ export default function RelatoriosPage() {
           <article className="metric-card">
             <div className="metric-top"><span>Tarefas concluídas</span><span className="metric-icon">✓</span></div>
             <div className="metric-value">{completedTasks}<small> / {tasks.length}</small></div>
-            <div className="metric-caption">Conclusão geral</div>
+            <div className="metric-caption">Taxa geral: {taskRate}%</div>
           </article>
           <article className="metric-card">
             <div className="metric-top"><span>Hábitos de hoje</span><span className="metric-icon">↻</span></div>
