@@ -865,7 +865,7 @@ test.describe("NEXO - Armazenamento central da rotina", () => {
 
     await page.goto("/rotina/tarefas");
 
-    await expect(page.getByRole("alert")).toContainText("Armazenamento protegido");
+    await expect(page.getByText("Armazenamento protegido", { exact: true })).toContainText("Armazenamento protegido");
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks"))).toBe(original);
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))).toBe(original);
   });
@@ -879,7 +879,7 @@ test.describe("NEXO - Armazenamento central da rotina", () => {
 
     await page.goto("/rotina/planejamento");
 
-    await expect(page.getByRole("alert")).toContainText("Armazenamento protegido");
+    await expect(page.getByText("Armazenamento protegido", { exact: true })).toContainText("Armazenamento protegido");
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks"))).toBe(original);
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))).toBe(original);
   });
@@ -895,7 +895,7 @@ test.describe("NEXO - Armazenamento central da rotina", () => {
 
     await page.goto("/rotina/produtividade");
 
-    await expect(page.getByRole("alert")).toContainText("Armazenamento protegido");
+    await expect(page.getByText("Armazenamento protegido", { exact: true })).toContainText("Armazenamento protegido");
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks"))).toBe(originalTasks);
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_habits"))).toBe(originalHabits);
     await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))).toBe(originalTasks);
