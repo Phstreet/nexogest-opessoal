@@ -24,6 +24,49 @@ function readLocal(key: string): { exists: boolean; value: unknown; raw: string 
   return { exists: true, value, raw };
 }
 
+function switchLocalOwner(nextUserId: string): boolean {
+  const ownerKey = "nexo_sync_owner_user_id";
+  const currentOwner = localStorage.getItem(ownerKey);
+  if (!currentOwner) {
+    localStorage.setItem(ownerKey, nextUserId);
+    return false;
+  }
+  if (currentOwner === nextUserId) return false;
+
+  // Antes de trocar o usuário ativo, guarda uma cópia isolada por conta.
+  const entries = NEXO_SYNC_KEYS.map((key) => [key, localStorage.getItem(key)] as const);
+  const previousBackupKey = `nexo_account_local_backup_${currentOwner}`;
+  const previousBackup = JSON.stringify({
+    application: "NEXO", ownerId: currentOwner, createdAt: new Date().toISOString(), entries,
+  });
+  localStorage.setItem(previousBackupKey, previousBackup);
+  if (localStorage.getItem(previousBackupKey) !== previousBackup) {
+    throw new Error("Não foi possível preservar os dados da conta anterior. A troca de conta foi bloqueada.");
+  }
+
+  for (const key of NEXO_SYNC_KEYS) localStorage.removeItem(key);
+
+  // Se esta conta já foi usada neste navegador, recupera seu conjunto local.
+  const nextBackupRaw = localStorage.getItem(`nexo_account_local_backup_${nextUserId}`);
+  if (nextBackupRaw) {
+    const parsed = JSON.parse(nextBackupRaw) as { ownerId?: string; entries?: unknown };
+    if (parsed.ownerId !== nextUserId || !Array.isArray(parsed.entries)) {
+      throw new Error("O backup local desta conta está inválido. Os dados anteriores foram preservados.");
+    }
+    for (const entry of parsed.entries) {
+      if (!Array.isArray(entry) || entry.length !== 2 ||
+          typeof entry[0] !== "string" ||
+          !(NEXO_SYNC_KEYS as readonly string[]).includes(entry[0]) ||
+          !(typeof entry[1] === "string" || entry[1] === null)) {
+        throw new Error("O backup local desta conta contém uma estrutura inválida. Nenhum dado remoto foi aplicado.");
+      }
+      if (entry[1] !== null) localStorage.setItem(entry[0], entry[1]);
+    }
+  }
+  localStorage.setItem(ownerKey, nextUserId);
+  return true;
+}
+
 function backupLocalData() {
   const entries = NEXO_SYNC_KEYS.map((key) => [key, localStorage.getItem(key)] as const);
   const backup = { application: "NEXO", type: "pre-cloud-sync", createdAt: new Date().toISOString(), entries };
@@ -54,6 +97,11 @@ export default function NexoSyncManager() {
     busy.current = true;
     setState("loading");
     try {
+      if (switchLocalOwner(session.user.id)) {
+        // Reinicia os estados React para que nenhuma tela mantenha dados da conta anterior em memória.
+        window.location.reload();
+        return;
+      }
       const remote = await fetchRemoteCollections();
       const remoteMap = new Map(remote.map((row) => [row.data_key as NexoSyncKey, row]));
       const nextPending: NexoSyncKey[] = [];
