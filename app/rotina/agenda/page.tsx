@@ -5,6 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
+import AgendaMetrics from "@/components/routine/agenda/AgendaMetrics";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -281,33 +282,7 @@ export default function AgendaPage() {
         </button>
       </section>
 
-      <section className="agenda-metrics">
-        <div className="agenda-metric-card">
-          <span className="metric-label">ATIVIDADES DO DIA</span>
-          <strong>{selectedTasks.length}</strong>
-          <span className="metric-description">Total programado</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">PENDENTES</span>
-          <strong>{pendingTasks.length}</strong>
-          <span className="metric-description">Aguardando conclusão</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">CONCLUÍDAS</span>
-          <strong>{completedTasks.length}</strong>
-          <span className="metric-description">Atividades realizadas</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">ATRASADAS</span>
-          <strong className={overdueTasks.length ? "metric-danger" : ""}>
-            {overdueTasks.length}
-          </strong>
-          <span className="metric-description">Precisam de atenção</span>
-        </div>
-      </section>
+      <AgendaMetrics total={selectedTasks.length} pending={pendingTasks.length} completed={completedTasks.length} overdue={overdueTasks.length} />
 
       {showForm && (
         <section className="agenda-form-panel">
