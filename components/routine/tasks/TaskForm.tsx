@@ -3,6 +3,8 @@
 import type { FormEventHandler, Dispatch, SetStateAction } from "react";
 import type { RoutinePriority } from "@/lib/routine/types";
 
+type Priority = RoutinePriority;
+
 const CATEGORIES = ["Trabalho", "Pessoal", "Financeiro", "Saúde", "Estudos", "Outros"];
 const PRIORITIES: RoutinePriority[] = ["Baixa", "Média", "Alta", "Urgente"];
 
