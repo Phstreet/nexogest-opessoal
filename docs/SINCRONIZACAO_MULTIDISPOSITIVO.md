@@ -14,7 +14,7 @@ Supabase:
 - Row Level Security (RLS) para garantir que cada usuário leia e altere somente seus próprios registros.
 - Controle de revisão para detectar quando outro dispositivo alterou o mesmo conjunto de dados.
 
-A aplicação Next.js 16 deverá usar `@supabase/ssr` com sessões em cookies, clientes separados para navegador e servidor e `proxy.ts` para renovação da sessão. A chave secreta/service role nunca poderá ser incluída no navegador ou em variáveis `NEXT_PUBLIC_*`.
+A aplicação usa rotas servidoras Next.js (`/api/auth` e `/api/sync`) para intermediar as chamadas ao Supabase. Os tokens de acesso e renovação ficam em cookies `HttpOnly`, com `Secure` em produção e `SameSite=Lax`; o navegador recebe somente os dados públicos da sessão. As rotas renovam sessões expirando e validam a origem das operações POST. A chave publishable é usada no servidor e pode ser pública; a chave secreta/service role nunca é utilizada.
 
 ## Dados contemplados na primeira versão
 
