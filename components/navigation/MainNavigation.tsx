@@ -321,11 +321,15 @@ export default function MainNavigation() {
                   setCollapsed(false);
                   setFinanceMenuOpen(true);
                   setRoutineMenuOpen(false);
+                  setReportsMenuOpen(false);
+                  setSettingsMenuOpen(false);
                   return;
                 }
 
                 setFinanceMenuOpen((current) => !current);
                 setRoutineMenuOpen(false);
+                setReportsMenuOpen(false);
+                setSettingsMenuOpen(false);
               }}
               aria-expanded={financeMenuOpen && !collapsed}
               aria-controls="finance-submenu"
