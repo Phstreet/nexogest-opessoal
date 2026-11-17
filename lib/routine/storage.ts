@@ -10,6 +10,11 @@ export const ROUTINE_STORAGE_KEYS = {
   habits: "nexo_habits",
 } as const;
 
+export type RoutineRawResult = {
+  raw: string | null;
+  error: string | null;
+};
+
 export type RoutineLoadResult<T> = {
   items: T[];
   safeToSave: boolean;
@@ -28,23 +33,114 @@ function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
 
-function preserveInvalidData(key: string, raw: string): boolean {
+export function readRoutineRaw(key: string): RoutineRawResult {
+  if (!isBrowser()) {
+    return {
+      raw: null,
+      error: "O armazenamento da rotina não está disponível neste ambiente.",
+    };
+  }
+
+  try {
+    return {
+      raw: window.localStorage.getItem(key),
+      error: null,
+    };
+  } catch (error) {
+    console.error("[NEXO] Não foi possível ler o armazenamento da rotina:", error);
+    return {
+      raw: null,
+      error: "Não foi possível acessar o armazenamento local.",
+    };
+  }
+}
+
+export function writeRoutineRaw(
+  key: string,
+  raw: string,
+  expectedRawSnapshot: string | null
+): RoutineSaveResult {
+  if (!isBrowser()) {
+    return {
+      saved: false,
+      conflict: false,
+      rawSnapshot: expectedRawSnapshot,
+      error: "O armazenamento da rotina não está disponível.",
+    };
+  }
+
+  try {
+    const currentRaw = window.localStorage.getItem(key);
+
+    // Impede que uma aba sobrescreva silenciosamente alterações feitas em outra.
+    if (currentRaw !== expectedRawSnapshot) {
+      return {
+        saved: false,
+        conflict: true,
+        rawSnapshot: currentRaw,
+        error: "Os dados foram alterados em outra aba. Recarregue esta página antes de continuar para evitar sobrescrever alterações.",
+      };
+    }
+
+    if (raw !== currentRaw) {
+      window.localStorage.setItem(key, raw);
+    }
+
+    return {
+      saved: true,
+      conflict: false,
+      rawSnapshot: raw,
+      error: null,
+    };
+  } catch (error) {
+    console.error("[NEXO] Não foi possível gravar o armazenamento da rotina:", error);
+    return {
+      saved: false,
+      conflict: false,
+      rawSnapshot: expectedRawSnapshot,
+      error: "Não foi possível salvar os dados. Verifique o espaço disponível no navegador e tente novamente.",
+    };
+  }
+}
+
+export function readRoutineBackup(backupKey: string): RoutineRawResult {
+  return readRoutineRaw(backupKey);
+}
+
+export function writeRoutineBackup(
+  backupKey: string,
+  raw: string
+): boolean {
+  if (!isBrowser()) return false;
+
+  try {
+    window.localStorage.setItem(backupKey, raw);
+    return true;
+  } catch (error) {
+    console.error("[NEXO] Não foi possível gravar o backup da rotina:", error);
+    return false;
+  }
+}
+
+export function preserveRoutineBackup(key: string, raw: string): boolean {
   if (!isBrowser()) return false;
 
   try {
     const versionedBackupKey = `nexo_routine_backup_${key}`;
+
     if (window.localStorage.getItem(versionedBackupKey) === null) {
-      window.localStorage.setItem(
-        versionedBackupKey,
-        JSON.stringify({
-          storageKey: key,
-          createdAt: new Date().toISOString(),
-          rawData: raw,
-        })
-      );
+      const versionedBackup = JSON.stringify({
+        storageKey: key,
+        createdAt: new Date().toISOString(),
+        rawData: raw,
+      });
+
+      if (!writeRoutineBackup(versionedBackupKey, versionedBackup)) {
+        return false;
+      }
     }
 
-    // Compatibilidade com os backups antigos utilizados pelas telas.
+    // Mantém compatibilidade com os backups antigos utilizados pelas telas.
     const legacyBackupKey =
       key === ROUTINE_STORAGE_KEYS.tasks
         ? "nexo_tasks_backup"
@@ -54,9 +150,10 @@ function preserveInvalidData(key: string, raw: string): boolean {
 
     if (
       legacyBackupKey &&
-      window.localStorage.getItem(legacyBackupKey) === null
+      window.localStorage.getItem(legacyBackupKey) === null &&
+      !writeRoutineBackup(legacyBackupKey, raw)
     ) {
-      window.localStorage.setItem(legacyBackupKey, raw);
+      return false;
     }
 
     return true;
@@ -70,36 +167,36 @@ export function loadRoutineCollection<T>(
   key: string,
   isValidItem: (value: unknown) => value is T
 ): RoutineLoadResult<T> {
-  if (!isBrowser()) {
+  const read = readRoutineRaw(key);
+
+  if (read.error) {
     return {
       items: [],
       safeToSave: false,
       rawSnapshot: null,
-      error: "O armazenamento da rotina não está disponível neste ambiente.",
+      error: read.error,
     };
   }
 
-  let rawSnapshot: string | null = null;
+  const rawSnapshot = read.raw;
+
+  if (rawSnapshot === null) {
+    return {
+      items: [],
+      safeToSave: true,
+      rawSnapshot: null,
+      error: null,
+    };
+  }
 
   try {
-    rawSnapshot = window.localStorage.getItem(key);
-
-    if (rawSnapshot === null) {
-      return {
-        items: [],
-        safeToSave: true,
-        rawSnapshot: null,
-        error: null,
-      };
-    }
-
     const parsed: unknown = JSON.parse(rawSnapshot);
 
     if (
       !Array.isArray(parsed) ||
       !parsed.every((item: unknown) => isValidItem(item))
     ) {
-      const backupCreated = preserveInvalidData(key, rawSnapshot);
+      const backupCreated = preserveRoutineBackup(key, rawSnapshot);
 
       return {
         items: [],
@@ -118,8 +215,7 @@ export function loadRoutineCollection<T>(
       error: null,
     };
   } catch (error) {
-    const backupCreated =
-      rawSnapshot !== null && preserveInvalidData(key, rawSnapshot);
+    const backupCreated = preserveRoutineBackup(key, rawSnapshot);
 
     console.error("[NEXO] Falha ao carregar a coleção da rotina:", error);
 
@@ -139,57 +235,28 @@ export function saveRoutineCollection<T>(
   items: T[],
   expectedRawSnapshot: string | null
 ): RoutineSaveResult {
-  if (!isBrowser()) {
-    return {
-      saved: false,
-      conflict: false,
-      rawSnapshot: expectedRawSnapshot,
-      error: "O armazenamento da rotina não está disponível.",
-    };
-  }
+  let serialized: string;
 
   try {
-    const currentRaw = window.localStorage.getItem(key);
-
-    // Evita que uma aba sobrescreva silenciosamente alterações feitas em outra.
-    if (currentRaw !== expectedRawSnapshot) {
-      return {
-        saved: false,
-        conflict: true,
-        rawSnapshot: currentRaw,
-        error: "Os dados foram alterados em outra aba. Recarregue esta página antes de continuar para evitar sobrescrever alterações.",
-      };
-    }
-
-    const serialized = JSON.stringify(items);
-
-    if (typeof serialized !== "string") {
-      return {
-        saved: false,
-        conflict: false,
-        rawSnapshot: currentRaw,
-        error: "Não foi possível preparar os dados para gravação.",
-      };
-    }
-
-    if (serialized !== currentRaw) {
-      window.localStorage.setItem(key, serialized);
-    }
-
-    return {
-      saved: true,
-      conflict: false,
-      rawSnapshot: serialized,
-      error: null,
-    };
+    serialized = JSON.stringify(items);
   } catch (error) {
-    console.error("[NEXO] Falha ao salvar a coleção da rotina:", error);
-
+    console.error("[NEXO] Não foi possível preparar os dados da rotina:", error);
     return {
       saved: false,
       conflict: false,
       rawSnapshot: expectedRawSnapshot,
-      error: "Não foi possível salvar os dados. Verifique o espaço disponível no navegador e tente novamente.",
+      error: "Não foi possível preparar os dados para gravação.",
     };
   }
+
+  if (typeof serialized !== "string") {
+    return {
+      saved: false,
+      conflict: false,
+      rawSnapshot: expectedRawSnapshot,
+      error: "Não foi possível preparar os dados para gravação.",
+    };
+  }
+
+  return writeRoutineRaw(key, serialized, expectedRawSnapshot);
 }
