@@ -996,7 +996,7 @@ test.describe("NEXO - Proteção e resumo da página inicial", () => {
 
     await page.goto("/");
 
-    await expect(page.getByRole("alert")).toContainText("Armazenamento protegido");
+    await expect(page.locator(".storage-protection-message")).toContainText("Armazenamento protegido");
 
     await expect.poll(
       () => page.evaluate(() => localStorage.getItem("nexo_tasks"))
