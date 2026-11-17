@@ -623,7 +623,7 @@ export default function Home() {
                 <button
                   type="button"
                   className="primary-button"
-                  onClick={addTask}
+                  onClick={() => addTask()}
                 >
                   + Adicionar tarefa
                 </button>
