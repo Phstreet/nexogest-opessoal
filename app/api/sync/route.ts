@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseConfig, getValidAccessToken } from "@/lib/supabase/server";
+import { getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 const ALLOWED_KEYS = new Set([
@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!hasValidOrigin(request)) return NextResponse.json({ error: "Origem da solicitação não autorizada." }, { status: 403 });
   try {
     const body = await request.json();
     const dataKey = String(body.data_key || "");
