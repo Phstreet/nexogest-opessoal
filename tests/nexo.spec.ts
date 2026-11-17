@@ -928,3 +928,59 @@ test.describe("NEXO - Armazenamento central da rotina", () => {
     await agendaPage.close();
   });
 });
+
+test.describe("NEXO - Componentização de Tarefas e Agenda", () => {
+  test("deve cadastrar, editar e concluir uma tarefa pela lista componentizada", async ({ page }) => {
+    await page.goto("/rotina/tarefas");
+
+    await page.getByRole("button", { name: /Nova tarefa/ }).click();
+    await page.locator("#task-description").fill("Tarefa de teste componente");
+    await page.getByRole("button", { name: "Cadastrar tarefa" }).click();
+
+    let task = page.locator(".task-item").filter({ hasText: "Tarefa de teste componente" });
+    await expect(task).toBeVisible();
+
+    await task.locator(".icon-action").click();
+    await task.getByRole("button", { name: /Editar/ }).click();
+    await page.locator("#task-description").fill("Tarefa editada pelo componente");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    task = page.locator(".task-item").filter({ hasText: "Tarefa editada pelo componente" });
+    await expect(task).toBeVisible();
+    await task.getByRole("button", { name: "Concluir tarefa" }).click();
+    await expect(task).toHaveClass(/task-completed/);
+
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_tasks") || "[]"));
+    expect(saved).toEqual(expect.arrayContaining([
+      expect.objectContaining({ description: "Tarefa editada pelo componente", done: true })
+    ]));
+  });
+
+  test("deve renderizar e atualizar uma atividade na linha do tempo da Agenda", async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      localStorage.setItem("nexo_tasks", JSON.stringify([{
+        id: 991001,
+        description: "Atividade da linha do tempo",
+        done: false,
+        date,
+        time: "10:30",
+        priority: "Alta",
+        category: "Pessoal",
+        notes: "Atividade criada para validar o componente"
+      }]));
+    });
+
+    await page.goto("/rotina/agenda");
+    const item = page.locator(".timeline-item").filter({ hasText: "Atividade da linha do tempo" });
+    await expect(item).toBeVisible();
+
+    await item.getByRole("button", { name: "Concluir atividade" }).click();
+    await expect(item).toHaveClass(/completed/);
+
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("nexo_tasks") || "[]"));
+    expect(saved[0]).toMatchObject({ id: 991001, done: true });
+  });
+});
+
