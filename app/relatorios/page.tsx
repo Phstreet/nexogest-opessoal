@@ -37,8 +37,8 @@ export default function RelatoriosPage() {
       description: "Acompanhe tarefas, hábitos e consistência da sua rotina.",
       href: "/rotina/produtividade",
       icon: "◷",
-      value: `${taskRate}%`,
-      caption: "Conclusão geral das tarefas",
+      value: "Abrir",
+      caption: "Indicadores dos últimos 7 dias",
     },
     {
       title: "Evolução financeira",
@@ -61,8 +61,8 @@ export default function RelatoriosPage() {
       description: "Consulte suas movimentações e registros anteriores.",
       href: "/financeiro/historico",
       icon: "▤",
-      value: String(tasks.length),
-      caption: "Tarefas registradas",
+      value: "Histórico",
+      caption: "Movimentações financeiras anteriores",
     },
   ];
 
