@@ -418,6 +418,7 @@ export function notifyFinanceUpdate(
     return;
   }
 
+  window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: key ?? null } }));
   window.dispatchEvent(
     new CustomEvent(FINANCE_STORAGE_EVENT, {
       detail: {
