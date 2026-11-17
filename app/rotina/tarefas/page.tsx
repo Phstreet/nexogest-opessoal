@@ -5,8 +5,6 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
-import TaskMetrics from "@/components/routine/tasks/TaskMetrics";
-import TaskForm from "@/components/routine/tasks/TaskForm";
 
 type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
 
@@ -296,26 +294,189 @@ export default function TarefasPage() {
         </button>
       </section>
 
-      <TaskMetrics metrics={metrics} />
+      <section className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Total de tarefas</span>
+            <span className="metric-icon">▤</span>
+          </div>
+          <div className="metric-value">{metrics.total}</div>
+          <div className="metric-description">Atividades cadastradas</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Pendentes</span>
+            <span className="metric-icon">◷</span>
+          </div>
+          <div className="metric-value">{metrics.pending}</div>
+          <div className="metric-description">Aguardando conclusão</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Concluídas</span>
+            <span className="metric-icon">✓</span>
+          </div>
+          <div className="metric-value">{metrics.completed}</div>
+          <div className="metric-description">Atividades finalizadas</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Atrasadas</span>
+            <span className="metric-icon">!</span>
+          </div>
+          <div className="metric-value overdue-value">
+            {metrics.overdue}
+          </div>
+          <div className="metric-description">Precisam de atenção</div>
+        </div>
+      </section>
+
+      <section className="progress-section">
+        <div className="progress-info">
+          <div>
+            <span className="section-label">SEU DESEMPENHO</span>
+            <h2>Progresso geral</h2>
+            <p>
+              Você concluiu {metrics.completed} de {metrics.total} tarefas.
+            </p>
+          </div>
+
+          <div className="progress-percentage">
+            {metrics.percentage}%
+          </div>
+        </div>
+
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{ width: `${metrics.percentage}%` }}
+          />
+        </div>
+
+        <div className="progress-footer">
+          <span>{metrics.completed} concluídas</span>
+          <span>{metrics.pending} pendentes</span>
+        </div>
+      </section>
 
       {showForm && (
-        <TaskForm
-          editingId={editingId}
-          description={description}
-          setDescription={setDescription}
-          date={date}
-          setDate={setDate}
-          time={time}
-          setTime={setTime}
-          priority={priority}
-          setPriority={setPriority}
-          category={category}
-          setCategory={setCategory}
-          notes={notes}
-          setNotes={setNotes}
-          onCancel={resetForm}
-          onSubmit={handleSubmit}
-        />
+        <section className="form-card" id="task-form">
+          <div className="form-heading">
+            <div>
+              <span className="section-label">
+                {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
+              </span>
+              <h2>
+                {editingId !== null
+                  ? "Editar tarefa"
+                  : "Cadastrar tarefa"}
+              </h2>
+            </div>
+
+            <button
+              className="close-button"
+              onClick={resetForm}
+              type="button"
+              aria-label="Fechar formulário"
+            >
+              ×
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-field full-field">
+              <label htmlFor="task-description">Descrição da tarefa *</label>
+              <input
+                id="task-description"
+                type="text"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Ex.: Finalizar relatório financeiro"
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Data prevista</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Horário</label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Prioridade</label>
+                <select
+                  value={priority}
+                  onChange={(event) =>
+                    setPriority(event.target.value as Priority)
+                  }
+                >
+                  {PRIORITIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>Categoria</label>
+                <select
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                >
+                  {CATEGORIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-field full-field">
+              <label>Observações</label>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Adicione detalhes ou informações importantes..."
+                rows={3}
+              />
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
+
+              <button type="submit" className="primary-button">
+                {editingId !== null
+                  ? "Salvar alterações"
+                  : "Cadastrar tarefa"}
+              </button>
+            </div>
+          </form>
+        </section>
       )}
 
       <section className="tasks-section">
@@ -567,7 +728,7 @@ export default function TarefasPage() {
           margin-bottom: 28px;
         }
 
-        .eyebrow,
+        .tasks-page .eyebrow,
         .tasks-page .section-label {
           color: #777f8b;
           font-size: 10px;
@@ -587,7 +748,7 @@ export default function TarefasPage() {
           letter-spacing: -0.7px;
         }
 
-        .page-heading p,
+        .tasks-page .page-heading p,
         .tasks-page .tasks-heading p {
           margin: 8px 0 0;
           color: #858d98;
@@ -689,8 +850,8 @@ export default function TarefasPage() {
           justify-content: space-between;
         }
 
-        .progress-info h2,
-        .tasks-heading h2,
+        .tasks-page .progress-info h2,
+        .tasks-page .tasks-heading h2,
         .tasks-page .form-heading h2 {
           margin: 7px 0 0;
           color: #e9ebee;
@@ -743,11 +904,11 @@ export default function TarefasPage() {
         }
 
         @keyframes formAppear {
-          .tasks-page from {
+          from {
             opacity: 0;
             transform: translateY(-5px);
           }
-          .tasks-page to {
+          to {
             opacity: 1;
             transform: translateY(0);
           }
@@ -793,9 +954,9 @@ export default function TarefasPage() {
           font-weight: 550;
         }
 
-        .form-field input,
-        .form-field select,
-        .form-field textarea,
+        .tasks-page .form-field input,
+        .tasks-page .form-field select,
+        .tasks-page .form-field textarea,
         .tasks-page .select-filters select {
           width: 100%;
           min-height: 39px;
@@ -815,10 +976,10 @@ export default function TarefasPage() {
           resize: vertical;
         }
 
-        .form-field input:focus,
-        .form-field select:focus,
-        .form-field textarea:focus,
-        .select-filters select:focus,
+        .tasks-page .form-field input:focus,
+        .tasks-page .form-field select:focus,
+        .tasks-page .form-field textarea:focus,
+        .tasks-page .select-filters select:focus,
         .tasks-page .search-container input:focus {
           border-color: #727e8c;
         }
