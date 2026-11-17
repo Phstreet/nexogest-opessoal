@@ -46,7 +46,7 @@ export default function NexoSyncManager() {
     busy.current = true;
     setState("loading");
     try {
-      const remote = await fetchRemoteCollections(session);
+      const remote = await fetchRemoteCollections();
       const remoteMap = new Map(remote.map((row) => [row.data_key as NexoSyncKey, row]));
       const nextPending: NexoSyncKey[] = [];
       const nextIssues: SyncIssue[] = [];
@@ -111,7 +111,7 @@ export default function NexoSyncManager() {
       return;
     }
     try {
-      const result = await saveRemoteCollection(session, key, local.value, revision);
+      const result = await saveRemoteCollection(key, local.value, revision);
       if (!result.saved) {
         setState("conflict");
         setMessage(`A coleção ${key} foi alterada em outro dispositivo. Atualize a comparação antes de continuar.`);
@@ -158,7 +158,7 @@ export default function NexoSyncManager() {
       for (const key of pending) {
         const local = readLocal(key);
         if (!local.exists) continue;
-        const result = await saveRemoteCollection(session, key, local.value, 0);
+        const result = await saveRemoteCollection(key, local.value, 0);
         if (!result.saved) throw new Error(`A coleção ${key} já existe na nuvem. Nenhum dado foi sobrescrito.`);
         revisions.current.set(key, result.current_revision || 1);
         snapshots.current.set(key, local.raw || "null");
@@ -186,7 +186,7 @@ export default function NexoSyncManager() {
         revisions.current.set(issue.key, issue.remote.revision);
         window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: issue.key } }));
       } else {
-        const result = await saveRemoteCollection(session, issue.key, issue.local, issue.remote.revision);
+        const result = await saveRemoteCollection(issue.key, issue.local, issue.remote.revision);
         if (!result.saved) throw new Error("A nuvem mudou novamente. Atualize a comparação e tente outra vez.");
         revisions.current.set(issue.key, result.current_revision || issue.remote.revision + 1);
         snapshots.current.set(issue.key, JSON.stringify(issue.local));
