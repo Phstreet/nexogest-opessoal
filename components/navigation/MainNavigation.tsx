@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import {
   financeMenuItems,
@@ -19,7 +19,7 @@ const SIDEBAR_STORAGE_KEY = "nexo_navigation_collapsed";
 
 export default function MainNavigation() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [activeSettingsTab, setActiveSettingsTab] = useState("");
 
   const isFinanceRoute = pathname.startsWith("/financeiro");
   const isRoutineRoute = pathname.startsWith("/rotina");
@@ -90,6 +90,7 @@ export default function MainNavigation() {
     setRoutineMenuOpen(false);
     setReportsMenuOpen(false);
     setSettingsMenuOpen(false);
+    setActiveSettingsTab(new URLSearchParams(window.location.search).get("tab") || "");
   }, [pathname]);
 
   // Fecha os submenus também quando a sidebar for compactada.
@@ -159,7 +160,7 @@ export default function MainNavigation() {
 
     const params = new URLSearchParams(targetQuery);
     const tab = params.get("tab");
-    return !tab || searchParams.get("tab") === tab;
+    return !tab || activeSettingsTab === tab;
   }
 
   function toggleFavorite(href: string) {
@@ -229,7 +230,11 @@ export default function MainNavigation() {
               }`}
               aria-current={isActive(item.href) ? "page" : undefined}
               title={collapsed ? item.label : undefined}
-              onClick={handleNavigation}
+              onClick={() => {
+                const query = item.href.split("?")[1] || "";
+                setActiveSettingsTab(new URLSearchParams(query).get("tab") || "");
+                handleNavigation();
+              }}
             >
               {item.icon && (
                 <span className="nav-subitem-icon">{item.icon}</span>
