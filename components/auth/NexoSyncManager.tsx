@@ -13,7 +13,15 @@ type SyncState = "loading" | "local" | "ready" | "pending" | "conflict" | "error
 function readLocal(key: string): { exists: boolean; value: unknown; raw: string | null } {
   const raw = localStorage.getItem(key);
   if (raw === null) return { exists: false, value: null, raw: null };
-  return { exists: true, value: JSON.parse(raw), raw };
+  const value: unknown = JSON.parse(raw);
+  const arrayKeys = new Set(["nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements", "nexo_tasks", "nexo_habits"]);
+  if (arrayKeys.has(key) && !Array.isArray(value)) {
+    throw new Error(`A coleção local ${key} não possui o formato esperado. O conteúdo foi preservado e a migração foi bloqueada.`);
+  }
+  if (!arrayKeys.has(key) && (!value || typeof value !== "object" || Array.isArray(value))) {
+    throw new Error(`A configuração local ${key} não possui o formato esperado. O conteúdo foi preservado e a migração foi bloqueada.`);
+  }
+  return { exists: true, value, raw };
 }
 
 function backupLocalData() {
@@ -60,6 +68,10 @@ export default function NexoSyncManager() {
         }
         revisions.current.set(key, Number(row.revision));
         const remoteRaw = JSON.stringify(row.payload);
+        const arrayKeys = new Set(["nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements", "nexo_tasks", "nexo_habits"]);
+        if ((arrayKeys.has(key) && !Array.isArray(row.payload)) || (!arrayKeys.has(key) && (!row.payload || typeof row.payload !== "object" || Array.isArray(row.payload)))) {
+          throw new Error(`A coleção remota ${key} está em formato incompatível. Nenhum dado local foi alterado.`);
+        }
         if (!local.exists) {
           localStorage.setItem(key, remoteRaw);
           snapshots.current.set(key, remoteRaw);
