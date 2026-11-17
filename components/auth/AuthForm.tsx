@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
@@ -17,6 +17,10 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (mode === "login" && session) router.replace("/");
+  }, [mode, session, router]);
 
   const titles = {
     login: ["Acesse sua conta", "Entre para acessar seus dados e sincronizar seus dispositivos."],
