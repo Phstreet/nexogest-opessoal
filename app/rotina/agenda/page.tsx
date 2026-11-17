@@ -251,6 +251,12 @@ export default function AgendaPage() {
 
   return (
     <div className="content agenda-content">
+      {storageError && (
+        <div className="form-card" role="alert">
+          <strong>Armazenamento protegido</strong>
+          <p>{storageError}</p>
+        </div>
+      )}
       <section className="agenda-welcome">
         <div>
           <span className="eyebrow">ORGANIZAÇÃO PESSOAL</span>
