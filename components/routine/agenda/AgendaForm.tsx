@@ -3,6 +3,8 @@
 import type { FormEventHandler, Dispatch, SetStateAction } from "react";
 import type { RoutinePriority } from "@/lib/routine/types";
 
+type Priority = RoutinePriority;
+
 interface AgendaFormProps {
   editingId: number | null;
   description: string;
