@@ -89,7 +89,7 @@ export default function ConfiguracoesPage() {
   function downloadBackup() {
     try {
       const entries = Object.keys(localStorage)
-        .filter((key) => key.startsWith("nexo_"))
+        .filter((key) => key.startsWith("nexo_") && !key.startsWith("nexo_account_local_backup_"))
         .sort()
         .map((key) => [key, localStorage.getItem(key)] as const);
       const backup = {
