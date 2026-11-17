@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import Link from "next/link";
 
 type Task = {
@@ -36,9 +37,6 @@ type DayData = {
   total: number;
 };
 
-const TASKS_KEY = "nexo_tasks";
-const HABITS_KEY = "nexo_habits";
-
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -59,77 +57,43 @@ function formatDate(value: string) {
   });
 }
 
-function loadTasks(): Task[] {
-  try {
-    const stored = localStorage.getItem(TASKS_KEY);
-    if (!stored) return [];
-
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (item): item is Task =>
-        item &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.done === "boolean"
-    );
-  } catch {
-    return [];
+function isValidTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
   }
+
+  const task = value as Record<string, unknown>;
+
+  return (
+    typeof task.id === "number" &&
+    typeof task.description === "string" &&
+    typeof task.done === "boolean"
+  );
 }
 
-function loadHabits(): Habit[] {
-  try {
-    const stored = localStorage.getItem(HABITS_KEY);
-    if (!stored) return [];
-
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter(
-        (item) =>
-          item &&
-          typeof item.id === "number" &&
-          typeof item.name === "string"
-      )
-      .map((item) => ({
-        ...item,
-        completedDates: Array.isArray(item.completedDates)
-          ? item.completedDates.filter(
-              (date: unknown) => typeof date === "string"
-            )
-          : [],
-        active: item.active !== false,
-      }));
-  } catch {
-    return [];
+function isValidHabit(value: unknown): value is Habit {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
   }
+
+  const habit = value as Record<string, unknown>;
+
+  return (
+    typeof habit.id === "number" &&
+    typeof habit.name === "string" &&
+    typeof habit.category === "string" &&
+    Array.isArray(habit.completedDates) &&
+    typeof habit.active === "boolean"
+  );
 }
 
 export default function ProdutividadePage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { items: tasks, loaded: tasksLoaded, storageError: tasksStorageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask, { persist: false });
+  const { items: habits, loaded: habitsLoaded, storageError: habitsStorageError } = useRoutineCollection<Habit>("nexo_habits", isValidHabit, { persist: false });
+  const loaded = tasksLoaded && habitsLoaded;
+  const storageError = tasksStorageError || habitsStorageError;
 
   const today = getLocalDate();
-
-  useEffect(() => {
-    const syncData = () => {
-      setTasks(loadTasks());
-      setHabits(loadHabits());
-      setLoaded(true);
-    };
-
-    syncData();
-
-    window.addEventListener("storage", syncData);
-
-    return () => {
-      window.removeEventListener("storage", syncData);
-    };
-  }, []);
 
   const activeTasks = tasks;
   const completedTasks = activeTasks.filter((task) => task.done);
