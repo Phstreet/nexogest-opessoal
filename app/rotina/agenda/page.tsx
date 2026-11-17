@@ -4,6 +4,9 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import AgendaMetrics from "@/components/routine/agenda/AgendaMetrics";
+import AgendaForm from "@/components/routine/agenda/AgendaForm";
+import AgendaTimeline from "@/components/routine/agenda/AgendaTimeline";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 function getLocalDate(date = new Date()) {
@@ -281,146 +284,26 @@ export default function AgendaPage() {
         </button>
       </section>
 
-      <section className="agenda-metrics">
-        <div className="agenda-metric-card">
-          <span className="metric-label">ATIVIDADES DO DIA</span>
-          <strong>{selectedTasks.length}</strong>
-          <span className="metric-description">Total programado</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">PENDENTES</span>
-          <strong>{pendingTasks.length}</strong>
-          <span className="metric-description">Aguardando conclusão</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">CONCLUÍDAS</span>
-          <strong>{completedTasks.length}</strong>
-          <span className="metric-description">Atividades realizadas</span>
-        </div>
-
-        <div className="agenda-metric-card">
-          <span className="metric-label">ATRASADAS</span>
-          <strong className={overdueTasks.length ? "metric-danger" : ""}>
-            {overdueTasks.length}
-          </strong>
-          <span className="metric-description">Precisam de atenção</span>
-        </div>
-      </section>
+            <AgendaMetrics total={selectedTasks.length} pending={pendingTasks.length} completed={completedTasks.length} overdue={overdueTasks.length} />
 
       {showForm && (
-        <section className="agenda-form-panel">
-          <div className="panel-heading">
-            <div>
-              <span className="eyebrow">
-                {editingId !== null ? "EDIÇÃO" : "CADASTRO"}
-              </span>
-              <h2>
-                {editingId !== null
-                  ? "Editar atividade"
-                  : "Nova atividade"}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="close-button"
-              onClick={resetForm}
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label className="form-field field-wide">
-                <span>Nome da atividade *</span>
-                <input
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Ex.: Reunião, academia, estudar..."
-                  required
-                />
-              </label>
-
-              <label className="form-field">
-                <span>Data</span>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  required
-                />
-              </label>
-
-              <label className="form-field">
-                <span>Horário</span>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(event) => setTime(event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
-                <span>Prioridade</span>
-                <select
-                  value={priority}
-                  onChange={(event) =>
-                    setPriority(event.target.value as Priority)
-                  }
-                >
-                  <option value="Baixa">Baixa</option>
-                  <option value="Média">Média</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Urgente">Urgente</option>
-                </select>
-              </label>
-
-              <label className="form-field">
-                <span>Categoria</span>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  <option value="Pessoal">Pessoal</option>
-                  <option value="Trabalho">Trabalho</option>
-                  <option value="Saúde">Saúde</option>
-                  <option value="Estudos">Estudos</option>
-                  <option value="Financeiro">Financeiro</option>
-                  <option value="Lazer">Lazer</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </label>
-
-              <label className="form-field field-wide">
-                <span>Observações</span>
-                <textarea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Adicione detalhes sobre esta atividade..."
-                  rows={3}
-                />
-              </label>
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancelar
-              </button>
-              <button type="submit" className="primary-button">
-                {editingId !== null
-                  ? "Salvar alterações"
-                  : "Cadastrar atividade"}
-              </button>
-            </div>
-          </form>
-        </section>
+        <AgendaForm
+          editingId={editingId}
+          description={description}
+          setDescription={setDescription}
+          date={date}
+          setDate={setDate}
+          time={time}
+          setTime={setTime}
+          priority={priority}
+          setPriority={setPriority}
+          category={category}
+          setCategory={setCategory}
+          notes={notes}
+          setNotes={setNotes}
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        />
       )}
 
       <div className="agenda-layout">
@@ -462,86 +345,7 @@ export default function AgendaPage() {
               </button>
             </div>
           ) : (
-            <div className="timeline">
-              {selectedTasks.map((task) => (
-                <div
-                  className={`timeline-item ${task.done ? "completed" : ""}`}
-                  key={task.id}
-                >
-                  <div className="timeline-time">
-                    {task.time || "--:--"}
-                  </div>
-
-                  <div className="timeline-marker">
-                    <span />
-                  </div>
-
-                  <div className="timeline-card">
-                    <div className="timeline-card-top">
-                      <div className="task-title-area">
-                        <button
-                          type="button"
-                          className={`task-check ${task.done ? "checked" : ""}`}
-                          onClick={() => toggleTask(task.id)}
-                          aria-label={
-                            task.done
-                              ? "Marcar como pendente"
-                              : "Concluir atividade"
-                          }
-                        >
-                          {task.done ? "✓" : ""}
-                        </button>
-
-                        <div>
-                          <h3>{task.description}</h3>
-                          <span className="task-category">
-                            {task.category || "Pessoal"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`priority-badge ${priorityClass(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority || "Baixa"}
-                      </span>
-                    </div>
-
-                    {task.notes && (
-                      <p className="task-notes">{task.notes}</p>
-                    )}
-
-                    <div className="task-actions">
-                      <span
-                        className={
-                          task.done ? "done-label" : "waiting-label"
-                        }
-                      >
-                        {task.done ? "Concluída" : "Pendente"}
-                      </span>
-
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => editTask(task)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="delete-action"
-                          onClick={() => deleteTask(task.id)}
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                          <AgendaTimeline selectedTasks={selectedTasks} toggleTask={toggleTask} editTask={editTask} deleteTask={deleteTask} />
           )}
         </section>
 
