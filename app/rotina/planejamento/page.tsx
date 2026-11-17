@@ -1,7 +1,8 @@
 
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -16,8 +17,6 @@ type Task = {
   notes?: string;
   createdAt?: string;
 };
-
-const TASKS_KEY = "nexo_tasks";
 
 const weekDays = [
   "Segunda-feira",
@@ -72,25 +71,18 @@ function formatPeriod(start: Date, end: Date) {
   return `${first} – ${last}`;
 }
 
-function loadTasks(): Task[] {
-  try {
-    const stored = localStorage.getItem(TASKS_KEY);
-    if (!stored) return [];
-
-    const parsed: unknown = JSON.parse(stored);
-
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (item): item is Task =>
-        item &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.done === "boolean"
-    );
-  } catch {
-    return [];
+function isValidTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
   }
+
+  const task = value as Record<string, unknown>;
+
+  return (
+    typeof task.id === "number" &&
+    typeof task.description === "string" &&
+    typeof task.done === "boolean"
+  );
 }
 
 function priorityClass(priority?: Priority) {
@@ -107,8 +99,7 @@ function priorityClass(priority?: Priority) {
 }
 
 export default function WeeklyPlanningPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [weekStart, setWeekStart] = useState(() =>
     getWeekStart(new Date())
@@ -126,32 +117,6 @@ export default function WeeklyPlanningPage() {
 
   const today = getLocalDate();
 
-  const loadData = useCallback(() => {
-    setTasks(loadTasks());
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === TASKS_KEY) loadData();
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!loaded) return;
-
-    try {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Erro ao salvar planejamento:", error);
-    }
-  }, [tasks, loaded]);
 
   const days = useMemo(() => {
     return weekDays.map((name, index) => {
