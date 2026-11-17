@@ -63,6 +63,7 @@ export default function ConfiguracoesPage() {
     setPreferences(next);
     try {
       localStorage.setItem(PREFERENCES_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: PREFERENCES_KEY } }));
       setMessage("Preferências salvas.");
       setError("");
     } catch {
@@ -75,6 +76,7 @@ export default function ConfiguracoesPage() {
     event.preventDefault();
     try {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: PROFILE_KEY } }));
       window.dispatchEvent(new Event("nexo:profile-updated"));
       setMessage("Personalização salva.");
       setError("");
