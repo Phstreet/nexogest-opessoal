@@ -1,7 +1,8 @@
 
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -16,9 +17,6 @@ type Task = {
   notes?: string;
   createdAt?: string;
 };
-
-const TASKS_KEY = "nexo_tasks";
-const TASKS_BACKUP_KEY = "nexo_tasks_backup";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -46,59 +44,18 @@ function formatLongDate(date: string) {
   });
 }
 
-function isValidTaskArray(value: unknown): value is Task[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        item &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.done === "boolean"
-    )
-  );
-}
-
-type TasksLoadResult = {
-  tasks: Task[];
-  safeToSave: boolean;
-};
-
-function loadTasks(): TasksLoadResult {
-  let stored: string | null = null;
-
-  try {
-    stored = localStorage.getItem(TASKS_KEY);
-
-    if (stored === null) {
-      return { tasks: [], safeToSave: true };
-    }
-
-    const parsed: unknown = JSON.parse(stored);
-
-    if (isValidTaskArray(parsed)) {
-      return { tasks: parsed, safeToSave: true };
-    }
-
-    if (localStorage.getItem(TASKS_BACKUP_KEY) === null) {
-      localStorage.setItem(TASKS_BACKUP_KEY, stored);
-    }
-
-    return { tasks: [], safeToSave: false };
-  } catch (error) {
-    if (stored !== null) {
-      try {
-        if (localStorage.getItem(TASKS_BACKUP_KEY) === null) {
-          localStorage.setItem(TASKS_BACKUP_KEY, stored);
-        }
-      } catch (backupError) {
-        console.error("Não foi possível criar o backup das tarefas:", backupError);
-      }
-    }
-
-    console.error("Não foi possível carregar as tarefas. Os dados originais foram preservados.", error);
-    return { tasks: [], safeToSave: false };
+function isValidTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
   }
+
+  const task = value as Record<string, unknown>;
+
+  return (
+    typeof task.id === "number" &&
+    typeof task.description === "string" &&
+    typeof task.done === "boolean"
+  );
 }
 
 function priorityClass(priority?: Priority) {
@@ -115,9 +72,7 @@ function priorityClass(priority?: Priority) {
 }
 
 export default function AgendaPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [storageCanSave, setStorageCanSave] = useState(false);
+  const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [selectedDate, setSelectedDate] = useState(getLocalDate());
 
@@ -130,39 +85,6 @@ export default function AgendaPage() {
   const [priority, setPriority] = useState<Priority>("Média");
   const [category, setCategory] = useState("Pessoal");
   const [notes, setNotes] = useState("");
-
-  const loadData = useCallback(() => {
-    const result = loadTasks();
-    setTasks(result.tasks);
-    setStorageCanSave(result.safeToSave);
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === TASKS_KEY) {
-        loadData();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!loaded || !storageCanSave) return;
-
-    try {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Não foi possível salvar as tarefas:", error);
-    }
-  }, [tasks, loaded, storageCanSave]);
 
   const selectedTasks = useMemo(() => {
     return tasks
