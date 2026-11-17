@@ -4,7 +4,12 @@
 import { useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
-import { isValidRoutineTask, type RoutineTask } from "@/lib/routine/types";
+import {
+  isValidRoutineTask,
+  isValidRoutineHabit,
+  type RoutineTask,
+  type RoutineHabit,
+} from "@/lib/routine/types";
 import Link from "next/link";
 import AppLayout from "../components/layout/AppLayout";
 
@@ -40,6 +45,32 @@ export default function Home() {
     currentConfirmedExpenses: expenses,
     currentBalance: balance,
   } = useFinanceDashboard();
+
+  const {
+    items: habits,
+    setItems: setHabits,
+  } = useRoutineCollection<RoutineHabit>("nexo_habits", isValidRoutineHabit);
+
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const todayTasks = tasks.filter((task) => !task.done && task.date === todayKey);
+  const activeHabits = habits.filter((habit) => habit.active);
+  const completedHabitsToday = activeHabits.filter((habit) => habit.completedDates.includes(todayKey));
+
+  function toggleHabitToday(id: number) {
+    setHabits((current) =>
+      current.map((habit) => {
+        if (habit.id !== id) return habit;
+        const completed = habit.completedDates.includes(todayKey);
+        return {
+          ...habit,
+          completedDates: completed
+            ? habit.completedDates.filter((date) => date !== todayKey)
+            : [...habit.completedDates, todayKey],
+        };
+      })
+    );
+  }
 
   // =====================================================
   // PRODUTIVIDADE
@@ -110,7 +141,7 @@ export default function Home() {
   // =====================================================
 
   const pageTitles: Record<Tab, string> = {
-    dashboard: "Visão geral",
+    dashboard: "Central do Dia",
     rotina: "Minha rotina",
   };
 
@@ -148,7 +179,7 @@ export default function Home() {
         </header>
       }
     >
-      <div className="content">
+      <div className="content daily-home-content">
         {storageError && (
           <div role="alert" className="storage-protection-message">
             <strong>Armazenamento protegido:</strong> {storageError}
@@ -185,7 +216,7 @@ export default function Home() {
                 onClick={() => setTab("dashboard")}
                 aria-pressed={tab === "dashboard"}
               >
-                Visão geral
+                Central do Dia
               </button>
 
               <button
@@ -333,6 +364,72 @@ export default function Home() {
                 </div>
 
                 <div className="metric-line light-line" />
+              </div>
+            </section>
+
+            <section className="dashboard-bottom daily-overview-grid">
+              <div className="panel activity-panel">
+                <div className="panel-heading">
+                  <div>
+                    <div className="section-kicker">AGENDA DE HOJE</div>
+                    <h3>Atividades programadas</h3>
+                  </div>
+                  <Link href="/rotina/agenda" className="small-outline-button">Abrir agenda</Link>
+                </div>
+                {todayTasks.length ? (
+                  <div className="activity-list">
+                    {todayTasks.slice(0, 5).map((task) => (
+                      <div className="activity-item" key={task.id}>
+                        <span className="activity-bullet" />
+                        <span>{task.time ? `${task.time} · ` : ""}{task.description}</span>
+                        <button type="button" className="activity-check" onClick={() => toggleTask(task.id)} aria-label={`Concluir ${task.description}`}>✓</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>Nenhuma tarefa programada para hoje.</p>
+                    <Link href="/rotina/agenda">Organizar minha agenda</Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="panel summary-panel">
+                <div className="panel-heading">
+                  <div>
+                    <div className="section-kicker">HÁBITOS</div>
+                    <h3>Meu progresso de hoje</h3>
+                  </div>
+                  <Link href="/rotina/habitos" className="small-outline-button">Ver hábitos</Link>
+                </div>
+                {activeHabits.length ? (
+                  <>
+                    <div className="progress-label">
+                      <span>{completedHabitsToday.length} de {activeHabits.length} concluídos</span>
+                      <strong>{Math.round((completedHabitsToday.length / activeHabits.length) * 100)}%</strong>
+                    </div>
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{ width: `${Math.round((completedHabitsToday.length / activeHabits.length) * 100)}%` }} />
+                    </div>
+                    <div className="activity-list">
+                      {activeHabits.slice(0, 5).map((habit) => {
+                        const completed = habit.completedDates.includes(todayKey);
+                        return (
+                          <div className="activity-item" key={habit.id}>
+                            <span className="activity-bullet" />
+                            <span className={completed ? "daily-completed" : ""}>{habit.name}</span>
+                            <button type="button" className="activity-check" onClick={() => toggleHabitToday(habit.id)} aria-label={completed ? `Desmarcar ${habit.name}` : `Concluir ${habit.name}`}>{completed ? "✓" : "○"}</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <p>Você ainda não cadastrou hábitos.</p>
+                    <Link href="/rotina/habitos">Criar primeiro hábito</Link>
+                  </div>
+                )}
               </div>
             </section>
 
