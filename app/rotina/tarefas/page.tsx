@@ -4,6 +4,9 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import TaskMetrics from "@/components/routine/tasks/TaskMetrics";
+import TaskForm from "@/components/routine/tasks/TaskForm";
+import TaskList from "@/components/routine/tasks/TaskList";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
@@ -294,45 +297,9 @@ export default function TarefasPage() {
         </button>
       </section>
 
-      <section className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Total de tarefas</span>
-            <span className="metric-icon">▤</span>
-          </div>
-          <div className="metric-value">{metrics.total}</div>
-          <div className="metric-description">Atividades cadastradas</div>
-        </div>
+            <TaskMetrics metrics={metrics} />
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Pendentes</span>
-            <span className="metric-icon">◷</span>
-          </div>
-          <div className="metric-value">{metrics.pending}</div>
-          <div className="metric-description">Aguardando conclusão</div>
-        </div>
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Concluídas</span>
-            <span className="metric-icon">✓</span>
-          </div>
-          <div className="metric-value">{metrics.completed}</div>
-          <div className="metric-description">Atividades finalizadas</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Atrasadas</span>
-            <span className="metric-icon">!</span>
-          </div>
-          <div className="metric-value overdue-value">
-            {metrics.overdue}
-          </div>
-          <div className="metric-description">Precisam de atenção</div>
-        </div>
-      </section>
 
       <section className="progress-section">
         <div className="progress-info">
@@ -363,120 +330,23 @@ export default function TarefasPage() {
       </section>
 
       {showForm && (
-        <section className="form-card" id="task-form">
-          <div className="form-heading">
-            <div>
-              <span className="section-label">
-                {editingId !== null ? "EDIÇÃO" : "NOVO REGISTRO"}
-              </span>
-              <h2>
-                {editingId !== null
-                  ? "Editar tarefa"
-                  : "Cadastrar tarefa"}
-              </h2>
-            </div>
-
-            <button
-              className="close-button"
-              onClick={resetForm}
-              type="button"
-              aria-label="Fechar formulário"
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-field full-field">
-              <label htmlFor="task-description">Descrição da tarefa *</label>
-              <input
-                id="task-description"
-                type="text"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Ex.: Finalizar relatório financeiro"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div className="form-grid">
-              <div className="form-field">
-                <label>Data prevista</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Horário</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(event) => setTime(event.target.value)}
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Prioridade</label>
-                <select
-                  value={priority}
-                  onChange={(event) =>
-                    setPriority(event.target.value as Priority)
-                  }
-                >
-                  {PRIORITIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-field">
-                <label>Categoria</label>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  {CATEGORIES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-field full-field">
-              <label>Observações</label>
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Adicione detalhes ou informações importantes..."
-                rows={3}
-              />
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancelar
-              </button>
-
-              <button type="submit" className="primary-button">
-                {editingId !== null
-                  ? "Salvar alterações"
-                  : "Cadastrar tarefa"}
-              </button>
-            </div>
-          </form>
-        </section>
+        <TaskForm
+          editingId={editingId}
+          description={description}
+          setDescription={setDescription}
+          date={date}
+          setDate={setDate}
+          time={time}
+          setTime={setTime}
+          priority={priority}
+          setPriority={setPriority}
+          category={category}
+          setCategory={setCategory}
+          notes={notes}
+          setNotes={setNotes}
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        />
       )}
 
       <section className="tasks-section">
@@ -564,149 +434,27 @@ export default function TarefasPage() {
           </div>
         </div>
 
-        <div className="task-list">
-          {!loaded ? (
-            <div className="empty-state">
-              <div className="empty-icon">◷</div>
-              <h3>Carregando tarefas...</h3>
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">▤</div>
-              <h3>Nenhuma tarefa encontrada</h3>
-              <p>
-                Não existem tarefas para os filtros selecionados.
-                Cadastre uma nova atividade ou altere os filtros.
-              </p>
-
-              <button
-                className="secondary-button"
-                onClick={() => {
-                  setFilter("Todas");
-                  setCategoryFilter("Todas");
-                  setPriorityFilter("Todas");
-                  setSearch("");
-                }}
-                type="button"
-              >
-                Limpar filtros
-              </button>
-            </div>
-          ) : (
-            filteredTasks.map((task) => {
-              const overdue =
-                !task.done && !!task.date && task.date < today;
-
-              const expanded = expandedTask === task.id;
-
-              return (
-                <article
-                  className={`task-item ${
-                    task.done ? "task-completed" : ""
-                  }`}
-                  key={task.id}
-                >
-                  <div className="task-main">
-                    <button
-                      className={`task-checkbox ${
-                        task.done ? "checked" : ""
-                      }`}
-                      onClick={() => toggleTask(task.id)}
-                      aria-label={
-                        task.done
-                          ? "Reabrir tarefa"
-                          : "Concluir tarefa"
-                      }
-                      type="button"
-                    >
-                      {task.done ? "✓" : ""}
-                    </button>
-
-                    <div className="task-content">
-                      <div className="task-title-row">
-                        <h3>{task.description}</h3>
-
-                        {overdue && (
-                          <span className="overdue-tag">Atrasada</span>
-                        )}
-                      </div>
-
-                      <div className="task-meta">
-                        <span>{task.category || "Pessoal"}</span>
-                        <span className="meta-separator">•</span>
-                        <span>{formatDate(task.date)}</span>
-
-                        {task.time && (
-                          <>
-                            <span className="meta-separator">•</span>
-                            <span>{task.time}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="task-actions">
-                      <span
-                        className={`priority-badge ${priorityClass(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority || "Média"}
-                      </span>
-
-                      <button
-                        className="icon-action"
-                        onClick={() =>
-                          setExpandedTask(expanded ? null : task.id)
-                        }
-                        title="Mais opções"
-                        type="button"
-                      >
-                        ⋯
-                      </button>
-                    </div>
-                  </div>
-
-                  {expanded && (
-                    <div className="task-details">
-                      {task.notes ? (
-                        <p>{task.notes}</p>
-                      ) : (
-                        <p className="no-notes">
-                          Nenhuma observação adicionada.
-                        </p>
-                      )}
-
-                      <div className="task-detail-actions">
-                        <button
-                          onClick={() => editTask(task)}
-                          type="button"
-                        >
-                          ✎ Editar
-                        </button>
-
-                        <button
-                          onClick={() => toggleTask(task.id)}
-                          type="button"
-                        >
-                          {task.done ? "↺ Reabrir" : "✓ Concluir"}
-                        </button>
-
-                        <button
-                          className="delete-action"
-                          onClick={() => deleteTask(task.id)}
-                          type="button"
-                        >
-                          × Excluir
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })
-          )}
-        </div>
+              <TaskList
+        filteredTasks={filteredTasks}
+        loaded={loaded}
+        search={search}
+        setSearch={setSearch}
+        filters={filters}
+        filter={filter}
+        setFilter={setFilter}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        priorityFilter={priorityFilter}
+        setPriorityFilter={setPriorityFilter}
+        overdueCount={metrics.overdue}
+        toggleTask={toggleTask}
+        editTask={editTask}
+        deleteTask={deleteTask}
+        expandedTask={expandedTask}
+        setExpandedTask={setExpandedTask}
+        today={today}
+        onClearFilters={() => { setFilter("Todas"); setCategoryFilter("Todas"); setPriorityFilter("Todas"); setSearch(""); }}
+      />
       </section>
 
       <footer className="page-footer">
