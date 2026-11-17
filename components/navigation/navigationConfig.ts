@@ -13,7 +13,7 @@ export type MenuSection = {
 
 export const financeMenuItems: MenuItem[] = [
   { label: "Visão geral financeira", href: "/financeiro", icon: "◈" },
-  { label: "Contas e movimentações", href: "/financeiro/contas", icon: "▤" },
+  { label: "Contas", href: "/financeiro/contas", icon: "▤" },
   { label: "Contas a pagar", href: "/financeiro/contas-a-pagar", icon: "↗" },
   { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↙" },
   { label: "Histórico", href: "/financeiro/historico", icon: "◷" },
