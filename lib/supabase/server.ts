@@ -66,3 +66,8 @@ export async function fetchSupabaseUser(accessToken: string) {
   if (!response.ok) return null;
   return response.json();
 }
+
+export function hasValidOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  return Boolean(origin) && origin === new URL(request.url).origin;
+}
