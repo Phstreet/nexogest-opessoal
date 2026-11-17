@@ -107,9 +107,12 @@ export default function WeeklyPlanningPage() {
   const today = getLocalDate();
 
 
-  const orderedWeekDays = weekStartsOn === "sunday"
-    ? ["Domingo", ...weekDays.slice(0, 6)]
-    : weekDays;
+  const orderedWeekDays = useMemo(
+    () => weekStartsOn === "sunday"
+      ? ["Domingo", ...weekDays.slice(0, 6)]
+      : weekDays,
+    [weekStartsOn]
+  );
 
   const days = useMemo(() => {
     return orderedWeekDays.map((name, index) => {
