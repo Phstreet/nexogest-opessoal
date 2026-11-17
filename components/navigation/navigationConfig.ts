@@ -32,6 +32,7 @@ export const routineMenuItems: MenuItem[] = [
 ];
 
 export const reportsMenuItems: MenuItem[] = [
+  { label: "Visão geral de relatórios", href: "/relatorios", icon: "▥" },
   { label: "Desempenho semanal", href: "/rotina/produtividade", icon: "◷" },
   { label: "Evolução financeira", href: "/financeiro/dashboard", icon: "▥" },
   { label: "Evolução dos hábitos", href: "/rotina/habitos", icon: "↻" },
