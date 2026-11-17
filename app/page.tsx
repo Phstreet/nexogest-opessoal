@@ -187,13 +187,13 @@ export default function Home() {
       <div className="content daily-home-content">
         {storageError && (
           <div role="alert" className="storage-protection-message">
-            <strong>Armazenamento de tarefas protegido:</strong> {storageError}
+            <strong>Armazenamento protegido — tarefas:</strong> {storageError}
             {!safeToSave && " As alterações de tarefas foram bloqueadas para proteger seus dados."}
           </div>
         )}
         {habitsStorageError && (
           <div role="alert" className="storage-protection-message">
-            <strong>Armazenamento de hábitos protegido:</strong> {habitsStorageError}
+            <strong>Armazenamento protegido — hábitos:</strong> {habitsStorageError}
             {!habitsSafeToSave && " As alterações de hábitos foram bloqueadas para proteger seus dados."}
           </div>
         )}
