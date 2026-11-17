@@ -1,4 +1,5 @@
 "use client";
+import type { Dispatch, SetStateAction } from "react";
 import type { RoutineTask } from "@/lib/routine/types";
 import TaskItem from "@/components/routine/tasks/TaskItem";
 type Task = RoutineTask;
@@ -10,7 +11,7 @@ interface TaskListProps {
   editTask: (task: Task) => void;
   deleteTask: (id: number) => void;
   expandedTask: number | null;
-  setExpandedTask: (value: number | null) => void;
+  setExpandedTask: Dispatch<SetStateAction<number | null>>;
   today: string;
 }
 export default function TaskList(props: TaskListProps) {
