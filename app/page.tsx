@@ -92,7 +92,7 @@ export default function Home() {
   // FUNÇÕES DAS TAREFAS
   // =====================================================
 
-  function addTask() {
+  function addTask(date?: string) {
     if (!safeToSave) return;
 
     const description = taskName.trim();
@@ -106,6 +106,7 @@ export default function Home() {
       id: Date.now(),
       description,
       done: false,
+      ...(date ? { date } : {}),
     };
 
     setTasks((current) => [...current, newTask]);
@@ -364,6 +365,31 @@ export default function Home() {
                 </div>
 
                 <div className="metric-line light-line" />
+              </div>
+            </section>
+
+            <section className="panel task-form-panel daily-quick-entry">
+              <div className="section-kicker">CADASTRO RÁPIDO</div>
+              <h3>O que você precisa resolver hoje?</h3>
+              <div className="task-entry">
+                <input
+                  className="form-input"
+                  placeholder="Digite uma tarefa para hoje..."
+                  value={taskName}
+                  onChange={(event) => setTaskName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") addTask(todayKey);
+                  }}
+                  aria-label="Nova tarefa para hoje"
+                />
+                <button type="button" className="primary-button" onClick={() => addTask(todayKey)}>
+                  + Adicionar à agenda de hoje
+                </button>
+              </div>
+              <div className="daily-quick-links">
+                <Link href="/financeiro">Nova movimentação financeira ↗</Link>
+                <Link href="/rotina/agenda">Organizar agenda ↗</Link>
+                <Link href="/rotina/habitos">Acompanhar hábitos ↗</Link>
               </div>
             </section>
 
