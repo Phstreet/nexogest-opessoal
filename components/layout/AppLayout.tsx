@@ -16,10 +16,10 @@ export default function AppLayout({
   return (
     <main className="app-shell">
       <MainNavigation />
-      <AccountAccess />
       <NexoSyncManager />
 
       <section className="main-area">
+        <div className="nexo-account-slot"><AccountAccess /></div>
         {header ?? <Header />}
         {children}
       </section>
