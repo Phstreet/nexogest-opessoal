@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import {
   INCOME_CATEGORIES,
@@ -12,7 +12,6 @@ import {
 type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao";
 type Preferences = {
   weekStartsOn: "monday" | "sunday";
-  confirmBeforeDelete: boolean;
 };
 type Profile = { displayName: string };
 
@@ -32,7 +31,6 @@ export default function ConfiguracoesPage() {
   const [tab, setTab] = useState<SettingsTab>("preferencias");
   const [preferences, setPreferences] = useState<Preferences>({
     weekStartsOn: "monday",
-    confirmBeforeDelete: true,
   });
   const [profile, setProfile] = useState<Profile>({ displayName: "" });
   const [message, setMessage] = useState("");
@@ -47,7 +45,6 @@ export default function ConfiguracoesPage() {
     }
     setPreferences(readJson(PREFERENCES_KEY, {
       weekStartsOn: "monday",
-      confirmBeforeDelete: true,
     }));
     setProfile(readJson(PROFILE_KEY, { displayName: "" }));
     setBackupDate(localStorage.getItem("nexo_full_backup_created_at") || "");
@@ -74,7 +71,7 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+  function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -208,11 +205,7 @@ export default function ConfiguracoesPage() {
                 <option value="sunday">Domingo</option>
               </select>
             </label>
-            <label className="settings-check">
-              <input type="checkbox" checked={preferences.confirmBeforeDelete} onChange={(event) => savePreferences({ ...preferences, confirmBeforeDelete: event.target.checked })} />
-              <span>Manter confirmação antes de excluir registros</span>
-            </label>
-            <small>As preferências ficam salvas neste navegador. A aplicação gradual dessas opções nas telas será feita sem alterar os dados cadastrados.</small>
+                    <small>Esta preferência já é aplicada ao Planejamento Semanal. Ela fica salva neste navegador e não altera os registros cadastrados.</small>
           </section>
         )}
 
