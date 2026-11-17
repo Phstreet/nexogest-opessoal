@@ -213,7 +213,7 @@ export default function ConfiguracoesPage() {
         {tab === "categorias" && (
           <section className="settings-panel">
             <h2>Categorias disponíveis</h2>
-            <p>Consulta das categorias atualmente definidas no módulo financeiro. A edição centralizada será habilitada após a migração dos formulários para esta fonte única.</p>
+            <p>Consulta do catálogo de categorias de referência disponível no projeto. Os formulários financeiros ainda mantêm listas próprias; a edição centralizada será habilitada após a unificação dessas fontes.</p>
             <div className="category-groups">
               {categoryGroups.map((group) => (
                 <div className="category-group" key={group.title}>
