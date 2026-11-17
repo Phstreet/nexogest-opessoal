@@ -1,7 +1,8 @@
 
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 
 type Frequency = "Diário" | "Dias úteis" | "3 vezes por semana";
 
@@ -18,9 +19,6 @@ type Habit = {
 };
 
 type HabitFilter = "Todos" | "Concluídos" | "Pendentes";
-
-const HABITS_KEY = "nexo_habits";
-const HABITS_BACKUP_KEY = "nexo_habits_backup";
 
 const CATEGORIES = [
   "Trabalho",
@@ -53,61 +51,20 @@ function addDays(dateString: string, amount: number) {
   return getLocalDate(date);
 }
 
-function isValidHabitArray(value: unknown): value is Habit[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (habit) =>
-        habit &&
-        typeof habit.id === "number" &&
-        typeof habit.name === "string" &&
-        typeof habit.category === "string" &&
-        Array.isArray(habit.completedDates) &&
-        typeof habit.active === "boolean"
-    )
-  );
-}
-
-type HabitsLoadResult = {
-  habits: Habit[];
-  safeToSave: boolean;
-};
-
-function loadHabits(): HabitsLoadResult {
-  let saved: string | null = null;
-
-  try {
-    saved = localStorage.getItem(HABITS_KEY);
-
-    if (saved === null) {
-      return { habits: [], safeToSave: true };
-    }
-
-    const parsed: unknown = JSON.parse(saved);
-
-    if (isValidHabitArray(parsed)) {
-      return { habits: parsed, safeToSave: true };
-    }
-
-    if (localStorage.getItem(HABITS_BACKUP_KEY) === null) {
-      localStorage.setItem(HABITS_BACKUP_KEY, saved);
-    }
-
-    return { habits: [], safeToSave: false };
-  } catch (error) {
-    if (saved !== null) {
-      try {
-        if (localStorage.getItem(HABITS_BACKUP_KEY) === null) {
-          localStorage.setItem(HABITS_BACKUP_KEY, saved);
-        }
-      } catch (backupError) {
-        console.error("Não foi possível criar o backup dos hábitos:", backupError);
-      }
-    }
-
-    console.error("Não foi possível carregar os hábitos. Os dados originais foram preservados.", error);
-    return { habits: [], safeToSave: false };
+function isValidHabit(value: unknown): value is Habit {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
   }
+
+  const habit = value as Record<string, unknown>;
+
+  return (
+    typeof habit.id === "number" &&
+    typeof habit.name === "string" &&
+    typeof habit.category === "string" &&
+    Array.isArray(habit.completedDates) &&
+    typeof habit.active === "boolean"
+  );
 }
 
 function getStreak(habit: Habit, today: string) {
@@ -145,9 +102,7 @@ function getWeekProgress(habit: Habit, today: string) {
 }
 
 export default function HabitosPage() {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [storageCanSave, setStorageCanSave] = useState(false);
+  const { items: habits, setItems: setHabits, loaded, storageError } = useRoutineCollection<Habit>("nexo_habits", isValidHabit);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -163,39 +118,6 @@ export default function HabitosPage() {
   const [search, setSearch] = useState("");
 
   const today = getLocalDate();
-
-  const loadData = useCallback(() => {
-    const result = loadHabits();
-    setHabits(result.habits);
-    setStorageCanSave(result.safeToSave);
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === HABITS_KEY) {
-        loadData();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!loaded || !storageCanSave) return;
-
-    try {
-      localStorage.setItem(HABITS_KEY, JSON.stringify(habits));
-    } catch (error) {
-      console.error("Erro ao salvar hábitos:", error);
-    }
-  }, [habits, loaded, storageCanSave]);
 
   const activeHabits = useMemo(
     () => habits.filter((habit) => habit.active),
@@ -366,6 +288,12 @@ export default function HabitosPage() {
 
   return (
     <div className="content">
+      {storageError && (
+        <div className="form-card" role="alert">
+          <strong>Armazenamento protegido</strong>
+          <p>{storageError}</p>
+        </div>
+      )}
       <section className="page-heading">
         <div>
           <div className="eyebrow">DESENVOLVIMENTO PESSOAL</div>
