@@ -1,7 +1,7 @@
 
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
@@ -173,7 +173,7 @@ export default function WeeklyPlanningPage() {
   }
 
   function goToCurrentWeek() {
-    setWeekStart(getWeekStart(new Date()));
+    setWeekStart(getWeekStart(new Date(), weekStartsOn));
   }
 
   function resetForm() {
