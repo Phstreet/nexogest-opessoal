@@ -702,6 +702,19 @@ export default function Home() {
           </>
         )}
 
+        <style jsx>{`
+          .daily-quick-links { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+          .daily-quick-links a { color:#aaa; font-size:10px; text-decoration:none; }
+          .daily-quick-links a:hover { color:#fff; text-decoration:underline; }
+          .daily-overview-grid { margin-top:18px; }
+          .daily-completed { color:#888; text-decoration:line-through; }
+          @media(max-width:700px) {
+            .daily-quick-links { flex-direction:column; gap:10px; }
+            .daily-quick-entry .task-entry { align-items:stretch; flex-direction:column; }
+            .daily-quick-entry .task-entry button { width:100%; }
+          }
+        `}</style>
+
         <footer className="footer">
           <span>
             © 2026 NEXO — GESTÃO PESSOAL
