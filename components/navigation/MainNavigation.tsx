@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 import {
   financeMenuItems,
   routineMenuItems,
+  reportsMenuItems,
+  settingsMenuItems,
   mainMenuItems,
   type MenuItem,
 } from "./navigationConfig";
@@ -20,9 +22,13 @@ export default function MainNavigation() {
 
   const isFinanceRoute = pathname.startsWith("/financeiro");
   const isRoutineRoute = pathname.startsWith("/rotina");
+  const isReportsRoute = pathname.startsWith("/relatorios");
+  const isSettingsRoute = pathname.startsWith("/configuracoes");
 
   const [financeMenuOpen, setFinanceMenuOpen] = useState(false);
   const [routineMenuOpen, setRoutineMenuOpen] = useState(false);
+  const [reportsMenuOpen, setReportsMenuOpen] = useState(false);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -81,6 +87,8 @@ export default function MainNavigation() {
   useEffect(() => {
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
+    setReportsMenuOpen(false);
+    setSettingsMenuOpen(false);
   }, [pathname]);
 
   // Fecha os submenus também quando a sidebar for compactada.
@@ -88,6 +96,8 @@ export default function MainNavigation() {
     if (collapsed) {
       setFinanceMenuOpen(false);
       setRoutineMenuOpen(false);
+      setReportsMenuOpen(false);
+      setSettingsMenuOpen(false);
     }
   }, [collapsed]);
 
@@ -142,7 +152,7 @@ export default function MainNavigation() {
   );
 
   function isActive(href: string) {
-    return pathname === href;
+    return pathname === href.split("?")[0];
   }
 
   function toggleFavorite(href: string) {
@@ -158,6 +168,8 @@ export default function MainNavigation() {
     setCollapsed(true);
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
+    setReportsMenuOpen(false);
+    setSettingsMenuOpen(false);
     setSearchOpen(false);
     setSearchTerm("");
   }
@@ -168,6 +180,8 @@ export default function MainNavigation() {
     setCollapsed(true);
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
+    setReportsMenuOpen(false);
+    setSettingsMenuOpen(false);
   }
 
   function renderFavoriteButton(item: MenuItem) {
@@ -285,11 +299,11 @@ export default function MainNavigation() {
               href="/"
               className={`nav-item ${isActive("/") ? "active" : ""}`}
               aria-current={isActive("/") ? "page" : undefined}
-              title={collapsed ? "Visão geral" : undefined}
+              title={collapsed ? "Central do Dia" : undefined}
               onClick={handleNavigation}
             >
               <span className="nav-icon">⌂</span>
-              <span className="nav-item-label">Visão geral</span>
+              <span className="nav-item-label">Central do Dia</span>
             </Link>
 
             {renderFavoriteButton(mainMenuItems[0])}
@@ -333,42 +347,94 @@ export default function MainNavigation() {
               renderSubmenu(financeMenuItems, "finance-submenu")}
           </div>
 
-          {/* MINHA ROTINA */}
+          {/* ROTINA */}
           <div className="nav-group">
             <button
               type="button"
-              className={`nav-item nav-finance-parent ${
-                isRoutineRoute ? "active" : ""
-              }`}
+              className={`nav-item nav-finance-parent ${isRoutineRoute ? "active" : ""}`}
               onClick={() => {
                 if (collapsed) {
                   setCollapsed(false);
                   setRoutineMenuOpen(true);
                   setFinanceMenuOpen(false);
+                  setReportsMenuOpen(false);
+                  setSettingsMenuOpen(false);
                   return;
                 }
-
                 setRoutineMenuOpen((current) => !current);
                 setFinanceMenuOpen(false);
+                setReportsMenuOpen(false);
+                setSettingsMenuOpen(false);
               }}
               aria-expanded={routineMenuOpen && !collapsed}
               aria-controls="routine-submenu"
-              title={collapsed ? "Minha rotina" : undefined}
+              title={collapsed ? "Rotina" : undefined}
             >
               <span className="nav-icon">▤</span>
-              <span className="nav-finance-label">Minha rotina</span>
-              <span
-                className={`nav-chevron ${
-                  routineMenuOpen && !collapsed ? "open" : ""
-                }`}
-              >
-                ›
-              </span>
+              <span className="nav-finance-label">Rotina</span>
+              <span className={`nav-chevron ${routineMenuOpen && !collapsed ? "open" : ""}`}>›</span>
             </button>
+            {!collapsed && routineMenuOpen && renderSubmenu(routineMenuItems, "routine-submenu")}
+          </div>
 
-            {!collapsed &&
-              routineMenuOpen &&
-              renderSubmenu(routineMenuItems, "routine-submenu")}
+          {/* RELATÓRIOS */}
+          <div className="nav-group">
+            <button
+              type="button"
+              className={`nav-item nav-finance-parent ${isReportsRoute ? "active" : ""}`}
+              onClick={() => {
+                if (collapsed) {
+                  setCollapsed(false);
+                  setReportsMenuOpen(true);
+                  setFinanceMenuOpen(false);
+                  setRoutineMenuOpen(false);
+                  setSettingsMenuOpen(false);
+                  return;
+                }
+                setReportsMenuOpen((current) => !current);
+                setFinanceMenuOpen(false);
+                setRoutineMenuOpen(false);
+                setSettingsMenuOpen(false);
+              }}
+              aria-expanded={reportsMenuOpen && !collapsed}
+              aria-controls="reports-submenu"
+              title={collapsed ? "Relatórios" : undefined}
+            >
+              <span className="nav-icon">▥</span>
+              <span className="nav-finance-label">Relatórios</span>
+              <span className={`nav-chevron ${reportsMenuOpen && !collapsed ? "open" : ""}`}>›</span>
+            </button>
+            {!collapsed && reportsMenuOpen && renderSubmenu(reportsMenuItems, "reports-submenu")}
+          </div>
+
+          {/* CONFIGURAÇÕES */}
+          <div className="nav-group">
+            <button
+              type="button"
+              className={`nav-item nav-finance-parent ${isSettingsRoute ? "active" : ""}`}
+              onClick={() => {
+                if (collapsed) {
+                  setCollapsed(false);
+                  setSettingsMenuOpen(true);
+                  setFinanceMenuOpen(false);
+                  setRoutineMenuOpen(false);
+                  setReportsMenuOpen(false);
+                  return;
+                }
+                setSettingsMenuOpen((current) => !current);
+                setFinanceMenuOpen(false);
+                setRoutineMenuOpen(false);
+                setReportsMenuOpen(false);
+              }}
+              aria-expanded={settingsMenuOpen && !collapsed}
+              aria-controls="settings-submenu"
+              title={collapsed ? "Configurações" : undefined}
+            >
+              <span className="nav-icon">⚙</span>
+              <span className="nav-finance-label">Configurações</span>
+              <span className={`nav-chevron ${settingsMenuOpen && !collapsed ? "open" : ""}`}>›</span>
+            </button>
+            {!collapsed && settingsMenuOpen && renderSubmenu(settingsMenuItems, "settings-submenu")}
           </div>
         </nav>
 
