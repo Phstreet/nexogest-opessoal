@@ -7,6 +7,7 @@ import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import TaskMetrics from "@/components/routine/tasks/TaskMetrics";
 import TaskForm from "@/components/routine/tasks/TaskForm";
 import TaskList from "@/components/routine/tasks/TaskList";
+import { filterAndSortRoutineTasks, getRoutineTaskMetrics } from "@/lib/routine/task-queries";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
@@ -29,29 +30,6 @@ function getLocalDate() {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-function formatDate(value?: string) {
-  if (!value) return "Sem data";
-
-  const [year, month, day] = value.split("-");
-  if (!year || !month || !day) return value;
-
-  return `${day}/${month}/${year}`;
-}
-
-
-function priorityClass(priority?: Priority) {
-  switch (priority) {
-    case "Urgente":
-      return "priority-urgent";
-    case "Alta":
-      return "priority-high";
-    case "Média":
-      return "priority-medium";
-    default:
-      return "priority-low";
-  }
 }
 
 export default function TarefasPage() {
@@ -77,103 +55,12 @@ export default function TarefasPage() {
 
   const today = getLocalDate();
 
-  const metrics = useMemo(() => {
-    const completed = tasks.filter((task) => task.done).length;
-    const pending = tasks.filter((task) => !task.done).length;
+  const metrics = useMemo(() => getRoutineTaskMetrics(tasks, today), [tasks, today]);
 
-    const overdue = tasks.filter(
-      (task) => !task.done && task.date && task.date < today
-    ).length;
-
-    const todayTasks = tasks.filter((task) => task.date === today);
-
-    const percentage =
-      tasks.length > 0
-        ? Math.round((completed / tasks.length) * 100)
-        : 0;
-
-    return {
-      total: tasks.length,
-      completed,
-      pending,
-      overdue,
-      today: todayTasks.length,
-      percentage,
-    };
-  }, [tasks, today]);
-
-  const filteredTasks = useMemo(() => {
-    return tasks
-      .filter((task) => {
-        if (filter === "Hoje" && task.date !== today) return false;
-
-        if (filter === "Pendentes" && task.done) return false;
-
-        if (filter === "Concluídas" && !task.done) return false;
-
-        if (
-          filter === "Atrasadas" &&
-          (task.done || !task.date || task.date >= today)
-        ) {
-          return false;
-        }
-
-        if (
-          categoryFilter !== "Todas" &&
-          task.category !== categoryFilter
-        ) {
-          return false;
-        }
-
-        if (
-          priorityFilter !== "Todas" &&
-          task.priority !== priorityFilter
-        ) {
-          return false;
-        }
-
-        if (
-          search.trim() &&
-          !task.description
-            .toLowerCase()
-            .includes(search.trim().toLowerCase()) &&
-          !(task.notes || "")
-            .toLowerCase()
-            .includes(search.trim().toLowerCase())
-        ) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-
-        const dateA = a.date || "9999-12-31";
-        const dateB = b.date || "9999-12-31";
-
-        if (dateA !== dateB) return dateA.localeCompare(dateB);
-
-        const priorityOrder: Record<Priority, number> = {
-          Urgente: 0,
-          Alta: 1,
-          Média: 2,
-          Baixa: 3,
-        };
-
-        return (
-          priorityOrder[a.priority || "Média"] -
-          priorityOrder[b.priority || "Média"]
-        );
-      });
-  }, [
-    tasks,
-    filter,
-    categoryFilter,
-    priorityFilter,
-    search,
-    today,
-  ]);
+  const filteredTasks = useMemo(
+    () => filterAndSortRoutineTasks(tasks, { filter, categoryFilter, priorityFilter, search, today }),
+    [tasks, filter, categoryFilter, priorityFilter, search, today]
+  );
 
   const resetForm = () => {
     setDescription("");
