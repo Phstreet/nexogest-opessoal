@@ -15,6 +15,7 @@ interface TaskMetricsProps {
 
 export default function TaskMetrics({ metrics }: TaskMetricsProps) {
   return (
+    <>
           <section className="metrics-grid">
             <div className="metric-card">
               <div className="metric-top">
@@ -82,5 +83,6 @@ export default function TaskMetrics({ metrics }: TaskMetricsProps) {
               <span>{metrics.pending} pendentes</span>
             </div>
           </section>
+    </>
   );
 }
