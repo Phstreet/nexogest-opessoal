@@ -3,20 +3,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
-
-type Frequency = "Diário" | "Dias úteis" | "3 vezes por semana";
-
-type Habit = {
-  id: number;
-  name: string;
-  category: string;
-  frequency: Frequency;
-  time?: string;
-  notes?: string;
-  completedDates: string[];
-  active: boolean;
-  createdAt: string;
-};
+import { isValidRoutineHabit as isValidHabit } from "@/lib/routine/types";
+import type { RoutineHabitFrequency as Frequency, RoutineHabit as Habit } from "@/lib/routine/types";
 
 type HabitFilter = "Todos" | "Concluídos" | "Pendentes";
 
@@ -49,22 +37,6 @@ function addDays(dateString: string, amount: number) {
   date.setDate(date.getDate() + amount);
 
   return getLocalDate(date);
-}
-
-function isValidHabit(value: unknown): value is Habit {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const habit = value as Record<string, unknown>;
-
-  return (
-    typeof habit.id === "number" &&
-    typeof habit.name === "string" &&
-    typeof habit.category === "string" &&
-    Array.isArray(habit.completedDates) &&
-    typeof habit.active === "boolean"
-  );
 }
 
 function getStreak(habit: Habit, today: string) {
