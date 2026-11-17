@@ -52,9 +52,11 @@ export async function POST(request: NextRequest) {
       });
       if (!authResponse.ok) return NextResponse.json({ error: await readAuthError(authResponse) }, { status: authResponse.status });
       const data = await authResponse.json();
+      const user = data.user || (data.id ? data : data.access_token ? await fetchSupabaseUser(data.access_token) : null);
+      const hasSession = Boolean(data.access_token && data.refresh_token && user);
       const response = NextResponse.json({
-        session: data.access_token ? { user: data.user, expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600) } : null,
-        confirmationRequired: !data.access_token,
+        session: hasSession ? { user, expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600) } : null,
+        confirmationRequired: !hasSession,
       });
       if (data.access_token && data.refresh_token) setSessionCookies(response, data);
       return response;
