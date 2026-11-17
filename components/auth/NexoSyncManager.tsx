@@ -67,6 +67,18 @@ function switchLocalOwner(nextUserId: string): boolean {
   return true;
 }
 
+function preserveConflictVersion(userId: string, key: NexoSyncKey, version: "local" | "cloud", payload: unknown) {
+  const backupKey = `nexo_sync_conflict_backup_${userId}_${key}_${Date.now()}`;
+  const serialized = JSON.stringify({
+    application: "NEXO", userId, dataKey: key, version,
+    preservedAt: new Date().toISOString(), payload,
+  });
+  localStorage.setItem(backupKey, serialized);
+  if (localStorage.getItem(backupKey) !== serialized) {
+    throw new Error("Não foi possível preservar a versão que será substituída. O conflito permanece sem alterações.");
+  }
+}
+
 function backupLocalData() {
   const entries = NEXO_SYNC_KEYS.map((key) => [key, localStorage.getItem(key)] as const);
   const backup = { application: "NEXO", type: "pre-cloud-sync", createdAt: new Date().toISOString(), entries };
@@ -240,12 +252,14 @@ export default function NexoSyncManager() {
     busy.current = true;
     try {
       if (choice === "cloud") {
+        preserveConflictVersion(session.user.id, issue.key, "local", issue.local);
         const raw = JSON.stringify(issue.remote.payload);
         localStorage.setItem(issue.key, raw);
         snapshots.current.set(issue.key, raw);
         revisions.current.set(issue.key, issue.remote.revision);
         window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: issue.key } }));
       } else {
+        preserveConflictVersion(session.user.id, issue.key, "cloud", issue.remote.payload);
         const result = await saveRemoteCollection(issue.key, issue.local, issue.remote.revision);
         if (!result.saved) throw new Error("A nuvem mudou novamente. Atualize a comparação e tente outra vez.");
         revisions.current.set(issue.key, result.current_revision || issue.remote.revision + 1);
@@ -286,7 +300,7 @@ export default function NexoSyncManager() {
           {issues.map((issue) => (
             <div className="nexo-sync-conflict" key={issue.key}>
               <strong>{issue.key}</strong>
-              <span>Este dispositivo e a nuvem possuem versões diferentes.</span>
+              <span>Este dispositivo e a nuvem possuem versões diferentes. A versão substituída será preservada no backup local.</span>
               <button type="button" onClick={() => void resolveIssue(issue, "cloud")}>Usar versão da nuvem neste dispositivo</button>
               <button type="button" onClick={() => void resolveIssue(issue, "local")}>Manter versão deste dispositivo na nuvem</button>
             </div>
