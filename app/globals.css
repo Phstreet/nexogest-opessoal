@@ -2013,3 +2013,53 @@ textarea {
     }
   }
   
+
+
+/* =====================================================
+   NEXO — CONTA, AUTENTICAÇÃO E SINCRONIZAÇÃO
+===================================================== */
+.nexo-account-access {
+  position: fixed; top: 14px; right: 22px; z-index: 180;
+  display: inline-flex; align-items: center; gap: 9px;
+  min-height: 32px; padding: 5px 10px;
+  color: #d8d8dc; background: #19191d; border: 1px solid #3a3a40;
+  border-radius: 7px; font-size: 10px; text-decoration: none;
+}
+.nexo-account-access:hover { border-color: #777; color: #fff; }
+.nexo-account-access a,.nexo-account-access button { color: #eee; background: transparent; border: 0; font: inherit; text-decoration: underline; cursor: pointer; }
+.nexo-account-connected { padding-left: 10px; }
+.nexo-account-indicator,.nexo-sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #8a8a8a; flex: 0 0 auto; }
+.nexo-account-indicator { background: #9bb8a3; }
+.nexo-sync-widget { position: fixed; right: 18px; bottom: 18px; z-index: 190; width: min(360px, calc(100vw - 28px)); color: #eee; background: #17171a; border: 1px solid #3b3b42; border-radius: 10px; box-shadow: 0 14px 45px rgba(0,0,0,.4); }
+.nexo-sync-toggle { display:flex; align-items:center; gap:9px; width:100%; padding:12px 14px; color:#eee; background:transparent; border:0; text-align:left; font-size:11px; cursor:pointer; }
+.nexo-sync-chevron { margin-left:auto; color:#999; font-size:16px; }
+.nexo-sync-dot.ready { background:#9bb8a3; }.nexo-sync-dot.pending { background:#d5b77d; }.nexo-sync-dot.conflict,.nexo-sync-dot.error { background:#d48c8c; }.nexo-sync-dot.loading { background:#aaa; animation:nexoPulse 1s infinite alternate; }
+@keyframes nexoPulse { to { opacity:.3; } }
+.nexo-sync-body { padding:0 14px 14px; border-top:1px solid #303036; }
+.nexo-sync-body p { margin:12px 0; color:#aaa; font-size:10px; line-height:1.6; }
+.nexo-sync-primary,.nexo-sync-secondary,.nexo-sync-conflict button { width:100%; min-height:34px; margin-top:8px; padding:8px 10px; border:1px solid #555; border-radius:6px; color:#eee; background:#26262b; font-size:10px; cursor:pointer; }
+.nexo-sync-primary { color:#111; background:#e5e5e5; border-color:#e5e5e5; font-weight:700; }
+.nexo-sync-primary:disabled { opacity:.4; cursor:not-allowed; }
+.nexo-sync-confirm { display:flex; align-items:flex-start; gap:8px; margin-top:10px; color:#aaa; font-size:10px; line-height:1.5; }
+.nexo-sync-conflict { display:flex; flex-direction:column; gap:4px; padding:10px; margin:10px 0; background:#202024; border:1px solid #4a4141; border-radius:7px; }
+.nexo-sync-conflict strong { font-size:10px; }.nexo-sync-conflict span { color:#aaa; font-size:9px; line-height:1.5; }
+.nexo-auth-page { display:grid; place-items:center; min-height:100vh; padding:24px; color:#eee; background:#101012; }
+.nexo-auth-card { width:min(440px,100%); padding:34px; background:#19191d; border:1px solid #35353b; border-radius:13px; box-shadow:0 20px 70px rgba(0,0,0,.35); }
+.nexo-auth-brand { display:flex; align-items:center; gap:9px; color:#f1f1f1; text-decoration:none; font-size:19px; letter-spacing:3px; }
+.nexo-auth-brand span { display:grid; place-items:center; width:31px; height:31px; color:#111; background:#e4e4e7; border-radius:7px; font-weight:800; }
+.nexo-auth-kicker { margin-top:28px; color:#999; font-size:9px; letter-spacing:2px; }
+.nexo-auth-card h1 { margin:9px 0; font-size:25px; letter-spacing:-.6px; }
+.nexo-auth-description { margin:0 0 22px; color:#999; font-size:11px; line-height:1.6; }
+.nexo-auth-card form { display:flex; flex-direction:column; gap:14px; }
+.nexo-auth-card label { display:flex; flex-direction:column; gap:7px; color:#c9c9ce; font-size:10px; }
+.nexo-auth-card input { width:100%; min-height:42px; padding:0 12px; color:#eee; background:#101012; border:1px solid #3b3b42; border-radius:6px; outline:none; }
+.nexo-auth-card input:focus { border-color:#aaa; }
+.nexo-auth-card form button { min-height:42px; margin-top:4px; color:#111; background:#e6e6e8; border:1px solid #e6e6e8; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; }
+.nexo-auth-card form button:disabled { opacity:.55; cursor:wait; }
+.nexo-auth-feedback { padding:10px 12px; margin:12px 0; border:1px solid #444; border-radius:6px; font-size:10px; line-height:1.5; }
+.nexo-auth-feedback.error { color:#f0b0b0; border-color:#694444; background:#281b1b; }.nexo-auth-feedback.success { color:#d0d8d1; border-color:#465448; background:#1c241e; }
+.nexo-auth-links { display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:20px; color:#999; font-size:10px; }
+.nexo-auth-links a,.nexo-auth-back { color:#e2e2e2; text-decoration:underline; }
+.nexo-auth-back { display:block; margin-top:24px; color:#888; font-size:10px; text-align:center; text-decoration:none; }
+@media(max-width:760px) { .nexo-account-access { top:auto; right:12px; bottom:12px; max-width:calc(100vw - 24px); } .nexo-account-access>span:nth-child(2) { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .nexo-sync-widget { bottom:58px; right:12px; } }
+@media(max-width:480px) { .nexo-auth-card { padding:25px 20px; } }
