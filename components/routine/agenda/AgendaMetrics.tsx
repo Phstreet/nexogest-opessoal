@@ -1,15 +1,10 @@
 "use client";
 
-interface AgendaMetricsProps {
-  total: number;
-  pending: number;
-  completed: number;
-  overdue: number;
-}
+interface AgendaMetricsProps { total: number; pending: number; completed: number; overdue: number; }
 
 export default function AgendaMetrics({ total, pending, completed, overdue }: AgendaMetricsProps) {
   return (
-          <section className="agenda-metrics">
+    <section className="agenda-metrics">
             <div className="agenda-metric-card">
               <span className="metric-label">ATIVIDADES DO DIA</span>
               <strong>{total}</strong>
@@ -30,7 +25,7 @@ export default function AgendaMetrics({ total, pending, completed, overdue }: Ag
     
             <div className="agenda-metric-card">
               <span className="metric-label">ATRASADAS</span>
-              <strong className={overdue > 0 ? "metric-danger" : ""}>
+              <strong className={overdueTasks.length ? "metric-danger" : ""}>
                 {overdue}
               </strong>
               <span className="metric-description">Precisam de atenção</span>
