@@ -30,7 +30,7 @@ export default function AgendaMetrics({ total, pending, completed, overdue }: Ag
     
             <div className="agenda-metric-card">
               <span className="metric-label">ATRASADAS</span>
-              <strong className={overdueTasks.length ? "metric-danger" : ""}>
+              <strong className={overdue > 0 ? "metric-danger" : ""}>
                 {overdue}
               </strong>
               <span className="metric-description">Precisam de atenção</span>
