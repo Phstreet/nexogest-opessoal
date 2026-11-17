@@ -1,25 +1,12 @@
 
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-
-type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
-
-type Task = {
-  id: number;
-  description: string;
-  done: boolean;
-  date?: string;
-  time?: string;
-  priority?: Priority;
-  category?: string;
-  notes?: string;
-  createdAt?: string;
-};
+import { FormEvent, useMemo, useState } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
+import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 type Filter = "Todas" | "Hoje" | "Pendentes" | "Concluídas" | "Atrasadas";
-
-const TASKS_KEY = "nexo_tasks";
 
 const CATEGORIES = [
   "Trabalho",
@@ -50,32 +37,6 @@ function formatDate(value?: string) {
   return `${day}/${month}/${year}`;
 }
 
-function isValidTaskArray(value: unknown): value is Task[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (task) =>
-        task &&
-        typeof task.id === "number" &&
-        typeof task.description === "string" &&
-        typeof task.done === "boolean"
-    )
-  );
-}
-
-function loadTasks(): Task[] {
-  try {
-    const saved = localStorage.getItem(TASKS_KEY);
-
-    if (!saved) return [];
-
-    const parsed: unknown = JSON.parse(saved);
-
-    return isValidTaskArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 function priorityClass(priority?: Priority) {
   switch (priority) {
@@ -91,8 +52,7 @@ function priorityClass(priority?: Priority) {
 }
 
 export default function TarefasPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [filter, setFilter] = useState<Filter>("Todas");
   const [search, setSearch] = useState("");
@@ -111,36 +71,6 @@ export default function TarefasPage() {
 
   const [expandedTask, setExpandedTask] = useState<number | null>(null);
 
-  const loadData = useCallback(() => {
-    setTasks(loadTasks());
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === TASKS_KEY) {
-        loadData();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!loaded) return;
-
-    try {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Erro ao salvar tarefas:", error);
-    }
-  }, [tasks, loaded]);
 
   const today = getLocalDate();
 
@@ -343,6 +273,12 @@ export default function TarefasPage() {
 
   return (
     <div className="content">
+      {storageError && (
+        <div className="form-card" role="alert">
+          <strong>Armazenamento protegido</strong>
+          <p>{storageError}</p>
+        </div>
+      )}
       <section className="page-heading">
         <div>
           <div className="eyebrow">ORGANIZAÇÃO PESSOAL</div>

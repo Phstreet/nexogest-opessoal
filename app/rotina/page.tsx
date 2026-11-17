@@ -3,6 +3,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  preserveRoutineBackup,
+  readRoutineBackup,
+  readRoutineRaw,
+  writeRoutineBackup,
+  writeRoutineRaw,
+} from "@/lib/routine/storage";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -117,91 +124,95 @@ function isValidTask(value: unknown): value is Task {
   );
 }
 
-function backupRawTasks(raw: string) {
-  try {
-    // Preserva a primeira cópia automática; o backup manual pode ser atualizado pelo usuário.
-    if (localStorage.getItem(TASKS_BACKUP_KEY) === null) {
-      localStorage.setItem(TASKS_BACKUP_KEY, raw);
-    }
-  } catch (error) {
-    console.error("Erro ao criar backup das tarefas:", error);
-  }
-}
-
 type LoadResult = {
   valid: Task[];
   invalid: unknown[];
   canSave: boolean;
   notice: string;
+  rawSnapshot: string | null;
 };
 
 function loadTasks(): LoadResult {
-  const empty: LoadResult = {
-    valid: [],
-    invalid: [],
-    canSave: true,
-    notice: "",
-  };
+  const read = readRoutineRaw(TASKS_KEY);
+
+  if (read.error) {
+    return {
+      valid: [],
+      invalid: [],
+      canSave: false,
+      notice: read.error,
+      rawSnapshot: null,
+    };
+  }
+
+  const saved = read.raw;
+
+  if (saved === null) {
+    return {
+      valid: [],
+      invalid: [],
+      canSave: true,
+      notice: "",
+      rawSnapshot: null,
+    };
+  }
 
   try {
-    const saved = localStorage.getItem(TASKS_KEY);
+    const parsed: unknown = JSON.parse(saved);
 
-    if (!saved) return empty;
+    if (!Array.isArray(parsed)) {
+      const backupCreated = preserveRoutineBackup(TASKS_KEY, saved);
 
-    try {
-      const parsed: unknown = JSON.parse(saved);
-
-      if (!Array.isArray(parsed)) {
-        backupRawTasks(saved);
-        return {
-          valid: [],
-          invalid: [],
-          canSave: false,
-          notice:
-            "Os dados salvos estão em um formato inesperado. O salvamento automático foi pausado para evitar sobrescrever suas informações. A cópia original foi preservada no backup local.",
-        };
-      }
-
-      const valid: Task[] = [];
-      const invalid: unknown[] = [];
-
-      parsed.forEach((item) => {
-        if (isValidTask(item)) valid.push(item);
-        else invalid.push(item);
-      });
-
-      if (invalid.length > 0) backupRawTasks(saved);
-
-      return {
-        valid,
-        invalid,
-        canSave: true,
-        notice:
-          invalid.length > 0
-            ? invalid.length + " registro(s) não reconhecido(s) foram preservados sem exclusão. Uma cópia integral foi criada no backup local."
-            : "",
-      };
-    } catch (error) {
-      console.error("Erro ao interpretar tarefas:", error);
-      backupRawTasks(saved);
       return {
         valid: [],
         invalid: [],
         canSave: false,
-        notice:
-          "Não foi possível interpretar os dados salvos. O salvamento automático foi pausado e o conteúdo original foi preservado no backup local.",
+        notice: backupCreated
+          ? "Os dados salvos estão em formato inesperado. O salvamento automático foi pausado e a cópia original foi preservada no backup local."
+          : "Os dados salvos estão em formato inesperado. A cópia original permanece intacta, mas não foi possível criar o backup. O salvamento automático foi pausado.",
+        rawSnapshot: saved,
       };
     }
-  } catch (error) {
-    console.error("Erro ao carregar tarefas:", error);
+
+    const valid: Task[] = [];
+    const invalid: unknown[] = [];
+
+    parsed.forEach((item) => {
+      if (isValidTask(item)) valid.push(item);
+      else invalid.push(item);
+    });
+
+    const backupCreated =
+      invalid.length === 0 || preserveRoutineBackup(TASKS_KEY, saved);
+
     return {
-      ...empty,
-      canSave: false,
+      valid,
+      invalid,
+      canSave: backupCreated,
       notice:
-        "Não foi possível acessar o armazenamento local. Nenhum dado será sobrescrito nesta sessão.",
+        invalid.length > 0
+          ? backupCreated
+            ? invalid.length + " registro(s) não reconhecido(s) foram preservados sem exclusão. Uma cópia integral foi criada no backup local."
+            : "Há registros não reconhecidos e não foi possível criar o backup. O salvamento automático foi pausado para proteger os dados."
+          : "",
+      rawSnapshot: saved,
+    };
+  } catch (error) {
+    console.error("Erro ao interpretar tarefas:", error);
+    const backupCreated = preserveRoutineBackup(TASKS_KEY, saved);
+
+    return {
+      valid: [],
+      invalid: [],
+      canSave: false,
+      notice: backupCreated
+        ? "Não foi possível interpretar os dados salvos. O salvamento automático foi pausado e o conteúdo original foi preservado no backup local."
+        : "Não foi possível interpretar nem criar o backup dos dados. O conteúdo original foi mantido e nenhuma gravação será realizada.",
+      rawSnapshot: saved,
     };
   }
 }
+
 function priorityClass(priority?: Priority) {
   switch (priority) {
     case "Urgente":
@@ -223,6 +234,8 @@ export default function RoutineDashboard() {
 
   // Registros desconhecidos são preservados junto com as tarefas reconhecidas.
   const unknownItemsRef = useRef<unknown[]>([]);
+  const rawSnapshotRef = useRef<string | null>(null);
+  const skipNextSaveRef = useRef(true);
 
   // Relógio inicializado somente no navegador para evitar divergência de hidratação.
   const [clock, setClock] = useState<Clock | null>(null);
@@ -240,6 +253,8 @@ export default function RoutineDashboard() {
     const result = loadTasks();
 
     unknownItemsRef.current = result.invalid;
+    rawSnapshotRef.current = result.rawSnapshot;
+    skipNextSaveRef.current = true;
     setTasks(result.valid);
     setStorageCanSave(result.canSave);
     setDataNotice(result.notice);
@@ -298,17 +313,33 @@ export default function RoutineDashboard() {
   useEffect(() => {
     if (!loaded || !storageCanSave) return;
 
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+
     try {
       const next = JSON.stringify([
         ...tasks,
         ...unknownItemsRef.current,
       ]);
 
-      if (localStorage.getItem(TASKS_KEY) !== next) {
-        localStorage.setItem(TASKS_KEY, next);
+      const result = writeRoutineRaw(
+        TASKS_KEY,
+        next,
+        rawSnapshotRef.current
+      );
+
+      if (!result.saved) {
+        setStorageCanSave(false);
+        setDataNotice(result.error || "Não foi possível salvar as tarefas.");
+        return;
       }
+
+      rawSnapshotRef.current = result.rawSnapshot;
     } catch (error) {
       console.error("Erro ao salvar tarefas:", error);
+      setStorageCanSave(false);
       setDataNotice(
         "Não foi possível salvar as alterações no armazenamento local."
       );
@@ -438,79 +469,123 @@ export default function RoutineDashboard() {
   }
 
   function createLocalBackup() {
-    try {
-      const currentRaw = localStorage.getItem(TASKS_KEY);
-      const content =
-        currentRaw ??
-        JSON.stringify([...tasks, ...unknownItemsRef.current]);
+    const current = readRoutineRaw(TASKS_KEY);
 
-      localStorage.setItem(TASKS_BACKUP_KEY, content);
-      setDataNotice(
-        "Backup local criado com sucesso. A cópia está armazenada neste navegador."
-      );
-    } catch (error) {
-      console.error("Erro ao criar backup local:", error);
+    if (current.error) {
+      setDataNotice(current.error);
+      return;
+    }
+
+    const content =
+      current.raw ??
+      JSON.stringify([...tasks, ...unknownItemsRef.current]);
+
+    if (!writeRoutineBackup(TASKS_BACKUP_KEY, content)) {
       setDataNotice(
         "Não foi possível criar o backup. Verifique o espaço disponível no armazenamento do navegador."
       );
+      return;
     }
+
+    setDataNotice(
+      "Backup local criado com sucesso. A cópia está armazenada neste navegador."
+    );
   }
 
   function restoreLocalBackup() {
-    try {
-      const backup = localStorage.getItem(TASKS_BACKUP_KEY);
+    const backupResult = readRoutineBackup(TASKS_BACKUP_KEY);
 
-      if (!backup) {
-        setDataNotice("Nenhum backup local foi encontrado neste navegador.");
-        return;
-      }
-
-      const parsed: unknown = JSON.parse(backup);
-
-      if (!Array.isArray(parsed)) {
-        setDataNotice(
-          "O backup não contém uma lista válida. Os dados atuais foram mantidos."
-        );
-        return;
-      }
-
-      if (
-        !window.confirm(
-          "A restauração substituirá a lista atual pelo backup. Antes disso, uma cópia dos dados atuais será preservada. Deseja continuar?"
-        )
-      ) {
-        return;
-      }
-
-      const currentRaw = localStorage.getItem(TASKS_KEY);
-      if (currentRaw !== null) {
-        localStorage.setItem(
-          TASKS_PRE_RESTORE_BACKUP_KEY,
-          currentRaw
-        );
-      }
-
-      const valid: Task[] = [];
-      const invalid: unknown[] = [];
-
-      parsed.forEach((item) => {
-        if (isValidTask(item)) valid.push(item);
-        else invalid.push(item);
-      });
-
-      unknownItemsRef.current = invalid;
-      setTasks(valid);
-      setStorageCanSave(true);
-      setLoaded(true);
-      setDataNotice(
-        "Backup restaurado. " + valid.length + " atividade(s) reconhecida(s) e " + invalid.length + " registro(s) preservado(s)."
-      );
-    } catch (error) {
-      console.error("Erro ao restaurar backup:", error);
-      setDataNotice(
-        "Não foi possível restaurar o backup. Os dados atuais foram mantidos."
-      );
+    if (backupResult.error) {
+      setDataNotice(backupResult.error);
+      return;
     }
+
+    const backup = backupResult.raw;
+
+    if (!backup) {
+      setDataNotice("Nenhum backup local foi encontrado neste navegador.");
+      return;
+    }
+
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(backup);
+    } catch {
+      setDataNotice(
+        "O backup está corrompido. Os dados atuais foram mantidos."
+      );
+      return;
+    }
+
+    if (!Array.isArray(parsed)) {
+      setDataNotice(
+        "O backup não contém uma lista válida. Os dados atuais foram mantidos."
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "A restauração substituirá a lista atual pelo backup. Antes disso, uma cópia dos dados atuais será preservada. Deseja continuar?"
+      )
+    ) {
+      return;
+    }
+
+    const current = readRoutineRaw(TASKS_KEY);
+
+    if (current.error) {
+      setDataNotice(current.error);
+      return;
+    }
+
+    if (
+      current.raw !== null &&
+      !writeRoutineBackup(TASKS_PRE_RESTORE_BACKUP_KEY, current.raw)
+    ) {
+      setDataNotice(
+        "Não foi possível preservar os dados atuais antes da restauração. Nenhuma alteração foi realizada."
+      );
+      return;
+    }
+
+    const valid: Task[] = [];
+    const invalid: unknown[] = [];
+
+    parsed.forEach((item) => {
+      if (isValidTask(item)) valid.push(item);
+      else invalid.push(item);
+    });
+
+    const restoredRaw = JSON.stringify([...valid, ...invalid]);
+    const restoreResult = writeRoutineRaw(
+      TASKS_KEY,
+      restoredRaw,
+      current.raw
+    );
+
+    if (!restoreResult.saved) {
+      setDataNotice(
+        restoreResult.error ||
+          "Não foi possível restaurar o backup. Os dados atuais foram mantidos."
+      );
+      return;
+    }
+
+    rawSnapshotRef.current = restoreResult.rawSnapshot;
+    unknownItemsRef.current = invalid;
+    skipNextSaveRef.current = true;
+    setTasks(valid);
+    setStorageCanSave(true);
+    setLoaded(true);
+    setDataNotice(
+      "Backup restaurado. " +
+        valid.length +
+        " atividade(s) reconhecida(s) e " +
+        invalid.length +
+        " registro(s) preservado(s)."
+    );
   }
 
   function toggleTask(id: number) {

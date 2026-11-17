@@ -1,23 +1,10 @@
 
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-
-type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
-
-type Task = {
-  id: number;
-  description: string;
-  done: boolean;
-  date?: string;
-  time?: string;
-  priority?: Priority;
-  category?: string;
-  notes?: string;
-  createdAt?: string;
-};
-
-const TASKS_KEY = "nexo_tasks";
+import { FormEvent, useMemo, useState } from "react";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
+import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
+import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
 const weekDays = [
   "Segunda-feira",
@@ -72,27 +59,6 @@ function formatPeriod(start: Date, end: Date) {
   return `${first} – ${last}`;
 }
 
-function loadTasks(): Task[] {
-  try {
-    const stored = localStorage.getItem(TASKS_KEY);
-    if (!stored) return [];
-
-    const parsed: unknown = JSON.parse(stored);
-
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (item): item is Task =>
-        item &&
-        typeof item.id === "number" &&
-        typeof item.description === "string" &&
-        typeof item.done === "boolean"
-    );
-  } catch {
-    return [];
-  }
-}
-
 function priorityClass(priority?: Priority) {
   switch (priority) {
     case "Urgente":
@@ -107,8 +73,7 @@ function priorityClass(priority?: Priority) {
 }
 
 export default function WeeklyPlanningPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [weekStart, setWeekStart] = useState(() =>
     getWeekStart(new Date())
@@ -126,32 +91,6 @@ export default function WeeklyPlanningPage() {
 
   const today = getLocalDate();
 
-  const loadData = useCallback(() => {
-    setTasks(loadTasks());
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === TASKS_KEY) loadData();
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!loaded) return;
-
-    try {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Erro ao salvar planejamento:", error);
-    }
-  }, [tasks, loaded]);
 
   const days = useMemo(() => {
     return weekDays.map((name, index) => {
@@ -332,6 +271,12 @@ export default function WeeklyPlanningPage() {
 
   return (
     <div className="content weekly-page-content">
+      {storageError && (
+        <div className="form-card" role="alert">
+          <strong>Armazenamento protegido</strong>
+          <p>{storageError}</p>
+        </div>
+      )}
       <div className="weekly-content">
         <section className="weekly-welcome">
           <div>

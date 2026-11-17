@@ -853,3 +853,78 @@ test.describe("Financeiro - Planejamento com valores parciais", () => {
     await expect(page.getByText(/550,00/).first()).toBeVisible();
   });
 });
+
+
+test.describe("NEXO - Armazenamento central da rotina", () => {
+  test("deve preservar tarefas corrompidas na tela de tarefas", async ({ page }) => {
+    const original = '[{"id":"invalido","description":7,"done":false}]';
+
+    await page.addInitScript((raw) => {
+      localStorage.setItem("nexo_tasks", raw);
+    }, original);
+
+    await page.goto("/rotina/tarefas");
+
+    await expect(page.getByText("Armazenamento protegido", { exact: true })).toContainText("Armazenamento protegido");
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks"))).toBe(original);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))).toBe(original);
+  });
+
+  test("deve preservar tarefas corrompidas no planejamento semanal", async ({ page }) => {
+    const original = "{planejamento-invalido";
+
+    await page.addInitScript((raw) => {
+      localStorage.setItem("nexo_tasks", raw);
+    }, original);
+
+    await page.goto("/rotina/planejamento");
+
+    await expect(page.getByText("Armazenamento protegido", { exact: true })).toContainText("Armazenamento protegido");
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks"))).toBe(original);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))).toBe(original);
+  });
+
+  test("deve preservar tarefas e hábitos corrompidos na produtividade", async ({ page }) => {
+    const originalTasks = "{tarefas-corrompidas";
+    const originalHabits = "{habitos-corrompidos";
+
+    await page.addInitScript(({ tasks, habits }) => {
+      localStorage.setItem("nexo_tasks", tasks);
+      localStorage.setItem("nexo_habits", habits);
+    }, { tasks: originalTasks, habits: originalHabits });
+
+    await page.goto("/rotina/produtividade");
+
+    await expect(page.getByText("Armazenamento protegido", { exact: true })).toContainText("Armazenamento protegido");
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks"))).toBe(originalTasks);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_habits"))).toBe(originalHabits);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_tasks_backup"))).toBe(originalTasks);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("nexo_habits_backup"))).toBe(originalHabits);
+  });
+
+  test("deve sincronizar tarefas entre abas abertas", async ({ page }) => {
+    const agendaPage = await page.context().newPage();
+    await page.goto("/rotina/tarefas");
+    await agendaPage.goto("/rotina/agenda");
+
+    const today = await page.evaluate(() => {
+      const date = new Date();
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    });
+
+    await page.evaluate((date) => {
+      localStorage.setItem("nexo_tasks", JSON.stringify([{
+        id: 990001,
+        description: "Tarefa sincronizada entre abas",
+        done: false,
+        date,
+        time: "10:00",
+        priority: "Alta",
+        category: "Pessoal"
+      }]));
+    }, today);
+
+    await expect(agendaPage.getByText("Tarefa sincronizada entre abas")).toBeVisible();
+    await agendaPage.close();
+  });
+});
