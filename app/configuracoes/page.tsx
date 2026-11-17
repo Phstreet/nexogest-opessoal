@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import {
   INCOME_CATEGORIES,
   EXPENSE_CATEGORIES,
@@ -28,6 +29,7 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 export default function ConfiguracoesPage() {
+  const { session } = useNexoAuth();
   const [tab, setTab] = useState<SettingsTab>("preferencias");
   const [preferences, setPreferences] = useState<Preferences>({
     weekStartsOn: "monday",
@@ -89,7 +91,7 @@ export default function ConfiguracoesPage() {
   function downloadBackup() {
     try {
       const entries = Object.keys(localStorage)
-        .filter((key) => key.startsWith("nexo_") && !key.startsWith("nexo_account_local_backup_"))
+        .filter((key) => key.startsWith("nexo_") && !key.startsWith("nexo_account_local_backup_") && (!key.startsWith("nexo_sync_conflict_backup_") || Boolean(session && key.startsWith(`nexo_sync_conflict_backup_${session.user.id}_`))))
         .sort()
         .map((key) => [key, localStorage.getItem(key)] as const);
       const backup = {
