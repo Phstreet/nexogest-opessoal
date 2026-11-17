@@ -107,8 +107,12 @@ export default function WeeklyPlanningPage() {
   const today = getLocalDate();
 
 
+  const orderedWeekDays = weekStartsOn === "sunday"
+    ? ["Domingo", ...weekDays.slice(0, 6)]
+    : weekDays;
+
   const days = useMemo(() => {
-    return weekDays.map((name, index) => {
+    return orderedWeekDays.map((name, index) => {
       const current = new Date(weekStart);
       current.setDate(current.getDate() + index);
 
@@ -133,7 +137,7 @@ export default function WeeklyPlanningPage() {
         pending: dayTasks.filter((task) => !task.done).length,
       };
     });
-  }, [weekStart, tasks]);
+  }, [weekStart, tasks, orderedWeekDays]);
 
   const weekEnd = useMemo(() => {
     const end = new Date(weekStart);
