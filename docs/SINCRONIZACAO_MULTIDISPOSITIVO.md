@@ -66,3 +66,47 @@ Nunca coloque senha de banco, service role key ou secret key em variáveis públ
 - Um conflito entre dispositivos é detectado; nunca é sobrescrito silenciosamente.
 - A migração é idempotente ou bloqueia uma segunda execução, e oferece backup antes de gravar.
 - O modo local atual continua funcional enquanto a nuvem não estiver configurada.
+
+
+## Implementação da interface (PR em validação)
+
+A primeira camada de interface foi adicionada à branch de integração:
+- `/entrar`: login por e-mail e senha.
+- `/cadastro`: criação de conta.
+- `/recuperar-senha`: solicitação de link de recuperação.
+- `/redefinir-senha`: atualização de senha a partir do link enviado por e-mail.
+- `/configuracoes/conta`: estado da conta e saída.
+- Indicador de conta e painel de sincronização nas telas do sistema.
+
+As sessões são gerenciadas por rotas do servidor (`/api/auth`) e armazenadas em cookies `HttpOnly`, `Secure` em produção e `SameSite=Lax`. Os tokens não são gravados no `localStorage` nem expostos aos componentes do navegador. As rotas de sincronização (`/api/sync`) usam o token da sessão e continuam sujeitas às políticas RLS; não utilizam service role.
+
+## Migração e conflitos
+
+No primeiro acesso autenticado:
+- Se só houver dados locais, a interface solicita backup e confirmação antes do envio.
+- Se só houver dados remotos, eles são restaurados no armazenamento local.
+- Se houver versões diferentes nos dois lados, a aplicação bloqueia a sobrescrita automática e permite escolher a versão local ou a da nuvem.
+- Após a inicialização, alterações locais são enviadas com controle de revisão. A aplicação consulta a nuvem periodicamente para identificar atualizações feitas em outros dispositivos.
+
+O backup pré-migração é baixado pelo navegador. A aplicação não remove as chaves locais após o envio. Dados com JSON ou formato de coleção inválido bloqueiam a migração.
+
+## Configuração necessária por ambiente
+
+O arquivo `.env.example` contém a URL e a chave publishable do projeto NEXO-DEV para desenvolvimento. A chave publishable é pública e não substitui uma chave secreta. Em produção, configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente do host; o código não usa o projeto de desenvolvimento como fallback em produção.
+
+No painel Supabase, a URL base do aplicativo e os caminhos de redirecionamento devem incluir os domínios efetivos de Preview e Production:
+- `https://SEU-DOMINIO/entrar`
+- `https://SEU-DOMINIO/redefinir-senha`
+
+A configuração desses domínios depende do endereço definitivo da implantação e precisa ser conferida antes de liberar o cadastro em produção.
+
+## Limitações até a validação final
+
+A autenticação e as rotas de sincronização estão implementadas na branch, mas ainda dependem de:
+1. Execução bem-sucedida de lint, build e testes E2E na CI.
+2. Configuração das variáveis de ambiente no host de produção.
+3. Inclusão dos domínios reais na allowlist de redirecionamento do Supabase Auth.
+4. Teste prático de cadastro/confirmação de e-mail, recuperação de senha e sincronização em dois navegadores.
+5. Revisão dos conflitos e da restauração antes de mesclar a PR.
+
+Até concluir esses itens, o sistema mantém o modo local disponível e a PR não deve ser tratada como liberação de produção.
