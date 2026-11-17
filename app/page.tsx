@@ -71,7 +71,7 @@ export default function Home() {
       return;
     }
 
-    const newTask: Task = {
+    const newTask: RoutineTask = {
       id: Date.now(),
       description,
       done: false,
