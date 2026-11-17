@@ -43,7 +43,7 @@ export function getRoutineTaskMetrics(tasks: RoutineTask[], today: string): Rout
 }
 
 export function filterAndSortRoutineTasks(tasks: RoutineTask[], query: RoutineTaskQuery): RoutineTask[] {
-  const normalizedSearch = query.search.trim().toLocaleLowerCase("pt-BR");
+  const normalizedSearch = query.search.trim().toLowerCase();
 
   return tasks
     .filter((task) => {
@@ -55,8 +55,8 @@ export function filterAndSortRoutineTasks(tasks: RoutineTask[], query: RoutineTa
       if (query.priorityFilter !== "Todas" && task.priority !== query.priorityFilter) return false;
 
       if (normalizedSearch) {
-        const description = task.description.toLocaleLowerCase("pt-BR");
-        const notes = (task.notes || "").toLocaleLowerCase("pt-BR");
+        const description = task.description.toLowerCase();
+        const notes = (task.notes || "").toLowerCase();
         if (!description.includes(normalizedSearch) && !notes.includes(normalizedSearch)) return false;
       }
 
