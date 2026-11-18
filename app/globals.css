@@ -2649,3 +2649,33 @@ textarea::placeholder {
   :is(.finance-form,.accounts-panel > form,.form-card:has(#reserve-name),.movement-form,.agenda-form-panel form,#task-form form,#habit-form form,.task-form-panel form,.profile-panel,.nexo-auth-card form)
     :is(.form-actions button,.accounts-form-actions button,.finance-form-actions button,.profile-form-footer button) { flex: 1 1 auto; }
 }
+
+
+/* NEXO — modal global de confirmação (substitui diálogos nativos do navegador) */
+.nexo-confirm-backdrop {
+  position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center;
+  padding: 20px; background: rgba(0,0,0,.72); backdrop-filter: blur(5px);
+  animation: nexoConfirmFade .16s ease-out;
+}
+.nexo-confirm-dialog {
+  display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 16px;
+  width: min(460px,100%); padding: 24px; color: #f0f0f2;
+  background: linear-gradient(145deg,#1b1b1f,#121214); border: 1px solid #3b3b42;
+  border-radius: 15px; box-shadow: 0 24px 90px rgba(0,0,0,.55);
+  animation: nexoConfirmIn .18s ease-out;
+}
+.nexo-confirm-icon { display:grid; place-items:center; width:40px; height:40px; border:1px solid #55565e; border-radius:12px; color:#d8d9de; background:#28282d; font-size:20px; font-weight:700; }
+.nexo-confirm-dialog:has(.is-danger) .nexo-confirm-icon { color:#e5a1a1; border-color:#704646; background:#2a1d1f; }
+.nexo-confirm-copy h2 { margin:1px 0 8px; color:#f4f4f5; font-size:15px; font-weight:700; letter-spacing:-.02em; }
+.nexo-confirm-copy p { margin:0; color:#a9a9b1; font-size:12px; line-height:1.65; }
+.nexo-confirm-actions { grid-column:1/-1; display:flex; justify-content:flex-end; gap:9px; padding-top:16px; margin-top:2px; border-top:1px solid #303036; }
+.nexo-confirm-actions button { min-height:39px; padding:0 16px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:background .15s,border-color .15s,transform .15s; }
+.nexo-confirm-cancel { color:#d0d0d5; background:#252529; border:1px solid #44444c; }
+.nexo-confirm-cancel:hover { background:#303036; border-color:#62626b; }
+.nexo-confirm-accept { color:#151518; background:#d6d7dc; border:1px solid #d6d7dc; }
+.nexo-confirm-accept:hover { background:#f0f0f2; border-color:#f0f0f2; transform:translateY(-1px); }
+.nexo-confirm-accept.is-danger { color:#fff; background:#8e4545; border-color:#a45a5a; }
+.nexo-confirm-accept.is-danger:hover { background:#a65353; border-color:#bd6b6b; }
+@keyframes nexoConfirmFade { from { opacity:0; } to { opacity:1; } }
+@keyframes nexoConfirmIn { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+@media(max-width:480px) { .nexo-confirm-dialog { padding:19px; gap:12px; } .nexo-confirm-actions button { flex:1; } }
