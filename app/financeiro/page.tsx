@@ -274,11 +274,13 @@ function SelectField({
   value,
   onChange,
   options,
+  helper,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: string[];
+  helper?: string;
 }) {
   return (
     <div className="finance-field">
@@ -293,6 +295,7 @@ function SelectField({
           </option>
         ))}
       </select>
+      {helper && <small className="finance-field-helper">{helper}</small>}
     </div>
   );
 }
@@ -1724,14 +1727,24 @@ export default function Page() {
 
             <SelectField
               label={
-                type === "Transferência" ||
-                type === "Investimento"
-                  ? "Conta de origem"
-                  : "Conta financeira"
+                type === "Receita"
+                  ? "Conta de recebimento"
+                  : type === "Despesa"
+                    ? "Conta de pagamento"
+                    : "Conta de origem"
               }
               value={account}
               onChange={setAccount}
               options={accountOptions}
+              helper={
+                type === "Receita"
+                  ? "Salário, adiantamento ou 13º: ao marcar como Recebida, o valor entra no saldo desta conta."
+                  : type === "Despesa"
+                    ? "Ao marcar a despesa como paga, o valor será descontado desta conta."
+                    : type === "Transferência"
+                      ? "Conta de onde o dinheiro será retirado."
+                      : "Conta de onde sairá o valor aplicado."
+              }
             />
 
             {type === "Transferência" && (
@@ -1740,6 +1753,7 @@ export default function Page() {
                 value={destinationAccount}
                 onChange={setDestinationAccount}
                 options={accountOptions}
+                helper="Ao marcar a transferência como Realizada, o valor será acrescentado ao saldo desta conta."
               />
             )}
 
@@ -2306,6 +2320,13 @@ export default function Page() {
           color: #a7a8ae;
           font-size: 10px;
           font-weight: 600;
+        }
+
+        .finance-fields-grid .finance-field .finance-field-helper {
+          display: block;
+          color: #858b95;
+          font-size: 9px;
+          line-height: 1.45;
         }
 
         .finance-fields-grid input,
