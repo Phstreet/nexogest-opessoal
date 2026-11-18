@@ -378,6 +378,7 @@ function isValidTransaction(value: unknown): value is Transaction {
     "paymentMethod",
     "status",
     "recurrence",
+    "recurrenceGroupId",
     "reserveType",
     "investment",
     "institution",
@@ -463,6 +464,23 @@ function getNextTransactionId(transactions: Transaction[]) {
   return id;
 }
 
+function addMonthsToDate(value: string, months: number) {
+  const [year, month, day] = value.split("-").map(Number);
+  const targetMonth = new Date(year, month - 1 + months, 1);
+  const lastDay = new Date(
+    targetMonth.getFullYear(),
+    targetMonth.getMonth() + 1,
+    0
+  ).getDate();
+  const safeDay = Math.min(day, lastDay);
+
+  return [
+    targetMonth.getFullYear(),
+    String(targetMonth.getMonth() + 1).padStart(2, "0"),
+    String(safeDay).padStart(2, "0"),
+  ].join("-");
+}
+
 function downloadJson(filename: string, content: string) {
   const blob = new Blob([content], {
     type: "application/json;charset=utf-8",
@@ -495,6 +513,7 @@ export default function Page() {
   const [paymentMethod, setPaymentMethod] = useState("PIX");
   const [status, setStatus] = useState("Pendente");
   const [recurrence, setRecurrence] = useState("Nenhuma");
+  const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
   const [institution, setInstitution] = useState("Nubank");
   const [filter, setFilter] = useState("Todos");
   const [loaded, setLoaded] = useState(false);
@@ -859,6 +878,44 @@ export default function Page() {
     (item) => filter === "Todos" || item.type === filter
   );
 
+  function startEditingTransaction(item: Transaction) {
+    if (item.type !== "Receita" && item.type !== "Despesa") return;
+
+    setEditingTransactionId(item.id);
+    setDescription(item.description);
+    setAmount(String(item.amount).replace(".", ","));
+    setSettledAmount(
+      item.settledAmount === undefined
+        ? ""
+        : String(item.settledAmount).replace(".", ",")
+    );
+    setType(item.type);
+    setCategory(item.category || getDefaultCategory(item.type));
+    setSubcategory(
+      item.subcategory ||
+        getDefaultSubcategory(item.category || getDefaultCategory(item.type))
+    );
+    setDate(item.date || localDate());
+    setAccount(item.account || "Conta Corrente");
+    setPaymentMethod(item.paymentMethod || "PIX");
+    setStatus(item.status || "Pendente");
+    setRecurrence(item.recurrence || "Nenhuma");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEditingTransaction() {
+    setEditingTransactionId(null);
+    setDescription("");
+    setAmount("");
+    setSettledAmount("");
+    setType("Despesa");
+    setCategory("Moradia");
+    setSubcategory("Aluguel");
+    setStatus("Pendente");
+    setRecurrence("Nenhuma");
+    setDate(localDate());
+  }
+
   function addTransaction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -951,8 +1008,12 @@ export default function Page() {
         ? `Investimento: ${subcategory} - ${institution}`
         : undefined;
 
+    const editingTransaction = editingTransactionId === null
+      ? undefined
+      : transactions.find((item) => item.id === editingTransactionId);
+
     const newTransaction: Transaction = {
-      id: getNextTransactionId(transactions),
+      id: editingTransaction?.id ?? getNextTransactionId(transactions),
       description: description.trim(),
       type,
       amount: parsedAmount,
@@ -980,11 +1041,58 @@ export default function Page() {
         type === "Investimento" ? institution : undefined,
     };
 
-    setTransactions((current) => [
-      newTransaction,
-      ...current,
-    ]);
+    if (editingTransactionId !== null) {
+      setTransactions((current) =>
+        current.map((item) =>
+          item.id === editingTransactionId
+            ? {
+                ...item,
+                ...newTransaction,
+                id: item.id,
+                recurrenceGroupId: item.recurrenceGroupId,
+                updatedAt: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+    } else if (
+      recurrence === "Mensal" &&
+      (type === "Receita" || type === "Despesa")
+    ) {
+      const recurrenceGroupId = "mensal-" + newTransaction.id;
+      const monthlyTransactions: Transaction[] = [
+        { ...newTransaction, recurrenceGroupId },
+      ];
+      let nextId = getNextTransactionId([
+        ...transactions,
+        newTransaction,
+      ]);
 
+      for (let monthOffset = 1; monthOffset <= 3; monthOffset += 1) {
+        monthlyTransactions.push({
+          ...newTransaction,
+          id: nextId,
+          date: addMonthsToDate(date, monthOffset),
+          status: "Pendente",
+          settledAmount: undefined,
+          recurrenceGroupId,
+          createdAt: new Date().toISOString(),
+        });
+        nextId += 1;
+      }
+
+      setTransactions((current) => [
+        ...monthlyTransactions,
+        ...current,
+      ]);
+    } else {
+      setTransactions((current) => [
+        newTransaction,
+        ...current,
+      ]);
+    }
+
+    setEditingTransactionId(null);
     setDescription("");
     setAmount("");
     setSettledAmount("");
@@ -1401,8 +1509,14 @@ export default function Page() {
         >
           <div className="finance-section-title">
             <div>
-              <span className="finance-eyebrow">CADASTRO</span>
-              <h2>Novo lançamento</h2>
+              <span className="finance-eyebrow">
+                {editingTransactionId !== null ? "EDIÇÃO INDIVIDUAL" : "CADASTRO"}
+              </span>
+              <h2>
+                {editingTransactionId !== null
+                  ? "Editar lançamento"
+                  : "Novo lançamento"}
+              </h2>
             </div>
           </div>
 
@@ -1627,10 +1741,21 @@ export default function Page() {
           )}
 
           <div className="finance-form-actions">
+            {editingTransactionId !== null && (
+              <button
+                type="button"
+                className="finance-cancel-edit"
+                onClick={cancelEditingTransaction}
+              >
+                Cancelar edição
+              </button>
+            )}
             <button type="submit" disabled={!safeToSave}>
-              {type === "Investimento"
-                ? "+ Registrar investimento"
-                : "+ Adicionar lançamento"}
+              {editingTransactionId !== null
+                ? "Salvar alterações"
+                : type === "Investimento"
+                  ? "+ Registrar investimento"
+                  : "+ Adicionar lançamento"}
             </button>
           </div>
         </form>
@@ -1738,15 +1863,28 @@ export default function Page() {
                     {money(Number(item.amount || 0))}
                   </strong>
 
-                  <button
-                    type="button"
-                    className="finance-delete"
-                    onClick={() => removeTransaction(item.id)}
-                    aria-label={`Excluir ${item.description}`}
-                    disabled={!safeToSave}
-                  >
-                    ×
-                  </button>
+                  <div className="finance-item-actions">
+                    {(item.type === "Receita" || item.type === "Despesa") && (
+                      <button
+                        type="button"
+                        className="finance-edit"
+                        onClick={() => startEditingTransaction(item)}
+                        aria-label={"Editar " + item.description}
+                        disabled={!safeToSave}
+                      >
+                        Editar
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="finance-delete"
+                      onClick={() => removeTransaction(item.id)}
+                      aria-label={"Excluir " + item.description}
+                      disabled={!safeToSave}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
@@ -2265,6 +2403,43 @@ export default function Page() {
 
         .finance-item > strong.reserve-movement {
           color: #c3c7ce;
+        }
+
+        .finance-item-actions {
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          gap: 5px;
+        }
+
+        .finance-edit,
+        .finance-cancel-edit {
+          min-height: 28px;
+          padding: 0 9px;
+          border: 1px solid #414149;
+          border-radius: 5px;
+          background: #222226;
+          color: #cbd0d8;
+          font-family: inherit;
+          font-size: 10px;
+          cursor: pointer;
+          transition: var(--transition);
+        }
+
+        .finance-edit:hover,
+        .finance-cancel-edit:hover {
+          border-color: #858c98;
+          background: #2b2d33;
+          color: #fff;
+        }
+
+        .finance-edit:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .finance-cancel-edit {
+          margin-right: 7px;
         }
 
         .finance-delete {
