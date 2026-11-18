@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import {
-  fetchRemoteCollections, saveRemoteCollection, NEXO_SYNC_KEYS,
+  fetchRemoteCollections, saveRemoteCollection, NEXO_LEGACY_SYNC_KEYS,
   type NexoSyncKey, type RemoteCollection,
 } from "@/lib/supabase/client";
 
@@ -34,7 +34,7 @@ function switchLocalOwner(nextUserId: string): boolean {
   if (currentOwner === nextUserId) return false;
 
   // Antes de trocar o usuário ativo, guarda uma cópia isolada por conta.
-  const entries = NEXO_SYNC_KEYS.map((key) => [key, localStorage.getItem(key)] as const);
+  const entries = NEXO_LEGACY_SYNC_KEYS.map((key) => [key, localStorage.getItem(key)] as const);
   const previousBackupKey = `nexo_account_local_backup_${currentOwner}`;
   const previousBackup = JSON.stringify({
     application: "NEXO", ownerId: currentOwner, createdAt: new Date().toISOString(), entries,
@@ -44,7 +44,7 @@ function switchLocalOwner(nextUserId: string): boolean {
     throw new Error("Não foi possível preservar os dados da conta anterior. A troca de conta foi bloqueada.");
   }
 
-  for (const key of NEXO_SYNC_KEYS) localStorage.removeItem(key);
+  for (const key of NEXO_LEGACY_SYNC_KEYS) localStorage.removeItem(key);
 
   // Se esta conta já foi usada neste navegador, recupera seu conjunto local.
   const nextBackupRaw = localStorage.getItem(`nexo_account_local_backup_${nextUserId}`);
@@ -56,7 +56,7 @@ function switchLocalOwner(nextUserId: string): boolean {
     for (const entry of parsed.entries) {
       if (!Array.isArray(entry) || entry.length !== 2 ||
           typeof entry[0] !== "string" ||
-          !(NEXO_SYNC_KEYS as readonly string[]).includes(entry[0]) ||
+          !(NEXO_LEGACY_SYNC_KEYS as readonly string[]).includes(entry[0]) ||
           !(typeof entry[1] === "string" || entry[1] === null)) {
         throw new Error("O backup local desta conta contém uma estrutura inválida. Nenhum dado remoto foi aplicado.");
       }
@@ -109,7 +109,7 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
       const remoteMap = new Map(remote.map((row) => [row.data_key as NexoSyncKey, row]));
       const nextPending: NexoSyncKey[] = [];
       const nextIssues: SyncIssue[] = [];
-      for (const key of NEXO_SYNC_KEYS) {
+      for (const key of NEXO_LEGACY_SYNC_KEYS) {
         const local = readLocal(key);
         const row = remoteMap.get(key);
         if (!row) {
@@ -217,11 +217,11 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
     if (!session) return;
     const handleLocalChange = (event: Event) => {
       const key = (event as CustomEvent<{ key?: string }>).detail?.key;
-      if (key && (NEXO_SYNC_KEYS as readonly string[]).includes(key)) void saveChanged(key as NexoSyncKey);
-      else for (const item of NEXO_SYNC_KEYS) void saveChanged(item);
+      if (key && (NEXO_LEGACY_SYNC_KEYS as readonly string[]).includes(key)) void saveChanged(key as NexoSyncKey);
+      else for (const item of NEXO_LEGACY_SYNC_KEYS) void saveChanged(item);
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key && (NEXO_SYNC_KEYS as readonly string[]).includes(event.key)) {
+      if (event.key && (NEXO_LEGACY_SYNC_KEYS as readonly string[]).includes(event.key)) {
         // Alterações recebidas por storage podem ser espelhos de gravações
         // já confirmadas na nuvem. Reconsulta a revisão antes de comparar,
         // em vez de tentar reenviar com uma revisão possivelmente antiga.
