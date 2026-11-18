@@ -3,8 +3,8 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import { FormEvent, useMemo, useState } from "react";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 
 type ReserveCategory =
   | "Emergência"
@@ -144,10 +144,7 @@ function getMovementColor(type: MovementType) {
 
 export default function ReservasFinanceirasPage() {
   const confirm = useNexoConfirm();
-  const [reserves, setReserves] = useState<Reserve[]>([]);
-  const [movements, setMovements] = useState<ReserveMovement[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { reserves, reserveMovements: movements, accounts, loaded, error: cloudError, saveReserves, saveReserveMovements } = useCloudFinanceCollections();
 
   const [showReserveForm, setShowReserveForm] = useState(false);
   const [editingReserveId, setEditingReserveId] = useState<number | null>(null);
@@ -163,55 +160,6 @@ export default function ReservasFinanceirasPage() {
 
   const [feedback, setFeedback] = useState("");
 
-  useEffect(() => {
-    function loadReserveData() {
-      try {
-        setReserves(getReserves());
-        setMovements(getReserveMovements());
-        setAccounts(
-          getAccounts().map((account) => ({
-            id: Number(account.id),
-            name: account.name || "Conta sem nome",
-            institution: account.institution || "",
-            active: account.active !== false,
-          }))
-        );
-      } catch (error) {
-        console.error("Erro ao carregar reservas financeiras:", error);
-      } finally {
-        setLoaded(true);
-      }
-    }
-
-    loadReserveData();
-
-    function handleStorage(event: StorageEvent) {
-      if (
-        event.key === null ||
-        event.key === FINANCE_STORAGE_KEYS.reserves ||
-        event.key === FINANCE_STORAGE_KEYS.reserveMovements ||
-        event.key === FINANCE_STORAGE_KEYS.accounts
-      ) {
-        loadReserveData();
-      }
-    }
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-
-    try {
-      if (!saveReserves(reserves) || !saveReserveMovements(movements)) {
-        throw new Error("O armazenamento central recusou os dados.");
-      }
-    } catch (error) {
-      console.error("Erro ao salvar reservas financeiras:", error);
-      setFeedback("Não foi possível salvar os dados no navegador.");
-    }
-  }, [reserves, movements, loaded]);
 
   const selectedReserve = useMemo(
     () => reserves.find((reserve) => reserve.id === selectedReserveId) || null,
@@ -311,7 +259,7 @@ export default function ReservasFinanceirasPage() {
     setShowReserveForm(false);
   }
 
-  function handleReserveSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleReserveSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const targetAmount = Number(reserveForm.targetAmount);
@@ -347,31 +295,31 @@ export default function ReservasFinanceirasPage() {
     const account = accounts.find((item) => item.id === accountId);
 
     if (editingReserveId !== null) {
-      setReserves((current) =>
-        current.map((reserve) =>
-          reserve.id === editingReserveId
-            ? {
-                ...reserve,
-                name: reserveForm.name.trim(),
-                category: reserveForm.category,
-                description: reserveForm.description.trim(),
-                targetAmount,
-                initialBalance,
-                monthlyContribution,
-                startDate: reserveForm.startDate,
-                targetDate: reserveForm.targetDate,
-                accountId,
-                institution:
-                  reserveForm.institution.trim() ||
-                  account?.institution ||
-                  "",
-                status: reserveForm.status,
-              }
-            : reserve
-        )
+      const updatedReserves = reserves.map((reserve) =>
+        reserve.id === editingReserveId
+          ? {
+              ...reserve,
+              name: reserveForm.name.trim(),
+              category: reserveForm.category,
+              description: reserveForm.description.trim(),
+              targetAmount,
+              initialBalance,
+              monthlyContribution,
+              startDate: reserveForm.startDate,
+              targetDate: reserveForm.targetDate,
+              accountId,
+              institution: reserveForm.institution.trim() || account?.institution || "",
+              status: reserveForm.status,
+            }
+          : reserve
       );
-
-      setFeedback("Reserva atualizada com sucesso.");
+      try {
+        await saveReserves(updatedReserves);
+        setFeedback("Reserva atualizada com sucesso.");
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : "Não foi possível atualizar a reserva na nuvem.");
+        return;
+      }
     } else {
       const newReserve: Reserve = {
         id: Date.now(),
@@ -390,8 +338,13 @@ export default function ReservasFinanceirasPage() {
         createdAt: new Date().toISOString(),
       };
 
-      setReserves((current) => [newReserve, ...current]);
-      setFeedback("Reserva cadastrada com sucesso.");
+      try {
+        await saveReserves([newReserve, ...reserves]);
+        setFeedback("Reserva cadastrada com sucesso.");
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : "Não foi possível cadastrar a reserva na nuvem.");
+        return;
+      }
     }
 
     resetReserveForm();
@@ -426,13 +379,15 @@ export default function ReservasFinanceirasPage() {
 
     if (!confirmed) return;
 
-    setReserves((current) =>
-      current.filter((item) => item.id !== reserve.id)
-    );
-
-    setMovements((current) =>
-      current.filter((item) => item.reserveId !== reserve.id)
-    );
+    try {
+      const nextReserves = reserves.filter((item) => item.id !== reserve.id);
+      const nextMovements = movements.filter((item) => item.reserveId !== reserve.id);
+      await saveReserves(nextReserves);
+      await saveReserveMovements(nextMovements);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível excluir a reserva na nuvem. Atualize os dados antes de tentar novamente.");
+      return;
+    }
 
     if (selectedReserveId === reserve.id) {
       setSelectedReserveId(null);
@@ -453,7 +408,7 @@ export default function ReservasFinanceirasPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleMovementSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleMovementSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedReserve) {
@@ -495,14 +450,14 @@ export default function ReservasFinanceirasPage() {
       createdAt: new Date().toISOString(),
     };
 
-    setMovements((current) => [newMovement, ...current]);
-    setShowMovementForm(false);
-    setMovementForm({
-      ...emptyMovementForm,
-      date: getLocalDate(),
-    });
-
-    setFeedback(`${movementForm.type} registrado com sucesso.`);
+    try {
+      await saveReserveMovements([newMovement, ...movements]);
+      setShowMovementForm(false);
+      setMovementForm({ ...emptyMovementForm, date: getLocalDate() });
+      setFeedback(`${movementForm.type} registrado e salvo na nuvem.`);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível registrar a movimentação na nuvem.");
+    }
   }
 
   async function handleDeleteMovement(movement: ReserveMovement) {
@@ -510,11 +465,12 @@ export default function ReservasFinanceirasPage() {
 
     if (!confirmed) return;
 
-    setMovements((current) =>
-      current.filter((item) => item.id !== movement.id)
-    );
-
-    setFeedback("Movimentação excluída.");
+    try {
+      await saveReserveMovements(movements.filter((item) => item.id !== movement.id));
+      setFeedback("Movimentação excluída.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível excluir a movimentação na nuvem.");
+    }
   }
 
   function getAccountName(accountId: number | null) {
@@ -552,6 +508,7 @@ export default function ReservasFinanceirasPage() {
         resgates.
       </div>
 
+      {cloudError && <div className="feedback-message" role="alert">{cloudError}</div>}
       {!loaded ? (
         <div className="loading-state">
           Carregando reservas financeiras...
