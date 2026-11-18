@@ -4,7 +4,7 @@ import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent, ChangeEvent } from "react";
+import type { FormEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
 import { getPrimaryAccount } from "@/lib/finance/accounts";
@@ -627,8 +627,7 @@ export default function Page() {
   const [safeToSave, setSafeToSave] = useState(false);
   const [invalidCount, setInvalidCount] = useState(0);
   const [, setStorageError] = useState<string | null>(null);
-  const [backupAvailable, setBackupAvailable] = useState(false);
-  const [syncStatus, setSyncStatus] = useState("Conectando ao banco de dados...");
+  const [, setSyncStatus] = useState("Conectando ao banco de dados...");
   const revisionRef = useRef(0);
   const remoteReadyRef = useRef(false);
   const lastSavedPayloadRef = useRef("");
@@ -642,27 +641,28 @@ export default function Page() {
 
       setLoaded(false);
       remoteReadyRef.current = false;
-      setDate(localDate());
 
+      // Nenhuma coleção local ou remota é lida/validada antes da autenticação.
+      if (!session) {
+        setTransactions([]);
+        setRegisteredAccounts([]);
+        setSafeToSave(false);
+        setStorageError(null);
+        setSyncStatus("Aguardando autenticação");
+        setLoaded(true);
+        return;
+      }
+
+      setDate(localDate());
       const localResult = loadTransactionsSafely();
       const localRaw = window.localStorage.getItem(STORAGE_KEY);
 
       getPrimaryAccount();
       setRegisteredAccounts(getAccounts());
       setInvalidCount(localResult.invalidRecords.length);
-      setBackupAvailable(Boolean(window.localStorage.getItem(BACKUP_KEY)));
 
       try {
         if (!active) return;
-
-        if (!session) {
-          setTransactions(localResult.transactions);
-          setSafeToSave(false);
-          setStorageError(null);
-          setSyncStatus("Aguardando autenticação");
-          setLoaded(true);
-          return;
-        }
 
         const collections = await fetchRemoteCollections();
         if (!active) return;
@@ -690,7 +690,6 @@ export default function Page() {
             JSON.stringify(localResult.transactions) !== JSON.stringify(cloudRecords)
           ) {
             createBackup(localRaw);
-            setBackupAvailable(true);
           }
 
           revisionRef.current = remoteTransactions.revision;
@@ -712,8 +711,7 @@ export default function Page() {
         } else {
           if (localRaw !== null) {
             createBackup(localRaw);
-            setBackupAvailable(true);
-          }
+            }
 
           const legacyRecords = synchronizeMonthlyRecurrences(
             localResult.transactions
@@ -1379,206 +1377,6 @@ export default function Page() {
     }
   }
 
-  function exportBackup() {
-    try {
-      const invalidData =
-        window.localStorage.getItem(INVALID_KEY);
-
-      const backup = {
-        application: "NEXO — Gestão Pessoal",
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        storageKey: STORAGE_KEY,
-        source: "Supabase",
-        transactions,
-        invalidRecords: invalidData
-          ? JSON.parse(invalidData)
-          : null,
-      };
-
-      downloadJson(
-        `nexo-backup-financeiro-${localDate()}.json`,
-        JSON.stringify(backup, null, 2)
-      );
-    } catch (error) {
-      console.error("Erro ao exportar backup:", error);
-      window.alert(
-        "Não foi possível exportar os dados financeiros."
-      );
-    }
-  }
-
-  async function restoreLocalBackup() {
-    const savedBackup =
-      window.localStorage.getItem(BACKUP_KEY);
-
-    if (!savedBackup) {
-      window.alert("Nenhum backup local foi encontrado.");
-      return;
-    }
-
-    if (
-      !(await confirm({ title: "Restaurar backup", message: "Deseja restaurar o último backup? Os lançamentos atuais serão substituídos pela versão salva no backup.", confirmLabel: "Restaurar", destructive: true }))
-    ) {
-      return;
-    }
-
-    try {
-      const parsedBackup: unknown = JSON.parse(savedBackup);
-
-      if (
-        !parsedBackup ||
-        typeof parsedBackup !== "object" ||
-        !("rawData" in parsedBackup) ||
-        typeof parsedBackup.rawData !== "string"
-      ) {
-        throw new Error("Formato de backup inválido.");
-      }
-
-      const parsedData: unknown = JSON.parse(
-        parsedBackup.rawData
-      );
-
-      if (!Array.isArray(parsedData)) {
-        throw new Error("O backup não contém uma lista válida.");
-      }
-
-      const validRecords = parsedData.filter(isValidTransaction);
-      const invalidRecords = parsedData.filter(
-        (item) => !isValidTransaction(item)
-      );
-
-      // Mantém o backup disponível até a restauração terminar.
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        parsedBackup.rawData
-      );
-
-      if (invalidRecords.length > 0) {
-        window.localStorage.setItem(
-          INVALID_KEY,
-          JSON.stringify({
-            createdAt: new Date().toISOString(),
-            records: invalidRecords,
-          })
-        );
-      }
-
-      setTransactions(validRecords);
-      setInvalidCount(invalidRecords.length);
-      setSafeToSave(true);
-      setStorageError(null);
-
-      window.alert(
-        `Backup restaurado. ${validRecords.length} lançamento(s) válido(s) recuperado(s).`
-      );
-    } catch (error) {
-      console.error("Erro ao restaurar backup:", error);
-      window.alert(
-        "Não foi possível restaurar o backup. Os dados atuais foram mantidos."
-      );
-    }
-  }
-
-  function importBackup(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    if (!safeToSave) {
-      window.alert(
-        "A importação está bloqueada enquanto o armazenamento estiver em modo de proteção."
-      );
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-      try {
-        const content = String(reader.result || "");
-        const parsed: unknown = JSON.parse(content);
-
-        let records: unknown;
-
-        if (Array.isArray(parsed)) {
-          records = parsed;
-        } else if (
-          parsed &&
-          typeof parsed === "object" &&
-          "transactions" in parsed
-        ) {
-          records = parsed.transactions;
-        }
-
-        if (!Array.isArray(records)) {
-          throw new Error("Formato de arquivo não reconhecido.");
-        }
-
-        const validRecords = records.filter(isValidTransaction);
-        const invalidRecords = records.filter(
-          (item) => !isValidTransaction(item)
-        );
-
-        if (validRecords.length === 0 && records.length > 0) {
-          throw new Error(
-            "Nenhum lançamento válido foi encontrado no arquivo."
-          );
-        }
-
-        if (
-          !(await confirm({ title: "Substituir lançamentos", message: `Foram encontrados ${validRecords.length} lançamento(s) válido(s) e ${invalidRecords.length} registro(s) inválido(s). Deseja substituir os dados atuais?`, confirmLabel: "Substituir", destructive: true }))
-        ) {
-          return;
-        }
-
-        const currentData =
-          window.localStorage.getItem(STORAGE_KEY) ?? "[]";
-
-        createBackup(currentData);
-
-        if (invalidRecords.length > 0) {
-          window.localStorage.setItem(
-            INVALID_KEY,
-            JSON.stringify({
-              createdAt: new Date().toISOString(),
-              records: invalidRecords,
-            })
-          );
-        }
-
-        window.localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(validRecords)
-        );
-
-        setTransactions(validRecords);
-        setInvalidCount(invalidRecords.length);
-        setStorageError(null);
-        setBackupAvailable(true);
-
-        window.alert(
-          `Importação concluída. ${validRecords.length} lançamento(s) recuperado(s).`
-        );
-      } catch (error) {
-        console.error("Erro ao importar backup:", error);
-        window.alert(
-          "Não foi possível importar o arquivo. Os dados atuais foram preservados."
-        );
-      } finally {
-        event.target.value = "";
-      }
-    };
-
-    reader.onerror = () => {
-      window.alert("Não foi possível ler o arquivo selecionado.");
-      event.target.value = "";
-    };
-
-    reader.readAsText(file);
-  }
-
   function movementIcon(item: Transaction) {
     if (item.type === "Receita") return "↗";
     if (item.type === "Despesa") return "↙";
@@ -1695,41 +1493,7 @@ export default function Page() {
           </div>
         </section>
 
-        <section className="finance-backup-panel">
-          <div>
-            <strong>Banco de dados e segurança</strong>
-            <span>
-              {syncStatus}. Os lançamentos são armazenados na nuvem por usuário.
-              O backup local antigo continua disponível para recuperação.
-            </span>
-          </div>
 
-          <div className="finance-backup-actions">
-            <button
-              type="button"
-              onClick={exportBackup}
-            >
-              Exportar backup
-            </button>
-
-            <label className="finance-import-button">
-              Importar backup
-              <input
-                type="file"
-                accept=".json,application/json"
-                onChange={importBackup}
-              />
-            </label>
-
-            <button
-              type="button"
-              onClick={restoreLocalBackup}
-              disabled={!backupAvailable}
-            >
-              Restaurar último backup
-            </button>
-          </div>
-        </section>
 
         <form
           className="finance-form finance-form-compact"
