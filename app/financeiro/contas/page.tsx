@@ -443,11 +443,12 @@ export default function ContasFinanceirasPage() {
         <div>
           <strong>Importante</strong>
           <p>
-            Nesta etapa, o sistema registra os saldos iniciais. O
-            saldo disponível será calculado posteriormente,
-            considerando receitas, despesas, transferências,
-            aplicações e resgates efetivados. Os lançamentos
-            existentes não serão alterados.
+            Informe o saldo que já existe na conta no momento do
+            cadastro. Depois, o NEXO atualiza o saldo automaticamente:
+            receitas recebidas acrescentam valores, despesas pagas e
+            investimentos aplicados descontam valores, e transferências
+            realizadas retiram da conta de origem e acrescentam à conta
+            de destino. Lançamentos pendentes não alteram o saldo atual.
           </p>
         </div>
       </section>
