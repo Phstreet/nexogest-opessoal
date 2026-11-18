@@ -91,7 +91,7 @@ function backupLocalData() {
   URL.revokeObjectURL(url);
 }
 
-export default function NexoSyncManager() {
+export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boolean }) {
   const { session } = useNexoAuth();
   const [state, setState] = useState<SyncState>("local");
   const [pending, setPending] = useState<NexoSyncKey[]>([]);
@@ -281,7 +281,7 @@ export default function NexoSyncManager() {
     }
   }
 
-  if (!session) return null;
+  if (!session || hidePanel) return null;
 
   // Conflitos continuam sendo detectados e bloqueiam gravações automáticas,
   // mas não exibem mais o painel flutuante que interrompia a navegação.
