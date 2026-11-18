@@ -58,8 +58,8 @@ export default function DashboardForecast({
           <thead>
             <tr>
               <th>Mês</th>
-              <th>Receitas estimadas</th>
-              <th>Despesas estimadas</th>
+              <th>Receitas previstas</th>
+              <th>Despesas previstas</th>
               <th>Resultado projetado</th>
               <th>Situação</th>
             </tr>
@@ -73,7 +73,7 @@ export default function DashboardForecast({
 
                   {month.estimated && (
                     <small className="estimate-label">
-                      Estimativa
+                      Com estimativa
                     </small>
                   )}
                 </td>
@@ -145,10 +145,12 @@ export default function DashboardForecast({
       </div>
 
       <p className="forecast-disclaimer">
-        As projeções utilizam lançamentos futuros cadastrados. Quando não
-        existem lançamentos para determinado mês, o painel utiliza a média
-        dos meses anteriores como estimativa. Não representa garantia de
-        receita ou despesa futura.
+        A projeção considera separadamente as receitas e despesas futuras já
+        cadastradas. Quando não há lançamento de uma dessas naturezas no mês,
+        utiliza a média dos três últimos meses completos com movimentação.
+        Investimentos e reservas programados também são descontados do
+        resultado. O resultado apresentado é mensal, não o saldo acumulado
+        da conta, e não representa garantia de receita ou despesa futura.
       </p>
     </section>
   );
