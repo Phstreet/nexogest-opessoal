@@ -14,6 +14,7 @@ import {
 } from "@/lib/routine/types";
 import Link from "next/link";
 import AppLayout from "../components/layout/AppLayout";
+import DailyCenter from "@/components/dashboard/DailyCenter";
 
 type Tab = "dashboard" | "rotina";
 
@@ -44,9 +45,12 @@ export default function Home() {
   // Mantém o resumo alinhado ao Dashboard Financeiro:
   // somente valores efetivamente recebidos e pagos no mês atual.
   const {
+    transactions: financeTransactions,
     currentConfirmedRevenue: income,
     currentConfirmedExpenses: expenses,
     currentBalance: balance,
+    loaded: financeLoaded,
+    error: financeError,
   } = useFinanceDashboard();
 
   const {
@@ -58,9 +62,7 @@ export default function Home() {
 
   const now = new Date();
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const todayTasks = tasks.filter((task) => !task.done && task.date === todayKey);
   const activeHabits = habits.filter((habit) => habit.active);
-  const completedHabitsToday = activeHabits.filter((habit) => habit.completedDates.includes(todayKey));
 
   function toggleHabitToday(id: number) {
     if (!habitsSafeToSave) return;
@@ -252,311 +254,25 @@ export default function Home() {
         {/* VISÃO GERAL */}
 
         {tab === "dashboard" && (
-          <>
-            <section className="hero-panel">
-              <div className="hero-content">
-                <div className="eyebrow">
-                  <span className="eyebrow-line" />
-                  SEU ESPAÇO DE ORGANIZAÇÃO
-                </div>
-
-                <h2>
-                  Você no controle
-                  <br />
-                  da sua <span>vida.</span>
-                </h2>
-
-                <p>
-                  Planeje com clareza, organize suas prioridades
-                  <br className="desktop-break" />
-                  e construa seus resultados todos os dias.
-                </p>
-
-                <Link
-                  href="/financeiro"
-                  className="hero-button"
-                >
-                  Acessar meu financeiro <span>↗</span>
-                </Link>
-              </div>
-
-              <div className="hero-art" aria-hidden="true">
-                <div className="hero-orbit orbit-one" />
-                <div className="hero-orbit orbit-two" />
-                <div className="hero-mountain mountain-back" />
-                <div className="hero-mountain mountain-front" />
-                <div className="hero-glow" />
-              </div>
-
-              <div className="hero-index">
-                01 — CONTROLE
-              </div>
-            </section>
-
-            <div className="section-heading">
-              <div>
-                <div className="section-kicker">
-                  ACOMPANHAMENTO
-                </div>
-
-                <h2>Resumo financeiro</h2>
-              </div>
-
-              <Link
-                href="/financeiro"
-                className="text-link"
-              >
-                Ver movimentações <span>→</span>
-              </Link>
-            </div>
-
-            <section className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-top">
-                  <span>Receitas</span>
-                  <span className="metric-icon">↗</span>
-                </div>
-
-                <div className="metric-value">
-                  {money(income)}
-                </div>
-
-                <div className="metric-caption">
-                  Valor efetivamente recebido neste mês
-                </div>
-
-                <div className="metric-line silver-line" />
-              </div>
-
-              <div className="metric-card">
-                <div className="metric-top">
-                  <span>Despesas</span>
-                  <span className="metric-icon">↙</span>
-                </div>
-
-                <div className="metric-value">
-                  {money(expenses)}
-                </div>
-
-                <div className="metric-caption">
-                  Valor efetivamente pago neste mês
-                </div>
-
-                <div className="metric-line dark-line" />
-              </div>
-
-              <div className="metric-card featured-metric">
-                <div className="metric-top">
-                  <span>Saldo disponível</span>
-                  <span className="metric-icon">◈</span>
-                </div>
-
-                <div className="metric-value">
-                  {money(balance)}
-                </div>
-
-                <div className="metric-caption">
-                  Resultado realizado do mês
-                </div>
-
-                <div className="metric-line silver-line" />
-              </div>
-
-              <div className="metric-card">
-                <div className="metric-top">
-                  <span>Produtividade</span>
-                  <span className="metric-icon">✓</span>
-                </div>
-
-                <div className="metric-value">
-                  {completedTasks}
-                  <small> / {tasks.length}</small>
-                </div>
-
-                <div className="metric-caption">
-                  Tarefas concluídas
-                </div>
-
-                <div className="metric-line light-line" />
-              </div>
-            </section>
-
-            <section className="panel task-form-panel daily-quick-entry">
-              <div className="section-kicker">CADASTRO RÁPIDO</div>
-              <h3>O que você precisa resolver hoje?</h3>
-              <div className="task-entry">
-                <input
-                  className="form-input"
-                  placeholder="Digite uma tarefa para hoje..."
-                  value={taskName}
-                  onChange={(event) => setTaskName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") addTask(todayKey);
-                  }}
-                  aria-label="Nova tarefa para hoje"
-                />
-                <button type="button" className="primary-button" onClick={() => addTask(todayKey)}>
-                  + Adicionar à agenda de hoje
-                </button>
-              </div>
-              <div className="daily-quick-links">
-                <Link href="/financeiro">Nova movimentação financeira ↗</Link>
-                <Link href="/rotina/agenda">Organizar agenda ↗</Link>
-                <Link href="/rotina/habitos">Acompanhar hábitos ↗</Link>
-              </div>
-            </section>
-
-            <section className="dashboard-bottom daily-overview-grid">
-              <div className="panel activity-panel">
-                <div className="panel-heading">
-                  <div>
-                    <div className="section-kicker">AGENDA DE HOJE</div>
-                    <h3>Atividades programadas</h3>
-                  </div>
-                  <Link href="/rotina/agenda" className="small-outline-button">Abrir agenda</Link>
-                </div>
-                {todayTasks.length ? (
-                  <div className="activity-list">
-                    {todayTasks.slice(0, 5).map((task) => (
-                      <div className="activity-item" key={task.id}>
-                        <span className="activity-bullet" />
-                        <span>{task.time ? `${task.time} · ` : ""}{task.description}</span>
-                        <button type="button" className="activity-check" onClick={() => toggleTask(task.id)} aria-label={`Concluir ${task.description}`}>✓</button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <p>Nenhuma tarefa programada para hoje.</p>
-                    <Link href="/rotina/agenda">Organizar minha agenda</Link>
-                  </div>
-                )}
-              </div>
-
-              <div className="panel summary-panel">
-                <div className="panel-heading">
-                  <div>
-                    <div className="section-kicker">HÁBITOS</div>
-                    <h3>Meu progresso de hoje</h3>
-                  </div>
-                  <Link href="/rotina/habitos" className="small-outline-button">Ver hábitos</Link>
-                </div>
-                {activeHabits.length ? (
-                  <>
-                    <div className="progress-label">
-                      <span>{completedHabitsToday.length} de {activeHabits.length} concluídos</span>
-                      <strong>{Math.round((completedHabitsToday.length / activeHabits.length) * 100)}%</strong>
-                    </div>
-                    <div className="progress-track">
-                      <div className="progress-fill" style={{ width: `${Math.round((completedHabitsToday.length / activeHabits.length) * 100)}%` }} />
-                    </div>
-                    <div className="activity-list">
-                      {activeHabits.slice(0, 5).map((habit) => {
-                        const completed = habit.completedDates.includes(todayKey);
-                        return (
-                          <div className="activity-item" key={habit.id}>
-                            <span className="activity-bullet" />
-                            <span className={completed ? "daily-completed" : ""}>{habit.name}</span>
-                            <button type="button" className="activity-check" onClick={() => toggleHabitToday(habit.id)} aria-label={completed ? `Desmarcar ${habit.name}` : `Concluir ${habit.name}`}>{completed ? "✓" : "○"}</button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : (
-                  <div className="empty-state">
-                    <p>Você ainda não cadastrou hábitos.</p>
-                    <Link href="/rotina/habitos">Criar primeiro hábito</Link>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="dashboard-bottom">
-              <div className="panel activity-panel">
-                <div className="panel-heading">
-                  <div>
-                    <div className="section-kicker">
-                      ORGANIZAÇÃO
-                    </div>
-
-                    <h3>Próximas atividades</h3>
-                  </div>
-
-                  <Link
-                    href="/rotina"
-                    className="small-outline-button"
-                  >
-                    Ver todas
-                  </Link>
-                </div>
-
-                {pendingTasks.length > 0 ? (
-                  <div className="activity-list">
-                    {pendingTasks.slice(0, 5).map((task) => (
-                      <div
-                        className="activity-item"
-                        key={task.id}
-                      >
-                        <span className="activity-bullet" />
-
-                        <span>{task.description}</span>
-
-                        <button
-                          type="button"
-                          className="activity-check"
-                          onClick={() => toggleTask(task.id)}
-                          title="Concluir tarefa"
-                          aria-label={`Concluir ${task.description}`}
-                        >
-                          ✓
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <span>✓</span>
-
-                    <p>Nenhuma tarefa pendente.</p>
-
-                    <Link href="/rotina">
-                      Adicionar atividade
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <div className="panel summary-panel">
-                <div className="section-kicker">
-                  SEU PROGRESSO
-                </div>
-
-                <h3>
-                  Consistência gera resultados.
-                </h3>
-
-                <p>
-                  Cada tarefa concluída e cada decisão financeira
-                  consciente aproximam você dos seus objetivos.
-                </p>
-
-                <div className="progress-track">
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: `${progress}%`,
-                    }}
-                  />
-                </div>
-
-                <div className="progress-label">
-                  <span>Atividades concluídas</span>
-                  <strong>{progress}%</strong>
-                </div>
-              </div>
-            </section>
-          </>
+          <DailyCenter
+            tasks={tasks}
+            habits={habits}
+            transactions={financeTransactions}
+            financeLoaded={financeLoaded}
+            financeError={financeError}
+            income={income}
+            expenses={expenses}
+            balance={balance}
+            onToggleTask={toggleTask}
+            onToggleHabit={toggleHabitToday}
+            onAddTask={() => addTask(todayKey)}
+            taskName={taskName}
+            onTaskNameChange={setTaskName}
+            canSaveTasks={safeToSave}
+            canSaveHabits={habitsSafeToSave}
+            taskError={storageError}
+            habitError={habitsStorageError}
+          />
         )}
 
         {/* MINHA ROTINA */}
