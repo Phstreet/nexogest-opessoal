@@ -110,12 +110,12 @@ export function useCloudFinanceCollections() {
         revisions.current.set(key, result.current_revision ?? (revisions.current.get(key) ?? 0) + 1);
         setState((current) => ({
           ...current,
-          ...(key === "nexo_transactions" ? { transactions: payload } : {}),
-          ...(key === "nexo_accounts" ? { accounts: payload } : {}),
-          ...(key === "nexo_reserves" ? { reserves: payload } : {}),
-          ...(key === "nexo_reserve_movements" ? { reserveMovements: payload } : {}),
-          ...(key === "nexo_planning_budgets" ? { planningBudgets: payload } : {}),
-          ...(key === "nexo_planning_goals" ? { financialGoals: payload } : {}),
+          ...(key === "nexo_transactions" ? { transactions: payload as Transaction[] } : {}),
+          ...(key === "nexo_accounts" ? { accounts: payload as Account[] } : {}),
+          ...(key === "nexo_reserves" ? { reserves: payload as Reserve[] } : {}),
+          ...(key === "nexo_reserve_movements" ? { reserveMovements: payload as ReserveMovement[] } : {}),
+          ...(key === "nexo_planning_budgets" ? { planningBudgets: payload as unknown[] } : {}),
+          ...(key === "nexo_planning_goals" ? { financialGoals: payload as unknown[] } : {}),
         }));
       } finally {
         setSaving(false);
