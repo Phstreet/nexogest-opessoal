@@ -1,6 +1,7 @@
 "use client";
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
@@ -9,7 +10,6 @@ import type { Account, Transaction } from "@/lib/finance/types";
 import { getPrimaryAccount } from "@/lib/finance/accounts";
 import {
   fetchRemoteCollections,
-  getCurrentSession,
   saveRemoteCollection,
 } from "@/lib/supabase/client";
 
@@ -603,6 +603,7 @@ function downloadJson(filename: string, content: string) {
 
 export default function Page() {
   const confirm = useNexoConfirm();
+  const { session, loading: authLoading } = useNexoAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [registeredAccounts, setRegisteredAccounts] = useState<Account[]>([]);
   const [description, setDescription] = useState("");
@@ -623,7 +624,7 @@ export default function Page() {
   const [loaded, setLoaded] = useState(false);
   const [safeToSave, setSafeToSave] = useState(false);
   const [invalidCount, setInvalidCount] = useState(0);
-  const [storageError, setStorageError] = useState<string | null>(null);
+  const [, setStorageError] = useState<string | null>(null);
   const [backupAvailable, setBackupAvailable] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Conectando ao banco de dados...");
   const revisionRef = useRef(0);
@@ -635,6 +636,10 @@ export default function Page() {
     let active = true;
 
     async function initializeFinanceData() {
+      if (authLoading) return;
+
+      setLoaded(false);
+      remoteReadyRef.current = false;
       setDate(localDate());
 
       const localResult = loadTransactionsSafely();
@@ -646,16 +651,12 @@ export default function Page() {
       setBackupAvailable(Boolean(window.localStorage.getItem(BACKUP_KEY)));
 
       try {
-        const session = await getCurrentSession();
-
         if (!active) return;
 
         if (!session) {
           setTransactions(localResult.transactions);
           setSafeToSave(false);
-          setStorageError(
-            "Entre na sua conta NEXO para carregar e salvar os lançamentos no banco de dados. Os dados antigos deste navegador foram preservados."
-          );
+          setStorageError(null);
           setSyncStatus("Aguardando autenticação");
           setLoaded(true);
           return;
@@ -804,7 +805,7 @@ export default function Page() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authLoading, session]);
 
   useEffect(() => {
     if (!loaded || !safeToSave || !remoteReadyRef.current) return;
@@ -1516,32 +1517,6 @@ export default function Page() {
             </p>
           </div>
         </section>
-
-        {storageError && (
-          <section className="finance-storage-alert" role="alert">
-            <strong>Proteção dos dados ativada</strong>
-            <p>{storageError}</p>
-            <span>
-              Não atualize nem limpe os dados do navegador antes de
-              verificar as opções de recuperação.
-            </span>
-
-            <div className="finance-storage-actions">
-              <button type="button" onClick={exportBackup}>
-                Exportar dados atuais
-              </button>
-
-              {backupAvailable && (
-                <button
-                  type="button"
-                  onClick={restoreLocalBackup}
-                >
-                  Restaurar último backup
-                </button>
-              )}
-            </div>
-          </section>
-        )}
 
         {invalidCount > 0 && (
           <section className="finance-storage-warning">
