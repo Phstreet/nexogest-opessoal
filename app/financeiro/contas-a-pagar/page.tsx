@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
@@ -104,6 +106,7 @@ function getStatus(transaction: Transaction) {
 }
 
 export default function ContasAPagarPage() {
+  const confirm = useNexoConfirm();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
@@ -450,12 +453,8 @@ export default function ContasAPagarPage() {
 <button
                             type="button"
                             className="payable-action-button"
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                `Confirma a quitação do saldo restante de "${item.description}" no valor de ${formatCurrency(
-                                  getOpenAmount(item)
-                                )}?`
-                              );
+                            onClick={async () => {
+                              const confirmed = await confirm({ title: "Confirmar recebimento", message: `Confirma a quitação do saldo restante de "${item.description}" no valor de ${formatCurrency(getOpenAmount(item))}?`, confirmLabel: "Confirmar" });
 
                               if (confirmed) {
                                 updateStatus(item.id, "Pago");
@@ -469,10 +468,8 @@ export default function ContasAPagarPage() {
                           <button
                             type="button"
                             className="payable-undo-button"
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                "Deseja voltar esta conta para Pendente?"
-                              );
+                            onClick={async () => {
+                              const confirmed = await confirm({ title: "Reabrir conta", message: "Deseja voltar esta conta para Pendente?", confirmLabel: "Reabrir" });
 
                               if (confirmed) {
                                 updateStatus(item.id, "Pendente");
