@@ -20,7 +20,7 @@ function getEffectiveAmount(transaction: Transaction): number {
   }
   if (transaction.type === "Receita") {
     if (status === "recebida" || status === "recebido") return amount;
-    if (status === "recebida parcialmente") {
+    if (status === "recebida parcialmente" || status === "parcial") {
       const settled = Number(transaction.settledAmount || 0);
       return Number.isFinite(settled) ? Math.min(Math.max(settled, 0), amount) : 0;
     }
@@ -28,7 +28,7 @@ function getEffectiveAmount(transaction: Transaction): number {
   }
   if (transaction.type === "Despesa") {
     if (status === "pago" || status === "paga") return amount;
-    if (status === "paga parcialmente") {
+    if (status === "paga parcialmente" || status === "parcial") {
       const settled = Number(transaction.settledAmount || 0);
       return Number.isFinite(settled) ? Math.min(Math.max(settled, 0), amount) : 0;
     }
