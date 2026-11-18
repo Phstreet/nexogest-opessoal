@@ -5,7 +5,6 @@ import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
-import type { Account } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
 
 type Transaction = {
