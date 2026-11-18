@@ -208,7 +208,12 @@ export default function NexoSyncManager() {
       else for (const item of NEXO_SYNC_KEYS) void saveChanged(item);
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key && (NEXO_SYNC_KEYS as readonly string[]).includes(event.key)) void saveChanged(event.key as NexoSyncKey);
+      if (event.key && (NEXO_SYNC_KEYS as readonly string[]).includes(event.key)) {
+        // Alterações recebidas por storage podem ser espelhos de gravações
+        // já confirmadas na nuvem. Reconsulta a revisão antes de comparar,
+        // em vez de tentar reenviar com uma revisão possivelmente antiga.
+        window.setTimeout(() => { void inspect(); }, 1200);
+      }
     };
     window.addEventListener("nexo:local-data-updated", handleLocalChange);
     window.addEventListener("storage", handleStorage);
