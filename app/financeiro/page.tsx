@@ -1235,20 +1235,62 @@ export default function Page() {
   }
 
   async function removeTransaction(id: number) {
-    if (!safeToSave) {
-      window.alert(
-        "A exclusão está bloqueada enquanto o armazenamento estiver em modo de proteção."
+    if (!safeToSave || !remoteReadyRef.current) {
+      setStorageError(
+        "A exclusão está temporariamente bloqueada porque os dados ainda não foram sincronizados. Atualize a tela para carregar a versão mais recente."
       );
+      setSyncStatus("Aguardando sincronização");
       return;
     }
 
-    if (!(await confirm({ title: "Excluir lançamento", message: "Deseja excluir este lançamento?", confirmLabel: "Excluir", destructive: true }))) {
-      return;
-    }
+    const transactionToRemove = transactions.find((item) => item.id === id);
+    if (!transactionToRemove) return;
 
-    setTransactions((current) =>
-      current.filter((item) => item.id !== id)
-    );
+    const accepted = await confirm({
+      title: "Excluir lançamento",
+      message: `Deseja excluir o lançamento "${transactionToRemove.description}"? Esta ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+
+    if (!accepted) return;
+
+    try {
+      // Aguarda qualquer gravação anterior para usar a revisão mais recente.
+      await saveQueueRef.current;
+
+      const latestTransactions = transactions.filter((item) => item.id !== id);
+      const result = await saveRemoteCollection(
+        STORAGE_KEY,
+        latestTransactions,
+        revisionRef.current
+      );
+
+      if (!result.saved) {
+        setSafeToSave(false);
+        setStorageError(
+          "O banco identificou uma alteração feita em outra sessão. Nenhum lançamento foi excluído. Atualize a página e tente novamente."
+        );
+        setSyncStatus("Conflito de sincronização");
+        return;
+      }
+
+      revisionRef.current =
+        result.current_revision ?? revisionRef.current + 1;
+      lastSavedPayloadRef.current = JSON.stringify(latestTransactions);
+      mirrorRemoteTransactions(latestTransactions);
+      setTransactions(latestTransactions);
+      setStorageError(null);
+      setSyncStatus("Lançamento excluído e sincronizado");
+    } catch (error) {
+      console.error("Não foi possível excluir o lançamento:", error);
+      setStorageError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível excluir o lançamento no banco de dados. Tente novamente."
+      );
+      setSyncStatus("Falha ao excluir lançamento");
+    }
   }
 
   function exportBackup() {
