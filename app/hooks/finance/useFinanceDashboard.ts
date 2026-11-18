@@ -3,12 +3,7 @@
 
 import { useMemo, useState } from "react";
 
-import type {
-  Account,
-  Transaction,
-  Reserve,
-  ReserveMovement,
-} from "@/lib/finance/types";
+import type { Transaction } from "@/lib/finance/types";
 
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { getAccountBalanceFrom } from "@/lib/finance/accounts";
