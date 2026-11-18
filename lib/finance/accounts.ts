@@ -497,8 +497,6 @@ export function getAccountBalanceFrom(
   account: Account,
   transactions: Transaction[]
 ): number {
-  const transactions = getTransactions();
-
   let balance = Number(account.initialBalance) || 0;
 
   for (const transaction of transactions) {
