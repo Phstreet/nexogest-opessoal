@@ -35,7 +35,6 @@ export default function MainNavigation() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [preferencesError, setPreferencesError] = useState("");
-  const preferencesRevisionRef = useRef(0);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,7 +65,6 @@ export default function MainNavigation() {
               typeof href === "string" && mainMenuItems.some((item) => item.href === href))
           : []);
         setCollapsed(payload.sidebarCollapsed === true);
-        preferencesRevisionRef.current = Number(row?.revision) || 0;
         setPreferencesError("");
       } catch (error) {
         if (active) setPreferencesError(error instanceof Error ? error.message : "Não foi possível carregar as preferências da nuvem.");
@@ -101,10 +99,8 @@ export default function MainNavigation() {
             typeof href === "string" && mainMenuItems.some((item) => item.href === href))
         : []);
       setCollapsed(payload.sidebarCollapsed === true);
-      preferencesRevisionRef.current = Number(current?.revision) || 0;
       throw new Error("As preferências foram alteradas em outro dispositivo. A versão mais recente foi carregada.");
     }
-    preferencesRevisionRef.current = result.current_revision ?? preferencesRevisionRef.current + 1;
     setPreferencesError("");
   }
 
