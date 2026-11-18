@@ -1,5 +1,7 @@
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 
@@ -600,6 +602,7 @@ function downloadJson(filename: string, content: string) {
 }
 
 export default function Page() {
+  const confirm = useNexoConfirm();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [registeredAccounts, setRegisteredAccounts] = useState<Account[]>([]);
   const [description, setDescription] = useState("");
@@ -1230,7 +1233,7 @@ export default function Page() {
     setDate(localDate());
   }
 
-  function removeTransaction(id: number) {
+  async function removeTransaction(id: number) {
     if (!safeToSave) {
       window.alert(
         "A exclusão está bloqueada enquanto o armazenamento estiver em modo de proteção."
@@ -1238,7 +1241,7 @@ export default function Page() {
       return;
     }
 
-    if (!window.confirm("Deseja excluir este lançamento?")) {
+    if (!(await confirm({ title: "Excluir lançamento", message: "Deseja excluir este lançamento?", confirmLabel: "Excluir", destructive: true }))) {
       return;
     }
 
@@ -1276,7 +1279,7 @@ export default function Page() {
     }
   }
 
-  function restoreLocalBackup() {
+  async function restoreLocalBackup() {
     const savedBackup =
       window.localStorage.getItem(BACKUP_KEY);
 
@@ -1286,9 +1289,7 @@ export default function Page() {
     }
 
     if (
-      !window.confirm(
-        "Deseja restaurar o último backup? Os lançamentos atuais serão substituídos pela versão salva no backup."
-      )
+      !(await confirm({ title: "Restaurar backup", message: "Deseja restaurar o último backup? Os lançamentos atuais serão substituídos pela versão salva no backup.", confirmLabel: "Restaurar", destructive: true }))
     ) {
       return;
     }
@@ -1365,7 +1366,7 @@ export default function Page() {
 
     const reader = new FileReader();
 
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const content = String(reader.result || "");
         const parsed: unknown = JSON.parse(content);
@@ -1398,9 +1399,7 @@ export default function Page() {
         }
 
         if (
-          !window.confirm(
-            `Foram encontrados ${validRecords.length} lançamento(s) válido(s) e ${invalidRecords.length} registro(s) inválido(s). Deseja substituir os dados atuais?`
-          )
+          !(await confirm({ title: "Substituir lançamentos", message: `Foram encontrados ${validRecords.length} lançamento(s) válido(s) e ${invalidRecords.length} registro(s) inválido(s). Deseja substituir os dados atuais?`, confirmLabel: "Substituir", destructive: true }))
         ) {
           return;
         }
