@@ -83,7 +83,6 @@ export default function ContasFinanceirasPage() {
   const [initialBalance, setInitialBalance] = useState("");
   const [filter, setFilter] = useState("Todas");
   const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const revisionRef = useRef(0);
 
@@ -129,21 +128,16 @@ export default function ContasFinanceirasPage() {
   async function persistAccounts(next: Account[]) {
     if (!session) throw new Error("Entre na sua conta para salvar.");
     if (!loaded || loadError) throw new Error(loadError || "Aguarde o carregamento das contas antes de salvar.");
-    setSaving(true);
-    try {
-      const result = await saveRemoteCollection("nexo_accounts", next, revisionRef.current);
-      if (!result.saved) {
-        const latest = await fetchRemoteCollections();
-        const row = latest.find((item) => item.data_key === "nexo_accounts");
-        revisionRef.current = Number(row?.revision) || 0;
-        if (row && Array.isArray(row.payload)) setAccounts(row.payload as Account[]);
-        throw new Error("As contas foram alteradas em outro dispositivo. A versão mais recente foi carregada; revise e tente novamente.");
-      }
-      revisionRef.current = result.current_revision ?? revisionRef.current + 1;
-      setAccounts(next);
-    } finally {
-      setSaving(false);
+    const result = await saveRemoteCollection("nexo_accounts", next, revisionRef.current);
+    if (!result.saved) {
+      const latest = await fetchRemoteCollections();
+      const row = latest.find((item) => item.data_key === "nexo_accounts");
+      revisionRef.current = Number(row?.revision) || 0;
+      if (row && Array.isArray(row.payload)) setAccounts(row.payload as Account[]);
+      throw new Error("As contas foram alteradas em outro dispositivo. A versão mais recente foi carregada; revise e tente novamente.");
     }
+    revisionRef.current = result.current_revision ?? revisionRef.current + 1;
+    setAccounts(next);
   }
 
   const activeAccounts = useMemo(() => accounts.filter((account) => account.active), [accounts]);
