@@ -1234,6 +1234,55 @@ export default function Page() {
     setDate(localDate());
   }
 
+  async function updateTransactionStatus(item: Transaction) {
+    const isIncome = item.type === "Receita";
+    const isExpense = item.type === "Despesa";
+    if (!isIncome && !isExpense) return;
+
+    if (!safeToSave || !remoteReadyRef.current) {
+      setSyncStatus("Aguardando sincronização para alterar o lançamento");
+      return;
+    }
+
+    const nextStatus =
+      item.status === "Pendente" || !item.status
+        ? isIncome ? "Recebida" : "Pago"
+        : "Pendente";
+    const actionLabel = nextStatus === "Pendente" ? "Reabrir" : isIncome ? "Marcar como recebida" : "Marcar como pago";
+    const accepted = await confirm({
+      title: actionLabel,
+      message: nextStatus === "Pendente"
+        ? `Deseja reabrir "${item.description}" e voltar o lançamento para Pendente?`
+        : `Confirma que "${item.description}" foi ${isIncome ? "recebido" : "pago"} no valor de ${money(Number(item.amount || 0))}?`,
+      confirmLabel: actionLabel,
+      destructive: nextStatus === "Pendente",
+    });
+    if (!accepted) return;
+
+    try {
+      await saveQueueRef.current;
+      const updated = transactions.map((current) =>
+        current.id === item.id
+          ? { ...current, status: nextStatus, settledAmount: nextStatus === "Pendente" ? 0 : Number(current.amount || 0) }
+          : current
+      );
+      const result = await saveRemoteCollection(STORAGE_KEY, updated, revisionRef.current);
+      if (!result.saved) {
+        setSafeToSave(false);
+        setSyncStatus("Conflito de sincronização — atualize a tela");
+        return;
+      }
+      revisionRef.current = result.current_revision ?? revisionRef.current + 1;
+      lastSavedPayloadRef.current = JSON.stringify(updated);
+      mirrorRemoteTransactions(updated);
+      setTransactions(updated);
+      setSyncStatus(nextStatus === "Pendente" ? "Lançamento reaberto" : "Status atualizado e sincronizado");
+    } catch (error) {
+      console.error("Erro ao atualizar status do lançamento:", error);
+      setSyncStatus("Não foi possível atualizar o status");
+    }
+  }
+
   async function removeTransaction(id: number) {
     if (!safeToSave || !remoteReadyRef.current) {
       setStorageError(
@@ -2017,6 +2066,19 @@ export default function Page() {
                   </strong>
 
                   <div className="finance-item-actions">
+                    {(item.type === "Receita" || item.type === "Despesa") && (
+                      <button
+                        type="button"
+                        className="finance-edit"
+                        onClick={() => updateTransactionStatus(item)}
+                        disabled={!safeToSave}
+                        aria-label={item.status === "Pendente" || !item.status ? (item.type === "Receita" ? "Marcar recebida" : "Marcar pago") : "Reabrir lançamento"}
+                      >
+                        {item.status === "Pendente" || !item.status
+                          ? item.type === "Receita" ? "Recebido" : "Pago"
+                          : "Reabrir"}
+                      </button>
+                    )}
                     {(item.type === "Receita" || item.type === "Despesa") && (
                       <button
                         type="button"
