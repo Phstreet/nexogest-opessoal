@@ -80,7 +80,7 @@ export async function saveRemoteCollection(
 
 export const NEXO_SYNC_KEYS = [
   "nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements",
-  "nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile",
+  "nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile", "nexo_planning_budgets", "nexo_planning_goals",
 ] as const;
 
 export type NexoSyncKey = (typeof NEXO_SYNC_KEYS)[number];
@@ -88,5 +88,5 @@ export type NexoSyncKey = (typeof NEXO_SYNC_KEYS)[number];
 // Coleções que ainda dependem do mecanismo legado. Tarefas e hábitos
 // agora são carregados e gravados diretamente no Supabase pelo hook próprio.
 export const NEXO_LEGACY_SYNC_KEYS = NEXO_SYNC_KEYS.filter(
-  (key) => !["nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile"].includes(key)
-) as readonly Exclude<NexoSyncKey, "nexo_tasks" | "nexo_habits">[];
+  (key) => !["nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile", "nexo_planning_budgets", "nexo_planning_goals"].includes(key)
+) as readonly Exclude<NexoSyncKey, "nexo_tasks" | "nexo_habits" | "nexo_preferences" | "nexo_profile" | "nexo_planning_budgets" | "nexo_planning_goals">[];
