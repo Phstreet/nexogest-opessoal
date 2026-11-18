@@ -82,6 +82,7 @@ function preserveConflictVersion(userId: string, key: NexoSyncKey, version: "loc
 
 export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boolean }) {
   const { session } = useNexoAuth();
+  const authenticatedUserId = session?.user.id ?? null;
   const [state, setState] = useState<SyncState>("local");
   const [pending, setPending] = useState<NexoSyncKey[]>([]);
   const [issues, setIssues] = useState<SyncIssue[]>([]);
@@ -92,6 +93,7 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
   const busy = useRef(false);
   const initialized = useRef(false);
   const autoMigrationAttempts = useRef(new Set<string>());
+  const migrateLocalRef = useRef<() => Promise<void>>(async () => undefined);
 
   const inspect = useCallback(async () => {
     if (!session || busy.current) return;
@@ -160,7 +162,7 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
   }, [session, inspect]);
 
   useEffect(() => {
-    if (!session) {
+    if (!authenticatedUserId) {
       autoMigrationAttempts.current.clear();
       return;
     }
@@ -178,8 +180,8 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
     // Só envia coleções locais quando a inspeção confirmou que elas ainda
     // não existem na nuvem. A revisão zero impede sobrescrever dados remotos.
     autoMigrationAttempts.current.add(pendingSignature);
-    void migrateLocal();
-  }, [session?.user.id, state, pending]);
+    void migrateLocalRef.current();
+  }, [authenticatedUserId, state, pending]);
 
   const saveChanged = useCallback(async (key: NexoSyncKey) => {
     if (!session || !initialized.current || busy.current || issues.some((item) => item.key === key)) return;
@@ -260,6 +262,8 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
       busy.current = false;
     }
   }
+
+  migrateLocalRef.current = migrateLocal;
 
   async function resolveIssue(issue: SyncIssue, choice: "cloud" | "local") {
     if (!session || busy.current) return;
