@@ -33,7 +33,7 @@ const EMPTY_PROFILE: Profile = {
 function normalizeProfile(value: unknown): Profile {
   if (!value || typeof value !== "object" || Array.isArray(value)) return EMPTY_PROFILE;
   const data = value as Record<string, unknown>;
-  const fullName = typeof data.fullName === "string" ? data.fullName : "";
+  const fullName = typeof data.fullName === "string" ? data.fullName : typeof data.displayName === "string" ? data.displayName : "";
   return {
     fullName,
     sex: typeof data.sex === "string" ? data.sex : "",
