@@ -106,7 +106,7 @@ function getStatus(transaction: Transaction) {
 
 export default function ContasAReceberPage() {
   const confirm = useNexoConfirm();
-  const { transactions, accounts, loaded: cloudLoaded, saveTransactions } = useCloudFinanceCollections();
+  const { transactions, accounts, loaded: cloudLoaded, error: cloudError, saveTransactions } = useCloudFinanceCollections();
   const registeredAccounts = useMemo(() => accounts.filter((account) => account.active).sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary))), [accounts]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
@@ -286,6 +286,7 @@ export default function ContasAReceberPage() {
 
   return (
     <div className="content receivable-content-page">
+      {cloudError && <div role="alert" className="finance-cloud-error">{cloudError}</div>}
       <div className="receivable-intro">
         <div>
           <p>
