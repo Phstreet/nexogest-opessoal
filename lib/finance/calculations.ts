@@ -1,6 +1,5 @@
 import type { Account, FinancialSummary, Reserve, ReserveMovement, Transaction } from "./types";
 import { getTotalAccountsBalance } from "./accounts";
-import { getTotalReserveBalance } from "./reserves";
 
 function normalizeStatus(item: Transaction): string {
   return (item.status ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
