@@ -8,6 +8,7 @@ import type { FormEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
+import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
@@ -327,120 +328,6 @@ function getNextTransactionId(transactions: Transaction[]) {
   return id;
 }
 
-function addMonthsToDate(value: string, months: number) {
-  const [year, month, day] = value.split("-").map(Number);
-  const targetMonth = new Date(year, month - 1 + months, 1);
-  const lastDay = new Date(
-    targetMonth.getFullYear(),
-    targetMonth.getMonth() + 1,
-    0
-  ).getDate();
-  const safeDay = Math.min(day, lastDay);
-
-  return [
-    targetMonth.getFullYear(),
-    String(targetMonth.getMonth() + 1).padStart(2, "0"),
-    String(safeDay).padStart(2, "0"),
-  ].join("-");
-}
-
-function hasSameMonthlySeries(
-  first: Transaction,
-  second: Transaction
-) {
-  return (
-    first.type === second.type &&
-    (first.type === "Receita" || first.type === "Despesa") &&
-    first.description.trim().toLocaleLowerCase("pt-BR") ===
-      second.description.trim().toLocaleLowerCase("pt-BR") &&
-    first.amount === second.amount &&
-    (first.category || "") === (second.category || "") &&
-    (first.subcategory || "") === (second.subcategory || "") &&
-    (first.account || "") === (second.account || "") &&
-    (first.paymentMethod || "") === (second.paymentMethod || "")
-  );
-}
-
-/**
- * Completa recorrências mensais antigas sem duplicar competências existentes.
- * Os registros já existentes são vinculados ao mesmo grupo; somente meses
- * ausentes são criados. A função é idempotente: após a primeira execução,
- * recurrenceGroupId impede que a mesma série seja processada novamente.
- */
-function synchronizeMonthlyRecurrences(
-  transactions: Transaction[]
-): Transaction[] {
-  const synchronized = transactions.map((item) => ({ ...item }));
-  const orderedCandidates = [...synchronized]
-    .filter(
-      (item) =>
-        item.recurrence === "Mensal" &&
-        (item.type === "Receita" || item.type === "Despesa") &&
-        !item.recurrenceGroupId &&
-        item.status !== "Cancelada" &&
-        Boolean(item.date && isValidDate(item.date))
-    )
-    .sort((a, b) => {
-      const dateOrder = (a.date || "").localeCompare(b.date || "");
-      return dateOrder || a.id - b.id;
-    });
-
-  for (const candidate of orderedCandidates) {
-    const rootIndex = synchronized.findIndex(
-      (item) => item.id === candidate.id
-    );
-    if (rootIndex < 0 || synchronized[rootIndex].recurrenceGroupId) {
-      continue;
-    }
-
-    const root = synchronized[rootIndex];
-    if (!root.date) continue;
-
-    const recurrenceGroupId = "mensal-" + root.id;
-    synchronized[rootIndex] = {
-      ...root,
-      recurrenceGroupId,
-    };
-
-    for (let monthOffset = 1; monthOffset <= 3; monthOffset += 1) {
-      const expectedDate = addMonthsToDate(root.date, monthOffset);
-      const existingIndex = synchronized.findIndex(
-        (item) =>
-          item.id !== root.id &&
-          item.date === expectedDate &&
-          item.recurrence === "Mensal" &&
-          (item.recurrenceGroupId === undefined ||
-            item.recurrenceGroupId === recurrenceGroupId) &&
-          item.status !== "Cancelada" &&
-          hasSameMonthlySeries(root, item)
-      );
-
-      if (existingIndex >= 0) {
-        synchronized[existingIndex] = {
-          ...synchronized[existingIndex],
-          recurrenceGroupId,
-        };
-        continue;
-      }
-
-      const nextId = getNextTransactionId(synchronized);
-      synchronized.push({
-        ...root,
-        id: nextId,
-        date: expectedDate,
-        status: "Pendente",
-        settledAmount: undefined,
-        recurrenceGroupId,
-        createdAt: new Date().toISOString(),
-        updatedAt: undefined,
-      });
-    }
-  }
-
-  return synchronized;
-}
-
-
 export default function Page() {
   const confirm = useNexoConfirm();
   const { session, loading: authLoading } = useNexoAuth();
@@ -531,7 +418,7 @@ export default function Page() {
         }
 
         const validTransactions = cloudTransactions as Transaction[];
-        const synchronized = synchronizeMonthlyRecurrences(validTransactions);
+        const synchronized = expandRecurringTransactions(validTransactions);
         revisionRef.current = Number(transactionRow?.revision) || 0;
         lastSavedPayloadRef.current = JSON.stringify(validTransactions);
         setTransactions(synchronized);
@@ -923,35 +810,11 @@ export default function Page() {
         )
       );
     } else if (
-      recurrence === "Mensal" &&
+      recurrence !== "Nenhuma" &&
       (type === "Receita" || type === "Despesa")
     ) {
-      const recurrenceGroupId = "mensal-" + newTransaction.id;
-      const monthlyTransactions: Transaction[] = [
-        { ...newTransaction, recurrenceGroupId },
-      ];
-      let nextId = getNextTransactionId([
-        ...transactions,
-        newTransaction,
-      ]);
-
-      for (let monthOffset = 1; monthOffset <= 3; monthOffset += 1) {
-        monthlyTransactions.push({
-          ...newTransaction,
-          id: nextId,
-          date: addMonthsToDate(date, monthOffset),
-          status: "Pendente",
-          settledAmount: undefined,
-          recurrenceGroupId,
-          createdAt: new Date().toISOString(),
-        });
-        nextId += 1;
-      }
-
-      setTransactions((current) => [
-        ...monthlyTransactions,
-        ...current,
-      ]);
+      const expanded = expandRecurringTransactions([...transactions, newTransaction]);
+      setTransactions(expanded);
     } else {
       setTransactions((current) => [
         newTransaction,
