@@ -531,9 +531,7 @@ export default function PlanejamentoFinanceiroPage() {
   }
 
   async function deleteBudget(id: number) {
-    const confirmed = window.confirm(
-      "Deseja realmente excluir este orçamento?"
-    );
+    const confirmed = await confirm({ title: "Excluir orçamento", message: "Deseja realmente excluir este orçamento?", confirmLabel: "Excluir", destructive: true });
 
     if (!confirmed) return;
 
@@ -626,9 +624,7 @@ export default function PlanejamentoFinanceiroPage() {
   }
 
   async function deleteGoal(id: number) {
-    const confirmed = window.confirm(
-      "Deseja realmente excluir esta meta financeira?"
-    );
+    const confirmed = await confirm({ title: "Excluir meta", message: "Deseja realmente excluir esta meta financeira?", confirmLabel: "Excluir", destructive: true });
 
     if (!confirmed) return;
 
