@@ -3,8 +3,8 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { getTransactions, getAccounts, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import { useMemo, useState, type FormEvent } from "react";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import type { Account } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
 
@@ -108,46 +108,15 @@ function getStatus(transaction: Transaction) {
 
 export default function ContasAPagarPage() {
   const confirm = useNexoConfirm();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [registeredAccounts, setRegisteredAccounts] = useState<Account[]>([]);
+  const { transactions, accounts, loaded: cloudLoaded, saveTransactions } = useCloudFinanceCollections();
+  const registeredAccounts = useMemo(() => accounts.filter((account) => account.active).sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary))), [accounts]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
-  const [loading, setLoading] = useState(true);
+  const loading = !cloudLoaded;
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState({ description: "", amount: "", settledAmount: "0", date: getToday(), category: "", subcategory: "", account: "", paymentMethod: "PIX", status: "Pendente", recurrence: "Nenhuma" });
 
-  const loadTransactions = useCallback(() => {
-    try {
-      setTransactions(getTransactions());
-    } catch {
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    function loadRegisteredAccounts() {
-      try {
-        setRegisteredAccounts(
-          getAccounts()
-            .filter((account) => account.active)
-            .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)))
-        );
-      } catch {
-        setRegisteredAccounts([]);
-      }
-    }
-
-    loadTransactions();
-    loadRegisteredAccounts();
-
-    return subscribeFinanceUpdates((key) => {
-      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) loadTransactions();
-      if (key === null || key === FINANCE_STORAGE_KEYS.accounts) loadRegisteredAccounts();
-    });
-  }, [loadTransactions]);
 
   const expenses = useMemo(
     () => transactions.filter((item) => item.type === "Despesa"),
@@ -236,18 +205,13 @@ export default function ContasAPagarPage() {
       });
   }, [expenses, search, filter]);
 
-  function updateStatus(id: number, newStatus: string) {
+  async function updateStatus(id: number, newStatus: string) {
     const updatedTransactions = transactions.map((item) =>
       item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Pago" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
-    if (!saveTransactions(updatedTransactions)) {
-      alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
-      loadTransactions();
-      return;
-    }
-
-    setTransactions(updatedTransactions);
+    try { await saveTransactions(updatedTransactions); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível salvar a alteração na nuvem."); }
   }
 
   function openExpenseEditor(item?: Transaction) {
@@ -269,7 +233,7 @@ export default function ContasAPagarPage() {
     setEditorOpen(true);
   }
 
-  function saveExpense(event: FormEvent<HTMLFormElement>) {
+  async function saveExpense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const amount = parseCurrencyInput(draft.amount);
     const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
@@ -280,10 +244,10 @@ export default function ContasAPagarPage() {
     const status = effectiveSettledAmount >= amount ? "Pago" : effectiveSettledAmount > 0 ? "Paga parcialmente" : draft.status === "Paga parcialmente" ? "Pendente" : draft.status;
     const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Despesa", amount, settledAmount: effectiveSettledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
     const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
-    if (!saveTransactions(updated)) { alert("Não foi possível salvar. Os dados anteriores foram preservados."); loadTransactions(); return; }
-    setTransactions(updated); setEditorOpen(false); setEditingId(null);
+    try { await saveTransactions(updated); setEditorOpen(false); setEditingId(null); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível salvar na nuvem."); }
   }
-  function registerPartialPayment(item: Transaction) {
+  async function registerPartialPayment(item: Transaction) {
     const openAmount = getOpenAmount(item);
     const entered = window.prompt(
       `Informe quanto foi pago agora. Saldo restante: ${formatCurrency(openAmount)}`,
@@ -300,12 +264,8 @@ export default function ContasAPagarPage() {
     const updatedTransactions = transactions.map((transaction) =>
       transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
     );
-    if (!saveTransactions(updatedTransactions)) {
-      alert("Não foi possível registrar o pagamento. Os dados anteriores foram preservados.");
-      loadTransactions();
-      return;
-    }
-    setTransactions(updatedTransactions);
+    try { await saveTransactions(updatedTransactions); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível registrar o pagamento na nuvem."); }
   }
 
   return (
