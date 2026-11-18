@@ -143,9 +143,7 @@ export default function TarefasPage() {
   };
 
   const deleteTask = async (id: number) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir esta tarefa?"
-    );
+    const confirmed = await confirm({ title: "Excluir tarefa", message: "Tem certeza que deseja excluir esta tarefa?", confirmLabel: "Excluir", destructive: true });
 
     if (!confirmed) return;
 
