@@ -632,6 +632,18 @@ export default function Page() {
   const remoteReadyRef = useRef(false);
   const lastSavedPayloadRef = useRef("");
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const transactionFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (editingTransactionId === null) return;
+
+    const form = transactionFormRef.current;
+    if (!form) return;
+
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    const firstInput = form.querySelector<HTMLInputElement>("input");
+    firstInput?.focus({ preventScroll: true });
+  }, [editingTransactionId]);
 
   useEffect(() => {
     let active = true;
@@ -1030,7 +1042,6 @@ export default function Page() {
     setPaymentMethod(item.paymentMethod || "PIX");
     setStatus(item.status || "Pendente");
     setRecurrence(item.recurrence || "Nenhuma");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelEditingTransaction() {
@@ -1496,6 +1507,7 @@ export default function Page() {
 
 
         <form
+          ref={transactionFormRef}
           className="finance-form finance-form-compact"
           onSubmit={addTransaction}
         >
