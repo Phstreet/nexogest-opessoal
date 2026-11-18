@@ -7,7 +7,6 @@ import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
-  type RemoteCollection,
 } from "@/lib/supabase/client";
 
 type Profile = {
@@ -53,7 +52,7 @@ export default function PerfilPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const revision = useRef(0);
-  const loaded = useRef(false);
+  const [loaded, setLoaded] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!session) {
@@ -75,7 +74,7 @@ export default function PerfilPage() {
         revision.current = 0;
         setProfile(EMPTY_PROFILE);
       }
-      loaded.current = true;
+      setLoaded(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar seu perfil.");
       setProfile(EMPTY_PROFILE);
@@ -225,7 +224,7 @@ export default function PerfilPage() {
 
               <div className="profile-form-footer">
                 <span><b>*</b> Campo obrigatório</span>
-                <button className="profile-submit" type="submit" disabled={saving || !loaded.current}>{saving ? "Salvando..." : "Salvar meu perfil"}</button>
+                <button className="profile-submit" type="submit" disabled={saving || !loaded}>{saving ? "Salvando..." : "Salvar meu perfil"}</button>
               </div>
             </form>
             <div className="profile-privacy">Seus dados pessoais são armazenados na sua área individual do NEXO e sincronizados com sua conta. A renda é opcional e pode ser alterada ou removida quando quiser.</div>
