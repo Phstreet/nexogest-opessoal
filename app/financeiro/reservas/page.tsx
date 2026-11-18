@@ -17,13 +17,6 @@ type ReserveCategory =
 type ReserveStatus = "Ativa" | "Concluída" | "Pausada";
 type MovementType = "Aporte" | "Resgate" | "Rendimento" | "Ajuste";
 
-type Account = {
-  id: number;
-  name: string;
-  institution?: string;
-  active?: boolean;
-};
-
 type Reserve = {
   id: number;
   name: string;
