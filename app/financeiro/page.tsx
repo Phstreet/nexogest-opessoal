@@ -837,7 +837,7 @@ export default function Page() {
   function openSettlementEditor(item: Transaction) {
     if (
       (item.type !== "Receita" && item.type !== "Despesa") ||
-      (item.status !== "Pendente" && Boolean(item.status))
+      (!["Pendente", "Recebida parcialmente", "Paga parcialmente", "Prevista", "Atrasada", ""].includes(item.status || ""))
     ) return;
 
     setSettlementEditingId(item.id);
@@ -852,7 +852,7 @@ export default function Page() {
 
     if (
       (!isIncome && !isExpense) ||
-      (item.status !== "Pendente" && Boolean(item.status))
+      (!["Pendente", "Recebida parcialmente", "Paga parcialmente", "Prevista", "Atrasada", ""].includes(item.status || ""))
     ) return;
 
     if (!safeToSave || !remoteReadyRef.current) {
@@ -1507,7 +1507,7 @@ export default function Page() {
 
                   <div className="finance-item-actions">
                     {(item.type === "Receita" || item.type === "Despesa") &&
-                      (item.status === "Pendente" || !item.status) && (
+                      (["Pendente", "Recebida parcialmente", "Paga parcialmente", "Prevista", "Atrasada", ""].includes(item.status || "")) && (
                         <button
                           type="button"
                           className="finance-edit"
@@ -1515,7 +1515,7 @@ export default function Page() {
                           disabled={!safeToSave}
                           aria-label={item.type === "Receita" ? "Informar valor recebido" : "Informar valor pago"}
                         >
-                          {item.type === "Receita" ? "Receber" : "Pagar"}
+                          {item.status === "Recebida parcialmente" || item.status === "Paga parcialmente" ? "Atualizar valor" : item.type === "Receita" ? "Receber" : "Pagar"}
                         </button>
                       )}
                     {(item.type === "Receita" || item.type === "Despesa") && (
