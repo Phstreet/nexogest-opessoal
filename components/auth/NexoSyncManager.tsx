@@ -79,17 +79,6 @@ function preserveConflictVersion(userId: string, key: NexoSyncKey, version: "loc
   }
 }
 
-function backupLocalData() {
-  const entries = NEXO_SYNC_KEYS.map((key) => [key, localStorage.getItem(key)] as const);
-  const backup = { application: "NEXO", type: "pre-cloud-sync", createdAt: new Date().toISOString(), entries };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `nexo-backup-antes-da-sincronizacao-${new Date().toISOString().slice(0, 10)}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boolean }) {
   const { session } = useNexoAuth();
@@ -97,12 +86,12 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
   const [pending, setPending] = useState<NexoSyncKey[]>([]);
   const [issues, setIssues] = useState<SyncIssue[]>([]);
   const [message, setMessage] = useState("");
-  const [backupConfirmed, setBackupConfirmed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const revisions = useRef(new Map<NexoSyncKey, number>());
   const snapshots = useRef(new Map<NexoSyncKey, string>());
   const busy = useRef(false);
   const initialized = useRef(false);
+  const autoMigrationAttempts = useRef(new Set<string>());
 
   const inspect = useCallback(async () => {
     if (!session || busy.current) return;
@@ -170,6 +159,28 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
     void inspect();
   }, [session, inspect]);
 
+  useEffect(() => {
+    if (!session) {
+      autoMigrationAttempts.current.clear();
+      return;
+    }
+
+    const pendingSignature = [...pending].sort().join("|");
+    if (
+      state !== "pending" ||
+      !pendingSignature ||
+      busy.current ||
+      autoMigrationAttempts.current.has(pendingSignature)
+    ) {
+      return;
+    }
+
+    // Só envia coleções locais quando a inspeção confirmou que elas ainda
+    // não existem na nuvem. A revisão zero impede sobrescrever dados remotos.
+    autoMigrationAttempts.current.add(pendingSignature);
+    void migrateLocal();
+  }, [session?.user.id, state, pending]);
+
   const saveChanged = useCallback(async (key: NexoSyncKey) => {
     if (!session || !initialized.current || busy.current || issues.some((item) => item.key === key)) return;
     const local = readLocal(key);
@@ -226,12 +237,10 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
   }, [session, saveChanged, inspect]);
 
   async function migrateLocal() {
-    if (!session || !backupConfirmed || busy.current) return;
+    if (!session || busy.current) return;
     busy.current = true;
     setState("loading");
     try {
-      // Exporta um backup completo antes de qualquer gravação remota.
-      backupLocalData();
       for (const key of pending) {
         const local = readLocal(key);
         if (!local.exists) continue;
@@ -299,13 +308,6 @@ export default function NexoSyncManager({ hidePanel = false }: { hidePanel?: boo
       {expanded && (
         <div className="nexo-sync-body">
           <p>{message}</p>
-          {state === "pending" && (
-            <>
-              <button type="button" className="nexo-sync-secondary" onClick={() => { backupLocalData(); setBackupConfirmed(true); }}>Baixar backup antes de migrar</button>
-              <label className="nexo-sync-confirm"><input type="checkbox" checked={backupConfirmed} onChange={(event) => setBackupConfirmed(event.target.checked)} /> Confirmo que guardei o backup dos dados locais.</label>
-              <button type="button" className="nexo-sync-primary" disabled={!backupConfirmed} onClick={() => void migrateLocal()}>Enviar dados locais para a nuvem</button>
-            </>
-          )}
           {issues.map((issue) => (
             <div className="nexo-sync-conflict" key={issue.key}>
               <strong>{issue.key}</strong>
