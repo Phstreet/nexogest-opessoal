@@ -77,6 +77,8 @@ export type Account = {
   initialBalance: number;
   createdAt: string;
   active: boolean;
+  /** Conta selecionada automaticamente para recebimentos salariais. */
+  isPrimary?: boolean;
 
   initialBalanceDate?: string;
   updatedAt?: string;
