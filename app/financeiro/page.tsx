@@ -619,6 +619,8 @@ export default function Page() {
   const [status, setStatus] = useState("Pendente");
   const [recurrence, setRecurrence] = useState("Nenhuma");
   const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
+  const [settlementEditingId, setSettlementEditingId] = useState<number | null>(null);
+  const [settlementInput, setSettlementInput] = useState("");
   const [institution, setInstitution] = useState("Nubank");
   const [filter, setFilter] = useState("Todos");
   const [loaded, setLoaded] = useState(false);
@@ -1234,52 +1236,87 @@ export default function Page() {
     setDate(localDate());
   }
 
-  async function updateTransactionStatus(item: Transaction) {
+  function openSettlementEditor(item: Transaction) {
+    if (
+      (item.type !== "Receita" && item.type !== "Despesa") ||
+      (item.status !== "Pendente" && Boolean(item.status))
+    ) return;
+
+    setSettlementEditingId(item.id);
+    setSettlementInput(
+      String(item.settledAmount ?? item.amount).replace(".", ",")
+    );
+  }
+
+  async function saveSettlement(item: Transaction) {
     const isIncome = item.type === "Receita";
     const isExpense = item.type === "Despesa";
-    if (!isIncome && !isExpense) return;
+
+    if (
+      (!isIncome && !isExpense) ||
+      (item.status !== "Pendente" && Boolean(item.status))
+    ) return;
 
     if (!safeToSave || !remoteReadyRef.current) {
       setSyncStatus("Aguardando sincronização para alterar o lançamento");
       return;
     }
 
-    const nextStatus =
-      item.status === "Pendente" || !item.status
-        ? isIncome ? "Recebida" : "Pago"
-        : "Pendente";
-    const actionLabel = nextStatus === "Pendente" ? "Reabrir" : isIncome ? "Marcar como recebida" : "Marcar como pago";
-    const accepted = await confirm({
-      title: actionLabel,
-      message: nextStatus === "Pendente"
-        ? `Deseja reabrir "${item.description}" e voltar o lançamento para Pendente?`
-        : `Confirma que "${item.description}" foi ${isIncome ? "recebido" : "pago"} no valor de ${money(Number(item.amount || 0))}?`,
-      confirmLabel: actionLabel,
-      destructive: nextStatus === "Pendente",
-    });
-    if (!accepted) return;
+    const effectiveAmount = parseAmount(settlementInput);
+    if (
+      !Number.isFinite(effectiveAmount) ||
+      effectiveAmount <= 0 ||
+      effectiveAmount > item.amount
+    ) {
+      setSyncStatus("Informe um valor maior que zero e igual ou inferior ao valor do lançamento");
+      return;
+    }
+
+    const isFullySettled = effectiveAmount >= item.amount;
+    const nextStatus = isIncome
+      ? isFullySettled ? "Recebida" : "Recebida parcialmente"
+      : isFullySettled ? "Pago" : "Paga parcialmente";
 
     try {
       await saveQueueRef.current;
       const updated = transactions.map((current) =>
         current.id === item.id
-          ? { ...current, status: nextStatus, settledAmount: nextStatus === "Pendente" ? 0 : Number(current.amount || 0) }
+          ? {
+              ...current,
+              status: nextStatus,
+              settledAmount: effectiveAmount,
+              updatedAt: new Date().toISOString(),
+            }
           : current
       );
-      const result = await saveRemoteCollection(STORAGE_KEY, updated, revisionRef.current);
+
+      const result = await saveRemoteCollection(
+        STORAGE_KEY,
+        updated,
+        revisionRef.current
+      );
+
       if (!result.saved) {
         setSafeToSave(false);
         setSyncStatus("Conflito de sincronização — atualize a tela");
         return;
       }
-      revisionRef.current = result.current_revision ?? revisionRef.current + 1;
+
+      revisionRef.current =
+        result.current_revision ?? revisionRef.current + 1;
       lastSavedPayloadRef.current = JSON.stringify(updated);
       mirrorRemoteTransactions(updated);
       setTransactions(updated);
-      setSyncStatus(nextStatus === "Pendente" ? "Lançamento reaberto" : "Status atualizado e sincronizado");
+      setSettlementEditingId(null);
+      setSettlementInput("");
+      setSyncStatus(
+        nextStatus === "Recebida parcialmente" || nextStatus === "Paga parcialmente"
+          ? "Valor parcial registrado e sincronizado"
+          : "Lançamento confirmado e sincronizado"
+      );
     } catch (error) {
-      console.error("Erro ao atualizar status do lançamento:", error);
-      setSyncStatus("Não foi possível atualizar o status");
+      console.error("Erro ao registrar valor efetivo:", error);
+      setSyncStatus("Não foi possível atualizar o lançamento");
     }
   }
 
@@ -2065,20 +2102,57 @@ export default function Page() {
                     {money(Number(item.amount || 0))}
                   </strong>
 
+                  {settlementEditingId === item.id && (
+                    <div className="finance-settlement-editor">
+                      <label htmlFor={`settlement-${item.id}`}>
+                        {item.type === "Receita" ? "Valor realmente recebido" : "Valor realmente pago"}
+                      </label>
+                      <div className="finance-settlement-controls">
+                        <input
+                          id={`settlement-${item.id}`}
+                          type="text"
+                          inputMode="decimal"
+                          value={settlementInput}
+                          onChange={(event) => setSettlementInput(event.target.value)}
+                          placeholder="0,00"
+                          aria-label={item.type === "Receita" ? "Valor recebido" : "Valor pago"}
+                        />
+                        <button
+                          type="button"
+                          className="finance-edit"
+                          onClick={() => saveSettlement(item)}
+                          disabled={!safeToSave}
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          type="button"
+                          className="finance-cancel-edit"
+                          onClick={() => {
+                            setSettlementEditingId(null);
+                            setSettlementInput("");
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                      <small>Valor previsto: {money(item.amount)}. Se informar um valor menor, o lançamento ficará parcialmente {item.type === "Receita" ? "recebido" : "pago"}.</small>
+                    </div>
+                  )}
+
                   <div className="finance-item-actions">
-                    {(item.type === "Receita" || item.type === "Despesa") && (
-                      <button
-                        type="button"
-                        className="finance-edit"
-                        onClick={() => updateTransactionStatus(item)}
-                        disabled={!safeToSave}
-                        aria-label={item.status === "Pendente" || !item.status ? (item.type === "Receita" ? "Marcar recebida" : "Marcar pago") : "Reabrir lançamento"}
-                      >
-                        {item.status === "Pendente" || !item.status
-                          ? item.type === "Receita" ? "Recebido" : "Pago"
-                          : "Reabrir"}
-                      </button>
-                    )}
+                    {(item.type === "Receita" || item.type === "Despesa") &&
+                      (item.status === "Pendente" || !item.status) && (
+                        <button
+                          type="button"
+                          className="finance-edit"
+                          onClick={() => openSettlementEditor(item)}
+                          disabled={!safeToSave}
+                          aria-label={item.type === "Receita" ? "Informar valor recebido" : "Informar valor pago"}
+                        >
+                          {item.type === "Receita" ? "Receber" : "Pagar"}
+                        </button>
+                      )}
                     {(item.type === "Receita" || item.type === "Despesa") && (
                       <button
                         type="button"
@@ -2625,6 +2699,50 @@ export default function Page() {
 
         .finance-item > strong.reserve-movement {
           color: #c3c7ce;
+        }
+
+        .finance-settlement-editor {
+          display: flex;
+          flex: 1 0 100%;
+          flex-direction: column;
+          gap: 6px;
+          padding: 10px 12px;
+          border: 1px solid #414149;
+          border-radius: 6px;
+          background: #101012;
+        }
+
+        .finance-settlement-editor label {
+          color: #d8dae0;
+          font-size: 10px;
+          font-weight: 600;
+        }
+
+        .finance-settlement-controls {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .finance-settlement-controls input {
+          width: 150px;
+          min-width: 110px;
+          height: 29px;
+          padding: 0 9px;
+          border: 1px solid #414149;
+          border-radius: 5px;
+          outline: none;
+          background: #1b1b1f;
+          color: #f3f3f5;
+          font: inherit;
+          font-size: 11px;
+        }
+
+        .finance-settlement-editor small {
+          color: #92949c;
+          font-size: 9px;
+          line-height: 1.45;
         }
 
         .finance-item-actions {
