@@ -171,9 +171,8 @@ export default function MainNavigation() {
     );
   }
 
-  // Compacta a sidebar e fecha todos os submenus ao navegar.
+  // Fecha os submenus ao navegar, mantendo a largura escolhida pelo usuário.
   function handleNavigation() {
-    setCollapsed(true);
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
     setReportsMenuOpen(false);
@@ -185,7 +184,6 @@ export default function MainNavigation() {
   function handleSearchNavigation() {
     setSearchOpen(false);
     setSearchTerm("");
-    setCollapsed(true);
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
     setReportsMenuOpen(false);
