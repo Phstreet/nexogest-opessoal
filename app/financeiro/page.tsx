@@ -482,6 +482,102 @@ function addMonthsToDate(value: string, months: number) {
   ].join("-");
 }
 
+function hasSameMonthlySeries(
+  first: Transaction,
+  second: Transaction
+) {
+  return (
+    first.type === second.type &&
+    (first.type === "Receita" || first.type === "Despesa") &&
+    first.description.trim().toLocaleLowerCase("pt-BR") ===
+      second.description.trim().toLocaleLowerCase("pt-BR") &&
+    first.amount === second.amount &&
+    (first.category || "") === (second.category || "") &&
+    (first.subcategory || "") === (second.subcategory || "") &&
+    (first.account || "") === (second.account || "") &&
+    (first.paymentMethod || "") === (second.paymentMethod || "")
+  );
+}
+
+/**
+ * Completa recorrências mensais antigas sem duplicar competências existentes.
+ * Os registros já existentes são vinculados ao mesmo grupo; somente meses
+ * ausentes são criados. A função é idempotente: após a primeira execução,
+ * recurrenceGroupId impede que a mesma série seja processada novamente.
+ */
+function synchronizeMonthlyRecurrences(
+  transactions: Transaction[]
+): Transaction[] {
+  const synchronized = transactions.map((item) => ({ ...item }));
+  const orderedCandidates = [...synchronized]
+    .filter(
+      (item) =>
+        item.recurrence === "Mensal" &&
+        (item.type === "Receita" || item.type === "Despesa") &&
+        !item.recurrenceGroupId &&
+        item.status !== "Cancelada" &&
+        Boolean(item.date && isValidDate(item.date))
+    )
+    .sort((a, b) => {
+      const dateOrder = (a.date || "").localeCompare(b.date || "");
+      return dateOrder || a.id - b.id;
+    });
+
+  for (const candidate of orderedCandidates) {
+    const rootIndex = synchronized.findIndex(
+      (item) => item.id === candidate.id
+    );
+    if (rootIndex < 0 || synchronized[rootIndex].recurrenceGroupId) {
+      continue;
+    }
+
+    const root = synchronized[rootIndex];
+    if (!root.date) continue;
+
+    const recurrenceGroupId = "mensal-" + root.id;
+    synchronized[rootIndex] = {
+      ...root,
+      recurrenceGroupId,
+    };
+
+    for (let monthOffset = 1; monthOffset <= 3; monthOffset += 1) {
+      const expectedDate = addMonthsToDate(root.date, monthOffset);
+      const existingIndex = synchronized.findIndex(
+        (item) =>
+          item.id !== root.id &&
+          item.date === expectedDate &&
+          item.recurrence === "Mensal" &&
+          (item.recurrenceGroupId === undefined ||
+            item.recurrenceGroupId === recurrenceGroupId) &&
+          item.status !== "Cancelada" &&
+          hasSameMonthlySeries(root, item)
+      );
+
+      if (existingIndex >= 0) {
+        synchronized[existingIndex] = {
+          ...synchronized[existingIndex],
+          recurrenceGroupId,
+        };
+        continue;
+      }
+
+      const nextId = getNextTransactionId(synchronized);
+      synchronized.push({
+        ...root,
+        id: nextId,
+        date: expectedDate,
+        status: "Pendente",
+        settledAmount: undefined,
+        recurrenceGroupId,
+        createdAt: new Date().toISOString(),
+        updatedAt: undefined,
+      });
+    }
+  }
+
+  return synchronized;
+}
+
 function downloadJson(filename: string, content: string) {
   const blob = new Blob([content], {
     type: "application/json;charset=utf-8",
@@ -572,6 +668,8 @@ export default function Page() {
           }
 
           const cloudRecords = remoteTransactions.payload.filter(isValidTransaction);
+          const synchronizedCloudRecords =
+            synchronizeMonthlyRecurrences(cloudRecords);
           const invalidCloudRecords = remoteTransactions.payload.filter(
             (item) => !isValidTransaction(item)
           );
@@ -586,8 +684,8 @@ export default function Page() {
 
           revisionRef.current = remoteTransactions.revision;
           lastSavedPayloadRef.current = JSON.stringify(cloudRecords);
-          setTransactions(cloudRecords);
-          mirrorRemoteTransactions(cloudRecords);
+          setTransactions(synchronizedCloudRecords);
+          mirrorRemoteTransactions(synchronizedCloudRecords);
           setInvalidCount(invalidCloudRecords.length);
           setSafeToSave(invalidCloudRecords.length === 0);
           setStorageError(
@@ -606,7 +704,9 @@ export default function Page() {
             setBackupAvailable(true);
           }
 
-          const legacyRecords = localResult.transactions;
+          const legacyRecords = synchronizeMonthlyRecurrences(
+            localResult.transactions
+          );
 
           if (!localResult.safeToSave) {
             setTransactions(legacyRecords);
@@ -641,14 +741,16 @@ export default function Page() {
             }
 
             const refreshedRecords = refreshed.payload.filter(isValidTransaction);
+            const synchronizedRefreshedRecords =
+              synchronizeMonthlyRecurrences(refreshedRecords);
             const refreshedInvalid = refreshed.payload.filter(
               (item) => !isValidTransaction(item)
             );
 
             revisionRef.current = refreshed.revision;
             lastSavedPayloadRef.current = JSON.stringify(refreshedRecords);
-            setTransactions(refreshedRecords);
-            mirrorRemoteTransactions(refreshedRecords);
+            setTransactions(synchronizedRefreshedRecords);
+            mirrorRemoteTransactions(synchronizedRefreshedRecords);
             setInvalidCount(refreshedInvalid.length);
             setSafeToSave(refreshedInvalid.length === 0);
             setStorageError(
