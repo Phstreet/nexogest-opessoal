@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
@@ -33,6 +35,7 @@ function getLocalDate() {
 }
 
 export default function TarefasPage() {
+  const confirm = useNexoConfirm();
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [filter, setFilter] = useState<Filter>("Todas");
@@ -139,7 +142,7 @@ export default function TarefasPage() {
     );
   };
 
-  const deleteTask = (id: number) => {
+  const deleteTask = async (id: number) => {
     const confirmed = window.confirm(
       "Tem certeza que deseja excluir esta tarefa?"
     );
