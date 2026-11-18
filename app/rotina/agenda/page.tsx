@@ -164,9 +164,7 @@ export default function AgendaPage() {
   }
 
   async function deleteTask(id: number) {
-    const confirmed = window.confirm(
-      "Deseja realmente excluir esta atividade?"
-    );
+    const confirmed = await confirm({ title: "Excluir atividade", message: "Deseja realmente excluir esta atividade?", confirmLabel: "Excluir", destructive: true });
 
     if (!confirmed) return;
 
