@@ -109,8 +109,8 @@ export default function Header() {
             <div className="nexo-header-dropdown profile-dropdown">
               <strong>{displayName.trim() || "NEXO"}</strong>
               <span>Perfil pessoal</span>
-              <p>Gerencie seu nome de exibição e suas preferências.</p>
-              <Link href="/configuracoes?tab=personalizacao" className="profile-settings-link" onClick={() => setProfileOpen(false)}>Editar perfil</Link>
+              <p>Gerencie seus dados pessoais e informações da conta.</p>
+              <Link href="/perfil" className="profile-settings-link" onClick={() => setProfileOpen(false)}>Editar perfil</Link>
             </div>
           )}
         </div>
