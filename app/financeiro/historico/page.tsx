@@ -1,39 +1,13 @@
 
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
+import type { Transaction as FinanceTransaction } from "@/lib/finance/types";
 import Link from "next/link";
 
-type MovementType =
-  | "Receita"
-  | "Despesa"
-  | "Transferência"
-  | "Investimento"
-  | "Aplicação"
-  | "Reserva";
-
-type Transaction = {
-  id: string | number;
-  description: string;
-  type: MovementType;
-  amount: number;
-  date?: string;
-  category?: string;
-  subcategory?: string;
-  account?: string;
-  destination?: string;
-  destinationAccount?: string;
-  method?: string;
-  paymentMethod?: string;
-  status?: string;
-  recurrence?: string;
-  reserveType?: string;
-  investment?: string;
-  institution?: string;
-  [key: string]: unknown;
-};
-
-const STORAGE_KEY = "nexo_transactions";
+type MovementType = FinanceTransaction["type"];
+type Transaction = FinanceTransaction & { destination?: string; method?: string };
 
 const currency = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -95,7 +69,8 @@ const getStatusClass = (status?: string) => {
 };
 
 export default function HistoricoFinanceiroPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { transactions: cloudTransactions, loaded, error, reload } = useCloudFinanceCollections();
+  const transactions = cloudTransactions as Transaction[];
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -105,33 +80,6 @@ export default function HistoricoFinanceiroPage() {
     string | null
   >(null);
 
-  const loadTransactions = useCallback(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-
-      if (!saved) {
-        setTransactions([]);
-        return;
-      }
-
-      const parsed: unknown = JSON.parse(saved);
-
-      setTransactions(Array.isArray(parsed) ? parsed : []);
-    } catch (error) {
-      console.error("Erro ao carregar histórico financeiro:", error);
-      setTransactions([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadTransactions();
-
-    window.addEventListener("storage", loadTransactions);
-
-    return () => {
-      window.removeEventListener("storage", loadTransactions);
-    };
-  }, [loadTransactions]);
 
   const activeTransactions = useMemo(
     () => transactions.filter((item) => !isCancelled(item.status)),
@@ -291,6 +239,8 @@ export default function HistoricoFinanceiroPage() {
         </Link>
       </section>
 
+      {error && <div role="alert" className="history-error">{error}</div>}
+      {!loaded && <div className="history-loading">Carregando histórico financeiro...</div>}
       <section className="history-summary">
         <article className="history-card">
           <div className="history-card-top">
@@ -356,7 +306,7 @@ export default function HistoricoFinanceiroPage() {
           <button
             type="button"
             className="history-refresh"
-            onClick={loadTransactions}
+            onClick={() => void reload()}
           >
             ↻ Atualizar
           </button>
