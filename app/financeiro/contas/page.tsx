@@ -3,7 +3,7 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
