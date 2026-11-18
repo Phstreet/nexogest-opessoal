@@ -16,6 +16,8 @@ import {
 type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao";
 type Preferences = {
   weekStartsOn: "monday" | "sunday";
+  navigationFavorites?: string[];
+  sidebarCollapsed?: boolean;
 };
 type Profile = { displayName: string; fullName?: string; sex?: string; monthlyIncome?: string; birthDate?: string; profession?: string };
 
@@ -62,8 +64,14 @@ export default function ConfiguracoesPage() {
         const remoteProfile = collections.find((item) => item.data_key === PROFILE_KEY);
         const nextPreferences = remotePreferences?.payload;
         if (nextPreferences && typeof nextPreferences === "object" && !Array.isArray(nextPreferences)) {
-          const weekStartsOn = (nextPreferences as Record<string, unknown>).weekStartsOn;
-          setPreferences({ weekStartsOn: weekStartsOn === "sunday" ? "sunday" : "monday" });
+          const data = nextPreferences as Record<string, unknown>;
+          setPreferences({
+            weekStartsOn: data.weekStartsOn === "sunday" ? "sunday" : "monday",
+            navigationFavorites: Array.isArray(data.navigationFavorites)
+              ? data.navigationFavorites.filter((item): item is string => typeof item === "string")
+              : [],
+            sidebarCollapsed: data.sidebarCollapsed === true,
+          });
         } else {
           setPreferences({ weekStartsOn: "monday" });
         }
@@ -118,8 +126,9 @@ export default function ConfiguracoesPage() {
     setMessage("");
     setError("");
     try {
-      await persistSetting(PREFERENCES_KEY, next);
-      setPreferences(next);
+      const merged = { ...preferences, ...next };
+      await persistSetting(PREFERENCES_KEY, merged);
+      setPreferences(merged);
       setMessage("Preferências salvas no Supabase.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível salvar as preferências.");
