@@ -16,7 +16,7 @@ export default function AppLayout({
   return (
     <main className="app-shell">
       <MainNavigation />
-      <NexoSyncManager />
+      <NexoSyncManager hidePanel />
 
       <section className="main-area">
         <div className="nexo-account-slot"><AccountAccess /></div>
