@@ -218,9 +218,9 @@ export default function MainNavigation() {
     );
   }
 
-  function renderSubmenu(items: MenuItem[], id: string) {
+  function renderSubmenu(items: MenuItem[], id: string, isOpen: boolean) {
     return (
-      <div className="nav-submenu" id={id}>
+      <div className={`nav-submenu ${isOpen ? "is-open" : ""}`} id={id} aria-hidden={!isOpen}>
         {items.map((item) => (
           <div className="nav-subitem-row" key={item.href}>
             <Link
@@ -358,9 +358,7 @@ export default function MainNavigation() {
               </span>
             </button>
 
-            {!collapsed &&
-              financeMenuOpen &&
-              renderSubmenu(financeMenuItems, "finance-submenu")}
+            {!collapsed && renderSubmenu(financeMenuItems, "finance-submenu", financeMenuOpen)}
           </div>
 
           {/* ROTINA */}
@@ -390,7 +388,7 @@ export default function MainNavigation() {
               <span className="nav-finance-label">Rotina</span>
               <span className={`nav-chevron ${routineMenuOpen && !collapsed ? "open" : ""}`}>›</span>
             </button>
-            {!collapsed && routineMenuOpen && renderSubmenu(routineMenuItems, "routine-submenu")}
+            {!collapsed && renderSubmenu(routineMenuItems, "routine-submenu", routineMenuOpen)}
           </div>
 
           {/* RELATÓRIOS */}
@@ -420,7 +418,7 @@ export default function MainNavigation() {
               <span className="nav-finance-label">Relatórios</span>
               <span className={`nav-chevron ${reportsMenuOpen && !collapsed ? "open" : ""}`}>›</span>
             </button>
-            {!collapsed && reportsMenuOpen && renderSubmenu(reportsMenuItems, "reports-submenu")}
+            {!collapsed && renderSubmenu(reportsMenuItems, "reports-submenu", reportsMenuOpen)}
           </div>
 
           {/* CONFIGURAÇÕES */}
@@ -450,7 +448,7 @@ export default function MainNavigation() {
               <span className="nav-finance-label">Configurações</span>
               <span className={`nav-chevron ${settingsMenuOpen && !collapsed ? "open" : ""}`}>›</span>
             </button>
-            {!collapsed && settingsMenuOpen && renderSubmenu(settingsMenuItems, "settings-submenu")}
+            {!collapsed && renderSubmenu(settingsMenuItems, "settings-submenu", settingsMenuOpen)}
           </div>
         </nav>
 
@@ -1070,6 +1068,123 @@ export default function MainNavigation() {
           .sidebar-search-button,
           .nav-favorite-button {
             transition: none !important;
+          }
+        }
+
+        /* Transições contínuas dos submenus: anima abertura e fechamento. */
+        .sidebar {
+          transition:
+            width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+            min-width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+            flex-basis 280ms cubic-bezier(0.22, 1, 0.36, 1),
+            padding 220ms ease;
+          will-change: width;
+        }
+
+        .sidebar .brand-text,
+        .sidebar .sidebar-section-label,
+        .sidebar .nav-finance-label,
+        .sidebar .nav-item-label,
+        .sidebar .sidebar-status-label,
+        .sidebar .sidebar-version,
+        .sidebar .favorites-empty-label,
+        .sidebar .sidebar-search-label {
+          transition: opacity 160ms ease, transform 220ms ease;
+        }
+
+        .sidebar .nav-submenu {
+          max-height: 0;
+          overflow: hidden;
+          padding-top: 0;
+          padding-bottom: 0;
+          margin-top: 0;
+          margin-bottom: 0;
+          border-left-color: transparent;
+          opacity: 0;
+          transform: translateY(-6px);
+          visibility: hidden;
+          pointer-events: none;
+          transition:
+            max-height 320ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 180ms ease,
+            transform 220ms ease,
+            padding 220ms ease,
+            margin 220ms ease,
+            border-color 180ms ease,
+            visibility 0s linear 320ms;
+        }
+
+        .sidebar .nav-submenu.is-open {
+          max-height: 720px;
+          overflow: hidden;
+          padding: 5px 0 5px 12px;
+          margin: 4px 0 8px 18px;
+          border-left-color: #414147;
+          opacity: 1;
+          transform: translateY(0);
+          visibility: visible;
+          pointer-events: auto;
+          transition:
+            max-height 360ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 220ms ease 40ms,
+            transform 260ms ease,
+            padding 220ms ease,
+            margin 220ms ease,
+            border-color 180ms ease,
+            visibility 0s;
+        }
+
+        .sidebar .nav-chevron {
+          transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .sidebar .nav-item,
+        .sidebar .nav-subitem,
+        .sidebar .nav-favorite-button,
+        .sidebar .sidebar-toggle,
+        .sidebar .sidebar-search-button {
+          transition:
+            color 180ms ease,
+            background-color 180ms ease,
+            border-color 180ms ease,
+            box-shadow 180ms ease,
+            transform 220ms ease,
+            opacity 180ms ease;
+        }
+
+        .sidebar .nav-item:active,
+        .sidebar .sidebar-toggle:active,
+        .sidebar .sidebar-search-button:active {
+          transform: scale(0.985);
+        }
+
+        @media (max-width: 760px) {
+          .sidebar .nav-submenu:not(.is-open) {
+            max-height: 0 !important;
+            overflow: hidden !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            border-color: transparent !important;
+          }
+
+          .sidebar .nav-submenu.is-open {
+            max-height: 900px;
+            overflow: visible !important;
+            padding: 8px !important;
+            margin: 4px 0 10px !important;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .sidebar,
+          .sidebar *,
+          .sidebar *::before,
+          .sidebar *::after {
+            transition: none !important;
+            animation: none !important;
+            scroll-behavior: auto !important;
           }
         }
       `}</style>
