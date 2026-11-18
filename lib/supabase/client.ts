@@ -84,3 +84,9 @@ export const NEXO_SYNC_KEYS = [
 ] as const;
 
 export type NexoSyncKey = (typeof NEXO_SYNC_KEYS)[number];
+
+// Coleções que ainda dependem do mecanismo legado. Tarefas e hábitos
+// agora são carregados e gravados diretamente no Supabase pelo hook próprio.
+export const NEXO_LEGACY_SYNC_KEYS = NEXO_SYNC_KEYS.filter(
+  (key) => key !== "nexo_tasks" && key !== "nexo_habits"
+) as readonly Exclude<NexoSyncKey, "nexo_tasks" | "nexo_habits">[];
