@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { FINANCE_STORAGE_KEYS, subscribeFinanceUpdates } from "@/lib/finance/storage";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 
 type InvestmentTransaction = {
   id: number | string;
@@ -21,8 +21,6 @@ type InvestmentTransaction = {
   investment?: string;
   institution?: string;
 };
-
-const STORAGE_KEY = "nexo_transactions";
 
 function money(value: number) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -70,56 +68,13 @@ function isCancelled(transaction: InvestmentTransaction) {
 }
 
 export default function InvestimentosPage() {
-  const [transactions, setTransactions] = useState<InvestmentTransaction[]>([]);
+  const { transactions: allTransactions, loaded, error } = useCloudFinanceCollections();
+  const transactions = useMemo(() => allTransactions.filter((item) => item.type === "Investimento" || item.type === "Aplicação") as InvestmentTransaction[], [allTransactions]);
   const [typeFilter, setTypeFilter] = useState("Todos");
   const [institutionFilter, setInstitutionFilter] = useState("Todas");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    function loadInvestments() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-
-        if (!saved) {
-          setTransactions([]);
-          return;
-        }
-
-        const parsed: unknown = JSON.parse(saved);
-
-        if (Array.isArray(parsed)) {
-          setTransactions(
-            parsed.filter(
-              (item): item is InvestmentTransaction =>
-                item !== null &&
-                typeof item === "object" &&
-                (typeof item.id === "number" ||
-                  typeof item.id === "string") &&
-                typeof item.amount === "number" &&
-                typeof item.type === "string" &&
-                isInvestment(item)
-            )
-          );
-        } else {
-          setTransactions([]);
-        }
-      } catch (error) {
-        console.error("Não foi possível carregar os investimentos:", error);
-        setTransactions([]);
-      }
-    }
-
-    loadInvestments();
-
-    const unsubscribe = subscribeFinanceUpdates((key) => {
-      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
-        loadInvestments();
-      }
-    });
-
-    return unsubscribe;
-  }, []);
 
   const activeInvestments = useMemo(
     () => transactions.filter((transaction) => !isCancelled(transaction)),
@@ -265,6 +220,8 @@ export default function InvestimentosPage() {
         </Link>
       </section>
 
+      {error && <div role="alert" className="investment-error">{error}</div>}
+      {!loaded && <div className="investment-loading">Carregando investimentos...</div>}
       <section className="summary-grid">
         <article className="summary-card featured">
           <div className="summary-card-top">
