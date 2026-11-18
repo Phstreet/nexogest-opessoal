@@ -3,8 +3,7 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type Transaction = {
@@ -111,6 +110,9 @@ export default function ContasAPagarPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
   const [loading, setLoading] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState({ description: "", amount: "", settledAmount: "0", date: getToday(), category: "", subcategory: "", account: "", paymentMethod: "PIX", status: "Pendente", recurrence: "Nenhuma" });
 
   const loadTransactions = useCallback(() => {
     try {
@@ -226,6 +228,24 @@ export default function ContasAPagarPage() {
     setTransactions(updatedTransactions);
   }
 
+  function openExpenseEditor(item?: Transaction) {
+    setEditingId(item?.id ?? null);
+    setDraft({ description: item?.description ?? "", amount: item ? String(item.amount).replace(".", ",") : "", settledAmount: item ? String(getSettledAmount(item)).replace(".", ",") : "0", date: item?.date || getToday(), category: item?.category || "", subcategory: item?.subcategory || "", account: item?.account || "", paymentMethod: item?.paymentMethod || "PIX", status: item?.status || "Pendente", recurrence: item?.recurrence || "Nenhuma" });
+    setEditorOpen(true);
+  }
+
+  function saveExpense(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const amount = parseCurrencyInput(draft.amount);
+    const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
+    if (!draft.description.trim() || !Number.isFinite(amount) || amount <= 0) { alert("Informe uma descrição e um valor válido."); return; }
+    if (!Number.isFinite(settledAmount) || settledAmount < 0 || settledAmount > amount) { alert("O valor pago não pode ser negativo nem ultrapassar o valor total."); return; }
+    const status = settledAmount >= amount ? "Pago" : settledAmount > 0 ? "Paga parcialmente" : draft.status;
+    const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Despesa", amount, settledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
+    const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
+    if (!saveTransactions(updated)) { alert("Não foi possível salvar. Os dados anteriores foram preservados."); loadTransactions(); return; }
+    setTransactions(updated); setEditorOpen(false); setEditingId(null);
+  }
   function registerPartialPayment(item: Transaction) {
     const openAmount = getOpenAmount(item);
     const entered = window.prompt(
@@ -265,10 +285,10 @@ export default function ContasAPagarPage() {
           </p>
         </div>
 
-        <Link href="/financeiro" className="payable-new-button">
+        <button type="button" className="payable-new-button" onClick={() => openExpenseEditor()}>
           <span>+</span>
           Nova despesa
-        </Link>
+        </button>
       </section>
 
       <section className="payable-summary">
@@ -309,6 +329,24 @@ export default function ContasAPagarPage() {
         </article>
       </section>
 
+      {editorOpen && (
+        <section className="payable-editor-panel">
+          <div className="payable-section-heading"><div><span className="payable-eyebrow">CADASTRO DE DESPESA</span><h2>{editingId === null ? "Nova despesa" : "Editar despesa"}</h2><p>Formulário exclusivo de contas a pagar.</p></div></div>
+          <form className="payable-editor-form" onSubmit={saveExpense}>
+            <label>Descrição<input required value={draft.description} onChange={(e) => setDraft({...draft, description:e.target.value})} /></label>
+            <label>Valor total<input required inputMode="decimal" value={draft.amount} onChange={(e) => setDraft({...draft, amount:e.target.value})} /></label>
+            <label>Valor já pago<input inputMode="decimal" value={draft.settledAmount} onChange={(e) => setDraft({...draft, settledAmount:e.target.value})} /></label>
+            <label>Vencimento<input type="date" value={draft.date} onChange={(e) => setDraft({...draft, date:e.target.value})} /></label>
+            <label>Categoria<input value={draft.category} onChange={(e) => setDraft({...draft, category:e.target.value})} /></label>
+            <label>Subcategoria<input value={draft.subcategory} onChange={(e) => setDraft({...draft, subcategory:e.target.value})} /></label>
+            <label>Conta de pagamento<input value={draft.account} onChange={(e) => setDraft({...draft, account:e.target.value})} /></label>
+            <label>Forma de pagamento<select value={draft.paymentMethod} onChange={(e) => setDraft({...draft, paymentMethod:e.target.value})}><option>PIX</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option><option>Boleto</option><option>Transferência</option><option>Outro</option></select></label>
+            <label>Status<select value={draft.status} onChange={(e) => setDraft({...draft, status:e.target.value})}><option value="Pendente">Pendente</option><option value="Paga parcialmente">Paga parcialmente</option><option value="Pago">Pago</option><option value="Cancelada">Cancelada</option></select></label>
+            <label>Recorrência<select value={draft.recurrence} onChange={(e) => setDraft({...draft, recurrence:e.target.value})}><option>Nenhuma</option><option>Semanal</option><option>Quinzenal</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></label>
+            <div className="payable-editor-actions"><button type="button" onClick={() => {setEditorOpen(false);setEditingId(null);}}>Cancelar</button><button type="submit">{editingId === null ? "Cadastrar despesa" : "Salvar alterações"}</button></div>
+          </form>
+        </section>
+      )}
       <section className="payable-panel">
         <div className="payable-section-heading">
           <div>
@@ -382,8 +420,7 @@ export default function ContasAPagarPage() {
                     <div className="payable-empty-icon">▤</div>
                     <strong>Nenhuma conta encontrada</strong>
                     <span>
-                      Cadastre uma despesa na página Financeiro para
-                      visualizar aqui.
+                      Use o botão “Nova despesa” para cadastrar diretamente nesta aba.
                     </span>
                   </td>
                 </tr>
@@ -440,6 +477,7 @@ export default function ContasAPagarPage() {
                       </td>
 
                       <td>
+                        <div className="payable-row-actions"><button type="button" className="payable-edit-button" onClick={() => openExpenseEditor(item)}>Editar</button>
                         {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
                           <>
@@ -481,6 +519,7 @@ export default function ContasAPagarPage() {
                         ) : (
                           <span className="payable-no-action">—</span>
                         )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -575,6 +614,16 @@ export default function ContasAPagarPage() {
           font-size: 16px;
         }
 
+        .payable-editor-panel { border: 1px solid #34343a; border-radius: 12px; background: #111113; overflow: hidden; }
+        .payable-editor-form { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; padding: 18px 22px; }
+        .payable-editor-form label { display:flex; flex-direction:column; gap:6px; color:#b9bac1; font-size:11px; }
+        .payable-editor-form input,.payable-editor-form select { width:100%; min-width:0; height:37px; padding:0 10px; border:1px solid #37373d; border-radius:7px; color:#f3f3f5; background:#151517; color-scheme:dark; font:inherit; box-sizing:border-box; }
+        .payable-editor-actions,.payable-row-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+        .payable-editor-actions { grid-column:1/-1; justify-content:flex-end; }
+        .payable-editor-actions button,.payable-edit-button { min-height:30px; padding:0 11px; border:1px solid #414149; border-radius:6px; color:#e5e5e7; background:#222226; font:inherit; font-size:10px; cursor:pointer; }
+        .payable-editor-actions button[type="submit"] { background:#d7d9de; color:#151517; font-weight:700; }
+        @media(max-width:700px){.payable-editor-form{grid-template-columns:repeat(2,minmax(0,1fr));}}
+        @media(max-width:420px){.payable-editor-form{grid-template-columns:1fr;padding:14px;}}
         .payable-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
