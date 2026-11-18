@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineHabit as isValidHabit } from "@/lib/routine/types";
@@ -74,6 +76,7 @@ function getWeekProgress(habit: Habit, today: string) {
 }
 
 export default function HabitosPage() {
+  const confirm = useNexoConfirm();
   const { items: habits, setItems: setHabits, loaded, storageError } = useRoutineCollection<Habit>("nexo_habits", isValidHabit);
 
   const [showForm, setShowForm] = useState(false);
@@ -238,7 +241,7 @@ export default function HabitosPage() {
     );
   };
 
-  const deleteHabit = (id: number) => {
+  const deleteHabit = async (id: number) => {
     const confirmed = window.confirm(
       "Tem certeza que deseja excluir este hábito e seu histórico?"
     );
