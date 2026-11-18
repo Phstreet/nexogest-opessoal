@@ -9,6 +9,8 @@ import {
   deleteAccount,
   getAccountBalance,
   setAccountActive,
+  setPrimaryAccount,
+  getPrimaryAccount,
 } from "@/lib/finance/accounts";
 
 type Account = {
@@ -19,6 +21,7 @@ type Account = {
   initialBalance: number;
   createdAt: string;
   active: boolean;
+  isPrimary?: boolean;
 };
 
 const accountTypes = [
@@ -82,6 +85,7 @@ export default function ContasFinanceirasPage() {
   useEffect(() => {
     function loadAccounts() {
       try {
+        getPrimaryAccount();
         setAccounts(getAccounts());
         setBalanceVersion((version) => version + 1);
       } catch {
@@ -181,6 +185,16 @@ export default function ContasFinanceirasPage() {
       setBalanceVersion((version) => version + 1);
     } catch (error) {
       alert(error instanceof Error ? error.message : "Não foi possível atualizar a conta.");
+    }
+  }
+
+  function makePrimary(id: number) {
+    try {
+      setPrimaryAccount(id);
+      setAccounts(getAccounts());
+      setBalanceVersion((version) => version + 1);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Não foi possível definir a conta principal.");
     }
   }
 
@@ -387,6 +401,9 @@ export default function ContasFinanceirasPage() {
                   <span>
                     {account.institution} · {account.type}
                   </span>
+                  {account.isPrimary && account.active && (
+                    <small className="accounts-primary-label">Conta principal · recebimentos salariais</small>
+                  )}
                   <small>
                     Cadastrada em {formatDate(account.createdAt)}
                   </small>
@@ -400,6 +417,17 @@ export default function ContasFinanceirasPage() {
                 </div>
 
                 <div className="accounts-item-actions">
+                  {account.active && (
+                    <button
+                      type="button"
+                      className={account.isPrimary ? "accounts-primary-button selected" : "accounts-primary-button"}
+                      onClick={() => makePrimary(account.id)}
+                      disabled={Boolean(account.isPrimary)}
+                      title={account.isPrimary ? "Esta já é a conta principal" : "Definir como conta principal para recebimentos salariais"}
+                    >
+                      {account.isPrimary ? "Principal" : "Definir principal"}
+                    </button>
+                  )}
                   <span
                     className={
                       account.active
@@ -827,6 +855,24 @@ export default function ContasFinanceirasPage() {
         .accounts-item-actions button:hover {
           border-color: #777d87;
           background: #29292d;
+        }
+
+        .accounts-primary-label {
+          display: inline-block;
+          margin-top: 4px;
+          color: #a8c7b3;
+          font-size: 9px;
+        }
+
+        .accounts-item-actions .accounts-primary-button.selected {
+          border-color: #53685b;
+          color: #b7d0c0;
+          background: #1c2820;
+          cursor: default;
+        }
+
+        .accounts-item-actions .accounts-primary-button:disabled {
+          opacity: 1;
         }
 
         .accounts-item-actions .accounts-delete-button {
