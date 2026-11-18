@@ -418,7 +418,7 @@ export default function MainNavigation() {
             {!collapsed && renderSubmenu(routineMenuItems, "routine-submenu", routineMenuOpen)}
           </div>
 
-          {/* RELATÓRIOS */}
+          {/* CENTRAL DE INDICADORES */}
           <div className="nav-group">
             <button
               type="button"
@@ -439,10 +439,10 @@ export default function MainNavigation() {
               }}
               aria-expanded={reportsMenuOpen && !collapsed}
               aria-controls="reports-submenu"
-              title={collapsed ? "Relatórios" : undefined}
+              title={collapsed ? "Inteligência" : undefined}
             >
               <span className="nav-icon">▥</span>
-              <span className="nav-finance-label">Relatórios</span>
+              <span className="nav-finance-label">Inteligência</span>
               <span className={`nav-chevron ${reportsMenuOpen && !collapsed ? "open" : ""}`}>›</span>
             </button>
             {!collapsed && renderSubmenu(reportsMenuItems, "reports-submenu", reportsMenuOpen)}
