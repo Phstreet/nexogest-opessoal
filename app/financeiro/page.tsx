@@ -852,7 +852,6 @@ export default function Page() {
       registeredAccounts.map((item) => item.name)
     );
 
-    const primary = registeredAccounts.find((item) => item.active && item.isPrimary);
     const activeNames = registeredAccounts
       .filter((item) => item.active)
       .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)))
