@@ -14,6 +14,7 @@ import {
   FINANCE_STORAGE_KEYS,
   getAccounts,
   loadTransactionsSafely,
+  mirrorRemoteTransactions,
 } from "@/lib/finance/storage";
 
 type FormMovementType =
@@ -586,6 +587,7 @@ export default function Page() {
           revisionRef.current = remoteTransactions.revision;
           lastSavedPayloadRef.current = JSON.stringify(cloudRecords);
           setTransactions(cloudRecords);
+          mirrorRemoteTransactions(cloudRecords);
           setInvalidCount(invalidCloudRecords.length);
           setSafeToSave(invalidCloudRecords.length === 0);
           setStorageError(
@@ -646,6 +648,7 @@ export default function Page() {
             revisionRef.current = refreshed.revision;
             lastSavedPayloadRef.current = JSON.stringify(refreshedRecords);
             setTransactions(refreshedRecords);
+            mirrorRemoteTransactions(refreshedRecords);
             setInvalidCount(refreshedInvalid.length);
             setSafeToSave(refreshedInvalid.length === 0);
             setStorageError(
@@ -658,6 +661,7 @@ export default function Page() {
             revisionRef.current = migration.current_revision ?? 1;
             lastSavedPayloadRef.current = JSON.stringify(legacyRecords);
             setTransactions(legacyRecords);
+            mirrorRemoteTransactions(legacyRecords);
             setSafeToSave(true);
             setStorageError(null);
             setSyncStatus(
@@ -720,6 +724,7 @@ export default function Page() {
         revisionRef.current =
           result.current_revision ?? revisionRef.current + 1;
         lastSavedPayloadRef.current = serializedPayload;
+        mirrorRemoteTransactions(transactions);
         setStorageError(null);
         setSyncStatus("Sincronizado com o Supabase");
       } catch (error) {
