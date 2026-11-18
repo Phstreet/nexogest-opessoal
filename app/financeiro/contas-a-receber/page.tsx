@@ -3,8 +3,7 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
 type Transaction = {
@@ -109,6 +108,9 @@ export default function ContasAReceberPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
   const [loading, setLoading] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState({ description: "", amount: "", settledAmount: "0", date: getToday(), category: "", subcategory: "", account: "", paymentMethod: "PIX", status: "Pendente", recurrence: "Nenhuma" });
 
   const loadTransactions = useCallback(() => {
     try {
@@ -240,6 +242,24 @@ export default function ContasAReceberPage() {
     }
   }
 
+  function openRevenueEditor(item?: Transaction) {
+    setEditingId(item?.id ?? null);
+    setDraft({ description: item?.description ?? "", amount: item ? String(item.amount).replace(".", ",") : "", settledAmount: item ? String(getSettledAmount(item)).replace(".", ",") : "0", date: item?.date || getToday(), category: item?.category || "", subcategory: item?.subcategory || "", account: item?.account || "", paymentMethod: item?.paymentMethod || "PIX", status: item?.status || "Pendente", recurrence: item?.recurrence || "Nenhuma" });
+    setEditorOpen(true);
+  }
+
+  function saveRevenue(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const amount = parseCurrencyInput(draft.amount);
+    const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
+    if (!draft.description.trim() || !Number.isFinite(amount) || amount <= 0) { alert("Informe uma descrição e um valor válido."); return; }
+    if (!Number.isFinite(settledAmount) || settledAmount < 0 || settledAmount > amount) { alert("O valor recebido não pode ser negativo nem ultrapassar o valor total."); return; }
+    const status = settledAmount >= amount ? "Recebida" : settledAmount > 0 ? "Recebida parcialmente" : draft.status;
+    const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Receita", amount, settledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
+    const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
+    if (!saveTransactions(updated)) { alert("Não foi possível salvar. Os dados anteriores foram preservados."); loadTransactions(); return; }
+    setTransactions(updated); setEditorOpen(false); setEditingId(null);
+  }
   function registerPartialReceipt(item: Transaction) {
     const openAmount = getOpenAmount(item);
     const entered = window.prompt(
@@ -274,9 +294,7 @@ export default function ContasAReceberPage() {
           </p>
         </div>
 
-        <Link href="/financeiro" className="receivable-back">
-          ← Voltar ao financeiro
-        </Link>
+        <button type="button" className="receivable-back" onClick={() => setEditorOpen(false)}>Contas a receber</button>
       </div>
 
       <section className="receivable-summary">
@@ -321,6 +339,24 @@ export default function ContasAReceberPage() {
         </article>
       </section>
 
+      {editorOpen && (
+        <section className="receivable-editor-panel">
+          <div className="receivable-heading"><div><span className="receivable-editor-eyebrow">CADASTRO DE RECEITA</span><h2>{editingId === null ? "Nova receita" : "Editar receita"}</h2><p>Formulário exclusivo de contas a receber.</p></div></div>
+          <form className="receivable-editor-form" onSubmit={saveRevenue}>
+            <label>Descrição<input required value={draft.description} onChange={(e) => setDraft({...draft, description:e.target.value})} /></label>
+            <label>Valor total<input required inputMode="decimal" value={draft.amount} onChange={(e) => setDraft({...draft, amount:e.target.value})} /></label>
+            <label>Valor já recebido<input inputMode="decimal" value={draft.settledAmount} onChange={(e) => setDraft({...draft, settledAmount:e.target.value})} /></label>
+            <label>Data prevista<input type="date" value={draft.date} onChange={(e) => setDraft({...draft, date:e.target.value})} /></label>
+            <label>Categoria<input value={draft.category} onChange={(e) => setDraft({...draft, category:e.target.value})} /></label>
+            <label>Subcategoria<input value={draft.subcategory} onChange={(e) => setDraft({...draft, subcategory:e.target.value})} /></label>
+            <label>Conta de recebimento<input value={draft.account} onChange={(e) => setDraft({...draft, account:e.target.value})} /></label>
+            <label>Forma de recebimento<select value={draft.paymentMethod} onChange={(e) => setDraft({...draft, paymentMethod:e.target.value})}><option>PIX</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option><option>Boleto</option><option>Transferência</option><option>Outro</option></select></label>
+            <label>Status<select value={draft.status} onChange={(e) => setDraft({...draft, status:e.target.value})}><option value="Pendente">Pendente</option><option value="Recebida parcialmente">Recebida parcialmente</option><option value="Recebida">Recebida</option><option value="Cancelada">Cancelada</option></select></label>
+            <label>Recorrência<select value={draft.recurrence} onChange={(e) => setDraft({...draft, recurrence:e.target.value})}><option>Nenhuma</option><option>Semanal</option><option>Quinzenal</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></label>
+            <div className="receivable-editor-actions"><button type="button" onClick={() => {setEditorOpen(false);setEditingId(null);}}>Cancelar</button><button type="submit">{editingId === null ? "Cadastrar receita" : "Salvar alterações"}</button></div>
+          </form>
+        </section>
+      )}
       <section className="receivable-content">
         <div className="receivable-heading">
           <div>
@@ -330,12 +366,9 @@ export default function ContasAReceberPage() {
             </p>
           </div>
 
-          <Link
-            href="/financeiro"
-            className="receivable-new-button"
-          >
+          <button type="button" className="receivable-new-button" onClick={() => openRevenueEditor()}>
             + Nova receita
-          </Link>
+          </button>
         </div>
 
         <div className="receivable-filters">
@@ -395,8 +428,7 @@ export default function ContasAReceberPage() {
                     <strong>Nenhuma receita encontrada</strong>
 
                     <span>
-                      Cadastre uma receita na página Financeiro
-                      para visualizar aqui.
+                      Use o botão “Nova receita” para cadastrar diretamente nesta aba.
                     </span>
                   </td>
                 </tr>
@@ -453,6 +485,7 @@ export default function ContasAReceberPage() {
                       </td>
 
                       <td>
+                        <div className="receivable-row-actions"><button type="button" className="receivable-edit-button" onClick={() => openRevenueEditor(item)}>Editar</button>
                         {getOpenAmount(item) > 0 &&
                         !isCancelled(item.status) ? (
                           <>
@@ -482,6 +515,7 @@ export default function ContasAReceberPage() {
                         ) : (
                           <span className="no-action">—</span>
                         )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -557,6 +591,17 @@ export default function ContasAReceberPage() {
           background: #1b1b1e;
         }
 
+        .receivable-editor-panel { border:1px solid #34343a; border-radius:13px; background:#111113; overflow:hidden; }
+        .receivable-editor-eyebrow { color:#9298a2; font-size:9px; font-weight:700; letter-spacing:1.5px; }
+        .receivable-editor-form { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding:18px 23px 22px; }
+        .receivable-editor-form label { display:flex; flex-direction:column; gap:6px; color:#b9bac1; font-size:11px; }
+        .receivable-editor-form input,.receivable-editor-form select { width:100%; min-width:0; height:38px; padding:0 10px; border:1px solid #37373d; border-radius:7px; color:#f3f3f5; background:#151517; color-scheme:dark; font:inherit; box-sizing:border-box; }
+        .receivable-editor-actions,.receivable-row-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+        .receivable-editor-actions { grid-column:1/-1; justify-content:flex-end; }
+        .receivable-editor-actions button,.receivable-edit-button { min-height:31px; padding:0 11px; border:1px solid #414149; border-radius:6px; color:#e5e5e7; background:#222226; font:inherit; font-size:10px; cursor:pointer; }
+        .receivable-editor-actions button[type="submit"] { background:#d7d9de; color:#151517; font-weight:700; }
+        @media(max-width:700px){.receivable-editor-form{grid-template-columns:repeat(2,minmax(0,1fr));}}
+        @media(max-width:380px){.receivable-editor-form{grid-template-columns:1fr;padding:14px;}}
         .receivable-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
