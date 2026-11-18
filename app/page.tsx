@@ -12,20 +12,10 @@ import {
   type RoutineTask,
   type RoutineHabit,
 } from "@/lib/routine/types";
-import Link from "next/link";
 import AppLayout from "../components/layout/AppLayout";
 import DailyCenter from "@/components/dashboard/DailyCenter";
 
 type Tab = "dashboard" | "rotina";
-
-function money(value: number) {
-  const safeValue = Number.isFinite(value) ? value : 0;
-
-  return safeValue.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
 
 export default function Home() {
   const confirm = useNexoConfirm();
@@ -62,8 +52,6 @@ export default function Home() {
 
   const now = new Date();
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const activeHabits = habits.filter((habit) => habit.active);
-
   function toggleHabitToday(id: number) {
     if (!habitsSafeToSave) return;
 
@@ -92,10 +80,6 @@ export default function Home() {
   const pendingTasks = tasks.filter(
     (task) => !task.done
   );
-
-  const progress = tasks.length
-    ? Math.round((completedTasks / tasks.length) * 100)
-    : 0;
 
   // =====================================================
   // FUNÇÕES DAS TAREFAS
