@@ -2,11 +2,12 @@
 "use client";
 
 import Link from "next/link";
-import type { Account } from "@/lib/finance/types";
-import { getAccountBalance } from "@/lib/finance/accounts";
+import type { Account, Transaction } from "@/lib/finance/types";
+import { getAccountBalanceFrom } from "@/lib/finance/accounts";
 
 type DashboardAccountsProps = {
   accounts: Account[];
+  transactions: Transaction[];
   accountBalance: number;
   reserveBalance: number;
   money: (value: number) => string;
@@ -14,6 +15,7 @@ type DashboardAccountsProps = {
 
 export default function DashboardAccounts({
   accounts,
+  transactions,
   accountBalance,
   reserveBalance,
   money,
@@ -58,7 +60,7 @@ export default function DashboardAccounts({
               </div>
 
               <strong className="account-value">
-                {money(getAccountBalance(account))}
+                {money(getAccountBalanceFrom(account, transactions))}
               </strong>
             </div>
           ))}

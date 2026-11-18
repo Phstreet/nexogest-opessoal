@@ -7,7 +7,6 @@ import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
-  type RemoteCollection,
 } from "@/lib/supabase/client";
 
 type Profile = {
@@ -45,15 +44,6 @@ function normalizeProfile(value: unknown): Profile {
   };
 }
 
-function readLocalProfile(): Profile {
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY);
-    return raw ? normalizeProfile(JSON.parse(raw)) : EMPTY_PROFILE;
-  } catch {
-    return EMPTY_PROFILE;
-  }
-}
-
 export default function PerfilPage() {
   const { session, loading: authLoading } = useNexoAuth();
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
@@ -62,7 +52,7 @@ export default function PerfilPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const revision = useRef(0);
-  const loaded = useRef(false);
+  const [loaded, setLoaded] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!session) {
@@ -79,17 +69,15 @@ export default function PerfilPage() {
         const next = normalizeProfile(remote.payload);
         revision.current = Number(remote.revision) || 0;
         setProfile(next);
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(next));
-        window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: PROFILE_KEY } }));
         window.dispatchEvent(new Event("nexo:profile-updated"));
       } else {
         revision.current = 0;
-        setProfile(readLocalProfile());
+        setProfile(EMPTY_PROFILE);
       }
-      loaded.current = true;
+      setLoaded(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar seu perfil.");
-      setProfile(readLocalProfile());
+      setProfile(EMPTY_PROFILE);
     } finally {
       setLoading(false);
     }
@@ -141,8 +129,6 @@ export default function PerfilPage() {
       }
       revision.current = result.current_revision || revision.current + 1;
       setProfile(normalized);
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(normalized));
-      window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: PROFILE_KEY } }));
       window.dispatchEvent(new Event("nexo:profile-updated"));
       setMessage("Perfil atualizado e salvo com segurança na sua conta.");
     } catch (caught) {
@@ -238,7 +224,7 @@ export default function PerfilPage() {
 
               <div className="profile-form-footer">
                 <span><b>*</b> Campo obrigatório</span>
-                <button className="profile-submit" type="submit" disabled={saving || !loaded.current}>{saving ? "Salvando..." : "Salvar meu perfil"}</button>
+                <button className="profile-submit" type="submit" disabled={saving || !loaded}>{saving ? "Salvando..." : "Salvar meu perfil"}</button>
               </div>
             </form>
             <div className="profile-privacy">Seus dados pessoais são armazenados na sua área individual do NEXO e sincronizados com sua conta. A renda é opcional e pode ser alterada ou removida quando quiser.</div>

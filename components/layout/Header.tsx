@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { fetchRemoteCollections } from "@/lib/supabase/client";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -32,25 +33,34 @@ export default function Header() {
     setGreeting(getGreeting());
     setDate(getFormattedDate());
 
-    function loadProfile() {
+    let active = true;
+    async function loadProfile() {
       try {
-        const raw = window.localStorage.getItem("nexo_profile");
-        if (!raw) {
+        const collections = await fetchRemoteCollections();
+        if (!active) return;
+        const row = collections.find((item) => item.data_key === "nexo_profile");
+        const payload = row?.payload;
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
           setDisplayName("");
           return;
         }
-        const parsed = JSON.parse(raw) as { displayName?: unknown };
-        setDisplayName(typeof parsed.displayName === "string" ? parsed.displayName : "");
-      } catch {
-        setDisplayName("");
+        const profile = payload as { displayName?: unknown; fullName?: unknown };
+        const name = typeof profile.displayName === "string"
+          ? profile.displayName
+          : typeof profile.fullName === "string" ? profile.fullName : "";
+        setDisplayName(name);
+      } catch (error) {
+        console.error("Não foi possível carregar o perfil da nuvem:", error);
+        if (active) setDisplayName("");
       }
     }
 
-    loadProfile();
-    window.addEventListener("storage", loadProfile);
+    void loadProfile();
+    window.addEventListener("focus", loadProfile);
     window.addEventListener("nexo:profile-updated", loadProfile);
     return () => {
-      window.removeEventListener("storage", loadProfile);
+      active = false;
+      window.removeEventListener("focus", loadProfile);
       window.removeEventListener("nexo:profile-updated", loadProfile);
     };
   }, []);

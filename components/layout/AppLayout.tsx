@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import MainNavigation from "../navigation/MainNavigation";
 import Header from "./Header";
 import AccountAccess from "@/components/auth/AccountAccess";
-import NexoSyncManager from "@/components/auth/NexoSyncManager";
+import LegacyLocalDataCleanup from "@/components/auth/LegacyLocalDataCleanup";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -16,7 +16,7 @@ export default function AppLayout({
   return (
     <main className="app-shell">
       <MainNavigation />
-      <NexoSyncManager hidePanel />
+      <LegacyLocalDataCleanup />
 
       <section className="main-area">
         <div className="nexo-account-slot"><AccountAccess /></div>

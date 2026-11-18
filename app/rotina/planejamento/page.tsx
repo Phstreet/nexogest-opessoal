@@ -3,6 +3,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
+import { fetchRemoteCollections } from "@/lib/supabase/client";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
@@ -76,22 +77,33 @@ export default function WeeklyPlanningPage() {
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [weekStartsOn, setWeekStartsOn] = useState<"monday" | "sunday">("monday");
+  const [preferencesError, setPreferencesError] = useState("");
   const [weekStart, setWeekStart] = useState(() =>
     getWeekStart(new Date())
   );
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("nexo_preferences");
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { weekStartsOn?: unknown };
-      if (parsed.weekStartsOn === "monday" || parsed.weekStartsOn === "sunday") {
-        setWeekStartsOn(parsed.weekStartsOn);
-        setWeekStart(getWeekStart(new Date(), parsed.weekStartsOn));
+    let active = true;
+    async function loadPreferences() {
+      try {
+        const collections = await fetchRemoteCollections();
+        if (!active) return;
+        const row = collections.find((item) => item.data_key === "nexo_preferences");
+        if (!row) return;
+        if (!row.payload || typeof row.payload !== "object" || Array.isArray(row.payload)) {
+          throw new Error("As preferências recebidas da nuvem estão em formato inválido.");
+        }
+        const preference = row.payload as { weekStartsOn?: unknown };
+        if (preference.weekStartsOn === "monday" || preference.weekStartsOn === "sunday") {
+          setWeekStartsOn(preference.weekStartsOn);
+          setWeekStart(getWeekStart(new Date(), preference.weekStartsOn));
+        }
+      } catch (error) {
+        if (active) setPreferencesError(error instanceof Error ? error.message : "Não foi possível carregar as preferências da nuvem.");
       }
-    } catch (error) {
-      console.error("Não foi possível carregar as preferências do NEXO:", error);
     }
+    void loadPreferences();
+    return () => { active = false; };
   }, []);
 
   const [showForm, setShowForm] = useState(false);
@@ -293,6 +305,7 @@ export default function WeeklyPlanningPage() {
 
   return (
     <div className="content weekly-page-content">
+      {preferencesError && <div className="form-card" role="alert">{preferencesError}</div>}
       {storageError && (
         <div className="form-card" role="alert">
           <strong>Armazenamento protegido</strong>

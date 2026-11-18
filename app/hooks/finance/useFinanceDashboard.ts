@@ -1,24 +1,12 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-import type {
-  Account,
-  Transaction,
-  Reserve,
-  ReserveMovement,
-} from "@/lib/finance/types";
+import type { Transaction } from "@/lib/finance/types";
 
-import {
-  getAccounts,
-  getTransactions,
-  getReserves,
-  getReserveMovements,
-  subscribeFinanceUpdates,
-  FINANCE_STORAGE_KEYS,
-} from "@/lib/finance/storage";
-import { getAccountBalance } from "@/lib/finance/accounts";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
+import { getAccountBalanceFrom } from "@/lib/finance/accounts";
 import { calculateReserveBalance } from "@/lib/finance/reserves";
 
 // =====================================================
@@ -217,54 +205,12 @@ function sumSettledTransactions(
 // =====================================================
 
 export function useFinanceDashboard() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [reserves, setReserves] = useState<Reserve[]>([]);
-  const [reserveMovements, setReserveMovements] = useState<ReserveMovement[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { transactions, accounts, reserves, reserveMovements, loaded, error } = useCloudFinanceCollections();
   const [period, setPeriod] = useState<"3" | "6">("6");
 
   const today = useMemo(() => new Date(), []);
 
   const currentMonthKey = getMonthKey(today);
-
-  // =====================================================
-  // CARREGAMENTO E ATUALIZAÇÃO DOS DADOS
-  // =====================================================
-
-  useEffect(() => {
-    function loadData() {
-      try {
-        setTransactions(getTransactions());
-        setAccounts(getAccounts());
-        setReserves(getReserves());
-        setReserveMovements(getReserveMovements());
-      } catch (error) {
-        console.error(
-          "[NEXO] Erro ao carregar dados do Dashboard Financeiro:",
-          error
-        );
-      } finally {
-        setLoaded(true);
-      }
-    }
-
-    loadData();
-
-    const unsubscribe = subscribeFinanceUpdates((key) => {
-      if (
-        key === null ||
-        key === FINANCE_STORAGE_KEYS.transactions ||
-        key === FINANCE_STORAGE_KEYS.accounts ||
-        key === FINANCE_STORAGE_KEYS.reserves ||
-        key === FINANCE_STORAGE_KEYS.reserveMovements
-      ) {
-        loadData();
-      }
-    });
-
-    return unsubscribe;
-  }, []);
 
   // =====================================================
   // LANÇAMENTOS VÁLIDOS
@@ -422,8 +368,8 @@ export function useFinanceDashboard() {
   const accountBalance = useMemo(() => {
     return accounts
       .filter((account) => account.active)
-      .reduce((total, account) => total + getAccountBalance(account), 0);
-  }, [accounts]);
+      .reduce((total, account) => total + getAccountBalanceFrom(account, transactions), 0);
+  }, [accounts, transactions]);
 
   const reserveBalance = useMemo(
     () =>
@@ -957,6 +903,7 @@ export function useFinanceDashboard() {
 
   return {
     loaded,
+    error,
 
     transactions,
     accounts,

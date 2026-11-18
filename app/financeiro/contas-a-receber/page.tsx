@@ -3,10 +3,10 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { getTransactions, getAccounts, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
-import type { Account } from "@/lib/finance/types";
+import { useMemo, useState, type FormEvent } from "react";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
+import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
 
 type Transaction = {
   id: number;
@@ -106,46 +106,15 @@ function getStatus(transaction: Transaction) {
 
 export default function ContasAReceberPage() {
   const confirm = useNexoConfirm();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [registeredAccounts, setRegisteredAccounts] = useState<Account[]>([]);
+  const { transactions, accounts, loaded: cloudLoaded, error: cloudError, saveTransactions } = useCloudFinanceCollections();
+  const registeredAccounts = useMemo(() => accounts.filter((account) => account.active).sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary))), [accounts]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
-  const [loading, setLoading] = useState(true);
+  const loading = !cloudLoaded;
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState({ description: "", amount: "", settledAmount: "0", date: getToday(), category: "", subcategory: "", account: "", paymentMethod: "PIX", status: "Pendente", recurrence: "Nenhuma" });
 
-  const loadTransactions = useCallback(() => {
-    try {
-      setTransactions(getTransactions());
-    } catch {
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    function loadRegisteredAccounts() {
-      try {
-        setRegisteredAccounts(
-          getAccounts()
-            .filter((account) => account.active)
-            .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)))
-        );
-      } catch {
-        setRegisteredAccounts([]);
-      }
-    }
-
-    loadTransactions();
-    loadRegisteredAccounts();
-
-    return subscribeFinanceUpdates((key) => {
-      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) loadTransactions();
-      if (key === null || key === FINANCE_STORAGE_KEYS.accounts) loadRegisteredAccounts();
-    });
-  }, [loadTransactions]);
 
   const revenues = useMemo(() => {
     return transactions.filter((item) => item.type === "Receita");
@@ -234,18 +203,13 @@ export default function ContasAReceberPage() {
       });
   }, [revenues, search, filter]);
 
-  function updateStatus(id: number, newStatus: string) {
+  async function updateStatus(id: number, newStatus: string) {
     const updatedTransactions = transactions.map((item) =>
       item.id === id ? { ...item, status: newStatus, settledAmount: newStatus === "Pendente" ? 0 : newStatus === "Recebida" ? Number(item.amount || 0) : item.settledAmount } : item
     );
 
-    if (!saveTransactions(updatedTransactions)) {
-      alert("Não foi possível salvar a alteração. Os dados anteriores foram preservados.");
-      loadTransactions();
-      return;
-    }
-
-    setTransactions(updatedTransactions);
+    try { await saveTransactions(updatedTransactions); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível salvar a alteração na nuvem."); }
   }
 
   async function markAsReceived(item: Transaction) {
@@ -283,7 +247,7 @@ export default function ContasAReceberPage() {
     setEditorOpen(true);
   }
 
-  function saveRevenue(event: FormEvent<HTMLFormElement>) {
+  async function saveRevenue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const amount = parseCurrencyInput(draft.amount);
     const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
@@ -293,11 +257,13 @@ export default function ContasAReceberPage() {
     const effectiveSettledAmount = draft.status === "Recebida" ? amount : settledAmount;
     const status = effectiveSettledAmount >= amount ? "Recebida" : effectiveSettledAmount > 0 ? "Recebida parcialmente" : draft.status === "Recebida parcialmente" ? "Pendente" : draft.status;
     const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Receita", amount, settledAmount: effectiveSettledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
-    const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
-    if (!saveTransactions(updated)) { alert("Não foi possível salvar. Os dados anteriores foram preservados."); loadTransactions(); return; }
-    setTransactions(updated); setEditorOpen(false); setEditingId(null);
+    const updated = editingId === null
+      ? expandRecurringTransactions([...transactions, entry])
+      : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
+    try { await saveTransactions(updated); setEditorOpen(false); setEditingId(null); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível salvar na nuvem."); }
   }
-  function registerPartialReceipt(item: Transaction) {
+  async function registerPartialReceipt(item: Transaction) {
     const openAmount = getOpenAmount(item);
     const entered = window.prompt(
       `Informe quanto foi recebido agora. Saldo restante: ${formatCurrency(openAmount)}`,
@@ -314,16 +280,13 @@ export default function ContasAReceberPage() {
     const updatedTransactions = transactions.map((transaction) =>
       transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
     );
-    if (!saveTransactions(updatedTransactions)) {
-      alert("Não foi possível registrar o recebimento. Os dados anteriores foram preservados.");
-      loadTransactions();
-      return;
-    }
-    setTransactions(updatedTransactions);
+    try { await saveTransactions(updatedTransactions); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível registrar o recebimento na nuvem."); }
   }
 
   return (
     <div className="content receivable-content-page">
+      {cloudError && <div role="alert" className="finance-cloud-error">{cloudError}</div>}
       <div className="receivable-intro">
         <div>
           <p>

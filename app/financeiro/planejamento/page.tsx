@@ -3,13 +3,9 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  loadTransactionsSafely,
-  subscribeFinanceUpdates,
-  FINANCE_STORAGE_KEYS,
-} from "@/lib/finance/storage";
+import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 
 type TransactionType =
   | "Receita"
@@ -62,9 +58,6 @@ type GoalForm = {
   deadline: string;
   category: string;
 };
-
-const BUDGETS_KEY = "nexo_planning_budgets";
-const GOALS_KEY = "nexo_planning_goals";
 
 const goalCategories = [
   "Reserva de emergência",
@@ -208,30 +201,6 @@ function isValidGoal(value: unknown): value is FinancialGoal {
   );
 }
 
-function readPlanningList<T>(
-  key: string,
-  backupKey: string,
-  validator: (value: unknown) => value is T
-): { items: T[]; safeToSave: boolean } {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return { items: [], safeToSave: true };
-
-    const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.every(validator)) {
-      return { items: parsed, safeToSave: true };
-    }
-
-    if (localStorage.getItem(backupKey) === null) {
-      localStorage.setItem(backupKey, raw);
-    }
-
-    return { items: [], safeToSave: false };
-  } catch (error) {
-    console.error(`Não foi possível ler ${key}; os dados originais foram preservados.`, error);
-    return { items: [], safeToSave: false };
-  }
-}
 
 function isCanceled(transaction: Transaction) {
   const status = (transaction.status || "").toLowerCase().trim();
@@ -240,82 +209,33 @@ function isCanceled(transaction: Transaction) {
 
 export default function PlanejamentoFinanceiroPage() {
   const confirm = useNexoConfirm();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [goals, setGoals] = useState<FinancialGoal[]>([]);
+  const {
+    transactions: cloudTransactions,
+    planningBudgets: rawBudgets,
+    financialGoals: rawGoals,
+    loaded,
+    error: cloudError,
+    savePlanningBudgets,
+    saveFinancialGoals,
+  } = useCloudFinanceCollections();
 
+  const transactions = cloudTransactions as Transaction[];
+  const budgets = rawBudgets.filter(isValidBudget);
+  const goals = rawGoals.filter(isValidGoal);
+  const loading = !loaded;
+  const storageCanSave = loaded && !cloudError &&
+    budgets.length === rawBudgets.length &&
+    goals.length === rawGoals.length;
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [loading, setLoading] = useState(true);
-  const [storageCanSave, setStorageCanSave] = useState(false);
 
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
-
   const [budgetForm, setBudgetForm] = useState<BudgetForm>(emptyBudgetForm);
   const [goalForm, setGoalForm] = useState<GoalForm>(emptyGoalForm);
-
   const [editingBudgetId, setEditingBudgetId] = useState<number | null>(null);
   const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
-
   const [budgetError, setBudgetError] = useState("");
   const [goalError, setGoalError] = useState("");
-
-  useEffect(() => {
-    function loadData() {
-      const transactionResult = loadTransactionsSafely();
-      const budgetResult = readPlanningList(BUDGETS_KEY, "nexo_planning_budgets_backup", isValidBudget);
-      const goalResult = readPlanningList(GOALS_KEY, "nexo_planning_goals_backup", isValidGoal);
-
-      setTransactions(transactionResult.transactions);
-      setBudgets(budgetResult.items);
-      setGoals(goalResult.items);
-      setStorageCanSave(
-        transactionResult.safeToSave &&
-        budgetResult.safeToSave &&
-        goalResult.safeToSave
-      );
-      setLoading(false);
-    }
-
-    loadData();
-
-    const unsubscribe = subscribeFinanceUpdates((key) => {
-      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
-        loadData();
-      }
-    });
-
-    const handlePlanningStorage = (event: StorageEvent) => {
-      if (event.key === BUDGETS_KEY || event.key === GOALS_KEY) {
-        loadData();
-      }
-    };
-
-    window.addEventListener("storage", handlePlanningStorage);
-
-    return () => {
-      unsubscribe();
-      window.removeEventListener("storage", handlePlanningStorage);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!loading || !storageCanSave) return;
-    try {
-      localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
-    } catch (error) {
-      console.error("Erro ao salvar orçamentos:", error);
-    }
-  }, [budgets, loading, storageCanSave]);
-
-  useEffect(() => {
-    if (!loading || !storageCanSave) return;
-    try {
-      localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
-    } catch (error) {
-      console.error("Erro ao salvar metas financeiras:", error);
-    }
-  }, [goals, loading, storageCanSave]);
 
   const monthTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
@@ -469,7 +389,7 @@ export default function PlanejamentoFinanceiroPage() {
     setShowBudgetForm(true);
   }
 
-  function saveBudget(event: FormEvent<HTMLFormElement>) {
+  async function saveBudget(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBudgetError("");
 
@@ -506,28 +426,17 @@ export default function PlanejamentoFinanceiroPage() {
       return;
     }
 
-    if (editingBudgetId !== null) {
-      setBudgets((current) =>
-        current.map((budget) =>
-          budget.id === editingBudgetId
-            ? { ...budget, category, limit, month: selectedMonth }
-            : budget
-        )
-      );
-    } else {
-      const newBudget: Budget = {
-        id: Date.now(),
-        category,
-        limit,
-        month: selectedMonth,
-      };
-
-      setBudgets((current) => [...current, newBudget]);
+    const nextBudgets = editingBudgetId !== null
+      ? budgets.map((budget) => budget.id === editingBudgetId ? { ...budget, category, limit, month: selectedMonth } : budget)
+      : [...budgets, { id: Date.now(), category, limit, month: selectedMonth }];
+    try {
+      await savePlanningBudgets(nextBudgets);
+      setBudgetForm(emptyBudgetForm);
+      setShowBudgetForm(false);
+      setEditingBudgetId(null);
+    } catch (error) {
+      setBudgetError(error instanceof Error ? error.message : "Não foi possível salvar o orçamento na nuvem.");
     }
-
-    setBudgetForm(emptyBudgetForm);
-    setShowBudgetForm(false);
-    setEditingBudgetId(null);
   }
 
   async function deleteBudget(id: number) {
@@ -535,7 +444,8 @@ export default function PlanejamentoFinanceiroPage() {
 
     if (!confirmed) return;
 
-    setBudgets((current) => current.filter((budget) => budget.id !== id));
+    try { await savePlanningBudgets(budgets.filter((budget) => budget.id !== id)); }
+    catch (error) { setBudgetError(error instanceof Error ? error.message : "Não foi possível excluir o orçamento na nuvem."); }
   }
 
   function openNewGoalForm() {
@@ -561,7 +471,7 @@ export default function PlanejamentoFinanceiroPage() {
     setShowGoalForm(true);
   }
 
-  function saveGoal(event: FormEvent<HTMLFormElement>) {
+  async function saveGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setGoalError("");
 
@@ -589,38 +499,17 @@ export default function PlanejamentoFinanceiroPage() {
       return;
     }
 
-    if (editingGoalId !== null) {
-      setGoals((previous) =>
-        previous.map((goal) =>
-          goal.id === editingGoalId
-            ? {
-                ...goal,
-                name,
-                target,
-                current,
-                deadline: goalForm.deadline,
-                category: goalForm.category,
-              }
-            : goal
-        )
-      );
-    } else {
-      const newGoal: FinancialGoal = {
-        id: Date.now(),
-        name,
-        target,
-        current,
-        deadline: goalForm.deadline,
-        category: goalForm.category,
-        createdAt: getLocalDateString(),
-      };
-
-      setGoals((previous) => [...previous, newGoal]);
+    const nextGoals = editingGoalId !== null
+      ? goals.map((goal) => goal.id === editingGoalId ? { ...goal, name, target, current, deadline: goalForm.deadline, category: goalForm.category } : goal)
+      : [...goals, { id: Date.now(), name, target, current, deadline: goalForm.deadline, category: goalForm.category, createdAt: getLocalDateString() }];
+    try {
+      await saveFinancialGoals(nextGoals);
+      setGoalForm(emptyGoalForm);
+      setShowGoalForm(false);
+      setEditingGoalId(null);
+    } catch (error) {
+      setGoalError(error instanceof Error ? error.message : "Não foi possível salvar a meta na nuvem.");
     }
-
-    setGoalForm(emptyGoalForm);
-    setShowGoalForm(false);
-    setEditingGoalId(null);
   }
 
   async function deleteGoal(id: number) {
@@ -628,19 +517,17 @@ export default function PlanejamentoFinanceiroPage() {
 
     if (!confirmed) return;
 
-    setGoals((current) => current.filter((goal) => goal.id !== id));
+    try { await saveFinancialGoals(goals.filter((goal) => goal.id !== id)); }
+    catch (error) { setGoalError(error instanceof Error ? error.message : "Não foi possível excluir a meta na nuvem."); }
   }
 
-  function updateGoalAmount(goal: FinancialGoal, value: string) {
+  async function updateGoalAmount(goal: FinancialGoal, value: string) {
     const amount = Number(value);
 
     if (!Number.isFinite(amount) || amount < 0) return;
 
-    setGoals((current) =>
-      current.map((item) =>
-        item.id === goal.id ? { ...item, current: amount } : item
-      )
-    );
+    try { await saveFinancialGoals(goals.map((item) => item.id === goal.id ? { ...item, current: amount } : item)); }
+    catch (error) { setGoalError(error instanceof Error ? error.message : "Não foi possível atualizar a meta na nuvem."); }
   }
 
   function getBudgetStatus(used: number, limit: number) {
@@ -676,6 +563,7 @@ export default function PlanejamentoFinanceiroPage() {
 
   return (
     <div className="content planning-content">
+      {cloudError && <div role="alert" className="planning-error">{cloudError}</div>}
       {loading ? (
         <div className="loading-state">
           Carregando planejamento financeiro...

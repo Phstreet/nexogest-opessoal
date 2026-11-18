@@ -3,15 +3,10 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  preserveRoutineBackup,
-  readRoutineBackup,
-  readRoutineRaw,
-  writeRoutineBackup,
-  writeRoutineRaw,
-} from "@/lib/routine/storage";
+import { useRoutineCollection } from "@/hooks/useRoutineCollection";
+import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
 
 type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
@@ -26,10 +21,6 @@ type Task = {
   notes?: string;
   createdAt?: string;
 };
-
-const TASKS_KEY = "nexo_tasks";
-const TASKS_BACKUP_KEY = "nexo_tasks_backup";
-const TASKS_PRE_RESTORE_BACKUP_KEY = "nexo_tasks_backup_before_restore";
 
 function getLocalDate(date = new Date()) {
   const year = date.getFullYear();
@@ -126,94 +117,6 @@ function isValidTask(value: unknown): value is Task {
   );
 }
 
-type LoadResult = {
-  valid: Task[];
-  invalid: unknown[];
-  canSave: boolean;
-  notice: string;
-  rawSnapshot: string | null;
-};
-
-function loadTasks(): LoadResult {
-  const read = readRoutineRaw(TASKS_KEY);
-
-  if (read.error) {
-    return {
-      valid: [],
-      invalid: [],
-      canSave: false,
-      notice: read.error,
-      rawSnapshot: null,
-    };
-  }
-
-  const saved = read.raw;
-
-  if (saved === null) {
-    return {
-      valid: [],
-      invalid: [],
-      canSave: true,
-      notice: "",
-      rawSnapshot: null,
-    };
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(saved);
-
-    if (!Array.isArray(parsed)) {
-      const backupCreated = preserveRoutineBackup(TASKS_KEY, saved);
-
-      return {
-        valid: [],
-        invalid: [],
-        canSave: false,
-        notice: backupCreated
-          ? "Os dados salvos estão em formato inesperado. O salvamento automático foi pausado e a cópia original foi preservada no backup local."
-          : "Os dados salvos estão em formato inesperado. A cópia original permanece intacta, mas não foi possível criar o backup. O salvamento automático foi pausado.",
-        rawSnapshot: saved,
-      };
-    }
-
-    const valid: Task[] = [];
-    const invalid: unknown[] = [];
-
-    parsed.forEach((item) => {
-      if (isValidTask(item)) valid.push(item);
-      else invalid.push(item);
-    });
-
-    const backupCreated =
-      invalid.length === 0 || preserveRoutineBackup(TASKS_KEY, saved);
-
-    return {
-      valid,
-      invalid,
-      canSave: backupCreated,
-      notice:
-        invalid.length > 0
-          ? backupCreated
-            ? invalid.length + " registro(s) não reconhecido(s) foram preservados sem exclusão. Uma cópia integral foi criada no backup local."
-            : "Há registros não reconhecidos e não foi possível criar o backup. O salvamento automático foi pausado para proteger os dados."
-          : "",
-      rawSnapshot: saved,
-    };
-  } catch (error) {
-    console.error("Erro ao interpretar tarefas:", error);
-    const backupCreated = preserveRoutineBackup(TASKS_KEY, saved);
-
-    return {
-      valid: [],
-      invalid: [],
-      canSave: false,
-      notice: backupCreated
-        ? "Não foi possível interpretar os dados salvos. O salvamento automático foi pausado e o conteúdo original foi preservado no backup local."
-        : "Não foi possível interpretar nem criar o backup dos dados. O conteúdo original foi mantido e nenhuma gravação será realizada.",
-      rawSnapshot: saved,
-    };
-  }
-}
 
 function priorityClass(priority?: Priority) {
   switch (priority) {
@@ -230,39 +133,26 @@ function priorityClass(priority?: Priority) {
 
 export default function RoutineDashboard() {
   const confirm = useNexoConfirm();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [storageCanSave, setStorageCanSave] = useState(false);
-  const [dataNotice, setDataNotice] = useState("");
+  const {
+    items: tasks,
+    setItems: setTasks,
+    loaded,
+    safeToSave,
+    storageError,
+    saveNow,
+  } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
-  // Registros desconhecidos são preservados junto com as tarefas reconhecidas.
-  const unknownItemsRef = useRef<unknown[]>([]);
-  const rawSnapshotRef = useRef<string | null>(null);
-  const skipNextSaveRef = useRef(true);
+  const storageCanSave = loaded && safeToSave;
+  const [dataNotice, setDataNotice] = useState("");
 
   // Relógio inicializado somente no navegador para evitar divergência de hidratação.
   const [clock, setClock] = useState<Clock | null>(null);
-
   const [taskName, setTaskName] = useState("");
   const [taskDate, setTaskDate] = useState("");
   const [taskTime, setTaskTime] = useState("");
   const [taskPriority, setTaskPriority] = useState<Priority>("Média");
-
   const [showQuickForm, setShowQuickForm] = useState(false);
-
   const today = clock?.date ?? "";
-
-  const loadData = useCallback(() => {
-    const result = loadTasks();
-
-    unknownItemsRef.current = result.invalid;
-    rawSnapshotRef.current = result.rawSnapshot;
-    skipNextSaveRef.current = true;
-    setTasks(result.valid);
-    setStorageCanSave(result.canSave);
-    setDataNotice(result.notice);
-    setLoaded(true);
-  }, []);
 
   // RELÓGIO LOCAL E VIRADA DO DIA
 
@@ -292,62 +182,6 @@ export default function RoutineDashboard() {
       document.removeEventListener("visibilitychange", updateClock);
     };
   }, []);
-
-  // CARREGAMENTO E SINCRONIZAÇÃO
-
-  useEffect(() => {
-    loadData();
-
-    function handleStorage(event: StorageEvent) {
-      if (event.key === TASKS_KEY || event.key === null) {
-        loadData();
-      }
-    }
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [loadData]);
-
-  // SALVAMENTO PROTEGIDO
-
-  useEffect(() => {
-    if (!loaded || !storageCanSave) return;
-
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false;
-      return;
-    }
-
-    try {
-      const next = JSON.stringify([
-        ...tasks,
-        ...unknownItemsRef.current,
-      ]);
-
-      const result = writeRoutineRaw(
-        TASKS_KEY,
-        next,
-        rawSnapshotRef.current
-      );
-
-      if (!result.saved) {
-        setStorageCanSave(false);
-        setDataNotice(result.error || "Não foi possível salvar as tarefas.");
-        return;
-      }
-
-      rawSnapshotRef.current = result.rawSnapshot;
-    } catch (error) {
-      console.error("Erro ao salvar tarefas:", error);
-      setStorageCanSave(false);
-      setDataNotice(
-        "Não foi possível salvar as alterações no armazenamento local."
-      );
-    }
-  }, [tasks, loaded, storageCanSave]);
 
   // INDICADORES
 
@@ -432,20 +266,11 @@ export default function RoutineDashboard() {
     const createdAt = new Date().toISOString();
 
     setTasks((current) => {
-      const unknownIds = unknownItemsRef.current
-        .filter(
-          (item): item is Record<string, unknown> =>
-            !!item && typeof item === "object"
-        )
-        .map((item) => item.id)
-        .filter((id): id is number => typeof id === "number");
-
       // Preserva o padrão numérico já usado pelo NEXO e evita colisões.
       let nextId = Date.now();
 
       while (
-        current.some((task) => task.id === nextId) ||
-        unknownIds.includes(nextId)
+        current.some((task) => task.id === nextId)
       ) {
         nextId += 1;
       }
@@ -471,122 +296,79 @@ export default function RoutineDashboard() {
     setShowQuickForm(false);
   }
 
-  function createLocalBackup() {
-    const current = readRoutineRaw(TASKS_KEY);
-
-    if (current.error) {
-      setDataNotice(current.error);
-      return;
+  async function createLocalBackup() {
+    try {
+      const collections = await fetchRemoteCollections();
+      const taskRow = collections.find((item) => item.data_key === "nexo_tasks");
+      const currentTasks = taskRow?.payload ?? [];
+      if (!Array.isArray(currentTasks) || !currentTasks.every(isValidTask)) {
+        throw new Error("A lista atual da nuvem contém dados inválidos. O backup foi interrompido.");
+      }
+      const backupRow = collections.find((item) => item.data_key === "nexo_task_backups");
+      const existing = backupRow?.payload ?? [];
+      if (!Array.isArray(existing)) throw new Error("O histórico de backups da nuvem está inválido.");
+      const backup = {
+        id: `manual-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        reason: "manual",
+        tasks: currentTasks,
+      };
+      const result = await saveRemoteCollection("nexo_task_backups", [...existing, backup], Number(backupRow?.revision) || 0);
+      if (!result.saved) throw new Error("O histórico de backups foi alterado em outro dispositivo. Atualize e tente novamente.");
+      setDataNotice("Backup criado e salvo com sucesso na nuvem.");
+    } catch (error) {
+      setDataNotice(error instanceof Error ? error.message : "Não foi possível criar o backup na nuvem.");
     }
-
-    const content =
-      current.raw ??
-      JSON.stringify([...tasks, ...unknownItemsRef.current]);
-
-    if (!writeRoutineBackup(TASKS_BACKUP_KEY, content)) {
-      setDataNotice(
-        "Não foi possível criar o backup. Verifique o espaço disponível no armazenamento do navegador."
-      );
-      return;
-    }
-
-    setDataNotice(
-      "Backup local criado com sucesso. A cópia está armazenada neste navegador."
-    );
   }
 
   async function restoreLocalBackup() {
-    const backupResult = readRoutineBackup(TASKS_BACKUP_KEY);
-
-    if (backupResult.error) {
-      setDataNotice(backupResult.error);
-      return;
-    }
-
-    const backup = backupResult.raw;
-
-    if (!backup) {
-      setDataNotice("Nenhum backup local foi encontrado neste navegador.");
-      return;
-    }
-
-    let parsed: unknown;
-
     try {
-      parsed = JSON.parse(backup);
-    } catch {
-      setDataNotice(
-        "O backup está corrompido. Os dados atuais foram mantidos."
+      const collections = await fetchRemoteCollections();
+      const taskRow = collections.find((item) => item.data_key === "nexo_tasks");
+      const backupRow = collections.find((item) => item.data_key === "nexo_task_backups");
+      const currentTasks = taskRow?.payload ?? [];
+      const backups = backupRow?.payload ?? [];
+      if (!Array.isArray(currentTasks) || !currentTasks.every(isValidTask)) {
+        throw new Error("Os dados atuais da nuvem estão inválidos. A restauração foi bloqueada.");
+      }
+      if (!Array.isArray(backups)) throw new Error("O histórico de backups da nuvem está inválido.");
+      const latest = backups
+        .filter((item): item is { id: string; createdAt: string; tasks: Task[] } =>
+          !!item && typeof item === "object" &&
+          Array.isArray((item as { tasks?: unknown }).tasks) &&
+          (item as { tasks: unknown[] }).tasks.every(isValidTask) &&
+          typeof (item as { createdAt?: unknown }).createdAt === "string"
+        )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      if (!latest) {
+        setDataNotice("Nenhum backup válido foi encontrado na nuvem.");
+        return;
+      }
+      const confirmed = await confirm({
+        title: "Restaurar backup",
+        message: "A restauração substituirá a lista atual pela cópia selecionada. Antes disso, os dados atuais serão preservados em um novo backup na nuvem. Deseja continuar?",
+        confirmLabel: "Restaurar",
+        destructive: true,
+      });
+      if (!confirmed) return;
+
+      const preserved = {
+        id: `pre-restore-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        reason: "pre-restore",
+        tasks: currentTasks,
+      };
+      const backupSave = await saveRemoteCollection(
+        "nexo_task_backups",
+        [...backups, preserved],
+        Number(backupRow?.revision) || 0
       );
-      return;
+      if (!backupSave.saved) throw new Error("Não foi possível preservar a lista atual. A restauração não foi realizada.");
+      await saveNow(latest.tasks);
+      setDataNotice(`Backup restaurado da nuvem: ${latest.tasks.length} atividade(s).`);
+    } catch (error) {
+      setDataNotice(error instanceof Error ? error.message : "Não foi possível restaurar o backup da nuvem.");
     }
-
-    if (!Array.isArray(parsed)) {
-      setDataNotice(
-        "O backup não contém uma lista válida. Os dados atuais foram mantidos."
-      );
-      return;
-    }
-
-    if (
-      !(await confirm({ title: "Restaurar backup", message: "A restauração substituirá a lista atual pelo backup. Antes disso, uma cópia dos dados atuais será preservada. Deseja continuar?", confirmLabel: "Restaurar", destructive: true }))
-    ) {
-      return;
-    }
-
-    const current = readRoutineRaw(TASKS_KEY);
-
-    if (current.error) {
-      setDataNotice(current.error);
-      return;
-    }
-
-    if (
-      current.raw !== null &&
-      !writeRoutineBackup(TASKS_PRE_RESTORE_BACKUP_KEY, current.raw)
-    ) {
-      setDataNotice(
-        "Não foi possível preservar os dados atuais antes da restauração. Nenhuma alteração foi realizada."
-      );
-      return;
-    }
-
-    const valid: Task[] = [];
-    const invalid: unknown[] = [];
-
-    parsed.forEach((item) => {
-      if (isValidTask(item)) valid.push(item);
-      else invalid.push(item);
-    });
-
-    const restoredRaw = JSON.stringify([...valid, ...invalid]);
-    const restoreResult = writeRoutineRaw(
-      TASKS_KEY,
-      restoredRaw,
-      current.raw
-    );
-
-    if (!restoreResult.saved) {
-      setDataNotice(
-        restoreResult.error ||
-          "Não foi possível restaurar o backup. Os dados atuais foram mantidos."
-      );
-      return;
-    }
-
-    rawSnapshotRef.current = restoreResult.rawSnapshot;
-    unknownItemsRef.current = invalid;
-    skipNextSaveRef.current = true;
-    setTasks(valid);
-    setStorageCanSave(true);
-    setLoaded(true);
-    setDataNotice(
-      "Backup restaurado. " +
-        valid.length +
-        " atividade(s) reconhecida(s) e " +
-        invalid.length +
-        " registro(s) preservado(s)."
-    );
   }
 
   function toggleTask(id: number) {
@@ -653,11 +435,11 @@ export default function RoutineDashboard() {
           <div className="routine-storage-copy">
             <strong>Proteção dos dados</strong>
             <span>
-              Backup e recuperação das atividades armazenadas neste navegador.
+              Backup e recuperação das atividades armazenadas com segurança na nuvem.
             </span>
-            {dataNotice && (
+            {(storageError || dataNotice) && (
               <small role="status" aria-live="polite">
-                {dataNotice}
+                {storageError || dataNotice}
               </small>
             )}
           </div>
@@ -665,14 +447,14 @@ export default function RoutineDashboard() {
             <button
               type="button"
               className="routine-secondary-button"
-              onClick={createLocalBackup}
+              onClick={() => void createLocalBackup()}
             >
               Criar backup
             </button>
             <button
               type="button"
               className="routine-secondary-button"
-              onClick={restoreLocalBackup}
+              onClick={() => void restoreLocalBackup()}
             >
               Restaurar backup
             </button>

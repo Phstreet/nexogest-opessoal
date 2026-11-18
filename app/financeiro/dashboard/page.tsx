@@ -14,6 +14,8 @@ import DashboardFooter from "@/components/finance/dashboard/DashboardFooter";
 export default function FinancialDashboardPage() {
   const {
     loaded,
+    error,
+    transactions,
     accounts,
     period,
     setPeriod,
@@ -47,6 +49,7 @@ export default function FinancialDashboardPage() {
   if (!loaded) {
     return (
       <div className="content dashboard-content">
+      {error && <div role="alert" className="finance-cloud-error">{error}</div>}
         <div className="dashboard-loading">
           <div className="loading-indicator" />
           <p>Carregando dashboard financeiro...</p>
@@ -85,6 +88,7 @@ export default function FinancialDashboardPage() {
 
   return (
     <div className="content dashboard-content">
+      {error && <div role="alert" className="finance-cloud-error">{error}</div>}
       <DashboardHeader
         currentMonthName={currentMonthName}
         financialSituation={financialSituation}
@@ -140,6 +144,7 @@ export default function FinancialDashboardPage() {
 
         <DashboardAccounts
           accounts={accounts}
+          transactions={transactions}
           accountBalance={accountBalance}
           reserveBalance={reserveBalance}
           money={money}
