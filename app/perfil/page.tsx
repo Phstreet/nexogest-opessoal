@@ -45,15 +45,6 @@ function normalizeProfile(value: unknown): Profile {
   };
 }
 
-function readLocalProfile(): Profile {
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY);
-    return raw ? normalizeProfile(JSON.parse(raw)) : EMPTY_PROFILE;
-  } catch {
-    return EMPTY_PROFILE;
-  }
-}
-
 export default function PerfilPage() {
   const { session, loading: authLoading } = useNexoAuth();
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
