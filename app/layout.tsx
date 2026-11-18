@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NexoAuthProvider } from "@/contexts/NexoAuthProvider";
+import { NexoConfirmProvider } from "@/contexts/NexoConfirmProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <NexoAuthProvider>{children}</NexoAuthProvider>
+        <NexoConfirmProvider><NexoAuthProvider>{children}</NexoAuthProvider></NexoConfirmProvider>
         <Analytics />
       </body>
     </html>
