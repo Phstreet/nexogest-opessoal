@@ -157,7 +157,7 @@ export default function ContasFinanceirasPage() {
     if (duplicate) { alert("Já existe uma conta com esse nome."); return; }
     const hasPrimary = accounts.some((account) => account.active && account.isPrimary);
     const created: Account = {
-      id: Math.max(Date.now(), ...accounts.map((account) => account.id + 1), 1),
+      id: Math.max(0, ...accounts.map((account) => account.id)) + 1,
       name: name.trim(), institution, type, initialBalance: parsedBalance,
       createdAt: new Date().toISOString(), active: true, isPrimary: !hasPrimary,
     };
