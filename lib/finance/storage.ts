@@ -563,6 +563,7 @@ function isTransaction(
     "paymentMethod",
     "status",
     "recurrence",
+    "recurrenceGroupId",
     "reserveType",
     "investment",
     "institution",
@@ -745,6 +746,38 @@ export function getTransactions(): Transaction[] {
     FINANCE_STORAGE_KEYS.transactions,
     isTransaction
   );
+}
+
+/**
+ * Atualiza o espelho local com a coleção já confirmada no Supabase.
+ * Não dispara o evento de alteração local usado pelo sincronizador,
+ * evitando reenviar a mesma gravação para a nuvem com uma revisão antiga.
+ */
+export function mirrorRemoteTransactions(
+  transactions: Transaction[]
+): boolean {
+  if (!isBrowser() || !Array.isArray(transactions) || !transactions.every(isTransaction)) {
+    return false;
+  }
+
+  try {
+    window.localStorage.setItem(
+      FINANCE_STORAGE_KEYS.transactions,
+      JSON.stringify(transactions)
+    );
+    window.dispatchEvent(
+      new CustomEvent(FINANCE_STORAGE_EVENT, {
+        detail: {
+          key: FINANCE_STORAGE_KEYS.transactions,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+    );
+    return true;
+  } catch (error) {
+    console.error("[NEXO] Não foi possível atualizar o espelho local dos lançamentos:", error);
+    return false;
+  }
 }
 
 /**
