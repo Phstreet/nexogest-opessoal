@@ -119,3 +119,44 @@ export type CategoryGroup = {
     return source.map((item) => item.name);
   }
   
+
+// Categorias oficiais utilizadas no cadastro de lançamentos do Financeiro,
+// Contas a pagar e Contas a receber.
+export const categoriesByType = {
+  Receita: [
+    "Salário", "13º Salário", "Adiantamento Salarial", "Horas Extras",
+    "Comissões", "Trabalhos Extras", "Reembolsos", "Receitas Eventuais",
+    "Rendimentos", "Outros",
+  ],
+  Despesa: [
+    "Moradia", "Alimentação", "Transporte", "Saúde", "Educação", "Lazer",
+    "Serviços", "Assinaturas", "Religião", "Impostos", "Dívidas", "Outros",
+  ],
+  Transferência: ["Transferência"],
+  Investimento: ["Investimento"],
+} as const;
+
+export const subcategories: Record<string, string[]> = {
+  Salário: ["Salário mensal", "Adiantamento", "Outros"],
+  "13º Salário": ["Primeira parcela", "Segunda parcela", "Integral", "Outros"],
+  "Adiantamento Salarial": ["Adiantamento", "Outros"],
+  "Horas Extras": ["Horas extras", "DSR", "Outros"],
+  Comissões: ["Comissão", "Outros"],
+  "Trabalhos Extras": ["Serviços extras", "Freelance", "Outros"],
+  Reembolsos: ["Reembolso de despesas", "Outros"],
+  "Receitas Eventuais": ["Venda", "Presente", "Outros"],
+  Rendimentos: ["Rendimento de conta", "Rendimento financeiro", "Outros"],
+  Moradia: ["Aluguel", "Condomínio", "Energia", "Água", "Internet", "Gás", "Manutenção", "Móveis", "Casa", "Outros"],
+  Alimentação: ["Mercado", "Restaurante", "iFood", "Keeta", "99 Food", "Lanches", "Outros"],
+  Transporte: ["Combustível", "Transporte público", "Aplicativos", "Estacionamento", "Manutenção do veículo", "Carro", "Outros"],
+  Saúde: ["Plano de saúde", "Consulta", "Exames", "Medicamentos", "Odontologia", "Outros"],
+  Educação: ["Cursos", "Material escolar", "Livros", "Notebook", "Outros"],
+  Lazer: ["Viagem", "Cinema", "Passeios", "Eventos", "Televisão", "Outros"],
+  Serviços: ["Telefonia", "Internet", "Manutenção", "Serviços domésticos", "Outros"],
+  Assinaturas: ["Streaming", "Telefonia", "Aplicativos", "Outros"],
+  Religião: ["Dízimo", "Oferta", "Doação", "Caixinha", "Outros"],
+  Impostos: ["IPVA", "IPTU", "Imposto de renda", "Multas", "Outros"],
+  Dívidas: ["Empréstimo", "Cartão de crédito", "Financiamento", "Parcelamento", "Outros"],
+  Outros: ["Notebook", "Televisão", "Carro", "Casa", "Viagem", "Outros"],
+  Transferência: ["Entre contas"],
+};
