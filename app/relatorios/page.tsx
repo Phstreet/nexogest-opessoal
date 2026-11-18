@@ -52,9 +52,9 @@ export default function RelatoriosPage() {
 
   const tasks = tasksCollection.items;
   const habits = habitsCollection.items;
-  const today = new Date();
-  const todayKey = dateKey(today);
-  const startDate = new Date(today);
+  const todayKey = dateKey(new Date());
+  const currentMonthKey = todayKey.slice(0, 7);
+  const startDate = new Date();
   startDate.setDate(startDate.getDate() - period + 1);
   const startKey = dateKey(startDate);
 
@@ -86,7 +86,7 @@ export default function RelatoriosPage() {
   }, [periodTransactions]);
 
   const previousPeriod = useMemo(() => {
-    const previousEnd = new Date(startDate);
+    const previousEnd = new Date(`${startKey}T12:00:00`);
     previousEnd.setDate(previousEnd.getDate() - 1);
     const previousStart = new Date(previousEnd);
     previousStart.setDate(previousStart.getDate() - period + 1);
@@ -95,7 +95,7 @@ export default function RelatoriosPage() {
     return finance.transactions.filter((item) =>
       item.status !== "Cancelada" && Boolean(item.date) && item.date! >= from && item.date! <= to && item.type === "Despesa"
     ).reduce((sum, item) => sum + settledAmount(item), 0);
-  }, [finance.transactions, startDate, period]);
+  }, [finance.transactions, startKey, period]);
 
   const taskCompleted = tasks.filter((task) => task.done).length;
   const taskRate = tasks.length ? Math.round((taskCompleted / tasks.length) * 100) : null;
@@ -127,7 +127,8 @@ export default function RelatoriosPage() {
     const count = Math.min(12, Math.max(1, Math.ceil(period / 30)));
     const months: { key: string; revenue: number; expenses: number }[] = [];
     for (let offset = count - 1; offset >= 0; offset -= 1) {
-      const date = new Date(today.getFullYear(), today.getMonth() - offset, 1);
+      const [year, monthNumber] = currentMonthKey.split("-").map(Number);
+      const date = new Date(year, monthNumber - 1 - offset, 1);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
       months.push({ key, revenue: 0, expenses: 0 });
     }
@@ -138,7 +139,7 @@ export default function RelatoriosPage() {
       if (item.type === "Despesa") month.expenses += settledAmount(item);
     });
     return months;
-  }, [periodTransactions, period, today]);
+  }, [periodTransactions, period, currentMonthKey]);
 
   const maxChartValue = Math.max(1, ...chartMonths.flatMap((month) => [month.revenue, month.expenses]));
   const expenseVariation = previousPeriod > 0 ? ((totals.expenses - previousPeriod) / previousPeriod) * 100 : null;
