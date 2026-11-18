@@ -47,6 +47,7 @@ export default function FinancialDashboardPage() {
   if (!loaded) {
     return (
       <div className="content dashboard-content">
+      {error && <div role="alert" className="finance-cloud-error">{error}</div>}
         <div className="dashboard-loading">
           <div className="loading-indicator" />
           <p>Carregando dashboard financeiro...</p>
