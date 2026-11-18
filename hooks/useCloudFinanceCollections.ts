@@ -5,13 +5,15 @@ import type { Account, Reserve, ReserveMovement, Transaction } from "@/lib/finan
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
 
-type CollectionKey = "nexo_transactions" | "nexo_accounts" | "nexo_reserves" | "nexo_reserve_movements";
+type CollectionKey = "nexo_transactions" | "nexo_accounts" | "nexo_reserves" | "nexo_reserve_movements" | "nexo_planning_budgets" | "nexo_planning_goals";
 
 type FinanceState = {
   transactions: Transaction[];
   accounts: Account[];
   reserves: Reserve[];
   reserveMovements: ReserveMovement[];
+  planningBudgets: unknown[];
+  financialGoals: unknown[];
 };
 
 const EMPTY: FinanceState = {
@@ -19,6 +21,8 @@ const EMPTY: FinanceState = {
   accounts: [],
   reserves: [],
   reserveMovements: [],
+  planningBudgets: [],
+  financialGoals: [],
 };
 
 const KEYS: CollectionKey[] = [
@@ -26,6 +30,8 @@ const KEYS: CollectionKey[] = [
   "nexo_accounts",
   "nexo_reserves",
   "nexo_reserve_movements",
+  "nexo_planning_budgets",
+  "nexo_planning_goals",
 ];
 
 function isArrayPayload(value: unknown): value is unknown[] {
@@ -67,6 +73,8 @@ export function useCloudFinanceCollections() {
         if (key === "nexo_accounts") next.accounts = row.payload as Account[];
         if (key === "nexo_reserves") next.reserves = row.payload as Reserve[];
         if (key === "nexo_reserve_movements") next.reserveMovements = row.payload as ReserveMovement[];
+        if (key === "nexo_planning_budgets") next.planningBudgets = row.payload;
+        if (key === "nexo_planning_goals") next.financialGoals = row.payload;
       }
       setState(next);
     } catch (cause) {
@@ -85,7 +93,7 @@ export function useCloudFinanceCollections() {
     key: K,
     payload: K extends "nexo_transactions" ? Transaction[] :
       K extends "nexo_accounts" ? Account[] :
-      K extends "nexo_reserves" ? Reserve[] : ReserveMovement[]
+      K extends "nexo_reserves" ? Reserve[] : K extends "nexo_reserve_movements" ? ReserveMovement[] : unknown[]
   ) => {
     if (!session) throw new Error("Entre na sua conta antes de salvar.");
     if (!loaded) throw new Error("Aguarde o carregamento dos dados antes de salvar.");
@@ -106,6 +114,8 @@ export function useCloudFinanceCollections() {
           ...(key === "nexo_accounts" ? { accounts: payload } : {}),
           ...(key === "nexo_reserves" ? { reserves: payload } : {}),
           ...(key === "nexo_reserve_movements" ? { reserveMovements: payload } : {}),
+          ...(key === "nexo_planning_budgets" ? { planningBudgets: payload } : {}),
+          ...(key === "nexo_planning_goals" ? { financialGoals: payload } : {}),
         }));
       } finally {
         setSaving(false);
@@ -121,6 +131,8 @@ export function useCloudFinanceCollections() {
   const saveAccounts = useCallback((value: Account[]) => saveCollection("nexo_accounts", value), [saveCollection]);
   const saveReserves = useCallback((value: Reserve[]) => saveCollection("nexo_reserves", value), [saveCollection]);
   const saveReserveMovements = useCallback((value: ReserveMovement[]) => saveCollection("nexo_reserve_movements", value), [saveCollection]);
+  const savePlanningBudgets = useCallback((value: unknown[]) => saveCollection("nexo_planning_budgets", value), [saveCollection]);
+  const saveFinancialGoals = useCallback((value: unknown[]) => saveCollection("nexo_planning_goals", value), [saveCollection]);
 
   return {
     ...state,
@@ -132,5 +144,7 @@ export function useCloudFinanceCollections() {
     saveAccounts,
     saveReserves,
     saveReserveMovements,
+    savePlanningBudgets,
+    saveFinancialGoals,
   };
 }
