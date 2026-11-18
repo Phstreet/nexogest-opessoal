@@ -8,18 +8,12 @@ import type { FormEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
-import { getPrimaryAccount } from "@/lib/finance/accounts";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
 } from "@/lib/supabase/client";
 
-import {
-  FINANCE_STORAGE_KEYS,
-  getAccounts,
-  loadTransactionsSafely,
-  mirrorRemoteTransactions,
-} from "@/lib/finance/storage";
+
 
 type FormMovementType =
   | "Receita"
@@ -29,9 +23,7 @@ type FormMovementType =
 
 type MovementType = FormMovementType | "Aplicação" | "Reserva";
 
-const STORAGE_KEY = FINANCE_STORAGE_KEYS.transactions;
-const BACKUP_KEY = "nexo_transactions_backup";
-const INVALID_KEY = "nexo_transactions_invalid";
+const STORAGE_KEY = "nexo_transactions";
 
 const investmentOptions = [
   "CDB",
@@ -320,19 +312,6 @@ function getSettledAmount(item: Transaction) {
   return isInvestmentApplied(item) ? item.amount : 0;
 }
 
-function createBackup(rawData: string) {
-  const backup = {
-    version: 1,
-    createdAt: new Date().toISOString(),
-    storageKey: STORAGE_KEY,
-    rawData,
-  };
-
-  window.localStorage.setItem(
-    BACKUP_KEY,
-    JSON.stringify(backup)
-  );
-}
 
 function getNextTransactionId(transactions: Transaction[]) {
   const usedIds = new Set(
@@ -461,22 +440,6 @@ function synchronizeMonthlyRecurrences(
   return synchronized;
 }
 
-function downloadJson(filename: string, content: string) {
-  const blob = new Blob([content], {
-    type: "application/json;charset=utf-8",
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  URL.revokeObjectURL(url);
-}
 
 export default function Page() {
   const confirm = useNexoConfirm();
@@ -503,7 +466,7 @@ export default function Page() {
   const [loaded, setLoaded] = useState(false);
   const [safeToSave, setSafeToSave] = useState(false);
   const [invalidCount, setInvalidCount] = useState(0);
-  const [, setStorageError] = useState<string | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const [, setSyncStatus] = useState("Conectando ao banco de dados...");
   const revisionRef = useRef(0);
   const remoteReadyRef = useRef(false);
@@ -527,215 +490,101 @@ export default function Page() {
 
     async function initializeFinanceData() {
       if (authLoading) return;
-
       setLoaded(false);
       remoteReadyRef.current = false;
+      setSafeToSave(false);
+      setStorageError(null);
 
-      // Nenhuma coleção local ou remota é lida/validada antes da autenticação.
       if (!session) {
         setTransactions([]);
         setRegisteredAccounts([]);
-        setSafeToSave(false);
-        setStorageError(null);
+        setInvalidCount(0);
         setSyncStatus("Aguardando autenticação");
         setLoaded(true);
         return;
       }
 
       setDate(localDate());
-      const localResult = loadTransactionsSafely();
-      const localRaw = window.localStorage.getItem(STORAGE_KEY);
-
-      getPrimaryAccount();
-      setRegisteredAccounts(getAccounts());
-      setInvalidCount(localResult.invalidRecords.length);
-
       try {
-        if (!active) return;
-
         const collections = await fetchRemoteCollections();
         if (!active) return;
 
-        const remoteTransactions = collections.find(
-          (item) => item.data_key === STORAGE_KEY
-        );
+        const transactionRow = collections.find((item) => item.data_key === STORAGE_KEY);
+        const accountRow = collections.find((item) => item.data_key === "nexo_accounts");
+        const cloudTransactions = transactionRow?.payload ?? [];
+        const cloudAccounts = accountRow?.payload ?? [];
 
-        if (remoteTransactions) {
-          if (!Array.isArray(remoteTransactions.payload)) {
-            throw new Error(
-              "Os lançamentos encontrados no banco estão em um formato inválido. Nenhum dado foi sobrescrito."
-            );
-          }
-
-          const cloudRecords = remoteTransactions.payload.filter(isValidTransaction);
-          const synchronizedCloudRecords =
-            synchronizeMonthlyRecurrences(cloudRecords);
-          const invalidCloudRecords = remoteTransactions.payload.filter(
-            (item) => !isValidTransaction(item)
-          );
-
-          if (
-            localRaw !== null &&
-            JSON.stringify(localResult.transactions) !== JSON.stringify(cloudRecords)
-          ) {
-            createBackup(localRaw);
-          }
-
-          revisionRef.current = remoteTransactions.revision;
-          lastSavedPayloadRef.current = JSON.stringify(cloudRecords);
-          setTransactions(synchronizedCloudRecords);
-          mirrorRemoteTransactions(synchronizedCloudRecords);
-          setInvalidCount(invalidCloudRecords.length);
-          setSafeToSave(invalidCloudRecords.length === 0);
-          setStorageError(
-            invalidCloudRecords.length > 0
-              ? "Existem registros inválidos no banco de dados. A gravação foi bloqueada para evitar perda dessas informações."
-              : null
-          );
-          setSyncStatus(
-            invalidCloudRecords.length > 0
-              ? "Verificação necessária"
-              : "Dados carregados do Supabase"
-          );
-        } else {
-          if (localRaw !== null) {
-            createBackup(localRaw);
-            }
-
-          const legacyRecords = synchronizeMonthlyRecurrences(
-            localResult.transactions
-          );
-
-          if (!localResult.safeToSave) {
-            setTransactions(legacyRecords);
-            setSafeToSave(false);
-            setStorageError(
-              localResult.error ||
-                "Os dados locais precisam ser verificados antes da migração. Nenhuma informação foi enviada ou removida."
-            );
-            setSyncStatus("Migração pausada por segurança");
-            setLoaded(true);
-            return;
-          }
-
-          const migration = await saveRemoteCollection(
-            STORAGE_KEY,
-            legacyRecords,
-            0
-          );
-
-          if (!active) return;
-
-          if (!migration.saved) {
-            const refreshedCollections = await fetchRemoteCollections();
-            const refreshed = refreshedCollections.find(
-              (item) => item.data_key === STORAGE_KEY
-            );
-
-            if (!refreshed || !Array.isArray(refreshed.payload)) {
-              throw new Error(
-                "Não foi possível concluir a migração com segurança. Os dados locais continuam preservados."
-              );
-            }
-
-            const refreshedRecords = refreshed.payload.filter(isValidTransaction);
-            const synchronizedRefreshedRecords =
-              synchronizeMonthlyRecurrences(refreshedRecords);
-            const refreshedInvalid = refreshed.payload.filter(
-              (item) => !isValidTransaction(item)
-            );
-
-            revisionRef.current = refreshed.revision;
-            lastSavedPayloadRef.current = JSON.stringify(refreshedRecords);
-            setTransactions(synchronizedRefreshedRecords);
-            mirrorRemoteTransactions(synchronizedRefreshedRecords);
-            setInvalidCount(refreshedInvalid.length);
-            setSafeToSave(refreshedInvalid.length === 0);
-            setStorageError(
-              refreshedInvalid.length > 0
-                ? "Existem registros inválidos no banco. A gravação foi bloqueada."
-                : null
-            );
-            setSyncStatus("Dados atualizados do Supabase");
-          } else {
-            revisionRef.current = migration.current_revision ?? 1;
-            lastSavedPayloadRef.current = JSON.stringify(legacyRecords);
-            setTransactions(legacyRecords);
-            mirrorRemoteTransactions(legacyRecords);
-            setSafeToSave(true);
-            setStorageError(null);
-            setSyncStatus(
-              "Migração concluída: " + legacyRecords.length +
-                " lançamento(s) enviados ao Supabase"
-            );
-          }
+        if (!Array.isArray(cloudTransactions)) {
+          throw new Error("Os lançamentos do Supabase estão em formato inválido. Nenhuma alteração foi feita.");
+        }
+        if (!Array.isArray(cloudAccounts) || !cloudAccounts.every((item) =>
+          item && typeof item === "object" &&
+          typeof (item as Record<string, unknown>).id === "number" &&
+          typeof (item as Record<string, unknown>).name === "string"
+        )) {
+          throw new Error("As contas do Supabase estão em formato inválido. Nenhuma alteração foi feita.");
         }
 
+        const invalidRecords = cloudTransactions.filter((item) => !isValidTransaction(item));
+        if (invalidRecords.length > 0) {
+          throw new Error(`Existem ${invalidRecords.length} lançamento(s) inválido(s) no Supabase. A gravação foi bloqueada para evitar perda de dados.`);
+        }
+
+        const validTransactions = cloudTransactions as Transaction[];
+        const synchronized = synchronizeMonthlyRecurrences(validTransactions);
+        revisionRef.current = Number(transactionRow?.revision) || 0;
+        lastSavedPayloadRef.current = JSON.stringify(validTransactions);
+        setTransactions(synchronized);
+        setRegisteredAccounts(cloudAccounts as Account[]);
+        setInvalidCount(0);
+        setSafeToSave(true);
+        setStorageError(null);
+        setSyncStatus("Dados carregados diretamente do Supabase");
         remoteReadyRef.current = true;
         setLoaded(true);
       } catch (error) {
         if (!active) return;
-
-        console.error("Falha ao carregar os lançamentos do Supabase:", error);
-        setTransactions(localResult.transactions);
+        console.error("Falha ao carregar os dados financeiros do Supabase:", error);
+        setTransactions([]);
+        setRegisteredAccounts([]);
+        setInvalidCount(0);
         setSafeToSave(false);
-        setStorageError(
-          error instanceof Error
-            ? error.message + " Os dados locais foram preservados e nenhuma gravação foi realizada."
-            : "Não foi possível acessar o banco de dados. Os dados locais foram preservados."
-        );
-        setSyncStatus("Falha na conexão com o Supabase");
+        setStorageError(error instanceof Error ? error.message : "Não foi possível carregar os dados financeiros da nuvem.");
+        setSyncStatus("Falha ao acessar o Supabase");
         setLoaded(true);
       }
     }
 
-    initializeFinanceData();
-
-    return () => {
-      active = false;
-    };
+    void initializeFinanceData();
+    return () => { active = false; };
   }, [authLoading, session]);
 
   useEffect(() => {
     if (!loaded || !safeToSave || !remoteReadyRef.current) return;
-
     const serializedPayload = JSON.stringify(transactions);
     if (serializedPayload === lastSavedPayloadRef.current) return;
 
     saveQueueRef.current = saveQueueRef.current.then(async () => {
       if (!remoteReadyRef.current) return;
-
       try {
-        const result = await saveRemoteCollection(
-          STORAGE_KEY,
-          transactions,
-          revisionRef.current
-        );
-
+        const result = await saveRemoteCollection(STORAGE_KEY, transactions, revisionRef.current);
         if (!result.saved) {
           setSafeToSave(false);
-          setStorageError(
-            "O banco informou que os dados foram alterados em outra sessão. Para evitar sobrescrever informações, a gravação foi pausada. Atualize a página para carregar a versão mais recente."
-          );
+          remoteReadyRef.current = false;
+          setStorageError("Os lançamentos foram alterados em outro dispositivo. A gravação foi pausada para evitar sobrescrever dados. Atualize a tela para carregar a versão mais recente.");
           setSyncStatus("Conflito de sincronização");
           return;
         }
-
-        revisionRef.current =
-          result.current_revision ?? revisionRef.current + 1;
+        revisionRef.current = result.current_revision ?? revisionRef.current + 1;
         lastSavedPayloadRef.current = serializedPayload;
-        mirrorRemoteTransactions(transactions);
         setStorageError(null);
         setSyncStatus("Sincronizado com o Supabase");
       } catch (error) {
         console.error("Não foi possível salvar os lançamentos no Supabase:", error);
         setSafeToSave(false);
-        setStorageError(
-          error instanceof Error
-            ? error.message + " A gravação foi pausada para proteger os dados."
-            : "Falha ao salvar no banco de dados. A gravação foi pausada para proteger os dados."
-        );
-        setSyncStatus("Erro ao sincronizar");
+        remoteReadyRef.current = false;
+        setStorageError(error instanceof Error ? error.message + " A gravação foi pausada para proteger os dados." : "Falha ao salvar no banco de dados. A gravação foi pausada.");
+        setSyncStatus("Erro ao salvar na nuvem");
       }
     });
   }, [transactions, loaded, safeToSave]);
@@ -1191,7 +1040,6 @@ export default function Page() {
       revisionRef.current =
         result.current_revision ?? revisionRef.current + 1;
       lastSavedPayloadRef.current = JSON.stringify(updated);
-      mirrorRemoteTransactions(updated);
       setTransactions(updated);
       setSettlementEditingId(null);
       setSettlementInput("");
@@ -1250,7 +1098,6 @@ export default function Page() {
       revisionRef.current =
         result.current_revision ?? revisionRef.current + 1;
       lastSavedPayloadRef.current = JSON.stringify(latestTransactions);
-      mirrorRemoteTransactions(latestTransactions);
       setTransactions(latestTransactions);
       setStorageError(null);
       setSyncStatus("Lançamento excluído e sincronizado");
@@ -1331,6 +1178,8 @@ export default function Page() {
             </p>
           </div>
         </section>
+
+        {storageError && <section className="finance-storage-warning" role="alert"><strong>Sincronização pausada</strong><p>{storageError}</p></section>}
 
         {invalidCount > 0 && (
           <section className="finance-storage-warning">
