@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getAccounts, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
@@ -73,6 +75,7 @@ function formatDate(value: string) {
 }
 
 export default function ContasFinanceirasPage() {
+  const confirm = useNexoConfirm();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [name, setName] = useState("");
   const [institution, setInstitution] = useState("Nubank");
@@ -198,10 +201,8 @@ export default function ContasFinanceirasPage() {
     }
   }
 
-  function removeAccount(id: number) {
-    const confirmed = confirm(
-      "Deseja excluir definitivamente esta conta? Essa ação não poderá ser desfeita."
-    );
+  async function removeAccount(id: number) {
+    const confirmed = await confirm({ title: "Excluir conta", message: "Deseja excluir definitivamente esta conta? Essa ação não poderá ser desfeita.", confirmLabel: "Excluir", destructive: true });
 
     if (!confirmed) return;
 
