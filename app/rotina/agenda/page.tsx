@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineTask as isValidTask } from "@/lib/routine/types";
@@ -37,6 +39,7 @@ function formatLongDate(date: string) {
 }
 
 export default function AgendaPage() {
+  const confirm = useNexoConfirm();
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [selectedDate, setSelectedDate] = useState(getLocalDate());
@@ -160,7 +163,7 @@ export default function AgendaPage() {
     );
   }
 
-  function deleteTask(id: number) {
+  async function deleteTask(id: number) {
     const confirmed = window.confirm(
       "Deseja realmente excluir esta atividade?"
     );
