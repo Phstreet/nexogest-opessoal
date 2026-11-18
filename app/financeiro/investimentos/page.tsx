@@ -56,13 +56,6 @@ function getStatus(transaction: InvestmentTransaction) {
   return transaction.status || "Aplicado";
 }
 
-function isInvestment(transaction: InvestmentTransaction) {
-  return (
-    transaction.type === "Investimento" ||
-    transaction.type === "Aplicação"
-  );
-}
-
 function isCancelled(transaction: InvestmentTransaction) {
   return getStatus(transaction).toLowerCase().includes("cancel");
 }
