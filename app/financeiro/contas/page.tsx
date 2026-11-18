@@ -3,16 +3,13 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { getAccounts, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
+import type { Transaction, Reserve } from "@/lib/finance/types";
 import {
-  createAccount,
-  deleteAccount,
-  getAccountBalance,
-  setAccountActive,
-  setPrimaryAccount,
-  getPrimaryAccount,
+  getAccountBalanceFrom,
 } from "@/lib/finance/accounts";
 
 type Account = {
@@ -76,146 +73,144 @@ function formatDate(value: string) {
 
 export default function ContasFinanceirasPage() {
   const confirm = useNexoConfirm();
+  const { session, loading: authLoading } = useNexoAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [reserves, setReserves] = useState<Reserve[]>([]);
   const [name, setName] = useState("");
   const [institution, setInstitution] = useState("Nubank");
   const [type, setType] = useState("Conta corrente");
   const [initialBalance, setInitialBalance] = useState("");
   const [filter, setFilter] = useState("Todas");
   const [loaded, setLoaded] = useState(false);
-  const [, setBalanceVersion] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const revisionRef = useRef(0);
 
   useEffect(() => {
-    function loadAccounts() {
-      try {
-        getPrimaryAccount();
-        setAccounts(getAccounts());
-        setBalanceVersion((version) => version + 1);
-      } catch {
-        console.error("Não foi possível carregar as contas.");
-      } finally {
+    let active = true;
+    async function loadCloudData() {
+      if (authLoading) return;
+      if (!session) {
+        setAccounts([]);
+        setTransactions([]);
+        setReserves([]);
         setLoaded(true);
+        setLoadError("Entre na sua conta para acessar suas contas financeiras.");
+        return;
+      }
+      setLoaded(false);
+      setLoadError("");
+      try {
+        const rows = await fetchRemoteCollections();
+        if (!active) return;
+        const accountRow = rows.find((row) => row.data_key === "nexo_accounts");
+        const transactionRow = rows.find((row) => row.data_key === "nexo_transactions");
+        const reserveRow = rows.find((row) => row.data_key === "nexo_reserves");
+        if (accountRow && (!Array.isArray(accountRow.payload) || !accountRow.payload.every((item) => item && typeof item === "object" && typeof item.id === "number" && typeof item.name === "string" && typeof item.active === "boolean"))) {
+          throw new Error("Os dados de contas no Supabase estão em formato inválido. Nenhuma alteração foi feita.");
+        }
+        if (transactionRow && !Array.isArray(transactionRow.payload)) throw new Error("Os lançamentos do Supabase estão em formato inválido.");
+        if (reserveRow && !Array.isArray(reserveRow.payload)) throw new Error("As reservas do Supabase estão em formato inválido.");
+        setAccounts((accountRow?.payload as Account[] | undefined) ?? []);
+        setTransactions((transactionRow?.payload as Transaction[] | undefined) ?? []);
+        setReserves((reserveRow?.payload as Reserve[] | undefined) ?? []);
+        revisionRef.current = Number(accountRow?.revision) || 0;
+      } catch (error) {
+        if (active) setLoadError(error instanceof Error ? error.message : "Não foi possível carregar as contas da nuvem.");
+      } finally {
+        if (active) setLoaded(true);
       }
     }
+    void loadCloudData();
+    return () => { active = false; };
+  }, [session, authLoading]);
 
-    loadAccounts();
-
-    return subscribeFinanceUpdates((key) => {
-      if (
-        key === null ||
-        key === FINANCE_STORAGE_KEYS.accounts ||
-        key === FINANCE_STORAGE_KEYS.transactions
-      ) {
-        loadAccounts();
-      }
-    });
-  }, []);
-
-  const activeAccounts = useMemo(
-    () => accounts.filter((account) => account.active),
-    [accounts]
-  );
-
-  const totalCurrentBalance = activeAccounts.reduce(
-    (sum, account) => sum + getAccountBalance(account),
-    0
-  );
-
-  const filteredAccounts = useMemo(
-    () =>
-      accounts.filter((account) => {
-        if (filter === "Todas") return true;
-        if (filter === "Ativas") return account.active;
-        return !account.active;
-      }),
-    [accounts, filter]
-  );
-
-  function addAccount(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const parsedBalance = parseAmount(initialBalance);
-
-    if (!name.trim()) {
-      alert("Informe o nome da conta.");
-      return;
-    }
-
-    if (!Number.isFinite(parsedBalance)) {
-      alert("Informe um saldo inicial válido.");
-      return;
-    }
-
-    const duplicate = accounts.some(
-      (account) =>
-        account.name.toLowerCase() === name.trim().toLowerCase() &&
-        account.active
-    );
-
-    if (duplicate) {
-      alert("Já existe uma conta ativa com esse nome.");
-      return;
-    }
-
+  async function persistAccounts(next: Account[]) {
+    if (!session) throw new Error("Entre na sua conta para salvar.");
+    setSaving(true);
     try {
-      createAccount({
-        name: name.trim(),
-        institution,
-        type,
-        initialBalance: parsedBalance,
-        active: true,
-      });
-      setAccounts(getAccounts());
-      setBalanceVersion((version) => version + 1);
+      const result = await saveRemoteCollection("nexo_accounts", next, revisionRef.current);
+      if (!result.saved) {
+        const latest = await fetchRemoteCollections();
+        const row = latest.find((item) => item.data_key === "nexo_accounts");
+        revisionRef.current = Number(row?.revision) || 0;
+        if (row && Array.isArray(row.payload)) setAccounts(row.payload as Account[]);
+        throw new Error("As contas foram alteradas em outro dispositivo. A versão mais recente foi carregada; revise e tente novamente.");
+      }
+      revisionRef.current = result.current_revision ?? revisionRef.current + 1;
+      setAccounts(next);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const activeAccounts = useMemo(() => accounts.filter((account) => account.active), [accounts]);
+  const totalCurrentBalance = activeAccounts.reduce((sum, account) => sum + getAccountBalanceFrom(account, transactions), 0);
+  const filteredAccounts = useMemo(() => accounts.filter((account) => {
+    if (filter === "Todas") return true;
+    if (filter === "Ativas") return account.active;
+    return !account.active;
+  }), [accounts, filter]);
+
+  async function addAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsedBalance = parseAmount(initialBalance);
+    if (!name.trim()) { alert("Informe o nome da conta."); return; }
+    if (!Number.isFinite(parsedBalance) || parsedBalance < 0) { alert("Informe um saldo inicial válido."); return; }
+    const duplicate = accounts.some((account) => account.name.toLowerCase() === name.trim().toLowerCase());
+    if (duplicate) { alert("Já existe uma conta com esse nome."); return; }
+    const hasPrimary = accounts.some((account) => account.active && account.isPrimary);
+    const created: Account = {
+      id: Math.max(Date.now(), ...accounts.map((account) => account.id + 1), 1),
+      name: name.trim(), institution, type, initialBalance: parsedBalance,
+      createdAt: new Date().toISOString(), active: true, isPrimary: !hasPrimary,
+    };
+    try {
+      await persistAccounts([...accounts, created]);
+      setName(""); setInstitution("Nubank"); setType("Conta corrente"); setInitialBalance("");
     } catch (error) {
       alert(error instanceof Error ? error.message : "Não foi possível salvar a conta.");
-      return;
-    }
-
-    setName("");
-    setInstitution("Nubank");
-    setType("Conta corrente");
-    setInitialBalance("");
-  }
-
-  function toggleAccount(id: number) {
-    const account = accounts.find((item) => item.id === id);
-    if (!account) return;
-
-    try {
-      setAccountActive(id, !account.active);
-      setAccounts(getAccounts());
-      setBalanceVersion((version) => version + 1);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Não foi possível atualizar a conta.");
     }
   }
 
-  function makePrimary(id: number) {
-    try {
-      setPrimaryAccount(id);
-      setAccounts(getAccounts());
-      setBalanceVersion((version) => version + 1);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Não foi possível definir a conta principal.");
+  async function toggleAccount(id: number) {
+    const selected = accounts.find((item) => item.id === id);
+    if (!selected) return;
+    let next = accounts.map((item) => ({ ...item, active: item.id === id ? !item.active : item.active, isPrimary: item.id === id && !item.active ? item.isPrimary : item.id === id ? false : item.isPrimary }));
+    if (!next.some((item) => item.active && item.isPrimary)) {
+      const firstActive = next.find((item) => item.active);
+      if (firstActive) next = next.map((item) => ({ ...item, isPrimary: item.id === firstActive.id }));
     }
+    try { await persistAccounts(next); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível atualizar a conta."); }
+  }
+
+  async function makePrimary(id: number) {
+    const selected = accounts.find((item) => item.id === id);
+    if (!selected || !selected.active) { alert("Ative a conta antes de defini-la como principal."); return; }
+    try { await persistAccounts(accounts.map((item) => ({ ...item, isPrimary: item.id === id }))); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível definir a conta principal."); }
   }
 
   async function removeAccount(id: number) {
     const confirmed = await confirm({ title: "Excluir conta", message: "Deseja excluir definitivamente esta conta? Essa ação não poderá ser desfeita.", confirmLabel: "Excluir", destructive: true });
-
     if (!confirmed) return;
-
-    try {
-      deleteAccount(id);
-      setAccounts(getAccounts());
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Não foi possível excluir a conta.");
+    const account = accounts.find((item) => item.id === id);
+    if (!account) return;
+    const hasMovements = transactions.some((item) => item.account === account.name || item.destinationAccount === account.name) || reserves.some((reserve) => reserve.accountId === id);
+    if (hasMovements) { alert("Esta conta possui movimentações ou reservas vinculadas. Inative-a em vez de excluí-la."); return; }
+    let next = accounts.filter((item) => item.id !== id);
+    if (account.isPrimary) {
+      const nextActive = next.find((item) => item.active);
+      if (nextActive) next = next.map((item) => ({ ...item, isPrimary: item.id === nextActive.id }));
     }
+    try { await persistAccounts(next); }
+    catch (error) { alert(error instanceof Error ? error.message : "Não foi possível excluir a conta."); }
   }
 
   return (
-    <div className="content accounts-content">
+    <div className="content accounts-content">\n      {loadError && <div role="alert" className="accounts-feedback">{loadError}</div>}
       <section className="accounts-intro">
         <div>
           <span className="accounts-eyebrow">
