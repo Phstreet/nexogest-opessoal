@@ -4,6 +4,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
 
 import {
   financeMenuItems,
@@ -14,11 +16,9 @@ import {
   type MenuItem,
 } from "./navigationConfig";
 
-const FAVORITES_STORAGE_KEY = "nexo_navigation_favorites";
-const SIDEBAR_STORAGE_KEY = "nexo_navigation_collapsed";
-
 export default function MainNavigation() {
   const pathname = usePathname();
+  const { session, loading: authLoading } = useNexoAuth();
   const [activeSettingsTab, setActiveSettingsTab] = useState("");
 
   const isFinanceRoute = pathname.startsWith("/financeiro");
@@ -33,7 +33,9 @@ export default function MainNavigation() {
 
   const [collapsed, setCollapsed] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [storageLoaded, setStorageLoaded] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [preferencesError, setPreferencesError] = useState("");
+  const preferencesRevisionRef = useRef(0);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,48 +43,70 @@ export default function MainNavigation() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      const savedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      const savedCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-
-      if (savedFavorites) {
-        const parsed = JSON.parse(savedFavorites);
-
-        if (Array.isArray(parsed)) {
-          setFavorites(
-            parsed.filter(
-              (href): href is string =>
-                typeof href === "string" &&
-                mainMenuItems.some((item) => item.href === href)
-            )
-          );
-        }
+    let active = true;
+    async function loadNavigationPreferences() {
+      if (authLoading) return;
+      if (!session) {
+        setFavorites([]);
+        setCollapsed(false);
+        setPreferencesError("Entre na sua conta para carregar as preferências de navegação.");
+        setPreferencesLoaded(true);
+        return;
       }
-
-      if (savedCollapsed !== null) {
-        setCollapsed(savedCollapsed === "true");
+      try {
+        const collections = await fetchRemoteCollections();
+        if (!active) return;
+        const row = collections.find((item) => item.data_key === "nexo_preferences");
+        const payload = row?.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+          ? row.payload as Record<string, unknown>
+          : {};
+        const savedFavorites = payload.navigationFavorites;
+        setFavorites(Array.isArray(savedFavorites)
+          ? savedFavorites.filter((href): href is string =>
+              typeof href === "string" && mainMenuItems.some((item) => item.href === href))
+          : []);
+        setCollapsed(payload.sidebarCollapsed === true);
+        preferencesRevisionRef.current = Number(row?.revision) || 0;
+        setPreferencesError("");
+      } catch (error) {
+        if (active) setPreferencesError(error instanceof Error ? error.message : "Não foi possível carregar as preferências da nuvem.");
+      } finally {
+        if (active) setPreferencesLoaded(true);
       }
-    } catch (error) {
-      console.error("Erro ao carregar preferências da navegação:", error);
-    } finally {
-      setStorageLoaded(true);
     }
-  }, []);
+    void loadNavigationPreferences();
+    return () => { active = false; };
+  }, [authLoading, session]);
 
-  useEffect(() => {
-    if (!storageLoaded) return;
-
-    try {
-      localStorage.setItem(
-        FAVORITES_STORAGE_KEY,
-        JSON.stringify(favorites)
-      );
-
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
-    } catch (error) {
-      console.error("Erro ao salvar preferências da navegação:", error);
+  async function persistNavigationPreferences(nextFavorites: string[], nextCollapsed: boolean) {
+    if (!session || !preferencesLoaded) throw new Error("As preferências ainda não foram carregadas.");
+    const collections = await fetchRemoteCollections();
+    const row = collections.find((item) => item.data_key === "nexo_preferences");
+    const latest = row?.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+      ? row.payload as Record<string, unknown>
+      : {};
+    const result = await saveRemoteCollection("nexo_preferences", {
+      ...latest,
+      navigationFavorites: nextFavorites,
+      sidebarCollapsed: nextCollapsed,
+    }, Number(row?.revision) || 0);
+    if (!result.saved) {
+      const refreshed = await fetchRemoteCollections();
+      const current = refreshed.find((item) => item.data_key === "nexo_preferences");
+      const payload = current?.payload && typeof current.payload === "object" && !Array.isArray(current.payload)
+        ? current.payload as Record<string, unknown>
+        : {};
+      setFavorites(Array.isArray(payload.navigationFavorites)
+        ? payload.navigationFavorites.filter((href): href is string =>
+            typeof href === "string" && mainMenuItems.some((item) => item.href === href))
+        : []);
+      setCollapsed(payload.sidebarCollapsed === true);
+      preferencesRevisionRef.current = Number(current?.revision) || 0;
+      throw new Error("As preferências foram alteradas em outro dispositivo. A versão mais recente foi carregada.");
     }
-  }, [favorites, collapsed, storageLoaded]);
+    preferencesRevisionRef.current = result.current_revision ?? preferencesRevisionRef.current + 1;
+    setPreferencesError("");
+  }
 
   // Fecha os submenus sempre que a rota mudar.
   useEffect(() => {
@@ -164,11 +188,19 @@ export default function MainNavigation() {
   }
 
   function toggleFavorite(href: string) {
-    setFavorites((current) =>
-      current.includes(href)
-        ? current.filter((item) => item !== href)
-        : [...current, href]
-    );
+    const nextFavorites = favorites.includes(href)
+      ? favorites.filter((item) => item !== href)
+      : [...favorites, href];
+    void persistNavigationPreferences(nextFavorites, collapsed)
+      .then(() => setFavorites(nextFavorites))
+      .catch((error) => setPreferencesError(error instanceof Error ? error.message : "Não foi possível salvar a preferência."));
+  }
+
+  function toggleCollapsed() {
+    const nextCollapsed = !collapsed;
+    void persistNavigationPreferences(favorites, nextCollapsed)
+      .then(() => setCollapsed(nextCollapsed))
+      .catch((error) => setPreferencesError(error instanceof Error ? error.message : "Não foi possível salvar a preferência."));
   }
 
   // Fecha os submenus ao navegar, mantendo a largura escolhida pelo usuário.
@@ -250,6 +282,7 @@ export default function MainNavigation() {
   return (
     <>
       <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`}>
+        {preferencesError && <div role="alert" className="nav-preferences-error">{preferencesError}</div>}
         <div className="sidebar-brand-row">
           <Link
             href="/"
@@ -291,7 +324,7 @@ export default function MainNavigation() {
           <button
             type="button"
             className="sidebar-toggle"
-            onClick={() => setCollapsed((current) => !current)}
+            onClick={toggleCollapsed}
             aria-label={
               collapsed ? "Expandir menu lateral" : "Recolher menu lateral"
             }
