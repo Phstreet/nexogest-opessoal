@@ -18,9 +18,24 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  function getPostLoginDestination() {
+    const requested = new URLSearchParams(window.location.search).get("next");
+    if (!requested) return "/";
+    try {
+      const destination = new URL(requested, window.location.origin);
+      return destination.origin === window.location.origin
+        ? destination.pathname + destination.search + destination.hash
+        : "/";
+    } catch {
+      return "/";
+    }
+  }
+
   useEffect(() => {
-    if (mode === "login" && session) router.replace("/");
-  }, [mode, session, router]);
+    if (mode === "login" && session) {
+      window.location.replace(getPostLoginDestination());
+    }
+  }, [mode, session]);
 
   const titles = {
     login: ["Acesse sua conta", "Entre para acessar seus dados e sincronizar seus dispositivos."],
@@ -35,7 +50,9 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     try {
       if (mode === "login") {
         await signIn(email.trim(), password);
-        router.replace("/");
+        // Navegacao completa evita reutilizar o estado/cache da tela de login
+        // antes de o servidor reconhecer os cookies HttpOnly recem-gravados.
+        window.location.assign(getPostLoginDestination());
       } else if (mode === "signup") {
         if (password.length < 8) throw new Error("A senha precisa ter pelo menos 8 caracteres.");
         const confirmationRequired = await signUp(email.trim(), password, name.trim());
