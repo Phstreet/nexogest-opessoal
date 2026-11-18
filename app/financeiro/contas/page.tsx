@@ -3,7 +3,7 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
@@ -408,7 +408,7 @@ export default function ContasFinanceirasPage() {
                 <div className="accounts-item-balance">
                   <span>Saldo atual</span>
                   <strong>
-                    {money(getAccountBalance(account))}
+                    {money(getAccountBalanceFrom(account, transactions))}
                   </strong>
                 </div>
 
