@@ -6,6 +6,7 @@ import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { useMemo, useState, type FormEvent } from "react";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
+import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
 
 type Transaction = {
   id: number;
@@ -242,7 +243,9 @@ export default function ContasAPagarPage() {
     const effectiveSettledAmount = draft.status === "Pago" ? amount : settledAmount;
     const status = effectiveSettledAmount >= amount ? "Pago" : effectiveSettledAmount > 0 ? "Paga parcialmente" : draft.status === "Paga parcialmente" ? "Pendente" : draft.status;
     const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Despesa", amount, settledAmount: effectiveSettledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
-    const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
+    const updated = editingId === null
+      ? expandRecurringTransactions([...transactions, entry])
+      : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
     try { await saveTransactions(updated); setEditorOpen(false); setEditingId(null); }
     catch (error) { alert(error instanceof Error ? error.message : "Não foi possível salvar na nuvem."); }
   }
