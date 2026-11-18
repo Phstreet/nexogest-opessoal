@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
@@ -25,6 +27,7 @@ function money(value: number) {
 }
 
 export default function Home() {
+  const confirm = useNexoConfirm();
   const [tab, setTab] = useState<Tab>("dashboard");
 
   const [taskName, setTaskName] = useState("");
@@ -129,10 +132,10 @@ export default function Home() {
     );
   }
 
-  function deleteTask(id: number) {
+  async function deleteTask(id: number) {
     if (!safeToSave) return;
 
-    if (!confirm("Deseja excluir esta atividade?")) {
+    if (!(await confirm({ title: "Excluir atividade", message: "Deseja excluir esta atividade?", confirmLabel: "Excluir", destructive: true }))) {
       return;
     }
 
