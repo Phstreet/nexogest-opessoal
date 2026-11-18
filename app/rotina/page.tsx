@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -227,6 +229,7 @@ function priorityClass(priority?: Priority) {
 }
 
 export default function RoutineDashboard() {
+  const confirm = useNexoConfirm();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [storageCanSave, setStorageCanSave] = useState(false);
@@ -492,7 +495,7 @@ export default function RoutineDashboard() {
     );
   }
 
-  function restoreLocalBackup() {
+  async function restoreLocalBackup() {
     const backupResult = readRoutineBackup(TASKS_BACKUP_KEY);
 
     if (backupResult.error) {
@@ -526,9 +529,7 @@ export default function RoutineDashboard() {
     }
 
     if (
-      !window.confirm(
-        "A restauração substituirá a lista atual pelo backup. Antes disso, uma cópia dos dados atuais será preservada. Deseja continuar?"
-      )
+      !(await confirm({ title: "Restaurar backup", message: "A restauração substituirá a lista atual pelo backup. Antes disso, uma cópia dos dados atuais será preservada. Deseja continuar?", confirmLabel: "Restaurar", destructive: true }))
     ) {
       return;
     }
