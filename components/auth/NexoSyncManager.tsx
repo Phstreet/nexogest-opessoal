@@ -283,7 +283,11 @@ export default function NexoSyncManager() {
 
   if (!session) return null;
 
-  const label = state === "ready" ? "Sincronizado" : state === "pending" ? "Migração pendente" : state === "conflict" ? "Conflito para revisar" : state === "error" ? "Atenção necessária" : "Verificando nuvem";
+  // Conflitos continuam sendo detectados e bloqueiam gravações automáticas,
+  // mas não exibem mais o painel flutuante que interrompia a navegação.
+  if (state === "conflict") return null;
+
+  const label = state === "ready" ? "Sincronizado" : state === "pending" ? "Migração pendente" : state === "error" ? "Atenção necessária" : "Verificando nuvem";
 
   return (
     <aside className="nexo-sync-widget" aria-live="polite">
