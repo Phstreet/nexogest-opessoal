@@ -76,6 +76,38 @@ export function useRoutineCollection<T>(
     };
   }, [loadData]);
 
+  const persistItems = useCallback(async (next: T[]) => {
+    if (!persist) {
+      applyItems(next);
+      return;
+    }
+    if (!session || !loaded || !safeToSave) {
+      throw new Error("Os dados ainda não foram carregados ou a sessão expirou. A alteração não foi salva.");
+    }
+    if (!Array.isArray(next) || !next.every(isValidItem)) {
+      throw new Error("A alteração contém registros inválidos e não foi enviada ao Supabase.");
+    }
+    const result = await saveRemoteCollection(key, next, revisionRef.current);
+    if (!result.saved) {
+      const latest = await fetchRemoteCollections();
+      const remote = latest.find((item) => item.data_key === key);
+      if (remote && Array.isArray(remote.payload) && remote.payload.every(isValidItem)) {
+        revisionRef.current = Number(remote.revision) || 0;
+        applyItems(remote.payload);
+      }
+      throw new Error("Esta coleção foi alterada em outro dispositivo. Carregamos a versão mais recente; revise e tente novamente.");
+    }
+    revisionRef.current = result.current_revision ?? revisionRef.current + 1;
+    applyItems(next);
+    if (mountedRef.current) setStorageError(null);
+  }, [persist, session, loaded, safeToSave, key, isValidItem, applyItems]);
+
+  const saveNow = useCallback(async (next: T[]) => {
+    const pending = queueRef.current.then(() => persistItems(next));
+    queueRef.current = pending.then(() => undefined, () => undefined);
+    await pending;
+  }, [persistItems]);
+
   const setItems: Dispatch<SetStateAction<T[]>> = useCallback((action) => {
     if (!persist) {
       const next = typeof action === "function"
@@ -84,50 +116,18 @@ export function useRoutineCollection<T>(
       applyItems(next);
       return;
     }
-
-    queueRef.current = queueRef.current.then(async () => {
-      if (!session || !loaded || !safeToSave) {
-        if (mountedRef.current) {
-          setStorageError("Os dados ainda não foram carregados ou a sessão expirou. A alteração não foi salva.");
-        }
-        return;
-      }
-
+    const pending = queueRef.current.then(async () => {
       const next = typeof action === "function"
         ? (action as (previous: T[]) => T[])(itemsRef.current)
         : action;
-
-      if (!Array.isArray(next) || !next.every(isValidItem)) {
-        setStorageError("A alteração contém registros inválidos e não foi enviada ao Supabase.");
-        return;
-      }
-
-      try {
-        const result = await saveRemoteCollection(key, next, revisionRef.current);
-        if (!result.saved) {
-          const latest = await fetchRemoteCollections();
-          const remote = latest.find((item) => item.data_key === key);
-          if (remote && Array.isArray(remote.payload) && remote.payload.every(isValidItem)) {
-            revisionRef.current = Number(remote.revision) || 0;
-            applyItems(remote.payload);
-          }
-          throw new Error("Esta coleção foi alterada em outro dispositivo. Carregamos a versão mais recente; revise e tente novamente.");
-        }
-
-        revisionRef.current = result.current_revision ?? revisionRef.current + 1;
-        applyItems(next);
-        if (mountedRef.current) setStorageError(null);
-      } catch (error) {
-        if (mountedRef.current) {
-          setStorageError(error instanceof Error ? error.message : "Falha ao salvar no Supabase. A alteração não foi aplicada.");
-        }
-      }
-    }).catch((error) => {
+      await persistItems(next);
+    });
+    queueRef.current = pending.then(() => undefined, (error) => {
       if (mountedRef.current) {
         setStorageError(error instanceof Error ? error.message : "Falha inesperada ao salvar os dados.");
       }
     });
-  }, [persist, session, loaded, safeToSave, key, isValidItem, applyItems]);
+  }, [persist, applyItems, persistItems]);
 
   return {
     items,
@@ -136,5 +136,6 @@ export function useRoutineCollection<T>(
     safeToSave,
     storageError,
     reload: loadData,
+    saveNow,
   };
 }
