@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -237,6 +239,7 @@ function isCanceled(transaction: Transaction) {
 }
 
 export default function PlanejamentoFinanceiroPage() {
+  const confirm = useNexoConfirm();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
@@ -527,7 +530,7 @@ export default function PlanejamentoFinanceiroPage() {
     setEditingBudgetId(null);
   }
 
-  function deleteBudget(id: number) {
+  async function deleteBudget(id: number) {
     const confirmed = window.confirm(
       "Deseja realmente excluir este orçamento?"
     );
@@ -622,7 +625,7 @@ export default function PlanejamentoFinanceiroPage() {
     setEditingGoalId(null);
   }
 
-  function deleteGoal(id: number) {
+  async function deleteGoal(id: number) {
     const confirmed = window.confirm(
       "Deseja realmente excluir esta meta financeira?"
     );
