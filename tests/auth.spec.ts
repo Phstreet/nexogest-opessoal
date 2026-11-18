@@ -1,3 +1,5 @@
+"use client";
+
 import { test, expect, type Page } from "@playwright/test";
 
 const testSession = {
@@ -14,16 +16,21 @@ async function mockAuthApi(
   page: Page,
   handler: (action: string, payload: Record<string, unknown>) => AuthResponse | Promise<AuthResponse>
 ) {
+  let currentSession: typeof testSession | null = null;
+
   await page.route("**/api/auth", async (route) => {
     const request = route.request();
 
     if (request.method() === "GET") {
-      await route.fulfill({ json: { session: null } });
+      await route.fulfill({ json: { session: currentSession } });
       return;
     }
 
     const payload = request.postDataJSON() as Record<string, unknown>;
     const result = await handler(String(payload.action || ""), payload);
+    if ((result.status || 200) < 400 && result.body.session) {
+      currentSession = result.body.session as typeof testSession;
+    }
     await route.fulfill({
       status: result.status || 200,
       contentType: "application/json",
