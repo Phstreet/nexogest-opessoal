@@ -254,8 +254,9 @@ export default function ContasAReceberPage() {
     const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
     if (!draft.description.trim() || !Number.isFinite(amount) || amount <= 0) { alert("Informe uma descrição e um valor válido."); return; }
     if (!Number.isFinite(settledAmount) || settledAmount < 0 || settledAmount > amount) { alert("O valor recebido não pode ser negativo nem ultrapassar o valor total."); return; }
-    const status = settledAmount >= amount ? "Recebida" : settledAmount > 0 ? "Recebida parcialmente" : draft.status;
-    const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Receita", amount, settledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
+    const effectiveSettledAmount = draft.status === "Recebida" ? amount : settledAmount;
+    const status = effectiveSettledAmount >= amount ? "Recebida" : effectiveSettledAmount > 0 ? "Recebida parcialmente" : draft.status === "Recebida parcialmente" ? "Pendente" : draft.status;
+    const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Receita", amount, settledAmount: effectiveSettledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
     const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
     if (!saveTransactions(updated)) { alert("Não foi possível salvar. Os dados anteriores foram preservados."); loadTransactions(); return; }
     setTransactions(updated); setEditorOpen(false); setEditingId(null);
@@ -294,7 +295,7 @@ export default function ContasAReceberPage() {
           </p>
         </div>
 
-        <button type="button" className="receivable-back" onClick={() => setEditorOpen(false)}>Contas a receber</button>
+        
       </div>
 
       <section className="receivable-summary">
