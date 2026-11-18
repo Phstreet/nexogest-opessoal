@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
@@ -102,6 +104,7 @@ function getStatus(transaction: Transaction) {
 }
 
 export default function ContasAReceberPage() {
+  const confirm = useNexoConfirm();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
@@ -221,22 +224,16 @@ export default function ContasAReceberPage() {
     setTransactions(updatedTransactions);
   }
 
-  function markAsReceived(item: Transaction) {
-    const confirmed = window.confirm(
-      `Confirma o recebimento do saldo restante de "${item.description}" no valor de ${formatCurrency(
-        getOpenAmount(item)
-      )}?`
-    );
+  async function markAsReceived(item: Transaction) {
+    const confirmed = await confirm({ title: "Confirmar recebimento", message: `Confirma o recebimento do saldo restante de "${item.description}" no valor de ${formatCurrency(getOpenAmount(item))}?`, confirmLabel: "Confirmar" });
 
     if (confirmed) {
       updateStatus(item.id, "Recebida");
     }
   }
 
-  function reopenRevenue(item: Transaction) {
-    const confirmed = window.confirm(
-      `Deseja reabrir a receita "${item.description}"?`
-    );
+  async function reopenRevenue(item: Transaction) {
+    const confirmed = await confirm({ title: "Reabrir receita", message: `Deseja reabrir a receita "${item.description}"?`, confirmLabel: "Reabrir" });
 
     if (confirmed) {
       updateStatus(item.id, "Pendente");
