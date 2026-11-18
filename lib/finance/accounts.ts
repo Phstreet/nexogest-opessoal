@@ -493,8 +493,9 @@ function isBeforeInitialBalanceDate(
 // SALDO INDIVIDUAL DA CONTA
 // =====================================================
 
-export function getAccountBalance(
-  account: Account
+export function getAccountBalanceFrom(
+  account: Account,
+  transactions: Transaction[]
 ): number {
   const transactions = getTransactions();
 
@@ -566,6 +567,11 @@ export function getAccountBalance(
   }
 
   return balance;
+
+}
+
+export function getAccountBalance(account: Account): number {
+  return getAccountBalanceFrom(account, getTransactions());
 }
 
 // =====================================================
