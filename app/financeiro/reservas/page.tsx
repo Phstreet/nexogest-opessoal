@@ -137,7 +137,7 @@ function getMovementColor(type: MovementType) {
 
 export default function ReservasFinanceirasPage() {
   const confirm = useNexoConfirm();
-  const { reserves, reserveMovements: movements, accounts, loaded, error: cloudError, saveReserves, saveReserveMovements } = useCloudFinanceCollections();
+  const { reserves, reserveMovements: movements, accounts, loaded, error: cloudError, saveReserves, saveReserveMovements, reload } = useCloudFinanceCollections();
 
   const [showReserveForm, setShowReserveForm] = useState(false);
   const [editingReserveId, setEditingReserveId] = useState<number | null>(null);
@@ -372,12 +372,23 @@ export default function ReservasFinanceirasPage() {
 
     if (!confirmed) return;
 
+    const nextReserves = reserves.filter((item) => item.id !== reserve.id);
+    const nextMovements = movements.filter((item) => item.reserveId !== reserve.id);
+    let reservesSaved = false;
     try {
-      const nextReserves = reserves.filter((item) => item.id !== reserve.id);
-      const nextMovements = movements.filter((item) => item.reserveId !== reserve.id);
       await saveReserves(nextReserves);
-      await saveReserveMovements(nextMovements);
+      reservesSaved = true;
+      if (nextMovements.length !== movements.length) {
+        await saveReserveMovements(nextMovements);
+      }
     } catch (error) {
+      if (reservesSaved) {
+        try {
+          await saveReserves(reserves);
+        } catch {
+          await reload();
+        }
+      }
       setFeedback(error instanceof Error ? error.message : "Não foi possível excluir a reserva na nuvem. Atualize os dados antes de tentar novamente.");
       return;
     }
