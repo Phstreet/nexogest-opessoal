@@ -240,8 +240,9 @@ export default function ContasAPagarPage() {
     const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
     if (!draft.description.trim() || !Number.isFinite(amount) || amount <= 0) { alert("Informe uma descrição e um valor válido."); return; }
     if (!Number.isFinite(settledAmount) || settledAmount < 0 || settledAmount > amount) { alert("O valor pago não pode ser negativo nem ultrapassar o valor total."); return; }
-    const status = settledAmount >= amount ? "Pago" : settledAmount > 0 ? "Paga parcialmente" : draft.status;
-    const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Despesa", amount, settledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
+    const effectiveSettledAmount = draft.status === "Pago" ? amount : settledAmount;
+    const status = effectiveSettledAmount >= amount ? "Pago" : effectiveSettledAmount > 0 ? "Paga parcialmente" : draft.status === "Paga parcialmente" ? "Pendente" : draft.status;
+    const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Despesa", amount, settledAmount: effectiveSettledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
     const updated = editingId === null ? [...transactions, entry] : transactions.map((item) => item.id === editingId ? { ...item, ...entry, id: item.id } : item);
     if (!saveTransactions(updated)) { alert("Não foi possível salvar. Os dados anteriores foram preservados."); loadTransactions(); return; }
     setTransactions(updated); setEditorOpen(false); setEditingId(null);
