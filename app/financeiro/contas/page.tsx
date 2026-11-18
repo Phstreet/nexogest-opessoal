@@ -128,6 +128,7 @@ export default function ContasFinanceirasPage() {
 
   async function persistAccounts(next: Account[]) {
     if (!session) throw new Error("Entre na sua conta para salvar.");
+    if (!loaded || loadError) throw new Error(loadError || "Aguarde o carregamento das contas antes de salvar.");
     setSaving(true);
     try {
       const result = await saveRemoteCollection("nexo_accounts", next, revisionRef.current);
