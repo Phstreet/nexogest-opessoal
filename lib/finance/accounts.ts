@@ -21,6 +21,51 @@ export function getActiveAccounts(): Account[] {
   return getAccounts().filter((account) => account.active);
 }
 
+/**
+ * Retorna a conta principal. Para contas antigas sem essa configuração,
+ * promove automaticamente a primeira conta ativa sem alterar lançamentos.
+ */
+export function getPrimaryAccount(): Account | undefined {
+  const accounts = getAccounts();
+  const activeAccounts = accounts.filter((account) => account.active);
+  const currentPrimary = activeAccounts.find((account) => account.isPrimary);
+
+  if (currentPrimary) return currentPrimary;
+  if (activeAccounts.length === 0) return undefined;
+
+  const primaryId = activeAccounts[0].id;
+  const updatedAccounts = accounts.map((account) => ({
+    ...account,
+    isPrimary: account.id === primaryId,
+  }));
+
+  if (!saveAccounts(updatedAccounts)) {
+    return activeAccounts[0];
+  }
+
+  return updatedAccounts.find((account) => account.id === primaryId);
+}
+
+/** Define uma única conta ativa como principal. */
+export function setPrimaryAccount(id: number): Account {
+  const accounts = getAccounts();
+  const selected = accounts.find((account) => account.id === id);
+
+  if (!selected) throw new Error("Conta não encontrada.");
+  if (!selected.active) throw new Error("Ative a conta antes de defini-la como principal.");
+
+  const updatedAccounts = accounts.map((account) => ({
+    ...account,
+    isPrimary: account.id === id,
+  }));
+
+  if (!saveAccounts(updatedAccounts)) {
+    throw new Error("Não foi possível definir a conta principal.");
+  }
+
+  return updatedAccounts.find((account) => account.id === id)!;
+}
+
 export function getAccountById(
   id: number
 ): Account | undefined {
@@ -80,8 +125,11 @@ export function createAccount(
     throw new Error("Informe uma data válida para o saldo inicial.");
   }
 
+  const hasPrimary = accounts.some((account) => account.active && account.isPrimary);
+
   const account: Account = {
     ...data,
+    isPrimary: Boolean(data.active && !hasPrimary),
     name: data.name.trim(),
     institution: data.institution.trim(),
     id: generateAccountId(accounts),
@@ -212,7 +260,23 @@ export function setAccountActive(
   id: number,
   active: boolean
 ): Account {
-  return updateAccount(id, { active });
+  const current = getAccounts().find((account) => account.id === id);
+  if (!current) throw new Error("Conta não encontrada.");
+
+  const updated = updateAccount(id, {
+    active,
+    ...(active ? {} : { isPrimary: false }),
+  });
+
+  const accounts = getAccounts();
+  const hasPrimary = accounts.some((account) => account.active && account.isPrimary);
+
+  if (!hasPrimary) {
+    const nextActive = accounts.find((account) => account.active);
+    if (nextActive) return setPrimaryAccount(nextActive.id);
+  }
+
+  return updated;
 }
 
 // =====================================================
@@ -251,6 +315,11 @@ export function deleteAccount(id: number): boolean {
 
   if (!saveAccounts(updatedAccounts)) {
     throw new Error("Não foi possível excluir a conta.");
+  }
+
+  if (account.isPrimary) {
+    const nextActive = updatedAccounts.find((item) => item.active);
+    if (nextActive) setPrimaryAccount(nextActive.id);
   }
 
   return true;
