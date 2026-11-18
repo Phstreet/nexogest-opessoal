@@ -305,6 +305,7 @@ export default function WeeklyPlanningPage() {
 
   return (
     <div className="content weekly-page-content">
+      {preferencesError && <div className="form-card" role="alert">{preferencesError}</div>}
       {storageError && (
         <div className="form-card" role="alert">
           <strong>Armazenamento protegido</strong>
