@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
+import {
+  fetchRemoteCollections,
+  getCurrentSession,
+  saveRemoteCollection,
+} from "@/lib/supabase/client";
 
 import {
   FINANCE_STORAGE_KEYS,
   getAccounts,
   loadTransactionsSafely,
-  saveTransactions,
 } from "@/lib/finance/storage";
 
 type FormMovementType =
@@ -498,52 +502,218 @@ export default function Page() {
   const [invalidCount, setInvalidCount] = useState(0);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [backupAvailable, setBackupAvailable] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("Conectando ao banco de dados...");
+  const revisionRef = useRef(0);
+  const remoteReadyRef = useRef(false);
+  const lastSavedPayloadRef = useRef("");
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    setDate(localDate());
+    let active = true;
 
-    const result = loadTransactionsSafely();
+    async function initializeFinanceData() {
+      setDate(localDate());
 
-    setTransactions(result.transactions);
-    setRegisteredAccounts(getAccounts());
-    setInvalidCount(result.invalidRecords.length);
-    setSafeToSave(result.safeToSave);
-    setStorageError(result.error);
-    setBackupAvailable(
-      Boolean(window.localStorage.getItem(BACKUP_KEY))
-    );
+      const localResult = loadTransactionsSafely();
+      const localRaw = window.localStorage.getItem(STORAGE_KEY);
 
-    setLoaded(true);
+      setRegisteredAccounts(getAccounts());
+      setInvalidCount(localResult.invalidRecords.length);
+      setBackupAvailable(Boolean(window.localStorage.getItem(BACKUP_KEY)));
+
+      try {
+        const session = await getCurrentSession();
+
+        if (!active) return;
+
+        if (!session) {
+          setTransactions(localResult.transactions);
+          setSafeToSave(false);
+          setStorageError(
+            "Entre na sua conta NEXO para carregar e salvar os lançamentos no banco de dados. Os dados antigos deste navegador foram preservados."
+          );
+          setSyncStatus("Aguardando autenticação");
+          setLoaded(true);
+          return;
+        }
+
+        const collections = await fetchRemoteCollections();
+        if (!active) return;
+
+        const remoteTransactions = collections.find(
+          (item) => item.data_key === STORAGE_KEY
+        );
+
+        if (remoteTransactions) {
+          if (!Array.isArray(remoteTransactions.payload)) {
+            throw new Error(
+              "Os lançamentos encontrados no banco estão em um formato inválido. Nenhum dado foi sobrescrito."
+            );
+          }
+
+          const cloudRecords = remoteTransactions.payload.filter(isValidTransaction);
+          const invalidCloudRecords = remoteTransactions.payload.filter(
+            (item) => !isValidTransaction(item)
+          );
+
+          if (
+            localRaw !== null &&
+            JSON.stringify(localResult.transactions) !== JSON.stringify(cloudRecords)
+          ) {
+            createBackup(localRaw);
+            setBackupAvailable(true);
+          }
+
+          revisionRef.current = remoteTransactions.revision;
+          lastSavedPayloadRef.current = JSON.stringify(cloudRecords);
+          setTransactions(cloudRecords);
+          setInvalidCount(invalidCloudRecords.length);
+          setSafeToSave(invalidCloudRecords.length === 0);
+          setStorageError(
+            invalidCloudRecords.length > 0
+              ? "Existem registros inválidos no banco de dados. A gravação foi bloqueada para evitar perda dessas informações."
+              : null
+          );
+          setSyncStatus(
+            invalidCloudRecords.length > 0
+              ? "Verificação necessária"
+              : "Dados carregados do Supabase"
+          );
+        } else {
+          if (localRaw !== null) {
+            createBackup(localRaw);
+            setBackupAvailable(true);
+          }
+
+          const legacyRecords = localResult.transactions;
+
+          if (!localResult.safeToSave) {
+            setTransactions(legacyRecords);
+            setSafeToSave(false);
+            setStorageError(
+              localResult.error ||
+                "Os dados locais precisam ser verificados antes da migração. Nenhuma informação foi enviada ou removida."
+            );
+            setSyncStatus("Migração pausada por segurança");
+            setLoaded(true);
+            return;
+          }
+
+          const migration = await saveRemoteCollection(
+            STORAGE_KEY,
+            legacyRecords,
+            0
+          );
+
+          if (!active) return;
+
+          if (!migration.saved) {
+            const refreshedCollections = await fetchRemoteCollections();
+            const refreshed = refreshedCollections.find(
+              (item) => item.data_key === STORAGE_KEY
+            );
+
+            if (!refreshed || !Array.isArray(refreshed.payload)) {
+              throw new Error(
+                "Não foi possível concluir a migração com segurança. Os dados locais continuam preservados."
+              );
+            }
+
+            const refreshedRecords = refreshed.payload.filter(isValidTransaction);
+            const refreshedInvalid = refreshed.payload.filter(
+              (item) => !isValidTransaction(item)
+            );
+
+            revisionRef.current = refreshed.revision;
+            lastSavedPayloadRef.current = JSON.stringify(refreshedRecords);
+            setTransactions(refreshedRecords);
+            setInvalidCount(refreshedInvalid.length);
+            setSafeToSave(refreshedInvalid.length === 0);
+            setStorageError(
+              refreshedInvalid.length > 0
+                ? "Existem registros inválidos no banco. A gravação foi bloqueada."
+                : null
+            );
+            setSyncStatus("Dados atualizados do Supabase");
+          } else {
+            revisionRef.current = migration.current_revision ?? 1;
+            lastSavedPayloadRef.current = JSON.stringify(legacyRecords);
+            setTransactions(legacyRecords);
+            setSafeToSave(true);
+            setStorageError(null);
+            setSyncStatus(
+              "Migração concluída: " + legacyRecords.length +
+                " lançamento(s) enviados ao Supabase"
+            );
+          }
+        }
+
+        remoteReadyRef.current = true;
+        setLoaded(true);
+      } catch (error) {
+        if (!active) return;
+
+        console.error("Falha ao carregar os lançamentos do Supabase:", error);
+        setTransactions(localResult.transactions);
+        setSafeToSave(false);
+        setStorageError(
+          error instanceof Error
+            ? error.message + " Os dados locais foram preservados e nenhuma gravação foi realizada."
+            : "Não foi possível acessar o banco de dados. Os dados locais foram preservados."
+        );
+        setSyncStatus("Falha na conexão com o Supabase");
+        setLoaded(true);
+      }
+    }
+
+    initializeFinanceData();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!loaded || !safeToSave) return;
+    if (!loaded || !safeToSave || !remoteReadyRef.current) return;
 
-    try {
-      const saved = saveTransactions(transactions);
+    const serializedPayload = JSON.stringify(transactions);
+    if (serializedPayload === lastSavedPayloadRef.current) return;
 
-      if (!saved) {
-        setStorageError(
-          "Não foi possível salvar os lançamentos. A camada de armazenamento bloqueou a gravação para proteger os dados existentes."
+    saveQueueRef.current = saveQueueRef.current.then(async () => {
+      if (!remoteReadyRef.current) return;
+
+      try {
+        const result = await saveRemoteCollection(
+          STORAGE_KEY,
+          transactions,
+          revisionRef.current
         );
-        return;
+
+        if (!result.saved) {
+          setSafeToSave(false);
+          setStorageError(
+            "O banco informou que os dados foram alterados em outra sessão. Para evitar sobrescrever informações, a gravação foi pausada. Atualize a página para carregar a versão mais recente."
+          );
+          setSyncStatus("Conflito de sincronização");
+          return;
+        }
+
+        revisionRef.current =
+          result.current_revision ?? revisionRef.current + 1;
+        lastSavedPayloadRef.current = serializedPayload;
+        setStorageError(null);
+        setSyncStatus("Sincronizado com o Supabase");
+      } catch (error) {
+        console.error("Não foi possível salvar os lançamentos no Supabase:", error);
+        setSafeToSave(false);
+        setStorageError(
+          error instanceof Error
+            ? error.message + " A gravação foi pausada para proteger os dados."
+            : "Falha ao salvar no banco de dados. A gravação foi pausada para proteger os dados."
+        );
+        setSyncStatus("Erro ao sincronizar");
       }
-
-      setBackupAvailable(
-        Boolean(window.localStorage.getItem(BACKUP_KEY))
-      );
-
-      setStorageError(null);
-    } catch (error) {
-      console.error(
-        "Não foi possível salvar os lançamentos com segurança.",
-        error
-      );
-
-      setStorageError(
-        "Falha ao salvar os dados. A gravação foi interrompida para evitar perda das informações."
-      );
-    }
+    });
   }, [transactions, loaded, safeToSave]);
 
   const accountOptions = useMemo(() => {
@@ -845,9 +1015,6 @@ export default function Page() {
 
   function exportBackup() {
     try {
-      const rawData =
-        window.localStorage.getItem(STORAGE_KEY) ?? "[]";
-
       const invalidData =
         window.localStorage.getItem(INVALID_KEY);
 
@@ -856,7 +1023,8 @@ export default function Page() {
         version: 1,
         exportedAt: new Date().toISOString(),
         storageKey: STORAGE_KEY,
-        transactions: JSON.parse(rawData),
+        source: "Supabase",
+        transactions,
         invalidRecords: invalidData
           ? JSON.parse(invalidData)
           : null,
@@ -1193,9 +1361,10 @@ export default function Page() {
 
         <section className="finance-backup-panel">
           <div>
-            <strong>Segurança dos dados</strong>
+            <strong>Banco de dados e segurança</strong>
             <span>
-              Backup local e recuperação dos lançamentos financeiros.
+              {syncStatus}. Os lançamentos são armazenados na nuvem por usuário.
+              O backup local antigo continua disponível para recuperação.
             </span>
           </div>
 
