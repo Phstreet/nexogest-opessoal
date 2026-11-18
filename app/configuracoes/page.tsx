@@ -2,9 +2,10 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import { fetchRemoteCollections, saveRemoteCollection, NEXO_SYNC_KEYS, type NexoSyncKey } from "@/lib/supabase/client";
 import {
   INCOME_CATEGORIES,
   EXPENSE_CATEGORIES,
@@ -21,39 +22,74 @@ type Profile = { displayName: string; fullName?: string; sex?: string; monthlyIn
 const PREFERENCES_KEY = "nexo_preferences";
 const PROFILE_KEY = "nexo_profile";
 
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export default function ConfiguracoesPage() {
   const confirm = useNexoConfirm();
   const { session } = useNexoAuth();
   const [tab, setTab] = useState<SettingsTab>("preferencias");
-  const [preferences, setPreferences] = useState<Preferences>({
-    weekStartsOn: "monday",
-  });
+  const [preferences, setPreferences] = useState<Preferences>({ weekStartsOn: "monday" });
   const [profile, setProfile] = useState<Profile>({ displayName: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [backupDate, setBackupDate] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const revisions = useRef(new Map<NexoSyncKey, number>());
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get("tab") as SettingsTab | null;
-    if (requested && ["preferencias", "categorias", "dados", "personalizacao"].includes(requested)) {
-      setTab(requested);
-    }
-    setPreferences(readJson(PREFERENCES_KEY, {
-      weekStartsOn: "monday",
-    }));
-    setProfile(readJson(PROFILE_KEY, { displayName: "" }));
-    setBackupDate(localStorage.getItem("nexo_full_backup_created_at") || "");
+    if (requested && ["preferencias", "categorias", "dados", "personalizacao"].includes(requested)) setTab(requested);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadSettings() {
+      if (!session) {
+        setLoading(false);
+        setError("Entre na sua conta para acessar suas configurações.");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const collections = await fetchRemoteCollections();
+        if (!active) return;
+        for (const key of NEXO_SYNC_KEYS) {
+          const row = collections.find((item) => item.data_key === key);
+          revisions.current.set(key, Number(row?.revision) || 0);
+        }
+        const remotePreferences = collections.find((item) => item.data_key === PREFERENCES_KEY);
+        const remoteProfile = collections.find((item) => item.data_key === PROFILE_KEY);
+        const nextPreferences = remotePreferences?.payload;
+        if (nextPreferences && typeof nextPreferences === "object" && !Array.isArray(nextPreferences)) {
+          const weekStartsOn = (nextPreferences as Record<string, unknown>).weekStartsOn;
+          setPreferences({ weekStartsOn: weekStartsOn === "sunday" ? "sunday" : "monday" });
+        } else {
+          setPreferences({ weekStartsOn: "monday" });
+        }
+        const nextProfile = remoteProfile?.payload;
+        if (nextProfile && typeof nextProfile === "object" && !Array.isArray(nextProfile)) {
+          const data = nextProfile as Record<string, unknown>;
+          setProfile({
+            displayName: typeof data.displayName === "string" ? data.displayName : "",
+            fullName: typeof data.fullName === "string" ? data.fullName : undefined,
+            sex: typeof data.sex === "string" ? data.sex : undefined,
+            monthlyIncome: typeof data.monthlyIncome === "string" ? data.monthlyIncome : undefined,
+            birthDate: typeof data.birthDate === "string" ? data.birthDate : undefined,
+            profession: typeof data.profession === "string" ? data.profession : undefined
+          });
+        } else {
+          setProfile({ displayName: "" });
+        }
+      } catch (caught) {
+        if (active) setError(caught instanceof Error ? caught.message : "Não foi possível carregar as configurações da nuvem.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void loadSettings();
+    return () => { active = false; };
+  }, [session]);
 
   const categoryGroups = useMemo(
     () => [
@@ -64,61 +100,73 @@ export default function ConfiguracoesPage() {
     []
   );
 
-  function savePreferences(next: Preferences) {
-    setPreferences(next);
+  async function persistSetting(key: NexoSyncKey, payload: unknown) {
+    if (!session) throw new Error("Entre na sua conta para salvar suas configurações.");
+    const revision = revisions.current.get(key) ?? 0;
+    const result = await saveRemoteCollection(key, payload, revision);
+    if (!result.saved) {
+      const latest = await fetchRemoteCollections();
+      const row = latest.find((item) => item.data_key === key);
+      revisions.current.set(key, Number(row?.revision) || 0);
+      throw new Error("Esta configuração foi alterada em outro dispositivo. Atualize a página e tente novamente.");
+    }
+    revisions.current.set(key, result.current_revision ?? revision + 1);
+  }
+
+  async function savePreferences(next: Preferences) {
+    setSaving(true);
+    setMessage("");
+    setError("");
     try {
-      localStorage.setItem(PREFERENCES_KEY, JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: PREFERENCES_KEY } }));
-      setMessage("Preferências salvas.");
-      setError("");
-    } catch {
-      setError("Não foi possível salvar as preferências neste navegador.");
-      setMessage("");
+      await persistSetting(PREFERENCES_KEY, next);
+      setPreferences(next);
+      setMessage("Preferências salvas no Supabase.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar as preferências.");
+    } finally {
+      setSaving(false);
     }
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSaving(true);
+    setMessage("");
+    setError("");
     try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      window.dispatchEvent(new CustomEvent("nexo:local-data-updated", { detail: { key: PROFILE_KEY } }));
+      const next = { ...profile, displayName: profile.displayName.trim() };
+      await persistSetting(PROFILE_KEY, next);
+      setProfile(next);
       window.dispatchEvent(new Event("nexo:profile-updated"));
-      setMessage("Personalização salva.");
-      setError("");
-    } catch {
-      setError("Não foi possível salvar a personalização.");
-      setMessage("");
+      setMessage("Personalização salva no Supabase.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar a personalização.");
+    } finally {
+      setSaving(false);
     }
   }
 
-  function downloadBackup() {
+  async function downloadBackup() {
+    setSaving(true);
+    setMessage("");
+    setError("");
     try {
-      const entries = Object.keys(localStorage)
-        .filter((key) => key.startsWith("nexo_") && !key.startsWith("nexo_account_local_backup_") && (!key.startsWith("nexo_sync_conflict_backup_") || Boolean(session && key.startsWith(`nexo_sync_conflict_backup_${session.user.id}_`))))
-        .sort()
-        .map((key) => [key, localStorage.getItem(key)] as const);
-      const backup = {
-        application: "NEXO",
-        version: 1,
-        createdAt: new Date().toISOString(),
-        entries,
-      };
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {
-        type: "application/json",
-      });
+      const collections = await fetchRemoteCollections();
+      const entries = collections.map((item) => [item.data_key, item.payload]);
+      const backup = { application: "NEXO", version: 2, createdAt: new Date().toISOString(), entries };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `nexo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.download = "nexo-backup-" + new Date().toISOString().slice(0, 10) + ".json";
       anchor.click();
       URL.revokeObjectURL(url);
-      localStorage.setItem("nexo_full_backup_created_at", backup.createdAt);
       setBackupDate(backup.createdAt);
-      setMessage("Backup exportado. Guarde o arquivo em um local seguro.");
-      setError("");
-    } catch {
-      setError("Não foi possível gerar o backup. Verifique o espaço disponível no navegador.");
-      setMessage("");
+      setMessage("Backup exportado diretamente do Supabase.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível gerar o backup da nuvem.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -127,49 +175,41 @@ export default function ConfiguracoesPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async () => {
+      setSaving(true);
+      setMessage("");
+      setError("");
       try {
-        const parsed = JSON.parse(String(reader.result)) as {
-          application?: unknown;
-          version?: unknown;
-          entries?: unknown;
-        };
-        if (
-          parsed.application !== "NEXO" ||
-          parsed.version !== 1 ||
-          !Array.isArray(parsed.entries)
-        ) {
-          throw new Error("Arquivo de backup incompatível.");
+        const parsed = JSON.parse(String(reader.result)) as { application?: unknown; version?: unknown; entries?: unknown };
+        if (parsed.application !== "NEXO" || ![1, 2].includes(Number(parsed.version)) || !Array.isArray(parsed.entries)) throw new Error("Arquivo de backup incompatível.");
+        const allowed = new Set<string>(NEXO_SYNC_KEYS);
+        const normalized = (parsed.entries as unknown[]).map((entry) => {
+          if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !allowed.has(entry[0])) throw new Error("O backup contém uma coleção não reconhecida.");
+          const payload = parsed.version === 1 ? (typeof entry[1] === "string" ? JSON.parse(entry[1]) : entry[1]) : entry[1];
+          if (payload === null || payload === undefined) throw new Error("O backup contém uma coleção vazia/inválida.");
+          return [entry[0] as NexoSyncKey, payload] as const;
+        });
+        if (!(await confirm({ title: "Confirmar importação", message: "As coleções do backup serão enviadas ao Supabase e poderão substituir os dados atuais. Deseja continuar?", confirmLabel: "Importar", destructive: true }))) return;
+        const latest = await fetchRemoteCollections();
+        const revisionsByKey = new Map(latest.map((row) => [row.data_key, Number(row.revision) || 0]));
+        for (const [key, payload] of normalized) {
+          const result = await saveRemoteCollection(key, payload, revisionsByKey.get(key) ?? 0);
+          if (!result.saved) throw new Error("Não foi possível importar " + key + ": houve uma alteração concorrente.");
+          revisions.current.set(key, result.current_revision ?? (revisionsByKey.get(key) ?? 0) + 1);
         }
-        const entries = parsed.entries as unknown[];
-        const validEntries = entries.every(
-          (entry) =>
-            Array.isArray(entry) &&
-            entry.length === 2 &&
-            typeof entry[0] === "string" &&
-            entry[0].startsWith("nexo_") &&
-            (typeof entry[1] === "string" || entry[1] === null)
-        );
-        if (!validEntries) throw new Error("O arquivo contém dados inválidos.");
-        if (!(await confirm({ title: "Confirmar importação", message: "A importação substituirá os registros com as mesmas chaves. Recomendamos exportar um backup atual antes de continuar. Deseja prosseguir?", confirmLabel: "Importar", destructive: true }))) {
-          event.target.value = "";
-          return;
+        const verified = await fetchRemoteCollections();
+        for (const [key] of normalized) {
+          if (!verified.some((row) => row.data_key === key)) throw new Error("A verificação da coleção " + key + " falhou.");
         }
-        for (const [key, value] of entries as [string, string | null][]) {
-          if (value === null) localStorage.removeItem(key);
-          else localStorage.setItem(key, value);
-        }
-        setMessage("Backup importado. Recarregue a página para atualizar todas as áreas.");
-        setError("");
+        setMessage("Backup importado e verificado no Supabase.");
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Não foi possível importar o backup.");
-        setMessage("");
       } finally {
+        setSaving(false);
         event.target.value = "";
       }
     };
     reader.onerror = () => {
       setError("Não foi possível ler o arquivo selecionado.");
-      setMessage("");
       event.target.value = "";
     };
     reader.readAsText(file);
@@ -178,6 +218,7 @@ export default function ConfiguracoesPage() {
   return (
     <AppLayout>
       <div className="content nexo-settings">
+        {loading && <div className="settings-feedback" role="status">Carregando configurações do Supabase...</div>}
         <header className="page-heading">
           <div>
             <div className="eyebrow">SISTEMA / PREFERÊNCIAS</div>
@@ -208,12 +249,12 @@ export default function ConfiguracoesPage() {
             <p>Defina como deseja organizar sua experiência no NEXO.</p>
             <label className="settings-field">
               <span>Primeiro dia da semana</span>
-              <select value={preferences.weekStartsOn} onChange={(event) => savePreferences({ ...preferences, weekStartsOn: event.target.value as Preferences["weekStartsOn"] })}>
+              <select value={preferences.weekStartsOn} onChange={(event) => void savePreferences({ ...preferences, weekStartsOn: event.target.value as Preferences["weekStartsOn"] })} disabled={saving || loading}>
                 <option value="monday">Segunda-feira</option>
                 <option value="sunday">Domingo</option>
               </select>
             </label>
-                    <small>Esta preferência já é aplicada ao Planejamento Semanal. Ela fica salva neste navegador e não altera os registros cadastrados.</small>
+                    <small>Esta preferência é salva na sua conta e fica disponível em seus dispositivos.</small>
           </section>
         )}
 
@@ -244,11 +285,11 @@ export default function ConfiguracoesPage() {
         {tab === "dados" && (
           <section className="settings-panel">
             <h2>Dados e backups</h2>
-            <p>Exporte os dados NEXO armazenados neste navegador ou importe um arquivo de backup anterior.</p>
+            <p>Exporte os dados NEXO armazenados no Supabase ou importe um arquivo de backup.</p>
             <div className="backup-actions">
-              <button type="button" className="primary-button" onClick={downloadBackup}>Exportar backup completo</button>
+              <button type="button" className="primary-button" onClick={() => void downloadBackup()} disabled={saving || loading}>Exportar backup completo</button>
               <label className="secondary-button file-button">
-                Importar arquivo de backup
+                Importar backup para o Supabase
                 <input type="file" accept="application/json,.json" onChange={importBackup} />
               </label>
             </div>
@@ -256,7 +297,7 @@ export default function ConfiguracoesPage() {
               <strong>Último backup exportado</strong>
               <span>{backupDate ? new Date(backupDate).toLocaleString("pt-BR") : "Nenhum backup exportado por esta tela."}</span>
             </div>
-            <p className="settings-warning">A importação substitui os dados das chaves presentes no arquivo. Ela não sincroniza informações entre dispositivos nem substitui um backup externo seguro.</p>
+            <p className="settings-warning">Os backups são gerados a partir da nuvem. A importação substitui as coleções correspondentes no Supabase.</p>
           </section>
         )}
 
@@ -273,7 +314,7 @@ export default function ConfiguracoesPage() {
                 <span>Prévia do perfil</span>
                 <strong>{profile.displayName.trim() || "NEXO"}</strong>
               </div>
-              <button className="primary-button" type="submit">Salvar personalização</button>
+              <button className="primary-button" type="submit" disabled={saving || loading}>{saving ? "Salvando..." : "Salvar personalização"}</button>
             </form>
             <p className="settings-note">O padrão visual monocromático atual foi preservado. Novos temas só serão adicionados quando todas as telas compartilharem o mesmo sistema de estilos.</p>
           </section>
