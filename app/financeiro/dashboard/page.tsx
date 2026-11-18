@@ -86,6 +86,7 @@ export default function FinancialDashboardPage() {
 
   return (
     <div className="content dashboard-content">
+      {error && <div role="alert" className="finance-cloud-error">{error}</div>}
       <DashboardHeader
         currentMonthName={currentMonthName}
         financialSituation={financialSituation}
