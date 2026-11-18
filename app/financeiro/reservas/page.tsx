@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { getAccounts, getReserves, getReserveMovements, saveReserves, saveReserveMovements, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
 
@@ -418,10 +420,8 @@ export default function ReservasFinanceirasPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleDeleteReserve(reserve: Reserve) {
-    const confirmed = window.confirm(
-      `Deseja realmente excluir a reserva "${reserve.name}" e todo o seu histórico de movimentações?`
-    );
+  async function handleDeleteReserve(reserve: Reserve) {
+    const confirmed = await confirm({ title: "Excluir reserva", message: `Deseja realmente excluir a reserva "${reserve.name}" e todo o seu histórico de movimentações?`, confirmLabel: "Excluir reserva", destructive: true });
 
     if (!confirmed) return;
 
@@ -504,10 +504,8 @@ export default function ReservasFinanceirasPage() {
     setFeedback(`${movementForm.type} registrado com sucesso.`);
   }
 
-  function handleDeleteMovement(movement: ReserveMovement) {
-    const confirmed = window.confirm(
-      "Deseja excluir esta movimentação?"
-    );
+  async function handleDeleteMovement(movement: ReserveMovement) {
+    const confirmed = await confirm({ title: "Excluir movimentação", message: "Deseja excluir esta movimentação?", confirmLabel: "Excluir", destructive: true });
 
     if (!confirmed) return;
 
