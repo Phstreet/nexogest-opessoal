@@ -143,6 +143,7 @@ function getMovementColor(type: MovementType) {
 }
 
 export default function ReservasFinanceirasPage() {
+  const confirm = useNexoConfirm();
   const [reserves, setReserves] = useState<Reserve[]>([]);
   const [movements, setMovements] = useState<ReserveMovement[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
