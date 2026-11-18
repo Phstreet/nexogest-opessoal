@@ -58,6 +58,9 @@ export type Transaction = {
   status?: string;
   recurrence?: string;
 
+  /** Identifica as ocorrências geradas pelo mesmo lançamento mensal. */
+  recurrenceGroupId?: string;
+
   reserveType?: string;
   investment?: string;
   institution?: string;
