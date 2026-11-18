@@ -4,7 +4,9 @@
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { getTransactions, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import { getTransactions, getAccounts, saveTransactions, subscribeFinanceUpdates, FINANCE_STORAGE_KEYS } from "@/lib/finance/storage";
+import type { Account } from "@/lib/finance/types";
+import { categoriesByType, subcategories } from "@/lib/finance/categories";
 
 type Transaction = {
   id: number;
@@ -107,6 +109,7 @@ function getStatus(transaction: Transaction) {
 export default function ContasAPagarPage() {
   const confirm = useNexoConfirm();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [registeredAccounts, setRegisteredAccounts] = useState<Account[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("Todas");
   const [loading, setLoading] = useState(true);
@@ -125,12 +128,24 @@ export default function ContasAPagarPage() {
   }, []);
 
   useEffect(() => {
+    function loadRegisteredAccounts() {
+      try {
+        setRegisteredAccounts(
+          getAccounts()
+            .filter((account) => account.active)
+            .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)))
+        );
+      } catch {
+        setRegisteredAccounts([]);
+      }
+    }
+
     loadTransactions();
+    loadRegisteredAccounts();
 
     return subscribeFinanceUpdates((key) => {
-      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) {
-        loadTransactions();
-      }
+      if (key === null || key === FINANCE_STORAGE_KEYS.transactions) loadTransactions();
+      if (key === null || key === FINANCE_STORAGE_KEYS.accounts) loadRegisteredAccounts();
     });
   }, [loadTransactions]);
 
@@ -138,6 +153,13 @@ export default function ContasAPagarPage() {
     () => transactions.filter((item) => item.type === "Despesa"),
     [transactions]
   );
+
+  const categoryOptions = categoriesByType.Despesa;
+  const subcategoryOptions = subcategories[draft.category] || ["Outros"];
+  const accountOptions = Array.from(new Set([
+    ...registeredAccounts.map((account) => account.name),
+    draft.account,
+  ].filter(Boolean)));
 
   const activeExpenses = useMemo(
     () => expenses.filter((item) => !isCancelled(item.status)),
@@ -229,8 +251,21 @@ export default function ContasAPagarPage() {
   }
 
   function openExpenseEditor(item?: Transaction) {
+    const defaultCategory = item?.category || categoryOptions[0];
+    const primaryAccount = registeredAccounts.find((account) => account.isPrimary) || registeredAccounts[0];
     setEditingId(item?.id ?? null);
-    setDraft({ description: item?.description ?? "", amount: item ? String(item.amount).replace(".", ",") : "", settledAmount: item ? String(getSettledAmount(item)).replace(".", ",") : "0", date: item?.date || getToday(), category: item?.category || "", subcategory: item?.subcategory || "", account: item?.account || "", paymentMethod: item?.paymentMethod || "PIX", status: item?.status || "Pendente", recurrence: item?.recurrence || "Nenhuma" });
+    setDraft({
+      description: item?.description ?? "",
+      amount: item ? String(item.amount).replace(".", ",") : "",
+      settledAmount: item ? String(getSettledAmount(item)).replace(".", ",") : "0",
+      date: item?.date || getToday(),
+      category: defaultCategory,
+      subcategory: item?.subcategory || subcategories[defaultCategory]?.[0] || "Outros",
+      account: item?.account || primaryAccount?.name || "",
+      paymentMethod: item?.paymentMethod || "PIX",
+      status: item?.status || "Pendente",
+      recurrence: item?.recurrence || "Nenhuma",
+    });
     setEditorOpen(true);
   }
 
@@ -239,6 +274,7 @@ export default function ContasAPagarPage() {
     const amount = parseCurrencyInput(draft.amount);
     const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
     if (!draft.description.trim() || !Number.isFinite(amount) || amount <= 0) { alert("Informe uma descrição e um valor válido."); return; }
+    if (!draft.account || !registeredAccounts.some((account) => account.name === draft.account)) { alert("Selecione uma conta ativa cadastrada em Financeiro > Contas."); return; }
     if (!Number.isFinite(settledAmount) || settledAmount < 0 || settledAmount > amount) { alert("O valor pago não pode ser negativo nem ultrapassar o valor total."); return; }
     const effectiveSettledAmount = draft.status === "Pago" ? amount : settledAmount;
     const status = effectiveSettledAmount >= amount ? "Pago" : effectiveSettledAmount > 0 ? "Paga parcialmente" : draft.status === "Paga parcialmente" ? "Pendente" : draft.status;
@@ -338,9 +374,9 @@ export default function ContasAPagarPage() {
             <label>Valor total<input required inputMode="decimal" value={draft.amount} onChange={(e) => setDraft({...draft, amount:e.target.value})} /></label>
             <label>Valor já pago<input inputMode="decimal" value={draft.settledAmount} onChange={(e) => setDraft({...draft, settledAmount:e.target.value})} /></label>
             <label>Vencimento<input type="date" value={draft.date} onChange={(e) => setDraft({...draft, date:e.target.value})} /></label>
-            <label>Categoria<input value={draft.category} onChange={(e) => setDraft({...draft, category:e.target.value})} /></label>
-            <label>Subcategoria<input value={draft.subcategory} onChange={(e) => setDraft({...draft, subcategory:e.target.value})} /></label>
-            <label>Conta de pagamento<input value={draft.account} onChange={(e) => setDraft({...draft, account:e.target.value})} /></label>
+            <label>Categoria<select required value={draft.category} onChange={(e) => { const category = e.target.value; setDraft({...draft, category, subcategory: subcategories[category]?.[0] || "Outros"}); }}>{categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+            <label>Subcategoria<select required value={draft.subcategory} onChange={(e) => setDraft({...draft, subcategory:e.target.value})}>{subcategoryOptions.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></label>
+            <label>Conta de pagamento<select required value={draft.account} onChange={(e) => setDraft({...draft, account:e.target.value})}><option value="">Selecione uma conta cadastrada</option>{accountOptions.map((account) => <option key={account} value={account}>{account}{registeredAccounts.find((item) => item.name === account)?.isPrimary ? " · Principal" : ""}</option>)}</select>{registeredAccounts.length === 0 && <small>Você ainda não possui contas ativas. <a href="/financeiro/contas">Cadastrar conta</a>.</small>}</label>
             <label>Forma de pagamento<select value={draft.paymentMethod} onChange={(e) => setDraft({...draft, paymentMethod:e.target.value})}><option>PIX</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option><option>Boleto</option><option>Transferência</option><option>Outro</option></select></label>
             <label>Status<select value={draft.status} onChange={(e) => setDraft({...draft, status:e.target.value})}><option value="Pendente">Pendente</option><option value="Paga parcialmente">Paga parcialmente</option><option value="Pago">Pago</option><option value="Cancelada">Cancelada</option></select></label>
             <label>Recorrência<select value={draft.recurrence} onChange={(e) => setDraft({...draft, recurrence:e.target.value})}><option>Nenhuma</option><option>Semanal</option><option>Quinzenal</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></label>
