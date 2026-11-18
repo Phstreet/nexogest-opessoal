@@ -1,5 +1,7 @@
 "use client";
 
+import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
@@ -29,6 +31,7 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 export default function ConfiguracoesPage() {
+  const confirm = useNexoConfirm();
   const { session } = useNexoAuth();
   const [tab, setTab] = useState<SettingsTab>("preferencias");
   const [preferences, setPreferences] = useState<Preferences>({
@@ -123,7 +126,7 @@ export default function ConfiguracoesPage() {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const parsed = JSON.parse(String(reader.result)) as {
           application?: unknown;
@@ -147,7 +150,7 @@ export default function ConfiguracoesPage() {
             (typeof entry[1] === "string" || entry[1] === null)
         );
         if (!validEntries) throw new Error("O arquivo contém dados inválidos.");
-        if (!window.confirm("A importação substituirá os registros com as mesmas chaves. Recomendamos exportar um backup atual antes de continuar. Deseja prosseguir?")) {
+        if (!(await confirm({ title: "Confirmar importação", message: "A importação substituirá os registros com as mesmas chaves. Recomendamos exportar um backup atual antes de continuar. Deseja prosseguir?", confirmLabel: "Importar", destructive: true }))) {
           event.target.value = "";
           return;
         }
