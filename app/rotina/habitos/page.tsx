@@ -242,9 +242,7 @@ export default function HabitosPage() {
   };
 
   const deleteHabit = async (id: number) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir este hábito e seu histórico?"
-    );
+    const confirmed = await confirm({ title: "Excluir hábito", message: "Tem certeza que deseja excluir este hábito e seu histórico?", confirmLabel: "Excluir hábito", destructive: true });
 
     if (!confirmed) return;
 
