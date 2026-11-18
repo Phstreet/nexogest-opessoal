@@ -2679,3 +2679,128 @@ textarea::placeholder {
 @keyframes nexoConfirmFade { from { opacity:0; } to { opacity:1; } }
 @keyframes nexoConfirmIn { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
 @media(max-width:480px) { .nexo-confirm-dialog { padding:19px; gap:12px; } .nexo-confirm-actions button { flex:1; } }
+
+
+/* =========================================================
+   REORGANIZAÇÃO DOS CADASTROS — NEXO
+   Hierarquia consistente, campos alinhados e leitura por grupos.
+   Mantém a estrutura e a lógica específicas de cada formulário.
+========================================================= */
+:is(
+  .finance-form,
+  .accounts-panel:has(> form),
+  .form-card:has(#reserve-name),
+  .movement-form,
+  .agenda-form-panel,
+  #task-form,
+  #habit-form,
+  .task-form-panel,
+  .profile-panel,
+  .nexo-auth-card
+) {
+  box-sizing: border-box;
+  padding: clamp(18px, 2vw, 26px) !important;
+  gap: 20px !important;
+}
+
+:is(.finance-form,.accounts-panel > form,.form-card:has(#reserve-name),.movement-form,.agenda-form-panel form,#task-form form,#habit-form form,.task-form-panel form,.profile-panel,.nexo-auth-card form) {
+  width: 100%;
+  gap: 20px !important;
+}
+
+:is(.finance-fields-grid,.accounts-form-grid,.form-card:has(#reserve-name) .form-grid,.movement-form .form-grid,.agenda-form-panel .form-grid,#task-form .form-grid,#habit-form .form-grid,.task-form-panel .form-grid,.profile-grid) {
+  display: grid !important;
+  align-items: start !important;
+  gap: 18px 20px !important;
+  width: 100%;
+}
+
+.finance-fields-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+.accounts-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+.form-card:has(#reserve-name) .form-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+.movement-form .form-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+.agenda-form-panel .form-grid,
+#task-form .form-grid,
+#habit-form .form-grid,
+.task-form-panel .form-grid,
+.profile-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+
+:is(.finance-form,.accounts-panel > form,.form-card:has(#reserve-name),.movement-form,.agenda-form-panel form,#task-form form,#habit-form form,.task-form-panel form,.profile-panel,.nexo-auth-card form)
+:is(.field-wide,.field-full,.full-field,.field-description,.investment-destination-field,.profile-field-wide) {
+  grid-column: 1 / -1 !important;
+}
+
+.finance-fields-grid .field-description { grid-column: span 2 !important; }
+.finance-fields-grid .investment-destination-field { grid-column: span 2 !important; }
+
+:is(.finance-section-title,.accounts-section-heading,.form-heading,.panel-heading,.profile-section-title) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 2px;
+}
+
+:is(.finance-section-title h2,.accounts-section-heading h2,.form-heading h2,.form-heading h3,.panel-heading h2,.profile-section-title h2) {
+  margin-top: 0;
+  margin-bottom: 5px;
+  line-height: 1.35;
+}
+
+:is(.finance-fields-grid,.accounts-form-grid,.form-card:has(#reserve-name) .form-grid,.movement-form .form-grid,.agenda-form-panel .form-grid,#task-form .form-grid,#habit-form .form-grid,.task-form-panel .form-grid,.profile-grid)
+:is(.finance-field,.accounts-field,.field,.form-field,.profile-field) {
+  min-width: 0;
+  width: 100%;
+  gap: 8px !important;
+}
+
+:is(.finance-fields-grid,.accounts-form-grid,.form-card:has(#reserve-name) .form-grid,.movement-form .form-grid,.agenda-form-panel .form-grid,#task-form .form-grid,#habit-form .form-grid,.task-form-panel .form-grid,.profile-grid)
+:is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+:is(.finance-form-actions,.accounts-form-actions,.form-actions,.profile-form-footer) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  padding-top: 16px;
+  margin-top: 2px;
+  border-top: 1px solid #303036;
+}
+
+:is(.finance-form-actions,.accounts-form-actions,.form-actions,.profile-form-footer) button {
+  min-width: 132px;
+  min-height: 42px !important;
+}
+
+.nexo-auth-card form { display: flex; flex-direction: column; gap: 15px !important; }
+.nexo-auth-card form > label { display: flex; flex-direction: column; gap: 7px; }
+
+@media (max-width: 1024px) {
+  .finance-fields-grid,
+  .form-card:has(#reserve-name) .form-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+}
+
+@media (max-width: 680px) {
+  :is(.finance-form,.accounts-panel:has(> form),.form-card:has(#reserve-name),.movement-form,.agenda-form-panel,#task-form,#habit-form,.task-form-panel,.profile-panel,.nexo-auth-card) {
+    padding: 16px !important;
+  }
+  :is(.finance-fields-grid,.accounts-form-grid,.form-card:has(#reserve-name) .form-grid,.movement-form .form-grid,.agenda-form-panel .form-grid,#task-form .form-grid,#habit-form .form-grid,.task-form-panel .form-grid,.profile-grid) {
+    grid-template-columns: minmax(0,1fr) !important;
+    gap: 14px !important;
+  }
+  .finance-fields-grid .field-description,
+  .finance-fields-grid .investment-destination-field { grid-column: 1 / -1 !important; }
+  :is(.finance-form-actions,.accounts-form-actions,.form-actions,.profile-form-footer) {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  :is(.finance-form-actions,.accounts-form-actions,.form-actions,.profile-form-footer) button {
+    width: 100%;
+    min-width: 0;
+  }
+}
