@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
+import { getPrimaryAccount } from "@/lib/finance/accounts";
 import {
   fetchRemoteCollections,
   getCurrentSession,
@@ -636,6 +637,7 @@ export default function Page() {
       const localResult = loadTransactionsSafely();
       const localRaw = window.localStorage.getItem(STORAGE_KEY);
 
+      getPrimaryAccount();
       setRegisteredAccounts(getAccounts());
       setInvalidCount(localResult.invalidRecords.length);
       setBackupAvailable(Boolean(window.localStorage.getItem(BACKUP_KEY)));
@@ -850,8 +852,10 @@ export default function Page() {
       registeredAccounts.map((item) => item.name)
     );
 
+    const primary = registeredAccounts.find((item) => item.active && item.isPrimary);
     const activeNames = registeredAccounts
       .filter((item) => item.active)
+      .sort((a, b) => Number(Boolean(b.isPrimary)) - Number(Boolean(a.isPrimary)))
       .map((item) => item.name);
 
     // Mantém acessíveis as contas antigas usadas em lançamentos,
@@ -899,6 +903,12 @@ export default function Page() {
     const newType = value as FormMovementType;
     const newCategory = getDefaultCategory(newType);
 
+    if (newType === "Receita") {
+      const primaryAccount = registeredAccounts.find((item) => item.active && item.isPrimary)
+        ?? registeredAccounts.find((item) => item.active);
+      if (primaryAccount) setAccount(primaryAccount.name);
+    }
+
     setType(newType);
     setCategory(newCategory);
     setSettledAmount("");
@@ -915,6 +925,13 @@ export default function Page() {
   function changeCategory(value: string) {
     setCategory(value);
     setSubcategory(getDefaultSubcategory(value));
+
+    const salaryCategories = ["Salário", "13º Salário", "Adiantamento Salarial"];
+    if (type === "Receita" && salaryCategories.includes(value)) {
+      const primaryAccount = registeredAccounts.find((item) => item.active && item.isPrimary)
+        ?? registeredAccounts.find((item) => item.active);
+      if (primaryAccount) setAccount(primaryAccount.name);
+    }
   }
 
   const totals = useMemo(() => {
