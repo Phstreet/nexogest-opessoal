@@ -552,8 +552,38 @@ export function useFinanceDashboard() {
   // MÉDIAS HISTÓRICAS
   // =====================================================
 
+  // A projeção usa os três últimos meses completos.
+  // Meses sem movimentação daquela natureza não entram na média,
+  // evitando distorcer o histórico quando o cadastro começou há pouco.
+  const projectionHistory = useMemo(() => {
+    return [1, 2, 3].map((monthsAgo) => {
+      const date = new Date(
+        today.getFullYear(),
+        today.getMonth() - monthsAgo,
+        1
+      );
+      const key = getMonthKey(date);
+      const monthTransactions = validTransactions.filter(
+        (transaction) => transaction.date?.slice(0, 7) === key
+      );
+
+      return {
+        revenue: sumTransactions(
+          monthTransactions.filter(
+            (transaction) => transaction.type === "Receita"
+          )
+        ),
+        expenses: sumTransactions(
+          monthTransactions.filter(
+            (transaction) => transaction.type === "Despesa"
+          )
+        ),
+      };
+    });
+  }, [validTransactions, today]);
+
   const averageRevenue = useMemo(() => {
-    const monthsWithRevenue = historicalMonths.filter(
+    const monthsWithRevenue = projectionHistory.filter(
       (month) => month.revenue > 0
     );
 
@@ -567,13 +597,10 @@ export function useFinanceDashboard() {
         0
       ) / monthsWithRevenue.length
     );
-  }, [
-    historicalMonths,
-    currentRevenue,
-  ]);
+  }, [projectionHistory, currentRevenue]);
 
   const averageExpenses = useMemo(() => {
-    const monthsWithExpenses = historicalMonths.filter(
+    const monthsWithExpenses = projectionHistory.filter(
       (month) => month.expenses > 0
     );
 
@@ -587,10 +614,7 @@ export function useFinanceDashboard() {
         0
       ) / monthsWithExpenses.length
     );
-  }, [
-    historicalMonths,
-    currentExpenses,
-  ]);
+  }, [projectionHistory, currentExpenses]);
 
   // =====================================================
   // PROJEÇÕES
@@ -598,35 +622,62 @@ export function useFinanceDashboard() {
 
   const forecastData = useMemo<ForecastMonth[]>(() => {
     return futureMonths.map((month) => {
-      const hasRegisteredData =
-        month.revenue > 0 ||
-        month.expenses > 0 ||
-        month.investments > 0 ||
-        month.reserves > 0;
+      const monthTransactions = validTransactions.filter(
+        (transaction) => transaction.date?.slice(0, 7) === month.key
+      );
 
-      const revenue = hasRegisteredData
-        ? month.revenue
+      const registeredRevenue = monthTransactions.filter(
+        (transaction) => transaction.type === "Receita"
+      );
+      const registeredExpenses = monthTransactions.filter(
+        (transaction) => transaction.type === "Despesa"
+      );
+
+      // Cada natureza é projetada de forma independente:
+      // um lançamento de despesa não elimina a estimativa de receita,
+      // e um lançamento de receita não elimina a estimativa de despesas.
+      const hasRegisteredRevenue = registeredRevenue.length > 0;
+      const hasRegisteredExpenses = registeredExpenses.length > 0;
+
+      const revenue = hasRegisteredRevenue
+        ? sumTransactions(registeredRevenue)
         : averageRevenue;
 
-      const expenses = hasRegisteredData
-        ? month.expenses
+      const expenses = hasRegisteredExpenses
+        ? sumTransactions(registeredExpenses)
         : averageExpenses;
+
+      // Compromissos futuros de investimento e reserva também entram
+      // na projeção, mesmo quando ainda estão pendentes.
+      const investments = sumTransactions(
+        monthTransactions.filter(
+          (transaction) =>
+            transaction.type === "Investimento" ||
+            transaction.type === "Aplicação"
+        )
+      );
+
+      const reserves = sumTransactions(
+        monthTransactions.filter(
+          (transaction) => transaction.type === "Reserva"
+        )
+      );
 
       return {
         ...month,
         revenue,
         expenses,
-        balance:
-          revenue -
-          expenses -
-          month.investments -
-          month.reserves,
+        investments,
+        reserves,
+        balance: revenue - expenses - investments - reserves,
         projected: true,
-        estimated: !hasRegisteredData,
+        // Indica estimativa quando falta previsão de receita ou despesa.
+        estimated: !hasRegisteredRevenue || !hasRegisteredExpenses,
       };
     });
   }, [
     futureMonths,
+    validTransactions,
     averageRevenue,
     averageExpenses,
   ]);
