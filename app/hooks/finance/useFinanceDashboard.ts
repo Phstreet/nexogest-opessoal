@@ -205,7 +205,7 @@ function sumSettledTransactions(
 // =====================================================
 
 export function useFinanceDashboard() {
-  const { transactions, accounts, reserves, reserveMovements, loaded } = useCloudFinanceCollections();
+  const { transactions, accounts, reserves, reserveMovements, loaded, error } = useCloudFinanceCollections();
   const [period, setPeriod] = useState<"3" | "6">("6");
 
   const today = useMemo(() => new Date(), []);
@@ -903,6 +903,7 @@ export function useFinanceDashboard() {
 
   return {
     loaded,
+    error,
 
     transactions,
     accounts,
