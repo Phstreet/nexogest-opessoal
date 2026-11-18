@@ -122,7 +122,7 @@ export type CategoryGroup = {
 
 // Categorias oficiais utilizadas no cadastro de lançamentos do Financeiro,
 // Contas a pagar e Contas a receber.
-export const categoriesByType = {
+export const categoriesByType: Record<"Receita" | "Despesa" | "Transferência" | "Investimento", string[]> = {
   Receita: [
     "Salário", "13º Salário", "Adiantamento Salarial", "Horas Extras",
     "Comissões", "Trabalhos Extras", "Reembolsos", "Receitas Eventuais",
@@ -134,7 +134,7 @@ export const categoriesByType = {
   ],
   Transferência: ["Transferência"],
   Investimento: ["Investimento"],
-} as const;
+};
 
 export const subcategories: Record<string, string[]> = {
   Salário: ["Salário mensal", "Adiantamento", "Outros"],
