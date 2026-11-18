@@ -14,7 +14,7 @@ type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao";
 type Preferences = {
   weekStartsOn: "monday" | "sunday";
 };
-type Profile = { displayName: string };
+type Profile = { displayName: string; fullName?: string; sex?: string; monthlyIncome?: string; birthDate?: string; profession?: string };
 
 const PREFERENCES_KEY = "nexo_preferences";
 const PROFILE_KEY = "nexo_profile";
@@ -260,11 +260,11 @@ export default function ConfiguracoesPage() {
         {tab === "personalizacao" && (
           <section className="settings-panel">
             <h2>Personalização</h2>
-            <p>Defina como seu perfil será identificado dentro do NEXO.</p>
+            <p>Defina seu nome de exibição ou complete suas informações pessoais na página de perfil.</p>
             <form onSubmit={saveProfile}>
               <label className="settings-field">
                 <span>Nome de exibição</span>
-                <input value={profile.displayName} maxLength={60} placeholder="Como deseja ser identificado?" onChange={(event) => setProfile({ displayName: event.target.value })} />
+                <input value={profile.displayName} maxLength={60} placeholder="Como deseja ser identificado?" onChange={(event) => setProfile({ ...profile, displayName: event.target.value })} />
               </label>
               <div className="settings-preview">
                 <span>Prévia do perfil</span>
