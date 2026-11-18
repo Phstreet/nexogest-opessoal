@@ -14,6 +14,8 @@ import DashboardFooter from "@/components/finance/dashboard/DashboardFooter";
 export default function FinancialDashboardPage() {
   const {
     loaded,
+    error,
+    transactions,
     accounts,
     period,
     setPeriod,
@@ -142,6 +144,7 @@ export default function FinancialDashboardPage() {
 
         <DashboardAccounts
           accounts={accounts}
+          transactions={transactions}
           accountBalance={accountBalance}
           reserveBalance={reserveBalance}
           money={money}
