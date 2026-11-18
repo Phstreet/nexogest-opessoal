@@ -69,6 +69,8 @@ export function expandRecurringTransactions(transactions: Transaction[]): Transa
     Boolean(item.date)
   );
 
+  const rootIds = new Set(roots.map((item) => item.id));
+
   for (const candidate of roots) {
     const index = result.findIndex((item) => item.id === candidate.id);
     if (index < 0 || result[index].recurrenceGroupId || !candidate.date) continue;
@@ -82,7 +84,7 @@ export function expandRecurringTransactions(transactions: Transaction[]): Transa
         item.id !== root.id &&
         item.date === date &&
         item.status !== "Cancelada" &&
-        (item.recurrenceGroupId === undefined || item.recurrenceGroupId === groupId) &&
+        (item.recurrenceGroupId === groupId || (!item.recurrenceGroupId && !rootIds.has(item.id))) &&
         sameSeries(root, item)
       );
       if (exists) continue;
