@@ -14,13 +14,6 @@ type Props = {
   income: number;
   expenses: number;
   balance: number;
-  onToggleTask: (id: number) => void;
-  onToggleHabit: (id: number) => void;
-  onAddTask: () => void;
-  taskName: string;
-  onTaskNameChange: (value: string) => void;
-  canSaveTasks: boolean;
-  canSaveHabits: boolean;
   taskError: string | null;
   habitError: string | null;
 };
@@ -232,8 +225,7 @@ export default function DailyCenter(props: Props) {
           </header>
           {focusTasks.length ? focusTasks.map((task) => (
             <div className="daily-row" key={task.id}>
-              <button type="button" className="daily-circle" disabled={!props.canSaveTasks}
-                onClick={() => props.onToggleTask(task.id)} aria-label={`Concluir ${task.description}`} />
+              <span className={`daily-task-indicator${task.done ? " completed" : ""}`} aria-hidden="true">{task.done ? "✓" : "•"}</span>
               <span className={task.date && task.date < todayKey ? "is-overdue" : ""}>{task.description}</span>
               {task.date && task.date < todayKey
                 ? <small className="daily-task-badge overdue">ATRASADA</small>
@@ -243,14 +235,7 @@ export default function DailyCenter(props: Props) {
             </div>
           )) : (
             <p className="daily-empty">{todaysTasks.length ? "Você concluiu todas as tarefas de hoje." : "Nenhuma tarefa programada para hoje."}</p>
-          )}
-          <div className="daily-add">
-            <input value={props.taskName} onChange={(event) => props.onTaskNameChange(event.target.value)}
-              onKeyDown={(event) => { if (event.key === "Enter") props.onAddTask(); }}
-              placeholder="Adicionar tarefa para hoje…" aria-label="Nova tarefa para hoje" />
-            <button type="button" onClick={props.onAddTask} disabled={!props.canSaveTasks}>Adicionar</button>
-          </div>
-        </section>
+          )}</section>
 
         {/* Minha agenda */}
         <section className="daily-card area-agenda">
@@ -304,11 +289,7 @@ export default function DailyCenter(props: Props) {
                   const done = habit.completedDates.includes(todayKey);
                   return (
                     <li key={habit.id}>
-                      <button type="button" className={`daily-circle small${done ? " checked" : ""}`}
-                        disabled={!props.canSaveHabits} onClick={() => props.onToggleHabit(habit.id)}
-                        aria-label={done ? `Desmarcar ${habit.name}` : `Concluir ${habit.name}`}>
-                        {done && <Icon name="check" size={12} />}
-                      </button>
+                      <span className={`daily-task-indicator${done ? " completed" : ""}`} aria-label={done ? "Concluído" : "Pendente"}>{done ? "✓" : "•"}</span>
                       <span>{habit.name}</span>
                     </li>
                   );
@@ -442,17 +423,8 @@ export default function DailyCenter(props: Props) {
         .daily-task-badge.overdue{border-color:#684747;background:#2a1d1f;color:#e0aaaa}
         .daily-task-badge.priority-urgente,.daily-task-badge.priority-alta{border-color:#684747;color:#e0aaaa}
         .daily-task-badge.priority-media{border-color:#62583e;color:#d9c48c}
-        .daily-circle{display:grid;place-items:center;flex-shrink:0;width:26px;height:26px;padding:0;border:2px solid #7b7b86;border-radius:50%;background:transparent;color:#fff;cursor:pointer;transition:border-color .18s ease,background .18s ease}
-        .daily-circle:hover:not(:disabled){border-color:#fff}
-        .daily-circle:disabled{opacity:.45;cursor:not-allowed}
-        .daily-circle.small{width:20px;height:20px;border-width:1.5px}
-        .daily-circle.checked{background:#3a3a42;border-color:#5a5a64}
-        .daily-add{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #2a2a30}
-        .daily-add input{flex:1;min-width:0;height:36px;padding:0 12px;border:1px solid #3b3b44;border-radius:8px;background:#111114;color:#eeeef1;font-size:13px;outline:none}
-        .daily-add input::placeholder{color:#777781}
-        .daily-add input:focus{border-color:#85858f}
-        .daily-add button{padding:0 14px;border:1px solid #d5d6da;border-radius:8px;background:linear-gradient(180deg,#e0e1e5,#c4c6cc);color:#17171a;font-size:12px;font-weight:700;cursor:pointer}
-        .daily-add button:disabled{opacity:.45;cursor:not-allowed}
+        .daily-task-indicator{display:grid;place-items:center;flex-shrink:0;width:22px;height:22px;border:1px solid #666671;border-radius:50%;color:#aeb0ba;font-size:13px;line-height:1}
+        .daily-task-indicator.completed{border-color:#718b79;color:#a9cbb5}
 
         /* Agenda */
         .daily-agenda-item{display:flex;align-items:center;gap:14px;padding:11px 2px;color:#ececf0;font-size:16px}
