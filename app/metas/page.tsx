@@ -1,7 +1,7 @@
 import MetasCenter from "./MetasCenter";
 
 export const metadata = {
-  title: "Metas · NEXO",
+  title: "Objetivos · NEXO",
 };
 
 export default function MetasPage() {
