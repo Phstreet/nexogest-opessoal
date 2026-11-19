@@ -10,6 +10,7 @@ export type RoutineTask = {
   category?: string;
   notes?: string;
   createdAt?: string;
+  goalId?: string;
 };
 
 export type RoutineHabitFrequency =
@@ -27,6 +28,7 @@ export type RoutineHabit = {
   completedDates: string[];
   active: boolean;
   createdAt?: string;
+  goalId?: string;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,7 +56,8 @@ export function isValidRoutineTask(value: unknown): value is RoutineTask {
       value.priority === "Urgente") &&
     (value.category === undefined || typeof value.category === "string") &&
     (value.notes === undefined || typeof value.notes === "string") &&
-    (value.createdAt === undefined || typeof value.createdAt === "string")
+    (value.createdAt === undefined || typeof value.createdAt === "string") &&
+    (value.goalId === undefined || typeof value.goalId === "string")
   );
 }
 
@@ -73,6 +76,7 @@ export function isValidRoutineHabit(value: unknown): value is RoutineHabit {
       value.frequency === "Diário" ||
       value.frequency === "Dias úteis" ||
       value.frequency === "3 vezes por semana") &&
-    (value.createdAt === undefined || typeof value.createdAt === "string")
+    (value.createdAt === undefined || typeof value.createdAt === "string") &&
+    (value.goalId === undefined || typeof value.goalId === "string")
   );
 }
