@@ -496,7 +496,6 @@ export default function DailyCenter(props: Props) {
           .daily-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"priorities" "agenda" "habits" "bills" "quick" "tip"}
           .daily-card{padding:16px;border-radius:14px}
           .daily-row,.daily-agenda-item{font-size:15px}
-          .daily-add input{font-size:16px}
           .daily-habits{gap:16px}
           .daily-close{padding:16px;border-radius:14px}
           .daily-close>header{align-items:flex-start;flex-direction:column}
