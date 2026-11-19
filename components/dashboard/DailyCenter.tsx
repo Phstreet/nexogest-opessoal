@@ -161,7 +161,9 @@ export default function DailyCenter(props: Props) {
 
   /* Fechamento: considera somente lançamentos datados para hoje e valores efetivados. */
   const todaysTransactions = props.transactions.filter((item) =>
-    item.date === todayKey && item.status !== "Cancelada"
+    item.date === todayKey &&
+    item.status !== "Cancelada" &&
+    (item.type === "Receita" || item.type === "Despesa")
   );
   const todaysRevenue = todaysTransactions
     .filter((item) => item.type === "Receita")
@@ -236,7 +238,7 @@ export default function DailyCenter(props: Props) {
               {task.date && task.date < todayKey
                 ? <small className="daily-task-badge overdue">ATRASADA</small>
                 : task.priority
-                  ? <small className={`daily-task-badge priority-${task.priority.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")}`}>{task.priority}</small>
+                  ? <small className={`daily-task-badge priority-${task.priority.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}>{task.priority}</small>
                   : null}
             </div>
           )) : (
