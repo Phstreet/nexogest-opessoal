@@ -5,7 +5,7 @@ import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
-import { fetchRemoteCollections, saveRemoteCollection, NEXO_SYNC_KEYS, type NexoSyncKey } from "@/lib/supabase/client";
+import { fetchRemoteCollections, saveRemoteCollection, updatePassword, NEXO_SYNC_KEYS, type NexoSyncKey } from "@/lib/supabase/client";
 import {
   INCOME_CATEGORIES,
   EXPENSE_CATEGORIES,
@@ -13,7 +13,7 @@ import {
   RESERVE_CATEGORIES,
 } from "@/lib/finance/categories";
 
-type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao";
+type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao" | "seguranca";
 type Preferences = {
   weekStartsOn: "monday" | "sunday";
   navigationFavorites?: string[];
@@ -35,12 +35,15 @@ export default function ConfiguracoesPage() {
   const [backupDate, setBackupDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const revisions = useRef(new Map<NexoSyncKey, number>());
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get("tab") as SettingsTab | null;
-    if (requested && ["preferencias", "categorias", "dados", "personalizacao"].includes(requested)) setTab(requested);
+    if (requested && ["preferencias", "categorias", "dados", "personalizacao", "seguranca"].includes(requested)) setTab(requested);
   }, []);
 
   useEffect(() => {
@@ -155,7 +158,7 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  async function downloadBackup() {
+  async function saveNewPassword(event: FormEvent<HTMLFormElement>) {\n    event.preventDefault();\n    setMessage(""); setError("");\n    if (newPassword.length < 8) { setError("A nova senha precisa ter pelo menos 8 caracteres."); return; }\n    if (newPassword !== confirmPassword) { setError("A confirmação não corresponde à nova senha."); return; }\n    setSaving(true);\n    try { await updatePassword(newPassword); setNewPassword(""); setConfirmPassword(""); setMessage("Senha alterada com sucesso."); }\n    catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível alterar a senha."); }\n    finally { setSaving(false); }\n  }\n\n  async function downloadBackup() {
     setSaving(true);
     setMessage("");
     setError("");
@@ -263,7 +266,7 @@ export default function ConfiguracoesPage() {
                 <option value="sunday">Domingo</option>
               </select>
             </label>
-                    <small>Esta preferência é salva na sua conta e fica disponível em seus dispositivos.</small>
+                    <label className="settings-toggle"><span><strong>Menu lateral compacto</strong><small>Recolher a navegação para liberar espaço na tela.</small></span><input type="checkbox" checked={preferences.sidebarCollapsed === true} disabled={saving || loading} onChange={(event) => void savePreferences({ ...preferences, sidebarCollapsed: event.target.checked })} /></label>\n            <small>As preferências são salvas na sua conta e sincronizadas entre dispositivos.</small>
           </section>
         )}
 
@@ -329,17 +332,17 @@ export default function ConfiguracoesPage() {
           </section>
         )}
 
-        <style jsx>{`
+\n        {tab === "seguranca" && (\n          <section className="settings-panel">\n            <h2>Segurança e acesso</h2>\n            <p>Atualize a senha utilizada para entrar na sua conta NEXO.</p>\n            <div className="backup-note"><strong>Conta autenticada</strong><span>{session?.user.email || "Conta não identificada"}</span></div>\n            <form onSubmit={saveNewPassword}>\n              <label className="settings-field"><span>Nova senha</span><div className="password-field"><input type={showPassword ? "text" : "password"} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" required /><button type="button" onClick={() => setShowPassword(!showPassword)}>{showPassword ? "Ocultar" : "Mostrar"}</button></div></label>\n              <label className="settings-field"><span>Confirmar nova senha</span><input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} autoComplete="new-password" placeholder="Digite novamente a senha" required /></label>\n              <button className="primary-button" type="submit" disabled={saving || loading || !session}>{saving ? "Atualizando..." : "Alterar senha"}</button>\n            </form>\n            <p className="settings-note">A alteração é processada pela autenticação do Supabase. Sua senha não é armazenada nas configurações do NEXO.</p>\n          </section>\n        )}\n\n        <style jsx>{`
           .nexo-settings { max-width: 1200px; margin: 0 auto; padding-bottom: 40px; }
-          .settings-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:22px 0; border-bottom:1px solid #303030; padding-bottom:12px; }
-          .settings-tabs button,.secondary-button { border:1px solid #393939; border-radius:7px; padding:10px 13px; background:#202020; color:#bdbdbd; font-size:11px; cursor:pointer; }
-          .settings-tabs button.active { background:#ededed; color:#111; border-color:#ededed; }
-          .settings-panel { padding:22px; border:1px solid #303030; border-radius:11px; background:#171717; color:#eee; }
+          .settings-tabs { display:flex; flex-wrap:wrap; gap:7px; margin:22px 0; padding:7px; border:1px solid #303036; border-radius:10px; background:linear-gradient(120deg,#19191c,#141416); }
+          .settings-tabs button,.secondary-button { border:1px solid transparent; border-radius:7px; padding:10px 13px; background:transparent; color:#aeb0b8; font-size:10px; cursor:pointer; transition:all .18s ease; }\n          .settings-tabs button:hover { background:#25262a; color:#eee; }
+          .settings-tabs button.active { background:linear-gradient(135deg,#e1e3e7,#aeb3bc); color:#151619; border-color:#c4c8cf; box-shadow:0 3px 12px #0005; font-weight:700; }
+          .settings-panel { padding:25px; border:1px solid #34353b; border-radius:12px; background:linear-gradient(145deg,#1b1b1f,#141416); color:#eee; box-shadow:0 12px 35px #0002; }
           .settings-panel h2 { margin:0 0 8px; font-size:17px; }
           .settings-panel>p { color:#999; font-size:12px; line-height:1.6; margin:0 0 20px; }
           .settings-field { display:flex; flex-direction:column; gap:7px; max-width:440px; margin:18px 0; }
           .settings-field span,.settings-check { color:#c8c8c8; font-size:12px; }
-          .settings-field input,.settings-field select { width:100%; padding:11px; border:1px solid #393939; border-radius:7px; background:#222; color:#eee; color-scheme:dark; }
+          .settings-field input,.settings-field select { width:100%; padding:11px; border:1px solid #393939; border-radius:7px; background:#222; color:#eee; color-scheme:dark; }\n          .settings-toggle { display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:440px; padding:14px 0; margin:12px 0; border-top:1px solid #303036; border-bottom:1px solid #303036; color:#ccc; }\n          .settings-toggle span { display:flex; flex-direction:column; gap:5px; }\n          .settings-toggle strong { font-size:12px; }\n          .settings-toggle small { color:#888; font-size:10px; }\n          .settings-toggle input { accent-color:#c4c8cf; width:17px; height:17px; }\n          .password-field { display:flex; gap:8px; }\n          .password-field button { padding:0 12px; border:1px solid #393939; border-radius:7px; background:#222; color:#ccc; font-size:10px; }
           .settings-check { display:flex; align-items:center; gap:9px; margin:20px 0; }
           .settings-panel small,.settings-note { color:#888; font-size:11px; line-height:1.6; }
           .settings-feedback { padding:12px 14px; margin:0 0 14px; border:1px solid #444; border-radius:7px; font-size:12px; }
