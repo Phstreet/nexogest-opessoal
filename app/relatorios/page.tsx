@@ -108,7 +108,7 @@ export default function RelatoriosPage() {
     return finance.transactions.filter((item) =>
       item.status !== "Cancelada" && Boolean(item.date) && item.date! >= from && item.date! <= to && item.type === "Despesa"
     ).reduce((sum, item) => sum + settledAmount(item), 0);
-  }, [finance.transactions, startKey, period]);
+  }, [finance.transactions, startKey, period, periodLength]);
 
   const taskCompleted = tasks.filter((task) => task.done).length;
   const taskRate = tasks.length ? Math.round((taskCompleted / tasks.length) * 100) : null;
