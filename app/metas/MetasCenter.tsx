@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
@@ -235,21 +235,21 @@ export default function MetasCenter() {
   const today = localDateKey();
   const reserveById = useMemo(() => new Map(finance.reserves.map((reserve) => [reserve.id, reserve] as const)), [finance.reserves]);
 
-  function currentFor(goal: Goal) {
+  const currentFor = useCallback((goal: Goal) => {
     if (goal.linkedReserveId) {
       const reserve = reserveById.get(goal.linkedReserveId);
       if (reserve) return reserveBalance(reserve, finance.reserveMovements);
     }
     return goal.current;
-  }
+  }, [reserveById, finance.reserveMovements]);
 
-  function targetFor(goal: Goal) {
+  const targetFor = useCallback((goal: Goal) => {
     if (goal.linkedReserveId) {
       const reserve = reserveById.get(goal.linkedReserveId);
       if (reserve) return reserve.targetAmount;
     }
     return goal.target;
-  }
+  }, [reserveById]);
 
   const active = goals.filter((goal) => normalizeStatus(goal) === "active" && !isReached(goal, currentFor(goal), targetFor(goal)));
   const paused = goals.filter((goal) => normalizeStatus(goal) === "paused");
@@ -270,7 +270,7 @@ export default function MetasCenter() {
     const aParent = a.parentGoalId ? 1 : 0;
     const bParent = b.parentGoalId ? 1 : 0;
     return aParent - bParent || (a.deadline || "9999-99-99").localeCompare(b.deadline || "9999-99-99");
-  }), [goals, filter, categoryFilter, search, reserveById, finance.reserveMovements]);
+  }), [goals, filter, categoryFilter, search, currentFor, targetFor]);
 
   const avgProgress = goals.length ? Math.round(goals.reduce((sum, goal) => sum + percentFor(goal, currentFor(goal), targetFor(goal)), 0) / goals.length) : 0;
   const nextDeadline = active.filter((goal) => goal.deadline).sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
