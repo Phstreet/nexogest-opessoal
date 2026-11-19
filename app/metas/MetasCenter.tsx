@@ -273,7 +273,6 @@ export default function MetasCenter() {
   }), [goals, filter, categoryFilter, search, currentFor, targetFor]);
 
   const avgProgress = goals.length ? Math.round(goals.reduce((sum, goal) => sum + percentFor(goal, currentFor(goal), targetFor(goal)), 0) / goals.length) : 0;
-  const nextDeadline = active.filter((goal) => goal.deadline).sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
 
   function resetForm() {
     setEditingId(null); setTitle(""); setDescription(""); setCategory(CATEGORIES[0]); setCustomCategory("");
@@ -572,6 +571,7 @@ export default function MetasCenter() {
                     <button type="button" disabled={!canLinkTasks} onClick={() => createLinkedTask(goal)}><Icon name="list" /> Criar tarefa</button>
                     <button type="button" disabled={!canLinkHabits} onClick={() => createLinkedHabit(goal)}><Icon name="repeat" /> Criar hábito</button>
                   </div>
+                  {(linkedTasks.length > 0 || linkedHabits.length > 0) && <div className="linked-summary">{linkedTasks.length} tarefa(s) vinculada(s) · {linkedHabits.length} hábito(s) vinculado(s)</div>}
                   <div className="card-actions">
                     <button type="button" onClick={() => openEdit(goal)}>Editar</button>
                     {status === "paused" ? <button type="button" onClick={() => changeStatus(goal, "active")}><Icon name="play" /> Retomar</button> : !reached && <button type="button" onClick={() => changeStatus(goal, "paused")}><Icon name="pause" /> Pausar</button>}
@@ -676,6 +676,8 @@ export default function MetasCenter() {
         .children-panel small{color:#c7c8cf}
         .relationship-actions,.card-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
         .relationship-actions button{border-color:#35353e;background:rgba(255,255,255,.025);color:#bdbdc6}
+        .relationship-actions button:disabled{opacity:.45;cursor:not-allowed}
+        .linked-summary{margin-top:7px;color:#92939c;font-size:10px}
         .card-actions{padding-top:9px;border-top:1px solid #2e2e36}
         .card-actions button.delete-button{margin-left:auto;color:#d5a3a3}
         .objectives-footer{display:flex;justify-content:space-between;gap:12px;padding-top:7px;color:#7f808a;font-size:10px}
