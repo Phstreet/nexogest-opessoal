@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
@@ -40,6 +41,7 @@ export default function MainNavigation() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [floatingSubmenuStyle, setFloatingSubmenuStyle] = useState<CSSProperties>({});
 
   useEffect(() => {
     let active = true;
@@ -218,6 +220,26 @@ export default function MainNavigation() {
     setSettingsMenuOpen(false);
   }
 
+  function prepareFloatingSubmenu(element: HTMLButtonElement) {
+    if (typeof window === "undefined" || window.innerWidth > 760) {
+      setFloatingSubmenuStyle({});
+      return;
+    }
+
+    const rect = element.getBoundingClientRect();
+    const panelWidth = Math.min(320, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - panelWidth - 12));
+
+    setFloatingSubmenuStyle({
+      position: "fixed",
+      top: Math.min(rect.bottom + 8, window.innerHeight - 180),
+      left,
+      width: panelWidth,
+      maxHeight: "min(65dvh, 460px)",
+      zIndex: 99999,
+    });
+  }
+
   function renderFavoriteButton(item: MenuItem) {
     const isFavorite = favorites.includes(item.href);
 
@@ -246,7 +268,7 @@ export default function MainNavigation() {
 
   function renderSubmenu(items: MenuItem[], id: string, isOpen: boolean) {
     return (
-      <div className={`nav-submenu ${isOpen ? "is-open" : ""}`} id={id} aria-hidden={!isOpen}>
+      <div className={`nav-submenu ${isOpen ? "is-open" : ""}`} id={id} aria-hidden={!isOpen} style={isOpen ? floatingSubmenuStyle : undefined}>
         {items.map((item) => (
           <div className="nav-subitem-row" key={item.href}>
             <Link
@@ -355,7 +377,8 @@ export default function MainNavigation() {
               className={`nav-item nav-finance-parent ${
                 isFinanceRoute ? "active" : ""
               }`}
-              onClick={() => {
+              onClick={(event) => {
+                prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
                   setCollapsed(false);
                   setFinanceMenuOpen(true);
@@ -393,7 +416,8 @@ export default function MainNavigation() {
             <button
               type="button"
               className={`nav-item nav-finance-parent ${isRoutineRoute ? "active" : ""}`}
-              onClick={() => {
+              onClick={(event) => {
+                prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
                   setCollapsed(false);
                   setRoutineMenuOpen(true);
@@ -423,7 +447,8 @@ export default function MainNavigation() {
             <button
               type="button"
               className={`nav-item nav-finance-parent ${isReportsRoute ? "active" : ""}`}
-              onClick={() => {
+              onClick={(event) => {
+                prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
                   setCollapsed(false);
                   setReportsMenuOpen(true);
@@ -453,7 +478,8 @@ export default function MainNavigation() {
             <button
               type="button"
               className={`nav-item nav-finance-parent ${isSettingsRoute ? "active" : ""}`}
-              onClick={() => {
+              onClick={(event) => {
+                prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
                   setCollapsed(false);
                   setSettingsMenuOpen(true);
@@ -1225,7 +1251,7 @@ export default function MainNavigation() {
           }
 
           .sidebar .nav-group > .nav-submenu.is-open {
-            position: absolute !important;
+            position: fixed !important;
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -1234,10 +1260,10 @@ export default function MainNavigation() {
             height: auto !important;
             overflow-x: hidden !important;
             overflow-y: auto !important;
-            top: calc(100% + 7px) !important;
-            left: 0 !important;
-            right: auto !important;
-            z-index: 1200 !important;
+            top: auto;
+            left: auto;
+            right: auto;
+            z-index: 99999 !important;
             padding: 8px !important;
             margin: 0 !important;
             transform: translateY(0) !important;
