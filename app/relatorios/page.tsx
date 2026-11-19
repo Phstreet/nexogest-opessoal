@@ -53,7 +53,6 @@ export default function RelatoriosPage() {
   const tasks = tasksCollection.items;
   const habits = habitsCollection.items;
   const todayKey = dateKey(new Date());
-  const currentMonthKey = todayKey.slice(0, 7);
   const startDate = new Date();
   if (period === "week") {
     startDate.setDate(startDate.getDate() - 6);
@@ -268,7 +267,7 @@ export default function RelatoriosPage() {
               <article className="intelligence-panel chart-panel">
                 <div className="intelligence-panel-heading"><div><span className="intelligence-eyebrow">EVOLUÇÃO FINANCEIRA</span><h2>Receitas x despesas</h2></div><span className="chart-legend"><i className="legend-income"/> Receitas <i className="legend-expense"/> Despesas</span></div>
                 {periodTransactions.length ? (
-                  <div className="monthly-chart">
+                  <div className="monthly-chart" style={{ gridTemplateColumns: `repeat(${chartBuckets.length}, minmax(0, 1fr))` }}>
                     {chartBuckets.map((month) => (
                       <div className="month-column" key={month.key}>
                         <div className="month-bars">
