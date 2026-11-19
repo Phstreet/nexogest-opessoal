@@ -487,11 +487,11 @@ export default function DailyCenter(props: Props) {
           .daily-close-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
         @media(max-width:640px){
-          .daily-center{gap:14px}
+          .daily-center{gap:12px}
           .daily-center::before{top:-90px;right:-190px;width:430px;opacity:.7}
-          .daily-hero{padding:22px 0 4px}
+          .daily-hero{padding:2px 0 0}
           .daily-kpis{gap:10px}
-          .daily-kpi{padding:16px 14px 12px;border-radius:14px}
+          .daily-kpi{padding:13px 12px 11px;border-radius:13px}
           .daily-kpi small{font-size:13px}
           .daily-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"priorities" "agenda" "habits" "bills" "quick" "tip"}
           .daily-card{padding:16px;border-radius:14px}
