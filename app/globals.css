@@ -2804,3 +2804,381 @@ textarea::placeholder {
     min-width: 0;
   }
 }
+
+
+/* =========================================================
+   NEXO — SISTEMA RESPONSIVO MULTIDISPOSITIVO
+   Desktop amplo, tablet equilibrado e mobile orientado a toque.
+   Mantém a identidade visual e a estrutura funcional existentes.
+========================================================= */
+
+:root {
+  --content-gutter: clamp(12px, 2.2vw, 32px);
+  --control-height: 44px;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  min-width: 320px;
+}
+
+.app-shell,
+.main-area,
+.content,
+.finance-page,
+.routine-page,
+.planning-page,
+.reports-page {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.content {
+  padding-inline: var(--content-gutter);
+}
+
+img, video, canvas, iframe {
+  max-width: 100%;
+}
+
+:is(.panel, .metric-card, .finance-card, .form-panel, .finance-form,
+    .finance-history, .accounts-panel, .profile-panel, .agenda-form-panel,
+    .task-form-panel, .nexo-settings, .nexo-auth-card) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.metrics-grid, .finance-metrics, .routine-metrics, .finance-cards,
+    .dashboard-bottom, .finance-layout, .accounts-grid, .overview-grid,
+    .reports-grid, .indicator-grid, .planning-grid, .routine-grid) {
+  min-width: 0;
+}
+
+:is(.panel, .metric-card, .finance-card, .transaction-item,
+    .task-item, .nav-item, .topbar, .section-heading) {
+  overflow-wrap: anywhere;
+}
+
+:is(.finance-history, .table-wrapper, .table-container, .data-table-wrapper,
+    .responsive-table, .chart-container, .recharts-responsive-container) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.finance-history, .table-wrapper, .table-container, .data-table-wrapper,
+    .responsive-table) {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  max-width: 100%;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+@media (min-width: 1101px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .content {
+    width: min(100%, 1600px);
+    margin-inline: auto;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .sidebar {
+    width: 190px;
+    padding-inline: 12px;
+  }
+
+  .content {
+    padding: 20px clamp(16px, 2.1vw, 24px);
+  }
+
+  .topbar {
+    padding-inline: clamp(16px, 2.1vw, 24px);
+  }
+
+  :is(.metrics-grid, .finance-metrics, .routine-metrics) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :is(.dashboard-bottom, .finance-layout) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.finance-page, .reports-page, .planning-page) {
+    padding-inline: 18px;
+  }
+
+  :is(.panel, .metric-card, .finance-card) {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 12px 8px;
+    background: rgba(12, 12, 14, .97);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  }
+
+  .sidebar-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .sidebar-toggle {
+    flex: 0 0 auto;
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  .navigation {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 5px 1px 7px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-link-row, .nav-group {
+    position: relative;
+    flex: 0 0 auto;
+    width: auto;
+    scroll-snap-align: start;
+  }
+
+  .nav-item {
+    min-height: 42px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 11px;
+  }
+
+  .nav-favorite-button {
+    display: none;
+  }
+
+  .nav-submenu {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    z-index: 700;
+    width: min(270px, calc(100vw - 28px));
+    max-height: min(65vh, 430px);
+    overflow-y: auto;
+    padding: 8px;
+    margin: 0;
+    background: #17171a;
+    border: 1px solid #414149;
+    border-radius: 11px;
+    box-shadow: 0 16px 38px rgba(0,0,0,.55);
+  }
+
+  .nav-subitem-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nav-subitem {
+    flex: 1;
+    min-height: 42px;
+    font-size: 12px;
+  }
+
+  .topbar {
+    gap: 10px;
+    min-height: 60px;
+    padding: 11px 14px;
+  }
+
+  .topbar > * {
+    min-width: 0;
+  }
+
+  .topbar h1 {
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+  }
+
+  .content {
+    padding: 16px 12px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  :is(.page-header, .finance-header, .section-heading, .profile-heading) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  :is(.header-actions, .page-actions, .finance-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+
+  :is(.header-actions, .page-actions, .finance-actions) > button,
+  :is(.header-actions, .page-actions, .finance-actions) > a {
+    min-height: 42px;
+  }
+
+  :is(.metrics-grid, .finance-metrics, .routine-metrics) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  :is(.dashboard-bottom, .finance-layout, .reports-grid, .indicator-grid,
+      .planning-grid, .routine-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.panel, .metric-card, .finance-card, .finance-history) {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  :is(.finance-page, .reports-page, .planning-page) {
+    padding: 14px 11px;
+  }
+
+  :is(.chart-container, .recharts-responsive-container) {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .footer {
+    gap: 8px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --font-size-3xl: 1.5rem;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-symbol {
+    width: 29px;
+    height: 29px;
+  }
+
+  .brand-name {
+    font-size: 19px;
+  }
+
+  .nav-item {
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 10px;
+  }
+
+  .topbar {
+    min-height: 56px;
+    padding: 9px 12px;
+  }
+
+  .content {
+    padding-inline: 10px;
+  }
+
+  :is(.metrics-grid, .finance-metrics, .routine-metrics) {
+    gap: 7px;
+  }
+
+  .metric-card {
+    padding: 11px 9px;
+  }
+
+  .metric-value {
+    font-size: clamp(15px, 4.5vw, 19px);
+    overflow-wrap: anywhere;
+  }
+
+  :is(.page-header h1, .finance-header h1, .profile-heading h1,
+      .topbar h1) {
+    font-size: clamp(16px, 5vw, 21px);
+  }
+
+  :is(.panel, .finance-card, .finance-history) {
+    border-radius: 10px;
+  }
+
+  .nexo-search-overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .nexo-search-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  :is(.metrics-grid, .finance-metrics, .routine-metrics) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nav-item {
+    padding-inline: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
