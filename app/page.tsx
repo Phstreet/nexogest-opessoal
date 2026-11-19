@@ -3,7 +3,9 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { mainMenuItems } from "@/components/navigation/navigationConfig";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
 import {
@@ -19,7 +21,22 @@ type Tab = "dashboard" | "rotina";
 
 export default function Home() {
   const confirm = useNexoConfirm();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("dashboard");
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  const searchResults = useMemo(() => {
+    const term = globalSearch.trim().toLocaleLowerCase("pt-BR");
+    if (!term) return [];
+    return mainMenuItems
+      .filter((item) => item.label.toLocaleLowerCase("pt-BR").includes(term))
+      .slice(0, 6);
+  }, [globalSearch]);
+
+  function openSearchResult(href: string) {
+    setGlobalSearch("");
+    router.push(href);
+  }
 
   const [taskName, setTaskName] = useState("");
 
@@ -163,6 +180,41 @@ export default function Home() {
           </div>
 
           <div className="topbar-right">
+            <div className="topbar-search-wrap">
+              <span className="topbar-search-icon" aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                className="topbar-search-input"
+                placeholder="Buscar no NEXO..."
+                aria-label="Buscar páginas no NEXO"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && searchResults[0]) {
+                    openSearchResult(searchResults[0].href);
+                  }
+                  if (event.key === "Escape") setGlobalSearch("");
+                }}
+              />
+              {globalSearch.trim() && (
+                <div className="topbar-search-results" role="listbox" aria-label="Resultados da busca">
+                  {searchResults.length > 0 ? searchResults.map((item) => (
+                    <button
+                      type="button"
+                      key={`${item.href}-${item.label}`}
+                      className="topbar-search-result"
+                      onClick={() => openSearchResult(item.href)}
+                    >
+                      <span>{item.icon || "⌕"}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  )) : (
+                    <div className="topbar-search-empty">Nenhuma página encontrada.</div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="date-display">
               <span className="date-icon">◷</span>
               {today}
@@ -194,9 +246,7 @@ export default function Home() {
           style={{ marginBottom: "24px" }}
         >
           <div>
-            <div className="section-kicker">
-              ÁREA DE TRABALHO
-            </div>
+
 
             <div
               style={{
@@ -416,6 +466,24 @@ export default function Home() {
         )}
 
         <style jsx>{`
+          .topbar-search-wrap { position:relative; width:min(320px, 30vw); min-width:210px; }
+          .topbar-search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#8f9299; font-size:22px; pointer-events:none; }
+          .topbar-search-input { width:100%; height:42px; padding:0 14px 0 40px; border:1px solid #34363d; border-radius:10px; background:#17181c; color:#f4f4f5; outline:none; font:inherit; font-size:13px; }
+          .topbar-search-input::placeholder { color:#858891; }
+          .topbar-search-input:focus { border-color:#777d88; box-shadow:0 0 0 3px rgba(160,168,180,.10); }
+          .topbar-search-results { position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:1200; padding:6px; border:1px solid #393b43; border-radius:11px; background:#191a1f; box-shadow:0 14px 34px rgba(0,0,0,.42); }
+          .topbar-search-result { display:flex; align-items:center; gap:10px; width:100%; padding:10px 11px; border:0; border-radius:7px; background:transparent; color:#e7e8eb; text-align:left; cursor:pointer; font:inherit; font-size:13px; }
+          .topbar-search-result:hover, .topbar-search-result:focus-visible { background:#2a2c33; outline:none; }
+          .topbar-search-result span:first-child { width:18px; color:#aeb4be; text-align:center; }
+          .topbar-search-empty { padding:12px; color:#9699a1; font-size:12px; }
+          @media(max-width:760px) {
+            .topbar-search-wrap { width:100%; min-width:0; order:3; }
+            .topbar-right { flex-wrap:wrap; }
+            .topbar-search-results { position:absolute; }
+          }
+          @media(max-width:480px) {
+            .topbar-search-wrap { min-width:100%; }
+          }
           .daily-quick-links { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
           .daily-quick-links a { color:#aaa; font-size:10px; text-decoration:none; }
           .daily-quick-links a:hover { color:#fff; text-decoration:underline; }
