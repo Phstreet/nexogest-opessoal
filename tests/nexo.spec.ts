@@ -76,6 +76,7 @@ const appRoutes = [
   "/rotina/agenda",
   "/rotina/tarefas",
   "/rotina/habitos",
+  "/rotina/metas",
   "/rotina/planejamento",
   "/rotina/produtividade",
 ];
@@ -171,5 +172,78 @@ test.describe("NEXO - Persistência exclusiva na nuvem", () => {
 
     await expect(page.getByText("Conta não salva")).toHaveCount(0);
     expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("nexo_")))).toEqual([]);
+  });
+});
+
+
+test.describe("NEXO - Objetivos pessoais", () => {
+  test("deve cadastrar objetivo numérico de redução e persistir no Supabase", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/metas");
+
+    await expect(page.getByRole("heading", { name: "Meus objetivos" })).toBeVisible();
+    await page.getByRole("button", { name: "Novo objetivo" }).click();
+    await page.getByLabel("Nome do objetivo *").fill("Reduzir medida de teste");
+    await page.getByLabel("Direção do objetivo").selectOption("decrease");
+    await page.getByLabel("Unidade").selectOption("kg");
+    await page.getByLabel("Valor inicial").fill("100");
+    await page.getByLabel("Valor desejado").fill("90");
+    await page.getByLabel("Valor atual").fill("95");
+    await page.getByRole("button", { name: "Criar objetivo" }).click();
+
+    await expect(page.getByRole("heading", { name: "Reduzir medida de teste" })).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_personal_goals")?.revision).toBe(1);
+    expect(cloud.get("nexo_personal_goals")?.payload).toEqual([
+      expect.objectContaining({
+        title: "Reduzir medida de teste",
+        trackingType: "numeric",
+        direction: "decrease",
+        startValue: 100,
+        target: 90,
+        current: 95,
+      }),
+    ]);
+  });
+
+  test("deve cadastrar objetivo por etapas e salvar novas etapas na nuvem", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/metas");
+
+    await page.getByRole("button", { name: "Novo objetivo" }).click();
+    await page.getByLabel("Nome do objetivo *").fill("Concluir curso de teste");
+    await page.getByLabel("Forma de acompanhamento").selectOption("steps");
+    await page.getByRole("button", { name: "Criar objetivo" }).click();
+
+    await expect(page.getByRole("heading", { name: "Concluir curso de teste" })).toBeVisible();
+    await page.getByPlaceholder("Adicionar uma etapa...").fill("Concluir primeiro módulo");
+    await page.getByRole("button", { name: "Adicionar etapa" }).click();
+
+    await expect(page.getByText("Concluir primeiro módulo")).toBeVisible();
+    await expect.poll(() => {
+      const payload = cloud.get("nexo_personal_goals")?.payload as Array<{ steps?: Array<{ title: string }> }> | undefined;
+      return payload?.[0]?.steps?.length;
+    }).toBe(1);
+    expect((cloud.get("nexo_personal_goals")?.payload as Array<{ steps: Array<{ title: string }> }>)[0].steps[0].title)
+      .toBe("Concluir primeiro módulo");
+  });
+
+  test("deve registrar frequência semanal sem duplicar o registro do mesmo dia", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/metas");
+
+    await page.getByRole("button", { name: "Novo objetivo" }).click();
+    await page.getByLabel("Nome do objetivo *").fill("Estudar inglês");
+    await page.getByLabel("Forma de acompanhamento").selectOption("frequency");
+    await page.getByLabel("Quantas vezes por semana?").fill("5");
+    await page.getByRole("button", { name: "Criar objetivo" }).click();
+
+    await expect(page.getByRole("heading", { name: "Estudar inglês" })).toBeVisible();
+    await page.getByRole("button", { name: "Registrar atividade de hoje" }).click();
+
+    await expect(page.getByRole("button", { name: "Registrado hoje" })).toBeVisible();
+    await expect.poll(() => {
+      const payload = cloud.get("nexo_personal_goals")?.payload as Array<{ frequencyLogs?: string[] }> | undefined;
+      return payload?.[0]?.frequencyLogs?.length;
+    }).toBe(1);
   });
 });
