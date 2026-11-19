@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
 import {
@@ -14,14 +13,10 @@ import AppLayout from "../components/layout/AppLayout";
 import DailyCenter from "@/components/dashboard/DailyCenter";
 
 export default function Home() {
-  const [taskName, setTaskName] = useState("");
-
   // Usa o armazenamento centralizado para preservar dados inválidos
   // e impedir gravações quando a coleção não puder ser validada.
   const {
     items: tasks,
-    setItems: setTasks,
-    safeToSave,
     storageError,
   } = useRoutineCollection<RoutineTask>("nexo_tasks", isValidRoutineTask);
 
@@ -38,67 +33,8 @@ export default function Home() {
 
   const {
     items: habits,
-    setItems: setHabits,
-    safeToSave: habitsSafeToSave,
     storageError: habitsStorageError,
   } = useRoutineCollection<RoutineHabit>("nexo_habits", isValidRoutineHabit);
-
-  const now = new Date();
-  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  function toggleHabitToday(id: number) {
-    if (!habitsSafeToSave) return;
-
-    setHabits((current) =>
-      current.map((habit) => {
-        if (habit.id !== id) return habit;
-        const completed = habit.completedDates.includes(todayKey);
-        return {
-          ...habit,
-          completedDates: completed
-            ? habit.completedDates.filter((date) => date !== todayKey)
-            : [...habit.completedDates, todayKey],
-        };
-      })
-    );
-  }
-
-  // =====================================================
-  // FUNÇÕES DAS TAREFAS
-  // =====================================================
-
-  function addTask(date?: string) {
-    if (!safeToSave) return;
-
-    const description = taskName.trim();
-
-    if (!description) {
-      alert("Informe a descrição da atividade.");
-      return;
-    }
-
-    const newTask: RoutineTask = {
-      id: Date.now(),
-      description,
-      done: false,
-      ...(date ? { date } : {}),
-    };
-
-    setTasks((current) => [...current, newTask]);
-    setTaskName("");
-  }
-
-  function toggleTask(id: number) {
-    if (!safeToSave) return;
-
-    setTasks((current) =>
-      current.map((task) =>
-        task.id === id
-          ? { ...task, done: !task.done }
-          : task
-      )
-    );
-  }
-
 
   // =====================================================
   // CABEÇALHO
@@ -152,13 +88,11 @@ export default function Home() {
         {storageError && (
           <div role="alert" className="storage-protection-message">
             <strong>Armazenamento protegido — tarefas:</strong> {storageError}
-            {!safeToSave && " As alterações de tarefas foram bloqueadas para proteger seus dados."}
           </div>
         )}
         {habitsStorageError && (
           <div role="alert" className="storage-protection-message">
             <strong>Armazenamento protegido — hábitos:</strong> {habitsStorageError}
-            {!habitsSafeToSave && " As alterações de hábitos foram bloqueadas para proteger seus dados."}
           </div>
         )}
 
@@ -173,13 +107,6 @@ export default function Home() {
             income={income}
             expenses={expenses}
             balance={balance}
-            onToggleTask={toggleTask}
-            onToggleHabit={toggleHabitToday}
-            onAddTask={() => addTask(todayKey)}
-            taskName={taskName}
-            onTaskNameChange={setTaskName}
-            canSaveTasks={safeToSave}
-            canSaveHabits={habitsSafeToSave}
             taskError={storageError}
             habitError={habitsStorageError}
         />
