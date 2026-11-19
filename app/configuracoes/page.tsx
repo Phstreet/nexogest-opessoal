@@ -132,6 +132,7 @@ export default function ConfiguracoesPage() {
       const merged = { ...preferences, ...next };
       await persistSetting(PREFERENCES_KEY, merged);
       setPreferences(merged);
+      window.dispatchEvent(new CustomEvent("nexo:preferences-updated", { detail: { sidebarCollapsed: merged.sidebarCollapsed === true } }));
       setMessage("Preferências salvas no Supabase.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível salvar as preferências.");
@@ -256,6 +257,7 @@ export default function ConfiguracoesPage() {
             ["categorias", "Categorias"],
             ["dados", "Dados e backups"],
             ["personalizacao", "Personalização"],
+            ["seguranca", "Segurança"],
           ] as [SettingsTab, string][]).map(([value, label]) => (
             <button key={value} type="button" className={tab === value ? "active" : ""} onClick={() => setTab(value)}>
               {label}
