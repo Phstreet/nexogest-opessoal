@@ -43,7 +43,8 @@ export const settingsMenuItems: MenuItem[] = [
   { label: "Preferências", href: "/configuracoes?tab=preferencias", icon: "⚙" },
   { label: "Categorias", href: "/configuracoes?tab=categorias", icon: "▦" },
   { label: "Dados e backups", href: "/configuracoes?tab=dados", icon: "◫" },
-  { label: "Personalização", href: "/configuracoes?tab=personalizacao", icon: "◐" },\n  { label: "Segurança", href: "/configuracoes?tab=seguranca", icon: "⌑" },
+  { label: "Personalização", href: "/configuracoes?tab=personalizacao", icon: "◐" },
+  { label: "Segurança", href: "/configuracoes?tab=seguranca", icon: "⌑" },
 ];
 
 export const mainMenuItems: MenuItem[] = [
