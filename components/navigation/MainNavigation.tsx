@@ -106,7 +106,16 @@ export default function MainNavigation() {
     setPreferencesError("");
   }
 
-  useEffect(() => {\n    function handlePreferencesUpdated(event: Event) {\n      const detail = (event as CustomEvent<{ sidebarCollapsed?: boolean }>).detail;\n      if (typeof detail?.sidebarCollapsed === "boolean") setCollapsed(detail.sidebarCollapsed);\n    }\n    window.addEventListener("nexo:preferences-updated", handlePreferencesUpdated);\n    return () => window.removeEventListener("nexo:preferences-updated", handlePreferencesUpdated);\n  }, []);\n\n  // Fecha os submenus sempre que a rota mudar.
+  useEffect(() => {
+    function handlePreferencesUpdated(event: Event) {
+      const detail = (event as CustomEvent<{ sidebarCollapsed?: boolean }>).detail;
+      if (typeof detail?.sidebarCollapsed === "boolean") setCollapsed(detail.sidebarCollapsed);
+    }
+    window.addEventListener("nexo:preferences-updated", handlePreferencesUpdated);
+    return () => window.removeEventListener("nexo:preferences-updated", handlePreferencesUpdated);
+  }, []);
+
+  // Fecha os submenus sempre que a rota mudar.
   useEffect(() => {
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
