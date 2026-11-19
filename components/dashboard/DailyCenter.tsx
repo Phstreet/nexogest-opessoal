@@ -250,29 +250,29 @@ export default function DailyCenter(props: Props) {
       </section>
 
       <style jsx>{`
-        .daily-center{display:flex;flex-direction:column;gap:16px;min-width:0;padding-bottom:24px}
-        .daily-welcome{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:25px 27px;border:1px solid #303036;border-radius:12px;background:linear-gradient(115deg,#202024,#151518 70%,#101012)}
+        .daily-center{display:flex;flex-direction:column;gap:18px;min-width:0;padding-bottom:24px;color:#f1f1f3}
+        .daily-welcome{position:relative;display:flex;align-items:center;justify-content:space-between;gap:22px;padding:28px 29px;border:1px solid #35353d;border-radius:14px;background:radial-gradient(ellipse at 88% 0%,rgba(255,255,255,.075),transparent 42%),linear-gradient(115deg,#202024,#151518 70%,#101012);box-shadow:0 14px 34px rgba(0,0,0,.18);overflow:hidden}
         .daily-eyebrow{display:block;color:#92929d;font-size:9px;font-weight:750;letter-spacing:1.5px}
         .daily-welcome h2{margin:9px 0 6px;color:#f2f2f4;font-size:clamp(20px,2.5vw,29px);letter-spacing:-.8px}
         .daily-welcome p{margin:0;color:#9999a3;font-size:11px;line-height:1.6;text-transform:capitalize}
-        .daily-progress{width:min(245px,32%);padding:14px;border:1px solid #34343b;border-radius:9px;background:#17171a}
+        .daily-progress{width:min(245px,32%);padding:15px;border:1px solid #3a3a42;border-radius:10px;background:rgba(12,12,14,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
         .daily-progress>span{color:#9999a3;font-size:8px;letter-spacing:1px}
         .daily-progress>strong{display:block;margin:4px 0;font-size:25px}
         .daily-progress small{display:block;margin-top:7px;color:#92929c;font-size:9px}
-        .daily-progress-track{height:6px;overflow:hidden;border-radius:10px;background:#34343b}
-        .daily-progress-track i{display:block;height:100%;border-radius:10px;background:#bfc4cc}
+        .daily-progress-track{height:6px;overflow:hidden;border-radius:10px;background:#34343b;box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+        .daily-progress-track i{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,#858b96,#e1e3e8);transition:width .3s ease}
         .daily-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-        .daily-kpi{display:flex;flex-direction:column;gap:7px;min-width:0;padding:15px;border:1px solid #2e2e34;border-radius:9px;background:#18181b}
+        .daily-kpi{position:relative;display:flex;flex-direction:column;gap:8px;min-width:0;padding:17px;border:1px solid #303038;border-radius:11px;background:linear-gradient(145deg,#1c1c20,#151518);box-shadow:0 8px 22px rgba(0,0,0,.12);transition:border-color .2s ease,transform .2s ease}
         .daily-kpi span{color:#a4a4ad;font-size:10px}
         .daily-kpi strong{overflow-wrap:anywhere;color:#f1f1f3;font-size:clamp(16px,2vw,21px)}
         .daily-kpi small{color:#85858f;font-size:9px}
-        .daily-kpi.featured{background:#202126;border-color:#45464d}
-        .panel{padding:17px;border:1px solid #303036;border-radius:10px;background:#171719}
+        .daily-kpi.featured{background:radial-gradient(ellipse at 100% 0%,rgba(255,255,255,.07),transparent 55%),linear-gradient(145deg,#24252b,#19191d);border-color:#4a4b54}
+        .panel{padding:19px;border:1px solid #303038;border-radius:12px;background:linear-gradient(145deg,#1a1a1e,#151518);box-shadow:0 10px 26px rgba(0,0,0,.13)}
         .daily-quick{display:flex;flex-direction:column;gap:12px}
         .daily-quick h3,.daily-panel h3,.daily-close h3{margin:5px 0 0;color:#eee;font-size:14px}
         .daily-entry{display:flex;gap:9px}
-        .daily-entry input{flex:1;min-width:0;height:38px;padding:0 12px;border:1px solid #3a3a42;border-radius:6px;background:#101012;color:#eee;font-size:11px}
-        .daily-entry button{padding:0 16px;border:1px solid #c3c6ce;border-radius:6px;background:#c3c6ce;color:#151518;font-size:10px;font-weight:700;cursor:pointer}
+        .daily-entry input{flex:1;min-width:0;height:40px;padding:0 13px;border:1px solid #3c3c45;border-radius:7px;background:#101012;color:#eee;font-size:11px;outline:none;transition:border-color .2s ease,box-shadow .2s ease}
+        .daily-entry button{padding:0 17px;border:1px solid #d0d2d8;border-radius:7px;background:linear-gradient(180deg,#d5d7dc,#bfc2ca);color:#151518;font-size:10px;font-weight:750;cursor:pointer;transition:filter .2s ease,transform .2s ease}
         .daily-entry button:disabled,.daily-task button:disabled{opacity:.45;cursor:not-allowed}
         .daily-shortcuts{display:flex;flex-wrap:wrap;gap:13px}
         .daily-shortcuts a,.daily-panel-heading>a,.daily-empty a{color:#b9bbc2;font-size:9px;text-decoration:none}
@@ -282,7 +282,7 @@ export default function DailyCenter(props: Props) {
         .daily-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}
         .daily-priority-group{margin-top:13px}
         .daily-priority-group h4{margin:0 0 7px;color:#c7c7ce;font-size:10px;font-weight:650}
-        .daily-task{display:flex;align-items:center;gap:10px;min-width:0;padding:9px 0;border-bottom:1px solid #29292e}
+        .daily-task{display:flex;align-items:center;gap:10px;min-width:0;padding:10px 2px;border-bottom:1px solid #29292e;transition:background .18s ease}
         .daily-task:last-child{border-bottom:0}
         .daily-task>button{display:grid;place-items:center;flex-shrink:0;width:24px;height:24px;border:1px solid #45454d;border-radius:50%;background:transparent;color:#d5d5db;cursor:pointer}
         .daily-task>div{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}
@@ -305,11 +305,17 @@ export default function DailyCenter(props: Props) {
         .daily-finance-item small{color:#888;font-size:9px}
         .daily-finance-item>strong{flex-shrink:0;color:#ddd;font-size:10px}
         .daily-finance-warning{padding:8px;border:1px solid #654747;border-radius:6px;background:#24191b;color:#e2aaaa;font-size:9px;line-height:1.5}
-        .daily-close{display:flex;align-items:center;justify-content:space-between;gap:15px}
+        .daily-close{display:flex;align-items:center;justify-content:space-between;gap:15px;background:linear-gradient(110deg,#1c1c20,#151518)}
         .daily-close p{margin:6px 0 0;color:#92929c;font-size:10px}
         .daily-close-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
         .daily-close-actions span,.daily-close-actions a{padding:7px 9px;border:1px solid #37373d;border-radius:6px;color:#bdbdc5;font-size:9px;text-decoration:none}
-        .daily-alert{display:flex;flex-direction:column;gap:5px;padding:11px 13px;border:1px solid #704b4b;border-radius:7px;background:#25191b;color:#e5b4b4;font-size:10px}
+        .daily-alert{display:flex;flex-direction:column;gap:5px;padding:12px 14px;border:1px solid #704b4b;border-radius:8px;background:linear-gradient(110deg,#291b1e,#211719);color:#e5b4b4;font-size:10px}
+        .daily-kpi:hover{border-color:#50505a;transform:translateY(-2px)}
+        .daily-entry input:focus{border-color:#777b85;box-shadow:0 0 0 3px rgba(190,194,203,.08)}
+        .daily-entry button:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
+        .daily-shortcuts a{transition:color .18s ease,border-color .18s ease,background .18s ease}
+        .daily-task>button{transition:border-color .18s ease,background .18s ease,color .18s ease}
+        .daily-task>button:hover:not(:disabled){border-color:#aeb2bc;background:#292a30;color:#fff}
         @media(max-width:900px){
           .daily-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
           .daily-columns{grid-template-columns:minmax(0,1fr)}
