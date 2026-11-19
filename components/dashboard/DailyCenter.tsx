@@ -336,14 +336,12 @@ export default function DailyCenter(props: Props) {
       </div>
 
       <style jsx>{`
-        /* Lua: ESO/NASA/M. Kornmesser — CC BY 4.0
-           https://www.eso.org/public/images/eso1210d
-           Para ficar idêntico à referência, salve uma foto da lua em /public/moon.jpg
-           e troque a URL abaixo por url("/moon.jpg"). */
+        /* Foto da Lua: NASA/JPL/USGS — domínio público.
+           Arquivo local: /public/moon.jpg */
         .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:18px;min-width:0;padding:6px 0 28px;color:#f1f1f3;overflow:hidden}
         .daily-center>*{position:relative;z-index:1}
         .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-200px;right:-170px;width:min(860px,72%);aspect-ratio:1;border-radius:50%;
-          background-image:url("https://upload.wikimedia.org/wikipedia/commons/0/0a/Artists%E2%80%99s_impression_of_the_Moon_showing_earthshine_%28eso1210d%29.jpg");
+          background-image:url("/moon.jpg");
           background-size:cover;background-position:center;opacity:.85;filter:grayscale(1) contrast(1.12) brightness(.95);
           -webkit-mask-image:radial-gradient(circle at 46% 50%,#000 0 56%,rgba(0,0,0,.8) 66%,transparent 78%);
           mask-image:radial-gradient(circle at 46% 50%,#000 0 56%,rgba(0,0,0,.8) 66%,transparent 78%)}
