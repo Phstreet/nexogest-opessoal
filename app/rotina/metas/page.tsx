@@ -1,7 +1,7 @@
 import MetasCenter from "../../metas/MetasCenter";
 
 export const metadata = {
-  title: "Metas pessoais · NEXO",
+  title: "Objetivos · NEXO",
 };
 
 export default function RoutineGoalsPage() {
