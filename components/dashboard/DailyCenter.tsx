@@ -395,7 +395,7 @@ export default function DailyCenter(props: Props) {
       <style jsx>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
-        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:18px;min-width:0;padding:6px 0 28px;color:#f1f1f3;overflow:hidden}
+        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:16px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
         .daily-center>*{position:relative;z-index:1}
         .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-200px;right:-170px;width:min(860px,72%);aspect-ratio:1;border-radius:50%;
           background-image:url("/moon.jpg");
@@ -407,7 +407,7 @@ export default function DailyCenter(props: Props) {
           mask-image:linear-gradient(to bottom,#000,transparent)}
 
         /* Hero */
-        .daily-hero{padding:34px 0 8px;max-width:640px}
+        .daily-hero{padding:8px 0 4px;max-width:640px}
         .daily-date{display:block;color:#a9a9b3;font-size:13px;font-weight:500;letter-spacing:2.4px;text-transform:uppercase}
         .daily-hero h2{margin:10px 0 8px;color:#fff;font-size:clamp(42px,5.4vw,68px);font-weight:700;letter-spacing:-2.2px;line-height:1.05}
         .daily-hero p{margin:0;color:#c3c3cb;font-size:clamp(16px,1.6vw,21px);font-weight:300}
