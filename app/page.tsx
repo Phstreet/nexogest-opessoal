@@ -201,7 +201,7 @@ export default function Home() {
 
         <div
           className="section-heading"
-          style={{ marginBottom: "24px" }}
+          style={{ marginBottom: tab === "dashboard" ? "8px" : "24px" }}
         >
           <div>
 
@@ -211,7 +211,7 @@ export default function Home() {
                 display: "flex",
                 gap: "10px",
                 flexWrap: "wrap",
-                marginTop: "10px",
+                marginTop: tab === "dashboard" ? "0px" : "10px",
               }}
             >
               <button
@@ -424,6 +424,7 @@ export default function Home() {
         )}
 
         <style jsx>{`
+          .daily-home-content { padding-top: 8px; }
           .topbar-search-trigger { min-height:42px; display:inline-flex; align-items:center; gap:9px; padding:0 13px; border:1px solid #34363d; border-radius:10px; background:#17181c; color:#c5cad2; font:inherit; font-size:12px; cursor:pointer; }
           .topbar-search-trigger:hover { border-color:#777d88; background:#202126; color:#fff; }
           .topbar-search-trigger>span:first-child { font-size:21px; line-height:1; }
