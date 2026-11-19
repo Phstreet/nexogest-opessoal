@@ -252,12 +252,14 @@ export default function DailyCenter(props: Props) {
       <style jsx>{`
         /* Lua realista: ESO/NASA/M. Kornmesser — CC BY 4.0
            https://www.eso.org/public/images/eso1210d */
-        .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-175px;right:-185px;width:min(760px,72vw);aspect-ratio:1;border-radius:50%;background-image:linear-gradient(90deg,rgba(10,10,12,.06),rgba(10,10,12,.12)),url("https://cdn.eso.org/images/large/eso1210d.jpg");background-size:cover;background-position:center;opacity:.58;filter:grayscale(1) contrast(1.08) brightness(.86);-webkit-mask-image:radial-gradient(circle at 48% 48%,#000 0 54%,rgba(0,0,0,.82) 63%,transparent 76%);mask-image:radial-gradient(circle at 48% 48%,#000 0 54%,rgba(0,0,0,.82) 63%,transparent 76%)}
+        .daily-center::before{content:none}
         .daily-center::after{content:"";position:absolute;z-index:0;inset:-35px -12px auto;height:560px;pointer-events:none;opacity:.24;background-image:radial-gradient(1px 1px at 8% 18%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 22% 9%,#dfe2ea 99%,transparent),radial-gradient(1.5px 1.5px at 49% 15%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 76% 11%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 92% 34%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 61% 43%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 13% 57%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 84% 71%,#dfe2ea 99%,transparent);background-size:100% 100%;mask-image:linear-gradient(to bottom,#000,transparent)}
         .daily-center>*{position:relative;z-index:1}
 
         .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:18px;min-width:0;padding:4px 0 26px;color:#f1f1f3;overflow:hidden}
-        .daily-welcome{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:30px 32px;border:1px solid #36363e;border-radius:16px;background:linear-gradient(135deg,#222227 0%,#19191e 58%,#151519 100%);box-shadow:0 18px 42px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.045)}
+        .daily-welcome{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:28px;padding:30px 32px;border:1px solid #36363e;border-radius:16px;background:linear-gradient(135deg,#222227 0%,#19191e 58%,#151519 100%);box-shadow:0 18px 42px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.045)}
+        .daily-welcome::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-155px;right:-88px;width:min(500px,58%);aspect-ratio:1;border-radius:50%;background-image:linear-gradient(90deg,rgba(20,20,24,.04),rgba(20,20,24,.2)),url("https://upload.wikimedia.org/wikipedia/commons/0/0a/Artists%E2%80%99s_impression_of_the_Moon_showing_earthshine_%28eso1210d%29.jpg");background-size:cover;background-position:center;opacity:.58;filter:grayscale(1) contrast(1.1) brightness(.9);-webkit-mask-image:radial-gradient(circle at 48% 48%,#000 0 57%,rgba(0,0,0,.82) 67%,transparent 80%);mask-image:radial-gradient(circle at 48% 48%,#000 0 57%,rgba(0,0,0,.82) 67%,transparent 80%)}
+        .daily-welcome>div{position:relative;z-index:1}
         .daily-eyebrow{display:block;color:#a5a5af;font-size:9px;font-weight:750;letter-spacing:1.65px}
         .daily-welcome h2{margin:11px 0 7px;color:#f5f5f7;font-size:clamp(22px,2.6vw,31px);font-weight:650;letter-spacing:-1.05px;line-height:1.16}
         .daily-welcome p{margin:0;color:#a4a4ad;font-size:12px;line-height:1.65;text-transform:capitalize}
@@ -331,7 +333,7 @@ export default function DailyCenter(props: Props) {
           .daily-welcome{gap:18px}
         }
         @media(max-width:600px){
-          .daily-center{gap:13px;padding:0 0 20px}.daily-center::before{top:-78px;right:-190px;width:430px;opacity:.48}.daily-center::after{height:390px;opacity:.18}
+          .daily-center{gap:13px;padding:0 0 20px}.daily-center::after{height:390px;opacity:.18}.daily-welcome::before{top:-88px;right:-105px;width:330px;opacity:.48}
           .daily-welcome,.daily-close{align-items:stretch;flex-direction:column}
           .daily-welcome{gap:16px;padding:21px 18px;border-radius:12px}
           .daily-eyebrow{font-size:8px;letter-spacing:1.3px}
