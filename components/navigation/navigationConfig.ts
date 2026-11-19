@@ -28,6 +28,7 @@ export const routineMenuItems: MenuItem[] = [
   { label: "Agenda diária", href: "/rotina/agenda", icon: "▦" },
   { label: "Tarefas", href: "/rotina/tarefas", icon: "☑" },
   { label: "Hábitos", href: "/rotina/habitos", icon: "↻" },
+  { label: "Metas pessoais", href: "/rotina/metas", icon: "◎" },
   { label: "Planejamento semanal", href: "/rotina/planejamento", icon: "▤" },
   { label: "Produtividade", href: "/rotina/produtividade", icon: "◷" },
 ];
