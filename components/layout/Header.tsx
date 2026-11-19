@@ -74,6 +74,16 @@ export default function Header() {
       </div>
 
       <div className="nexo-header-actions">
+        <button
+          type="button"
+          className="nexo-header-search"
+          onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
+          aria-label="Buscar no NEXO"
+        >
+          <span aria-hidden="true">⌕</span>
+          <span>Buscar no NEXO</span>
+          <kbd>Ctrl K</kbd>
+        </button>
         <div className="nexo-header-popover">
           <button
             type="button"
@@ -168,6 +178,25 @@ export default function Header() {
           align-items: center;
           gap: 13px;
         }
+
+        .nexo-header-search {
+          min-height: 37px;
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          padding: 0 11px;
+          border: 1px solid #35353a;
+          border-radius: 7px;
+          background: #19191c;
+          color: #c5cad2;
+          font: inherit;
+          font-size: 11px;
+          cursor: pointer;
+          transition: border-color .18s ease, background .18s ease, color .18s ease;
+        }
+        .nexo-header-search:hover { border-color:#66666f; background:#222226; color:#fff; }
+        .nexo-header-search>span:first-child { font-size:21px; line-height:1; }
+        .nexo-header-search kbd { padding:3px 5px; border:1px solid #414148; border-radius:4px; color:#858b95; font-size:9px; }
 
         .nexo-header-popover {
           position: relative;
@@ -279,6 +308,8 @@ export default function Header() {
           .nexo-profile-chevron {
             display: none;
           }
+          .nexo-header-search { width:37px; justify-content:center; padding:0; }
+          .nexo-header-search>span:nth-child(2), .nexo-header-search kbd { display:none; }
         }
       `}</style>
     </header>
