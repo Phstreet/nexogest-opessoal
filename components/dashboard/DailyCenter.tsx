@@ -376,7 +376,7 @@ export default function DailyCenter(props: Props) {
       <style jsx>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
-        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:16px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
+        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
         .daily-center>*{position:relative;z-index:1}
         .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-200px;right:-170px;width:min(860px,72%);aspect-ratio:1;border-radius:50%;
           background-image:url("/moon.jpg");
@@ -388,19 +388,19 @@ export default function DailyCenter(props: Props) {
           mask-image:linear-gradient(to bottom,#000,transparent)}
 
         /* Hero */
-        .daily-hero{padding:8px 0 4px;max-width:640px}
-        .daily-date{display:block;color:#a9a9b3;font-size:13px;font-weight:500;letter-spacing:2.4px;text-transform:uppercase}
-        .daily-hero h2{margin:10px 0 8px;color:#fff;font-size:clamp(42px,5.4vw,68px);font-weight:700;letter-spacing:-2.2px;line-height:1.05}
-        .daily-hero p{margin:0;color:#c3c3cb;font-size:clamp(16px,1.6vw,21px);font-weight:300}
+        .daily-hero{padding:2px 0 0;max-width:640px}
+        .daily-date{display:block;color:#858791;font-size:10px;font-weight:500;letter-spacing:1.7px;text-transform:uppercase}
+        .daily-hero h2{margin:4px 0 3px;color:#f5f5f7;font-size:clamp(30px,3.7vw,44px);font-weight:680;letter-spacing:-1.5px;line-height:1.04}
+        .daily-hero p{margin:0;color:#999ba4;font-size:clamp(12px,1.15vw,15px);font-weight:300}
 
         /* KPIs */
-        .daily-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:6px}
-        .daily-kpi{display:flex;flex-direction:column;gap:2px;min-width:0;padding:20px 22px 16px;border:1px solid #2d2d34;border-radius:18px;background:rgba(20,20,24,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f1f1f3;text-decoration:none;box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .2s ease,transform .2s ease}
+        .daily-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:0}
+        .daily-kpi{display:flex;flex-direction:column;gap:2px;min-width:0;padding:15px 18px 13px;border:1px solid #2d2d34;border-radius:15px;background:rgba(20,20,24,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f1f1f3;text-decoration:none;box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .2s ease,transform .2s ease}
         .daily-kpi:hover{border-color:#55555f;transform:translateY(-2px)}
-        .daily-kpi-icon{display:flex;color:#e6e6ea;margin-bottom:6px}
-        .daily-kpi strong{overflow-wrap:anywhere;font-size:clamp(26px,2.6vw,36px);font-weight:700;letter-spacing:-.8px;line-height:1.15}
+        .daily-kpi-icon{display:flex;color:#c9cbd1;margin-bottom:3px}
+        .daily-kpi strong{overflow-wrap:anywhere;font-size:clamp(23px,2.2vw,31px);font-weight:700;letter-spacing:-.8px;line-height:1.15}
         .daily-kpi>div{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#b4b4bd}
-        .daily-kpi small{font-size:15px;font-weight:400}
+        .daily-kpi small{font-size:13px;font-weight:400}
 
         /* Grade */
         .daily-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1.08fr) minmax(0,.9fr);gap:16px;grid-template-areas:"priorities agenda quick" "habits bills tip"}
