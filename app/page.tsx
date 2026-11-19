@@ -1,8 +1,6 @@
 
 "use client";
 
-import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
-
 import { useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useFinanceDashboard } from "@/app/hooks/finance/useFinanceDashboard";
@@ -15,12 +13,7 @@ import {
 import AppLayout from "../components/layout/AppLayout";
 import DailyCenter from "@/components/dashboard/DailyCenter";
 
-type Tab = "dashboard" | "rotina";
-
 export default function Home() {
-  const confirm = useNexoConfirm();
-  const [tab, setTab] = useState<Tab>("dashboard");
-
   const [taskName, setTaskName] = useState("");
 
   // Usa o armazenamento centralizado para preservar dados inválidos
@@ -70,18 +63,6 @@ export default function Home() {
   }
 
   // =====================================================
-  // PRODUTIVIDADE
-  // =====================================================
-
-  const completedTasks = tasks.filter(
-    (task) => task.done
-  ).length;
-
-  const pendingTasks = tasks.filter(
-    (task) => !task.done
-  );
-
-  // =====================================================
   // FUNÇÕES DAS TAREFAS
   // =====================================================
 
@@ -118,26 +99,10 @@ export default function Home() {
     );
   }
 
-  async function deleteTask(id: number) {
-    if (!safeToSave) return;
-
-    if (!(await confirm({ title: "Excluir atividade", message: "Deseja excluir esta atividade?", confirmLabel: "Excluir", destructive: true }))) {
-      return;
-    }
-
-    setTasks((current) =>
-      current.filter((task) => task.id !== id)
-    );
-  }
 
   // =====================================================
   // CABEÇALHO
   // =====================================================
-
-  const pageTitles: Record<Tab, string> = {
-    dashboard: "Central do Dia",
-    rotina: "Minha rotina",
-  };
 
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -156,10 +121,10 @@ export default function Home() {
         <header className="topbar">
           <div>
             <div className="breadcrumb">
-              NEXO / {pageTitles[tab].toUpperCase()}
+              NEXO / CENTRAL DO DIA
             </div>
 
-            <h1>{pageTitles[tab]}</h1>
+            <h1>Central do Dia</h1>
           </div>
 
           <div className="topbar-right">
@@ -197,56 +162,9 @@ export default function Home() {
           </div>
         )}
 
-        {/* ALTERNÂNCIA ENTRE AS ABAS */}
+        {/* RESUMO PRINCIPAL DO DIA */}
 
-        <div
-          className="section-heading"
-          style={{ marginBottom: tab === "dashboard" ? "8px" : "24px" }}
-        >
-          <div>
-
-
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                flexWrap: "wrap",
-                marginTop: tab === "dashboard" ? "0px" : "10px",
-              }}
-            >
-              <button
-                type="button"
-                className={
-                  tab === "dashboard"
-                    ? "primary-button"
-                    : "small-outline-button"
-                }
-                onClick={() => setTab("dashboard")}
-                aria-pressed={tab === "dashboard"}
-              >
-                Central do Dia
-              </button>
-
-              <button
-                type="button"
-                className={
-                  tab === "rotina"
-                    ? "primary-button"
-                    : "small-outline-button"
-                }
-                onClick={() => setTab("rotina")}
-                aria-pressed={tab === "rotina"}
-              >
-                Minha rotina
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* VISÃO GERAL */}
-
-        {tab === "dashboard" && (
-          <DailyCenter
+        <DailyCenter
             tasks={tasks}
             habits={habits}
             transactions={financeTransactions}
@@ -264,164 +182,7 @@ export default function Home() {
             canSaveHabits={habitsSafeToSave}
             taskError={storageError}
             habitError={habitsStorageError}
-          />
-        )}
-
-        {/* MINHA ROTINA */}
-
-        {tab === "rotina" && (
-          <>
-            <div className="page-intro">
-              <div className="section-kicker">
-                PRODUTIVIDADE E ORGANIZAÇÃO
-              </div>
-
-              <h2>Minha rotina</h2>
-
-              <p>
-                Organize suas atividades, acompanhe seu progresso
-                e mantenha o foco.
-              </p>
-            </div>
-
-            <section className="metrics-grid routine-metrics">
-              <div className="metric-card">
-                <div className="metric-top">
-                  <span>Total de tarefas</span>
-                  <span>▤</span>
-                </div>
-
-                <div className="metric-value">
-                  {tasks.length}
-                </div>
-              </div>
-
-              <div className="metric-card">
-                <div className="metric-top">
-                  <span>Concluídas</span>
-                  <span>✓</span>
-                </div>
-
-                <div className="metric-value">
-                  {completedTasks}
-                </div>
-              </div>
-
-              <div className="metric-card featured-metric">
-                <div className="metric-top">
-                  <span>Pendentes</span>
-                  <span>◷</span>
-                </div>
-
-                <div className="metric-value">
-                  {pendingTasks.length}
-                </div>
-              </div>
-            </section>
-
-            <section className="panel task-form-panel">
-              <div className="section-kicker">
-                PLANEJAMENTO
-              </div>
-
-              <h3>Nova atividade</h3>
-
-              <div className="task-entry">
-                <input
-                  className="form-input"
-                  placeholder="O que você precisa fazer?"
-                  value={taskName}
-                  onChange={(event) =>
-                    setTaskName(event.target.value)
-                  }
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      addTask();
-                    }
-                  }}
-                />
-
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={() => addTask()}
-                >
-                  + Adicionar tarefa
-                </button>
-              </div>
-            </section>
-
-            <section className="panel tasks-panel">
-              <div className="panel-heading">
-                <div>
-                  <div className="section-kicker">
-                    SEU PLANEJAMENTO
-                  </div>
-
-                  <h3>Lista de atividades</h3>
-                </div>
-
-                <span className="count-badge">
-                  {tasks.length} tarefas
-                </span>
-              </div>
-
-              {tasks.length > 0 ? (
-                <div className="task-list">
-                  {tasks.map((task) => (
-                    <div
-                      className="task-item"
-                      key={task.id}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={task.done}
-                        onChange={() => toggleTask(task.id)}
-                        className="task-checkbox"
-                      />
-
-                      <span
-                        className={
-                          task.done ? "task-done" : ""
-                        }
-                      >
-                        {task.description}
-                      </span>
-
-                      <span
-                        className={`task-status ${
-                          task.done ? "done" : ""
-                        }`}
-                      >
-                        {task.done ? "Concluída" : "Pendente"}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="delete-button"
-                        onClick={() => deleteTask(task.id)}
-                        title="Excluir tarefa"
-                        aria-label={`Excluir ${task.description}`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <span>✓</span>
-
-                  <p>Sua lista está vazia.</p>
-
-                  <small>
-                    Adicione uma atividade para começar.
-                  </small>
-                </div>
-              )}
-            </section>
-          </>
-        )}
+        />
 
         <style jsx>{`
           .daily-home-content { padding-top: 8px; }
