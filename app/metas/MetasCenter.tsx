@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import {
@@ -95,7 +95,10 @@ function normalizeTracking(goal: Goal): TrackingType {
 
 function normalizeStatus(goal: Goal): GoalStatus {
   if (goal.status) return goal.status;
-  if (normalizeTracking(goal) === "numeric" && goal.target > 0 && goal.current >= goal.target) return "completed";
+  if (normalizeTracking(goal) === "numeric" && goal.target > 0) {
+    const reached = goal.direction === "decrease" ? goal.current <= goal.target : goal.current >= goal.target;
+    if (reached) return "completed";
+  }
   return "active";
 }
 
@@ -172,7 +175,7 @@ function categoryForRoutine(category: string) {
 }
 
 function Icon({ name }: { name: "target" | "check" | "chart" | "calendar" | "plus" | "flag" | "pause" | "play" | "trash" | "list" | "book" | "heart" | "wallet" | "arrow" | "repeat" }) {
-  const paths: Record<string, React.ReactNode> = {
+  const paths: Record<string, ReactNode> = {
     target: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></>,
     check: <path d="m5 12 4 4L19 6" />,
     chart: <><path d="M4 19V5M4 19h16" /><path d="m7 15 4-4 3 2 5-7" /></>,
