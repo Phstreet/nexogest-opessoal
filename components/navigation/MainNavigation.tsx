@@ -1204,6 +1204,70 @@ export default function MainNavigation() {
           }
         }
 
+
+        /* Submenus móveis: abertura explícita e seleção sem bloqueio */
+        @media (max-width: 760px) {
+          .sidebar .navigation {
+            position: relative !important;
+            z-index: 950 !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+          }
+
+          .sidebar .nav-group {
+            position: relative !important;
+            z-index: 951 !important;
+            overflow: visible !important;
+          }
+
+          .sidebar .nav-group:has(> .nav-submenu.is-open) {
+            z-index: 1100 !important;
+          }
+
+          .sidebar .nav-group > .nav-submenu.is-open {
+            position: absolute !important;
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            max-height: min(65dvh, 460px) !important;
+            height: auto !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            top: calc(100% + 7px) !important;
+            left: 0 !important;
+            right: auto !important;
+            z-index: 1200 !important;
+            padding: 8px !important;
+            margin: 0 !important;
+            transform: translateY(0) !important;
+            background: #17171a !important;
+            border: 1px solid #414149 !important;
+            border-radius: 11px !important;
+            box-shadow: 0 16px 38px rgba(0,0,0,.55) !important;
+          }
+
+          .sidebar .nav-submenu.is-open .nav-subitem-row {
+            display: flex !important;
+            width: 100% !important;
+            min-height: 42px !important;
+          }
+
+          .sidebar .nav-submenu.is-open .nav-subitem {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            min-height: 42px !important;
+            justify-content: flex-start !important;
+            color: #d7dce4 !important;
+            text-decoration: none !important;
+          }
+
+          .sidebar .nav-submenu.is-open .nav-subitem.active {
+            color: #fff !important;
+            background: rgba(255,255,255,.09) !important;
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .sidebar,
           .sidebar *,
