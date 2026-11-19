@@ -151,6 +151,15 @@ export default function MainNavigation() {
   }, []);
 
   useEffect(() => {
+    function openGlobalSearch() {
+      setSearchOpen(true);
+      setSearchTerm("");
+    }
+    window.addEventListener("nexo:open-search", openGlobalSearch);
+    return () => window.removeEventListener("nexo:open-search", openGlobalSearch);
+  }, []);
+
+  useEffect(() => {
     if (searchOpen) {
       const timeout = window.setTimeout(() => {
         searchInputRef.current?.focus();
@@ -551,20 +560,6 @@ export default function MainNavigation() {
         </section>
 
         <div className="sidebar-bottom">
-          <button
-            type="button"
-            className="sidebar-search-button"
-            onClick={() => {
-              setSearchOpen(true);
-              setSearchTerm("");
-            }}
-            title="Buscar no NEXO"
-          >
-            <span className="nav-icon">⌕</span>
-            <span className="sidebar-search-label">Buscar no NEXO</span>
-            {!collapsed && <kbd>Ctrl K</kbd>}
-          </button>
-
           <div className="sidebar-status">
             <span className="status-dot" />
             <span className="sidebar-status-label">
