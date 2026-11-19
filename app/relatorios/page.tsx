@@ -13,7 +13,7 @@ import {
 } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
 
-type Period = 30 | 90 | 180 | 365;
+type Period = "week" | "month" | "quarter" | "semester" | "year";
 
 function money(value: number) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -48,15 +48,28 @@ export default function RelatoriosPage() {
   const finance = useFinanceDashboard();
   const tasksCollection = useRoutineCollection<RoutineTask>("nexo_tasks", isValidRoutineTask);
   const habitsCollection = useRoutineCollection<RoutineHabit>("nexo_habits", isValidRoutineHabit);
-  const [period, setPeriod] = useState<Period>(90);
+  const [period, setPeriod] = useState<Period>("quarter");
 
   const tasks = tasksCollection.items;
   const habits = habitsCollection.items;
   const todayKey = dateKey(new Date());
   const currentMonthKey = todayKey.slice(0, 7);
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - period + 1);
+  if (period === "week") {
+    startDate.setDate(startDate.getDate() - 6);
+  } else if (period === "month") {
+    startDate.setDate(1);
+  } else if (period === "quarter") {
+    startDate.setMonth(Math.floor(startDate.getMonth() / 3) * 3, 1);
+  } else if (period === "semester") {
+    startDate.setMonth(startDate.getMonth() < 6 ? 0 : 6, 1);
+  } else {
+    startDate.setMonth(0, 1);
+  }
   const startKey = dateKey(startDate);
+  const periodLength = Math.floor(
+    (new Date(`${todayKey}T12:00:00`).getTime() - new Date(`${startKey}T12:00:00`).getTime()) / 86400000
+  ) + 1;
 
   const periodTransactions = useMemo(() => finance.transactions.filter((item) =>
     item.status !== "Cancelada" && Boolean(item.date) && item.date! >= startKey && item.date! <= todayKey
@@ -89,7 +102,7 @@ export default function RelatoriosPage() {
     const previousEnd = new Date(`${startKey}T12:00:00`);
     previousEnd.setDate(previousEnd.getDate() - 1);
     const previousStart = new Date(previousEnd);
-    previousStart.setDate(previousStart.getDate() - period + 1);
+    previousStart.setDate(previousStart.getDate() - periodLength + 1);
     const from = dateKey(previousStart);
     const to = dateKey(previousEnd);
     return finance.transactions.filter((item) =>
@@ -123,25 +136,72 @@ export default function RelatoriosPage() {
     settledAmount(item) < Number(item.amount || 0)
   );
 
-  const chartMonths = useMemo(() => {
-    const count = Math.min(12, Math.max(1, Math.ceil(period / 30)));
-    const months: { key: string; revenue: number; expenses: number }[] = [];
-    for (let offset = count - 1; offset >= 0; offset -= 1) {
-      const [year, monthNumber] = currentMonthKey.split("-").map(Number);
-      const date = new Date(year, monthNumber - 1 - offset, 1);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      months.push({ key, revenue: 0, expenses: 0 });
-    }
-    periodTransactions.forEach((item) => {
-      const month = months.find((entry) => entry.key === item.date?.slice(0, 7));
-      if (!month) return;
-      if (item.type === "Receita") month.revenue += settledAmount(item);
-      if (item.type === "Despesa") month.expenses += settledAmount(item);
-    });
-    return months;
-  }, [periodTransactions, period, currentMonthKey]);
+  const chartBuckets = useMemo(() => {
+    const buckets: { key: string; label: string; start: string; end: string; revenue: number; expenses: number }[] = [];
+    const rangeStart = new Date(`${startKey}T12:00:00`);
+    const rangeEnd = new Date(`${todayKey}T12:00:00`);
 
-  const maxChartValue = Math.max(1, ...chartMonths.flatMap((month) => [month.revenue, month.expenses]));
+    if (period === "week") {
+      for (let offset = 0; offset < 7; offset += 1) {
+        const date = new Date(rangeStart);
+        date.setDate(date.getDate() + offset);
+        const key = dateKey(date);
+        if (key > todayKey) break;
+        buckets.push({
+          key,
+          label: date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }).replace(".", ""),
+          start: key,
+          end: key,
+          revenue: 0,
+          expenses: 0,
+        });
+      }
+    } else if (period === "month") {
+      for (let week = 0; week < 5; week += 1) {
+        const from = new Date(rangeStart);
+        from.setDate(1 + week * 7);
+        if (from > rangeEnd) break;
+        const to = new Date(from);
+        to.setDate(to.getDate() + 6);
+        if (to > rangeEnd) to.setTime(rangeEnd.getTime());
+        buckets.push({
+          key: `week-${week + 1}`,
+          label: `${week + 1}ª sem.`,
+          start: dateKey(from),
+          end: dateKey(to),
+          revenue: 0,
+          expenses: 0,
+        });
+      }
+    } else {
+      const monthCount = period === "quarter" ? 3 : period === "semester" ? 6 : 12;
+      for (let offset = 0; offset < monthCount; offset += 1) {
+        const from = new Date(rangeStart.getFullYear(), rangeStart.getMonth() + offset, 1, 12);
+        if (from > rangeEnd) break;
+        const to = new Date(from.getFullYear(), from.getMonth() + 1, 0, 12);
+        if (to > rangeEnd) to.setTime(rangeEnd.getTime());
+        const key = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}`;
+        buckets.push({
+          key,
+          label: monthLabel(key),
+          start: dateKey(from),
+          end: dateKey(to),
+          revenue: 0,
+          expenses: 0,
+        });
+      }
+    }
+
+    periodTransactions.forEach((item) => {
+      const bucket = buckets.find((entry) => Boolean(item.date) && item.date! >= entry.start && item.date! <= entry.end);
+      if (!bucket) return;
+      if (item.type === "Receita") bucket.revenue += settledAmount(item);
+      if (item.type === "Despesa") bucket.expenses += settledAmount(item);
+    });
+    return buckets;
+  }, [periodTransactions, period, startKey, todayKey]);
+
+  const maxChartValue = Math.max(1, ...chartBuckets.flatMap((bucket) => [bucket.revenue, bucket.expenses]));
   const expenseVariation = previousPeriod > 0 ? ((totals.expenses - previousPeriod) / previousPeriod) * 100 : null;
 
   const insights = useMemo(() => {
@@ -183,11 +243,12 @@ export default function RelatoriosPage() {
           </div>
           <label className="period-control">
             <span>PERÍODO DE ANÁLISE</span>
-            <select value={period} onChange={(event) => setPeriod(Number(event.target.value) as Period)}>
-              <option value={30}>Últimos 30 dias</option>
-              <option value={90}>Últimos 90 dias</option>
-              <option value={180}>Últimos 6 meses</option>
-              <option value={365}>Últimos 12 meses</option>
+            <select value={period} onChange={(event) => setPeriod(event.target.value as Period)}>
+              <option value="week">Esta semana</option>
+              <option value="month">Este mês</option>
+              <option value="quarter">Este trimestre</option>
+              <option value="semester">Este semestre</option>
+              <option value="year">Este ano</option>
             </select>
           </label>
         </header>
@@ -208,13 +269,13 @@ export default function RelatoriosPage() {
                 <div className="intelligence-panel-heading"><div><span className="intelligence-eyebrow">EVOLUÇÃO FINANCEIRA</span><h2>Receitas x despesas</h2></div><span className="chart-legend"><i className="legend-income"/> Receitas <i className="legend-expense"/> Despesas</span></div>
                 {periodTransactions.length ? (
                   <div className="monthly-chart">
-                    {chartMonths.map((month) => (
+                    {chartBuckets.map((month) => (
                       <div className="month-column" key={month.key}>
                         <div className="month-bars">
                           <div className="bar income-bar" style={{ height: `${Math.max(2, month.revenue / maxChartValue * 100)}%` }} title={`Receitas: ${money(month.revenue)}`} />
                           <div className="bar expense-bar" style={{ height: `${Math.max(2, month.expenses / maxChartValue * 100)}%` }} title={`Despesas: ${money(month.expenses)}`} />
                         </div>
-                        <small>{monthLabel(month.key)}</small>
+                        <small>{month.label}</small>
                       </div>
                     ))}
                   </div>
