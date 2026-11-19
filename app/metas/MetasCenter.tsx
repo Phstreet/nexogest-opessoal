@@ -89,6 +89,11 @@ function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function makeNumericId() {
+  const [timestamp, randomPart] = makeId().split("-");
+  return Number(timestamp) + (Number.parseInt(randomPart || "0", 36) % 1_000_000);
+}
+
 function normalizeTracking(goal: Goal): TrackingType {
   return goal.trackingType || "numeric";
 }
@@ -413,7 +418,7 @@ export default function MetasCenter() {
   function createLinkedTask(goal: Goal) {
     if (!canLinkTasks) return;
     const task: RoutineTask = {
-      id: Date.now() + Math.floor(Math.random() * 1000),
+      id: makeNumericId(),
       description: `Objetivo: ${goal.title}`,
       done: false,
       date: goal.deadline || today,
