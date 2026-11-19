@@ -132,7 +132,8 @@ function reserveBalance(reserve: { initialBalance: number; id: number }, movemen
 
 function percentFor(goal: Goal, current: number, target: number) {
   const type = normalizeTracking(goal);
-  if (type === "completion") return normalizeStatus(goal) === "completed" ? 100 : 0;
+  if (normalizeStatus(goal) === "completed") return 100;
+  if (type === "completion") return 0;
   if (type === "steps") {
     const steps = goal.steps || [];
     return steps.length ? Math.round((steps.filter((step) => step.done).length / steps.length) * 100) : 0;
@@ -233,7 +234,7 @@ export default function MetasCenter() {
   const canLinkTasks = tasksLoaded && tasksSafe;
   const canLinkHabits = habitsLoaded && habitsSafe;
   const today = localDateKey();
-  const reserveById = useMemo(() => new Map(finance.reserves.map((reserve) => [reserve.id, reserve])), [finance.reserves]);
+  const reserveById = useMemo(() => new Map(finance.reserves.map((reserve) => [reserve.id, reserve] as const)), [finance.reserves]);
 
   function currentFor(goal: Goal) {
     if (goal.linkedReserveId) {
@@ -398,7 +399,12 @@ export default function MetasCenter() {
   }
 
   function completeGoal(goal: Goal) {
-    updateGoal(goal.id, (item) => ({ ...item, status: "completed", updatedAt: new Date().toISOString() }));
+    updateGoal(goal.id, (item) => ({
+      ...item,
+      status: "completed",
+      current: normalizeTracking(item) === "numeric" ? targetFor(item) : item.current,
+      updatedAt: new Date().toISOString(),
+    }));
   }
 
   function deleteGoal(goal: Goal) {
@@ -481,9 +487,9 @@ export default function MetasCenter() {
           <form onSubmit={submitGoal}>
             <div className="form-grid">
               <label className="wide"><span>Nome do objetivo *</span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex.: Concluir curso de Excel avançado" required /></label>
-              <label><span>Categoria *</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{CATEGORIES.map((item) => <option key={item}>{item}</option>)}<option value="Personalizada">Personalizada</option></select></label>
+              <label><span>Categoria *</span><select value={category} onChange={(event) => { setCategory(event.target.value); if (event.target.value !== "Financeiro") setLinkedReserveId(""); }}>{CATEGORIES.map((item) => <option key={item}>{item}</option>)}<option value="Personalizada">Personalizada</option></select></label>
               {category === "Personalizada" && <label><span>Nome da categoria *</span><input value={customCategory} onChange={(event) => setCustomCategory(event.target.value)} placeholder="Ex.: Espiritualidade" /></label>}
-              <label><span>Forma de acompanhamento</span><select value={trackingType} onChange={(event) => setTrackingType(event.target.value as TrackingType)}>{TRACKING_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+              <label><span>Forma de acompanhamento</span><select value={trackingType} onChange={(event) => { const next = event.target.value as TrackingType; setTrackingType(next); if (next !== "numeric") setLinkedReserveId(""); }}>{TRACKING_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
               <label><span>Prioridade</span><select value={priority} onChange={(event) => setPriority(event.target.value as Goal["priority"])}><option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option></select></label>
               <label><span>Objetivo principal (opcional)</span><select value={parentGoalId} onChange={(event) => setParentGoalId(event.target.value)}><option value="">Nenhum — objetivo independente</option>{goals.filter((goal) => goal.id !== editingId && !goal.parentGoalId).map((goal) => <option key={goal.id} value={goal.id}>{goal.title}</option>)}</select></label>
               <label><span>Prazo final (opcional)</span><input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /></label>
