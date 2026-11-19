@@ -55,7 +55,8 @@ export default function RelatoriosPage() {
   const todayKey = dateKey(new Date());
   const startDate = new Date();
   if (period === "week") {
-    startDate.setDate(startDate.getDate() - 6);
+    const daysSinceMonday = (startDate.getDay() + 6) % 7;
+    startDate.setDate(startDate.getDate() - daysSinceMonday);
   } else if (period === "month") {
     startDate.setDate(1);
   } else if (period === "quarter") {
