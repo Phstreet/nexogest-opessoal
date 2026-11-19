@@ -18,7 +18,6 @@ export const financeMenuItems: MenuItem[] = [
   { label: "Contas a receber", href: "/financeiro/contas-a-receber", icon: "↙" },
   { label: "Histórico", href: "/financeiro/historico", icon: "◷" },
   { label: "Investimentos", href: "/financeiro/investimentos", icon: "◉" },
-  { label: "Metas pessoais", href: "/metas", icon: "◎" },
   { label: "Reservas", href: "/financeiro/reservas", icon: "◇" },
   { label: "Planejamento", href: "/financeiro/planejamento", icon: "▦" },
   { label: "Dashboard financeiro", href: "/financeiro/dashboard", icon: "▥" },
