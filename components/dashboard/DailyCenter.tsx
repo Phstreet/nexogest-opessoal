@@ -250,7 +250,10 @@ export default function DailyCenter(props: Props) {
       </section>
 
       <style jsx>{`
-        .daily-center{display:flex;flex-direction:column;gap:18px;min-width:0;padding-bottom:24px;color:#f1f1f3}
+        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:18px;min-width:0;padding-bottom:24px;color:#f1f1f3}
+        .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-58px;right:-58px;width:min(390px,46vw);aspect-ratio:1;border-radius:50%;opacity:.23;background:radial-gradient(circle at 31% 29%,rgba(255,255,255,.9) 0 1.2%,transparent 1.8%),radial-gradient(ellipse at 67% 63%,rgba(20,20,24,.32) 0 5%,transparent 5.8%),radial-gradient(ellipse at 34% 68%,rgba(20,20,24,.25) 0 7%,transparent 7.8%),radial-gradient(ellipse at 73% 31%,rgba(20,20,24,.2) 0 4%,transparent 4.8%),radial-gradient(circle at 38% 35%,#e2e3e7 0%,#bfc1c8 34%,#777b86 67%,#343740 100%);box-shadow:0 0 75px 22px rgba(194,198,208,.12),inset -24px -18px 45px rgba(0,0,0,.48)}
+        .daily-center::after{content:"";position:absolute;z-index:0;inset:-24px -12px auto; height:470px;pointer-events:none;opacity:.28;background-image:radial-gradient(1px 1px at 8% 18%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 22% 9%,#dfe2ea 99%,transparent),radial-gradient(1.5px 1.5px at 49% 15%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 76% 11%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 92% 34%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 61% 43%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 13% 57%,#dfe2ea 99%,transparent),radial-gradient(1px 1px at 84% 71%,#dfe2ea 99%,transparent);background-size:100% 100%;mask-image:linear-gradient(to bottom,#000,transparent)}
+        .daily-center>*{position:relative;z-index:1}
         .daily-welcome{position:relative;display:flex;align-items:center;justify-content:space-between;gap:22px;padding:28px 29px;border:1px solid #35353d;border-radius:14px;background:radial-gradient(ellipse at 88% 0%,rgba(255,255,255,.075),transparent 42%),linear-gradient(115deg,#202024,#151518 70%,#101012);box-shadow:0 14px 34px rgba(0,0,0,.18);overflow:hidden}
         .daily-eyebrow{display:block;color:#92929d;font-size:9px;font-weight:750;letter-spacing:1.5px}
         .daily-welcome h2{margin:9px 0 6px;color:#f2f2f4;font-size:clamp(20px,2.5vw,29px);letter-spacing:-.8px}
@@ -322,7 +325,7 @@ export default function DailyCenter(props: Props) {
           .daily-welcome{gap:16px}
         }
         @media(max-width:600px){
-          .daily-center{gap:12px;padding-bottom:18px}
+          .daily-center{gap:12px;padding-bottom:18px}.daily-center::before{top:-24px;right:-76px;width:245px;opacity:.19}.daily-center::after{height:330px;opacity:.2}
           .daily-welcome,.daily-close{align-items:stretch;flex-direction:column}
           .daily-welcome{gap:15px;padding:18px 16px;border-radius:10px}
           .daily-eyebrow{font-size:8px;letter-spacing:1.2px}
