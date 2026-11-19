@@ -226,7 +226,9 @@ export default function MetasCenter() {
   const [valueInputs, setValueInputs] = useState<Record<string, string>>({});
   const [newStepInput, setNewStepInput] = useState("");
 
-  const canSave = safeToSave && tasksLoaded && tasksSafe && habitsLoaded && habitsSafe;
+  const canSave = safeToSave;
+  const canLinkTasks = tasksLoaded && tasksSafe;
+  const canLinkHabits = habitsLoaded && habitsSafe;
   const today = localDateKey();
   const reserveById = useMemo(() => new Map(finance.reserves.map((reserve) => [reserve.id, reserve])), [finance.reserves]);
 
@@ -402,7 +404,7 @@ export default function MetasCenter() {
   }
 
   function createLinkedTask(goal: Goal) {
-    if (!canSave) return;
+    if (!canLinkTasks) return;
     const task: RoutineTask = {
       id: Date.now() + Math.floor(Math.random() * 1000),
       description: `Objetivo: ${goal.title}`,
@@ -418,7 +420,7 @@ export default function MetasCenter() {
   }
 
   function createLinkedHabit(goal: Goal) {
-    if (!canSave) return;
+    if (!canLinkHabits) return;
     const habit: RoutineHabit = {
       id: Date.now() + Math.floor(Math.random() * 1000),
       name: `Acompanhar: ${goal.title}`,
@@ -559,8 +561,8 @@ export default function MetasCenter() {
                   {children.length > 0 && <div className="children-panel"><strong>Subobjetivos ({children.length})</strong>{children.map((child) => <div key={child.id}><span>{child.title}</span><small>{percentFor(child, currentFor(child), targetFor(child))}%</small></div>)}</div>}
                   <div className="relationship-actions">
                     <button type="button" onClick={() => openCreate(goal.id)}><Icon name="plus" /> Subobjetivo</button>
-                    <button type="button" onClick={() => createLinkedTask(goal)}><Icon name="list" /> Criar tarefa</button>
-                    <button type="button" onClick={() => createLinkedHabit(goal)}><Icon name="repeat" /> Criar hábito</button>
+                    <button type="button" disabled={!canLinkTasks} onClick={() => createLinkedTask(goal)}><Icon name="list" /> Criar tarefa</button>
+                    <button type="button" disabled={!canLinkHabits} onClick={() => createLinkedHabit(goal)}><Icon name="repeat" /> Criar hábito</button>
                   </div>
                   <div className="card-actions">
                     <button type="button" onClick={() => openEdit(goal)}>Editar</button>
