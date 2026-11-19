@@ -170,7 +170,7 @@ export default function DailyCenter(props: Props) {
     { label: "Tarefas", href: "/rotina/agenda", icon: "checkCircle" },
     { label: "Finanças", href: "/financeiro", icon: "wallet" },
     { label: "Hábitos", href: "/rotina/habitos", icon: "trend" },
-    { label: "Metas", href: "/rotina/metas", icon: "target" },
+    { label: "Objetivos", href: "/rotina/metas", icon: "target" },
     { label: "Agenda", href: "/rotina/agenda", icon: "calendar" },
     { label: "Relatórios", href: "/relatorios", icon: "bars" },
   ];
