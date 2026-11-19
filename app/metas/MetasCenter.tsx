@@ -228,7 +228,6 @@ export default function MetasCenter() {
   const [formError, setFormError] = useState("");
   const [stepInputs, setStepInputs] = useState<Record<string, string>>({});
   const [valueInputs, setValueInputs] = useState<Record<string, string>>({});
-  const [newStepInput, setNewStepInput] = useState("");
 
   const canSave = safeToSave;
   const canLinkTasks = tasksLoaded && tasksSafe;
