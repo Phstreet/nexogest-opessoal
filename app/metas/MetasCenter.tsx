@@ -53,12 +53,12 @@ function Icon({ name, size = 20 }: { name: keyof typeof icons; size?: number }) 
 
 /* ---------- Utilitários ---------- */
 function localDateKey(date = new Date()) {
-  return \`\${date.getFullYear()}-\${String(date.getMonth() + 1).padStart(2, "0")}-\${String(date.getDate()).padStart(2, "0")}\`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function daysUntil(dateKey: string) {
-  const a = new Date(\`\${dateKey}T12:00:00\`).getTime();
-  const b = new Date(\`\${localDateKey()}T12:00:00\`).getTime();
+  const a = new Date(`${dateKey}T12:00:00`).getTime();
+  const b = new Date(`${localDateKey()}T12:00:00`).getTime();
   return Math.round((a - b) / 86400000);
 }
 
@@ -66,7 +66,7 @@ function formatValue(value: number, unit: string) {
   const safe = Number.isFinite(value) ? value : 0;
   if (unit === "R$") return safe.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const n = safe.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-  return unit === "%" ? \`\${n}%\` : \`\${n} \${unit}\`;
+  return unit === "%" ? `${n}%` : `${n} ${unit}`;
 }
 
 function parseNumber(raw: string) {
@@ -76,7 +76,7 @@ function parseNumber(raw: string) {
 }
 
 function newId() {
-  return \`\${Date.now()}-\${Math.random().toString(36).slice(2, 8)}\`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 const percent = (goal: Goal) => goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
@@ -85,12 +85,12 @@ const isDone = (goal: Goal) => goal.target > 0 && goal.current >= goal.target;
 function deadlineInfo(goal: Goal) {
   if (!goal.deadline) return { label: "Sem prazo", late: false };
   const days = daysUntil(goal.deadline);
-  const date = new Date(\`\${goal.deadline}T12:00:00\`).toLocaleDateString("pt-BR");
-  if (isDone(goal)) return { label: \`Prazo: \${date}\`, late: false };
-  if (days < 0) return { label: \`Atrasada há \${Math.abs(days)} dia(s) · \${date}\`, late: true };
-  if (days === 0) return { label: \`Vence hoje · \${date}\`, late: false };
-  if (days === 1) return { label: \`Vence amanhã · \${date}\`, late: false };
-  return { label: \`Faltam \${days} dias · \${date}\`, late: false };
+  const date = new Date(`${goal.deadline}T12:00:00`).toLocaleDateString("pt-BR");
+  if (isDone(goal)) return { label: `Prazo: ${date}`, late: false };
+  if (days < 0) return { label: `Atrasada há ${Math.abs(days)} dia(s) · ${date}`, late: true };
+  if (days === 0) return { label: `Vence hoje · ${date}`, late: false };
+  if (days === 1) return { label: `Vence amanhã · ${date}`, late: false };
+  return { label: `Faltam ${days} dias · ${date}`, late: false };
 }
 
 const RING_RADIUS = 42;
@@ -103,7 +103,7 @@ const moonCraters = [
   "radial-gradient(circle at 40% 52%, rgba(0,0,0,.30) 0 4%, rgba(255,255,255,.10) 4.6%, transparent 6%)",
 ].join(",");
 const moonStyle: CSSProperties = {
-  backgroundImage: \`\${moonCraters}, \${moonNoise}, radial-gradient(circle at 14% 52%, #dcdce0 0%, #b0b0b5 16%, #75757b 36%, #3a3a40 58%, #121215 82%)\`,
+  backgroundImage: `${moonCraters}, ${moonNoise}, radial-gradient(circle at 14% 52%, #dcdce0 0%, #b0b0b5 16%, #75757b 36%, #3a3a40 58%, #121215 82%)`,
   backgroundBlendMode: "normal, normal, normal, normal, overlay, normal",
 };
 
@@ -197,8 +197,8 @@ export default function MetasCenter() {
         <article className="metas-kpi"><span className="metas-kpi-icon"><Icon name="checkCircle" size={27} /></span><strong>{String(finished.length).padStart(2, "0")}</strong><small>Metas concluídas</small></article>
         <article className="metas-kpi"><span className="metas-kpi-icon"><Icon name="bars" size={27} /></span><strong>{avgProgress}%</strong><small>Progresso médio</small></article>
         <article className="metas-kpi"><span className="metas-kpi-icon"><Icon name="calendar" size={27} /></span>
-          <strong>{nextDeadline ? (() => { const d = daysUntil(nextDeadline.deadline); return d < 0 ? "Atrasada" : d === 0 ? "Hoje" : \`\${d} dia\${d === 1 ? "" : "s"}\`; })() : "—"}</strong>
-          <small>{nextDeadline ? \`Próximo prazo · \${nextDeadline.title}\` : "Próximo prazo"}</small>
+          <strong>{nextDeadline ? (() => { const d = daysUntil(nextDeadline.deadline); return d < 0 ? "Atrasada" : d === 0 ? "Hoje" : `${d} dia${d === 1 ? "" : "s"}`; })() : "—"}</strong>
+          <small>{nextDeadline ? `Próximo prazo · ${nextDeadline.title}` : "Próximo prazo"}</small>
         </article>
       </section>
 
@@ -219,14 +219,14 @@ export default function MetasCenter() {
             const pct = percent(goal);
             const done = isDone(goal);
             const info = deadlineInfo(goal);
-            return <article className={\`metas-card metas-goal\${done ? " is-done" : ""}\`} key={goal.id}>
+            return <article className={`metas-card metas-goal${done ? " is-done" : ""}`} key={goal.id}>
               <div className="metas-ring"><svg viewBox="0 0 100 100" aria-hidden="true">
                 <circle cx="50" cy="50" r={RING_RADIUS} className="ring-bg" />
                 <circle cx="50" cy="50" r={RING_RADIUS} className="ring-fg" strokeDasharray={RING_LENGTH} strokeDashoffset={RING_LENGTH * (1 - pct / 100)} />
               </svg><strong>{pct}%</strong></div>
               <div className="metas-goal-body">
                 <div className="metas-goal-top"><span className="metas-tag">{goal.category}</span>
-                  <span className={\`metas-status\${done ? " ok" : info.late ? " late" : ""}\`}>{done ? "Concluída" : info.late ? "Atrasada" : "Em andamento"}</span>
+                  <span className={`metas-status${done ? " ok" : info.late ? " late" : ""}`}>{done ? "Concluída" : info.late ? "Atrasada" : "Em andamento"}</span>
                 </div>
                 <h3>{goal.title}</h3>
                 <p className="metas-values"><b>{formatValue(goal.current, goal.unit)}</b> de {formatValue(goal.target, goal.unit)}</p>
@@ -236,12 +236,12 @@ export default function MetasCenter() {
                     <input value={progressInputs[goal.id] || ""} disabled={!safeToSave}
                       onChange={(e) => setProgressInputs((prev) => ({ ...prev, [goal.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === "Enter") addProgress(goal.id); }}
-                      inputMode="decimal" placeholder="Quanto avançou?" aria-label={\`Registrar progresso em \${goal.title}\`} />
+                      inputMode="decimal" placeholder="Quanto avançou?" aria-label={`Registrar progresso em ${goal.title}`} />
                     <button type="button" disabled={!safeToSave} onClick={() => addProgress(goal.id)}>Adicionar</button>
                     <button type="button" disabled={!safeToSave} className="ghost" onClick={() => completeGoal(goal.id)}>Concluir</button>
                   </>}
                   <button type="button" disabled={!safeToSave} className="icon" onClick={() => removeGoal(goal.id)}
-                    aria-label={\`Remover \${goal.title}\`}><Icon name="trash" size={16} /></button>
+                    aria-label={`Remover ${goal.title}`}><Icon name="trash" size={16} /></button>
                 </div>
               </div>
             </article>;
@@ -267,7 +267,7 @@ export default function MetasCenter() {
         </aside>
       </div>
 
-      <style jsx global>{\`
+      <style jsx global>{`
         .metas-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:16px;min-width:0;padding:6px 0 28px;color:#f1f1f3;overflow:hidden}
         .metas-center>*{position:relative;z-index:1}
         .metas-center>.metas-moon{position:absolute;z-index:0;pointer-events:none;top:-290px;right:-70px;width:min(780px,70%);aspect-ratio:1;border-radius:50%;opacity:.72;filter:grayscale(1);box-shadow:0 0 90px rgba(190,190,205,.07)}
@@ -338,7 +338,7 @@ export default function MetasCenter() {
         .metas-back:hover{color:#fff}
         @media(max-width:1100px){.metas-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.metas-grid{grid-template-columns:minmax(0,1fr)}.metas-form{position:static}}
         @media(max-width:640px){.metas-center{gap:13px}.metas-center>.metas-moon{top:-130px;right:-210px;width:450px;opacity:.55}.metas-hero{padding:20px 0 3px}.metas-kpis{gap:9px}.metas-kpi{padding:14px 12px;border-radius:13px}.metas-kpi small{font-size:11px}.metas-card{padding:14px;border-radius:13px}.metas-goal{align-items:flex-start;gap:12px}.metas-ring{width:68px;height:68px}.metas-ring strong{font-size:14px}.metas-actions input{font-size:16px}}
-      \`}</style>
+      `}</style>
     </div>
   );
 }
