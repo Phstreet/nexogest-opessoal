@@ -159,6 +159,18 @@ export default function DailyCenter(props: Props) {
     settledAmount(item) < Number(item.amount || 0)
   );
 
+  /* Fechamento: considera somente lançamentos datados para hoje e valores efetivados. */
+  const todaysTransactions = props.transactions.filter((item) =>
+    item.date === todayKey && item.status !== "Cancelada"
+  );
+  const todaysRevenue = todaysTransactions
+    .filter((item) => item.type === "Receita")
+    .reduce((sum, item) => sum + settledAmount(item), 0);
+  const todaysExpenses = todaysTransactions
+    .filter((item) => item.type === "Despesa")
+    .reduce((sum, item) => sum + settledAmount(item), 0);
+  const dailyFinancialResult = todaysRevenue - todaysExpenses;
+
   const quickLinks: { label: string; href: string; icon: keyof typeof icons }[] = [
     { label: "Tarefas", href: "/rotina/agenda", icon: "checkCircle" },
     { label: "Finanças", href: "/financeiro", icon: "wallet" },
@@ -201,10 +213,10 @@ export default function DailyCenter(props: Props) {
           <strong>{props.financeLoaded ? money(props.balance) : "Carregando…"}</strong>
           <div><small>Saldo disponível</small><Icon name="arrow" size={18} /></div>
         </Link>
-        <Link href="/rotina/habitos" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="bars" size={30} /></span>
+        <Link href="/rotina/agenda" className="daily-kpi">
+          <span className="daily-kpi-icon"><Icon name="checkCircle" size={30} /></span>
           <strong>{taskRate}%</strong>
-          <div><small>Progresso do dia</small><Icon name="arrow" size={18} /></div>
+          <div><small>Tarefas concluídas</small><Icon name="arrow" size={18} /></div>
         </Link>
       </section>
 
@@ -221,6 +233,11 @@ export default function DailyCenter(props: Props) {
               <button type="button" className="daily-circle" disabled={!props.canSaveTasks}
                 onClick={() => props.onToggleTask(task.id)} aria-label={`Concluir ${task.description}`} />
               <span className={task.date && task.date < todayKey ? "is-overdue" : ""}>{task.description}</span>
+              {task.date && task.date < todayKey
+                ? <small className="daily-task-badge overdue">ATRASADA</small>
+                : task.priority
+                  ? <small className={`daily-task-badge priority-${task.priority.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")}`}>{task.priority}</small>
+                  : null}
             </div>
           )) : (
             <p className="daily-empty">{todaysTasks.length ? "Você concluiu todas as tarefas de hoje." : "Nenhuma tarefa programada para hoje."}</p>
@@ -335,6 +352,44 @@ export default function DailyCenter(props: Props) {
         </section>
       </div>
 
+      {/* Fechamento diário com dados efetivamente registrados. */}
+      <section className="daily-close">
+        <header>
+          <div>
+            <span className="daily-close-eyebrow">RESUMO DO DIA</span>
+            <h3>Fechamento do dia</h3>
+          </div>
+          <span className="daily-close-date">{dateLabel}</span>
+        </header>
+        <div className="daily-close-grid">
+          <article>
+            <span>Tarefas concluídas</span>
+            <strong>{completedToday.length}/{todaysTasks.length}</strong>
+            <small>{taskRate}% do planejado para hoje</small>
+          </article>
+          <article>
+            <span>Hábitos realizados</span>
+            <strong>{completedHabits.length}/{activeHabits.length}</strong>
+            <small>{activeHabits.length ? `${Math.round(habitRate * 100)}% dos hábitos ativos` : "Nenhum hábito ativo cadastrado"}</small>
+          </article>
+          <article>
+            <span>Recebido hoje</span>
+            <strong className="daily-close-positive">{props.financeLoaded ? money(todaysRevenue) : "—"}</strong>
+            <small>Valores efetivados em receitas</small>
+          </article>
+          <article>
+            <span>Pago hoje</span>
+            <strong>{props.financeLoaded ? money(todaysExpenses) : "—"}</strong>
+            <small>Valores efetivados em despesas</small>
+          </article>
+          <article className={dailyFinancialResult < 0 ? "is-negative" : "is-positive"}>
+            <span>Resultado financeiro</span>
+            <strong>{props.financeLoaded ? money(dailyFinancialResult) : "—"}</strong>
+            <small>{props.financeLoaded ? `${todaysTransactions.length} lançamento(s) datado(s) para hoje` : "Carregando dados financeiros"}</small>
+          </article>
+        </div>
+      </section>
+
       <style jsx>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
@@ -381,6 +436,10 @@ export default function DailyCenter(props: Props) {
         .daily-row{display:flex;align-items:center;gap:14px;padding:11px 2px;border-top:1px solid #2a2a30;color:#ececf0;font-size:16px}
         .daily-row>span{min-width:0;overflow-wrap:anywhere}
         .daily-row .is-overdue{color:#d9b3b3}
+        .daily-task-badge{flex-shrink:0;padding:3px 6px;border:1px solid #45454d;border-radius:5px;color:#bfc0c8;font-size:9px;font-weight:700;letter-spacing:.35px}
+        .daily-task-badge.overdue{border-color:#684747;background:#2a1d1f;color:#e0aaaa}
+        .daily-task-badge.priority-urgente,.daily-task-badge.priority-alta{border-color:#684747;color:#e0aaaa}
+        .daily-task-badge.priority-media{border-color:#62583e;color:#d9c48c}
         .daily-circle{display:grid;place-items:center;flex-shrink:0;width:26px;height:26px;padding:0;border:2px solid #7b7b86;border-radius:50%;background:transparent;color:#fff;cursor:pointer;transition:border-color .18s ease,background .18s ease}
         .daily-circle:hover:not(:disabled){border-color:#fff}
         .daily-circle:disabled{opacity:.45;cursor:not-allowed}
@@ -435,10 +494,23 @@ export default function DailyCenter(props: Props) {
         .area-tip p{margin:5px 0 0;font-size:14px;line-height:1.5}
 
         .daily-alert{display:flex;flex-direction:column;gap:5px;padding:13px 15px;border:1px solid #704e4e;border-radius:12px;background:#261c1e;color:#e1baba;font-size:13px}
+        .daily-close{padding:20px 22px;border:1px solid #2d2d34;border-radius:18px;background:rgba(20,20,24,.82);box-shadow:0 14px 34px rgba(0,0,0,.24)}
+        .daily-close>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+        .daily-close-eyebrow{color:#8f9099;font-size:9px;font-weight:750;letter-spacing:1.5px}
+        .daily-close h3{margin:5px 0 0;color:#f4f4f6;font-size:17px}
+        .daily-close-date{color:#a5a5ae;font-size:11px;text-transform:capitalize}
+        .daily-close-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+        .daily-close-grid article{display:flex;flex-direction:column;gap:7px;min-width:0;padding:13px;border:1px solid #303038;border-radius:11px;background:rgba(255,255,255,.025)}
+        .daily-close-grid article>span{color:#a8a8b1;font-size:11px}
+        .daily-close-grid article strong{overflow-wrap:anywhere;color:#f1f1f3;font-size:clamp(16px,1.8vw,22px);font-weight:650}
+        .daily-close-grid article small{color:#85858f;font-size:10px;line-height:1.4}
+        .daily-close-grid .daily-close-positive,.daily-close-grid .is-positive strong{color:#a9cbb5}
+        .daily-close-grid .is-negative strong{color:#e1a3a3}
 
         @media(max-width:1100px){
           .daily-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"priorities agenda" "habits bills" "quick tip"}
           .daily-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .daily-close-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
         @media(max-width:640px){
           .daily-center{gap:14px}
@@ -452,6 +524,9 @@ export default function DailyCenter(props: Props) {
           .daily-row,.daily-agenda-item{font-size:15px}
           .daily-add input{font-size:16px}
           .daily-habits{gap:16px}
+          .daily-close{padding:16px;border-radius:14px}
+          .daily-close>header{align-items:flex-start;flex-direction:column}
+          .daily-close-grid{grid-template-columns:minmax(0,1fr)}
         }
       `}</style>
     </div>
