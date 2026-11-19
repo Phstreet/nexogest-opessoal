@@ -112,13 +112,27 @@ export default function Home() {
         />
 
         <style jsx>{`
-          .daily-home-content { padding-top: 8px; }
+          .daily-home-content { padding-top: 0; }
+          :global(.nexo-account-slot) { padding: 3px 22px 0; background: transparent; }
+          :global(.nexo-account-access) { min-height: 23px; padding: 2px 7px; gap: 7px; border-color: #29292e; background: transparent; color: #85858e; font-size: 9px; }
+          :global(.nexo-account-access a), :global(.nexo-account-access button) { color: #a5a5ad; }
+          :global(.nexo-account-indicator) { width: 5px; height: 5px; }
+          .topbar { min-height: 58px; padding: 8px 24px; gap: 12px; background: rgba(12,12,14,.48); }
+          .breadcrumb { margin-bottom: 2px; font-size: 7px; letter-spacing: 1.2px; opacity: .72; }
+          .topbar h1 { font-size: 16px; font-weight: 650; letter-spacing: -.3px; }
+          .topbar-right { gap: 11px; }
+          .topbar-search-trigger { min-height: 32px; padding: 0 10px; border-color: #2b2c32; background: rgba(23,24,28,.55); font-size: 10px; }
+          .topbar-search-trigger>span:first-child { font-size: 17px; }
+          .date-display { font-size: 9px; color: #777b84; }
+          .date-icon { font-size: 13px; }
+          .profile-avatar { width: 27px; height: 27px; font-size: 10px; }
           .topbar-search-trigger { min-height:42px; display:inline-flex; align-items:center; gap:9px; padding:0 13px; border:1px solid #34363d; border-radius:10px; background:#17181c; color:#c5cad2; font:inherit; font-size:12px; cursor:pointer; }
           .topbar-search-trigger:hover { border-color:#777d88; background:#202126; color:#fff; }
           .topbar-search-trigger>span:first-child { font-size:21px; line-height:1; }
           .topbar-search-trigger kbd { padding:3px 5px; border:1px solid #414148; border-radius:4px; color:#858b95; font-size:9px; }
           @media(max-width:760px) {
-            .topbar-right { flex-wrap:wrap; }
+            .topbar { padding: 8px 16px; }
+            .topbar-right { flex-wrap:wrap; gap: 8px; }
             .topbar-search-trigger { order:3; }
           }
           @media(max-width:480px) {
