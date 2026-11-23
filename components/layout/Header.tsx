@@ -36,7 +36,7 @@ export default function Header() {
     let active = true;
     async function loadProfile() {
       try {
-        const collections = await fetchRemoteCollections();
+        const collections = await fetchRemoteCollections(["nexo_profile"]);
         if (!active) return;
         const row = collections.find((item) => item.data_key === "nexo_profile");
         const payload = row?.payload;
