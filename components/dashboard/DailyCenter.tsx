@@ -221,7 +221,13 @@ export default function DailyCenter(props: Props) {
                   : null}
             </div>
           )) : (
-            <p className="daily-empty">{todaysTasks.length ? "Você concluiu todas as tarefas de hoje." : "Nenhuma tarefa programada para hoje."}</p>
+            <EmptyState
+              icon={<Icon name="checkCircle" size={25} />}
+              title={todaysTasks.length ? "Tudo em dia" : "Nenhuma prioridade"}
+              description={todaysTasks.length ? "Você concluiu todas as tarefas de hoje." : "As tarefas programadas para hoje aparecerão aqui."}
+              actionHref="/rotina/agenda"
+              actionLabel="Abrir tarefas"
+            />
           )}</section>
 
         {/* Minha agenda */}
