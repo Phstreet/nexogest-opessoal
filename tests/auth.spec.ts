@@ -1,5 +1,3 @@
-"use client";
-
 import { test, expect, type Page } from "@playwright/test";
 
 const testSession = {
