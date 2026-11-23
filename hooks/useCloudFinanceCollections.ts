@@ -79,9 +79,24 @@ export function useCloudFinanceCollections() {
   const [error, setError] = useState<string | null>(null);
   const revisions = useRef(new Map<CollectionKey, number>());
   const queue = useRef<Promise<void>>(Promise.resolve());
+  const sessionIdentityRef = useRef({
+    userId: session?.user.id ?? null,
+    generation: 0,
+  });
+  const currentUserId = session?.user.id ?? null;
+
+  if (sessionIdentityRef.current.userId !== currentUserId) {
+    sessionIdentityRef.current = {
+      userId: currentUserId,
+      generation: sessionIdentityRef.current.generation + 1,
+    };
+  }
 
   const reload = useCallback(async () => {
     if (authLoading) return;
+    const loadGeneration = sessionIdentityRef.current.generation;
+    const loadUserId = session?.user.id ?? null;
+
     setLoaded(false);
     setError(null);
     if (!session) {
@@ -93,6 +108,14 @@ export function useCloudFinanceCollections() {
     }
     try {
       const rows = await fetchRemoteCollections(KEYS);
+
+      if (
+        sessionIdentityRef.current.generation !== loadGeneration ||
+        sessionIdentityRef.current.userId !== loadUserId
+      ) {
+        return;
+      }
+
       const next: FinanceState = { ...EMPTY };
       for (const key of KEYS) {
         const row = rows.find((item) => item.data_key === key);
@@ -122,10 +145,21 @@ export function useCloudFinanceCollections() {
       }
       setState(next);
     } catch (cause) {
-      setState(EMPTY);
-      setError(cause instanceof Error ? cause.message : "Não foi possível carregar os dados financeiros da nuvem.");
+      const sessionIsCurrent =
+        sessionIdentityRef.current.generation === loadGeneration &&
+        sessionIdentityRef.current.userId === loadUserId;
+
+      if (sessionIsCurrent) {
+        setState(EMPTY);
+        setError(cause instanceof Error ? cause.message : "Não foi possível carregar os dados financeiros da nuvem.");
+      }
     } finally {
-      setLoaded(true);
+      if (
+        sessionIdentityRef.current.generation === loadGeneration &&
+        sessionIdentityRef.current.userId === loadUserId
+      ) {
+        setLoaded(true);
+      }
     }
   }, [authLoading, session]);
 
@@ -141,7 +175,19 @@ export function useCloudFinanceCollections() {
     if (!session) throw new Error("Entre na sua conta antes de salvar.");
     if (!loaded) throw new Error("Aguarde o carregamento dos dados antes de salvar.");
     if (error) throw new Error(error);
+
+    const expectedUserId = session.user.id;
+    const expectedGeneration = sessionIdentityRef.current.generation;
+
     const operation = async () => {
+      const sessionIsCurrent = () =>
+        sessionIdentityRef.current.userId === expectedUserId &&
+        sessionIdentityRef.current.generation === expectedGeneration;
+
+      if (!sessionIsCurrent()) {
+        throw new Error("A sessão foi alterada antes da gravação. Recarregue os dados da conta atual.");
+      }
+
       setSaving(true);
       try {
         setState((current) => ({
@@ -153,7 +199,14 @@ export function useCloudFinanceCollections() {
           ...(key === "nexo_planning_budgets" ? { planningBudgets: payload as unknown[] } : {}),
           ...(key === "nexo_planning_goals" ? { financialGoals: payload as unknown[] } : {}),
         }));
+        if (!sessionIsCurrent()) {
+          throw new Error("A sessão foi alterada antes da gravação. Recarregue os dados da conta atual.");
+        }
+
         const result = await saveRemoteCollection(key, payload, revisions.current.get(key) ?? 0);
+
+        if (!sessionIsCurrent()) return;
+
         if (!result.saved) {
           setError("Conflito de sincronização: a edição permanece nesta tela, mas ainda não foi enviada. Copie ou resolva a alteração antes de recarregar a coleção.");
           throw new Error("Outro dispositivo alterou esta coleção. A edição atual foi mantida na tela.");
