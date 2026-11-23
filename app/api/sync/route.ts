@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
+import { copyResponseCookies, getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
 import { isNexoSyncKey } from "@/lib/supabase/sync-keys";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ async function authorized(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { access, response } = await authorized(request);
-    if (!access) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers });
+    if (!access) return copyResponseCookies(response, NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers }));
 
     const requestedKeys = request.nextUrl.searchParams.get("keys");
     let keys: string[] | null = null;
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
       headers: { apikey: key, Authorization: `Bearer ${access}` }, cache: "no-store",
     });
     const data = await dataResponse.json().catch(() => ({}));
-    if (!dataResponse.ok) return NextResponse.json({ error: data.message || "Não foi possível consultar os dados." }, { status: dataResponse.status, headers: response.headers });
-    return NextResponse.json({ data }, { headers: response.headers });
+    if (!dataResponse.ok) return copyResponseCookies(response, NextResponse.json({ error: data.message || "Não foi possível consultar os dados." }, { status: dataResponse.status, headers: response.headers }));
+    return copyResponseCookies(response, NextResponse.json({ data }, { headers: response.headers }));
   } catch {
     return NextResponse.json({ error: "Falha ao consultar os dados da nuvem." }, { status: 500 });
   }
@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
     });
     const result = await save.json().catch(() => ({}));
-    if (!save.ok) return NextResponse.json({ error: result.message || result.details || "Não foi possível salvar na nuvem." }, { status: save.status, headers: response.headers });
-    return NextResponse.json({ result: Array.isArray(result) ? result[0] : result }, { headers: response.headers });
+    if (!save.ok) return copyResponseCookies(response, NextResponse.json({ error: result.message || result.details || "Não foi possível salvar na nuvem." }, { status: save.status, headers: response.headers }));
+    return copyResponseCookies(response, NextResponse.json({ result: Array.isArray(result) ? result[0] : result }, { headers: response.headers }));
   } catch {
     return NextResponse.json({ error: "Falha ao salvar os dados na nuvem." }, { status: 500 });
   }
