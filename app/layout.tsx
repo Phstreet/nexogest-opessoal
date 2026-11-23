@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./silver-executive.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
@@ -38,7 +39,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <NexoConfirmProvider><NexoAuthProvider>{children}</NexoAuthProvider></NexoConfirmProvider>
+        <NexoConfirmProvider>
+          <NexoAuthProvider>{children}</NexoAuthProvider>
+        </NexoConfirmProvider>
         <Analytics />
       </body>
     </html>

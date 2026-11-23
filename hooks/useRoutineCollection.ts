@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import type { NexoSyncKey } from "@/lib/supabase/sync-keys";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
@@ -13,7 +14,7 @@ type RoutineCollectionOptions = {
 };
 
 export function useRoutineCollection<T>(
-  key: string,
+  key: NexoSyncKey,
   isValidItem: (value: unknown) => value is T,
   options: RoutineCollectionOptions = {}
 ) {
@@ -47,7 +48,7 @@ export function useRoutineCollection<T>(
     setLoaded(false);
     setStorageError(null);
     try {
-      const collections = await fetchRemoteCollections();
+      const collections = await fetchRemoteCollections([key]);
       const remote = collections.find((item) => item.data_key === key);
       const payload = remote?.payload ?? [];
       if (!Array.isArray(payload) || !payload.every(isValidItem)) {
@@ -87,18 +88,13 @@ export function useRoutineCollection<T>(
     if (!Array.isArray(next) || !next.every(isValidItem)) {
       throw new Error("A alteração contém registros inválidos e não foi enviada ao Supabase.");
     }
+    // Mantém a edição na tela até o usuário decidir como resolver um conflito.
+    applyItems(next);
     const result = await saveRemoteCollection(key, next, revisionRef.current);
     if (!result.saved) {
-      const latest = await fetchRemoteCollections();
-      const remote = latest.find((item) => item.data_key === key);
-      if (remote && Array.isArray(remote.payload) && remote.payload.every(isValidItem)) {
-        revisionRef.current = Number(remote.revision) || 0;
-        applyItems(remote.payload);
-      }
-      throw new Error("Esta coleção foi alterada em outro dispositivo. Carregamos a versão mais recente; revise e tente novamente.");
+      throw new Error("Conflito de sincronização: sua edição continua preservada nesta tela, mas ainda não foi enviada. Recarregue somente depois de copiar ou resolver a alteração.");
     }
     revisionRef.current = result.current_revision ?? revisionRef.current + 1;
-    applyItems(next);
     if (mountedRef.current) setStorageError(null);
   }, [persist, session, loaded, safeToSave, key, isValidItem, applyItems]);
 

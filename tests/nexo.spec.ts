@@ -23,7 +23,7 @@ async function mockAuthenticatedCloud(page: Page) {
     await route.fulfill({ json: { session } });
   });
 
-  await page.route("**/api/sync", async (route) => {
+  await page.route("**/api/sync**", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({ json: { data: [...collections.values()] } });
       return;
@@ -157,7 +157,7 @@ test.describe("NEXO - Persistência exclusiva na nuvem", () => {
 
   test("deve bloquear a gravação quando o endpoint remoto falhar", async ({ page }) => {
     await mockAuthenticatedCloud(page);
-    await page.route("**/api/sync", async (route) => {
+    await page.route("**/api/sync**", async (route) => {
       if (route.request().method() === "GET") {
         await route.fulfill({ json: { data: [] } });
         return;

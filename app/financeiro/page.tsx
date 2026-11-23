@@ -3,7 +3,7 @@
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
@@ -360,6 +360,15 @@ export default function Page() {
   const lastSavedPayloadRef = useRef("");
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const transactionFormRef = useRef<HTMLFormElement>(null);
+  const sessionIdentity = useMemo(
+    () => ({ userId: session?.user.id ?? null }),
+    [session?.user.id]
+  );
+  const sessionIdentityRef = useRef(sessionIdentity);
+
+  useLayoutEffect(() => {
+    sessionIdentityRef.current = sessionIdentity;
+  }, [sessionIdentity]);
 
   useEffect(() => {
     if (editingTransactionId === null) return;
@@ -448,13 +457,25 @@ export default function Page() {
 
   useEffect(() => {
     if (!loaded || !safeToSave || !remoteReadyRef.current) return;
+
+    const queuedSessionIdentity = sessionIdentity;
     const serializedPayload = JSON.stringify(transactions);
     if (serializedPayload === lastSavedPayloadRef.current) return;
 
     saveQueueRef.current = saveQueueRef.current.then(async () => {
-      if (!remoteReadyRef.current) return;
+      const sessionIsCurrent =
+        sessionIdentityRef.current === queuedSessionIdentity;
+
+      if (!remoteReadyRef.current || !sessionIsCurrent) return;
+
       try {
         const result = await saveRemoteCollection(STORAGE_KEY, transactions, revisionRef.current);
+
+        const sessionStillCurrent =
+          sessionIdentityRef.current === queuedSessionIdentity;
+
+        if (!sessionStillCurrent) return;
+
         if (!result.saved) {
           setSafeToSave(false);
           remoteReadyRef.current = false;
@@ -467,6 +488,11 @@ export default function Page() {
         setStorageError(null);
         setSyncStatus("Sincronizado com o Supabase");
       } catch (error) {
+        const sessionStillCurrent =
+          sessionIdentityRef.current === queuedSessionIdentity;
+
+        if (!sessionStillCurrent) return;
+
         console.error("Não foi possível salvar os lançamentos no Supabase:", error);
         setSafeToSave(false);
         remoteReadyRef.current = false;
@@ -474,7 +500,7 @@ export default function Page() {
         setSyncStatus("Erro ao salvar na nuvem");
       }
     });
-  }, [transactions, loaded, safeToSave]);
+  }, [transactions, loaded, safeToSave, session?.user.id, sessionIdentity]);
 
   const accountOptions = useMemo(() => {
     const registeredNames = new Set(
