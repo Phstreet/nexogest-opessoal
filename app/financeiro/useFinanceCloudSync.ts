@@ -144,7 +144,6 @@ export function useFinanceCloudSync({
 
   return {
     registeredAccounts,
-    loaded,
     safeToSave,
     setSafeToSave,
     invalidCount,
