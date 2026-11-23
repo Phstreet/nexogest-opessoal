@@ -4559,3 +4559,74 @@ tbody tr:hover {
   #nexo-app :is(.primary-button,.secondary-button,.routine-primary-button,.routine-secondary-button) { min-height: 42px; }
   #nexo-app .objective-card { align-items: flex-start; }
 }
+
+
+/* Complementos dos submódulos: agenda, hábitos, tarefas, planejamento e contas. */
+#nexo-app :is(
+  .agenda-metric-card,.timeline-card,.habit-item,.inactive-section,
+  .agenda-date-panel,.agenda-main-panel,.side-panel,.weekly-progress-panel,
+  .bottom-panel,.day-column,.upcoming-panel,.upcoming-item,.quick-link,
+  .week-board-section,.agenda-welcome,.weekly-welcome,.insights-panel,
+  .tracking-panel,.steps-panel,.children-panel,.settings-preview,
+  .settings-warning,.category-group,.information-section,
+  .routine-storage-tools,.finance-investment-summary,.finance-backup-panel,
+  .finance-storage-warning,.finance-storage-alert
+) {
+  box-sizing: border-box;
+  min-width: 0;
+  color: #ededf0;
+  background: var(--nexo-card-bg);
+  border: 1px solid var(--nexo-card-border);
+  border-radius: var(--nexo-card-radius);
+  box-shadow: var(--nexo-card-shadow);
+}
+#nexo-app :is(.agenda-metric-card,.timeline-card,.habit-item,.inactive-item,.upcoming-item,.quick-link,.week-task,.finance-item,.accounts-item,.transaction-row) {
+  border-color: var(--nexo-card-border);
+  border-radius: 10px;
+}
+#nexo-app :is(.timeline-card,.habit-item,.inactive-item,.upcoming-item,.week-task,.finance-item,.accounts-item,.transaction-row) {
+  background: rgba(255,255,255,.025);
+}
+#nexo-app :is(.agenda-metric-card,.timeline-card,.habit-item,.inactive-item,.upcoming-item,.quick-link,.day-column,.side-panel,.bottom-panel,.weekly-progress-panel,.tracking-panel,.steps-panel,.children-panel,.settings-preview,.settings-warning,.category-group,.information-section,.routine-storage-tools) {
+  padding: 16px;
+}
+#nexo-app :is(.agenda-metric-card,.timeline-card,.habit-item,.quick-link,.upcoming-item) {
+  height: 100%;
+  align-self: stretch;
+}
+#nexo-app :is(.agenda-main-panel,.agenda-date-panel,.weekly-progress-panel,.bottom-panel,.side-panel,.upcoming-panel,.insights-panel,.information-section) {
+  padding: 18px;
+}
+#nexo-app :is(.agenda-metrics,.timeline,.habit-list,.task-list,.week-board,.weekly-bottom-grid,.agenda-layout,.weekly-metrics,.quick-links,.upcoming-list) {
+  min-width: 0;
+}
+#nexo-app :is(.agenda-metrics,.weekly-metrics) {
+  align-items: stretch;
+  gap: 14px;
+}
+#nexo-app :is(.agenda-metric-card,.metric-card) {
+  min-height: 118px;
+}
+#nexo-app :is(.timeline-card,.habit-item,.inactive-item,.upcoming-item,.week-task,.finance-item,.accounts-item,.transaction-row) {
+  transition: border-color .18s ease, background .18s ease;
+}
+#nexo-app :is(.timeline-card,.habit-item,.inactive-item,.upcoming-item,.week-task,.finance-item,.accounts-item,.transaction-row):hover {
+  border-color: var(--nexo-card-border-hover);
+  background: rgba(255,255,255,.045);
+}
+#nexo-app :is(.settings-feedback.success,.status-success,.sync-dot.ready) { color: var(--positive); }
+#nexo-app :is(.settings-feedback.error,.objectives-error,.form-error,.intelligence-error) {
+  border-color: rgba(209,140,140,.45);
+  border-radius: 10px;
+}
+#nexo-app :is(.filter-tabs button,.filter-tab,.date-arrow,.week-arrow,.month-arrow,.today-button,.close-button,.icon-action,.icon-action button) {
+  border-radius: 8px;
+}
+@media (max-width: 760px) {
+  #nexo-app :is(.agenda-layout,.weekly-bottom-grid,.agenda-metrics,.weekly-metrics) {
+    grid-template-columns: minmax(0,1fr);
+  }
+  #nexo-app :is(.agenda-main-panel,.agenda-date-panel,.weekly-progress-panel,.bottom-panel,.side-panel,.upcoming-panel,.insights-panel,.information-section) {
+    padding: 15px;
+  }
+}
