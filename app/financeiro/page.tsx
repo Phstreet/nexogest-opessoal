@@ -294,9 +294,9 @@ export default function Page() {
   function addTransaction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!safeToSave) {
+    if (!safeToSave || !remoteReadyRef.current || !session?.user.id) {
       window.alert(
-        "O armazenamento está protegido contra gravações porque há um problema com os dados existentes. Faça a recuperação ou verifique o backup antes de continuar."
+        "O armazenamento está protegido até que os dados da conta atual sejam carregados e sincronizados. Aguarde ou atualize a tela antes de continuar."
       );
       return;
     }
