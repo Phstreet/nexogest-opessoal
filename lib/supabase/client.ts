@@ -1,4 +1,4 @@
-import { NEXO_SYNC_KEYS, type NexoSyncKey } from "./sync-keys";
+import type { NexoSyncKey } from "./sync-keys";
 export { NEXO_SYNC_KEYS, type NexoSyncKey } from "./sync-keys";
 
 /**
