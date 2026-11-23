@@ -81,3 +81,11 @@ export function hasValidOrigin(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
   return Boolean(origin) && origin === new URL(request.url).origin;
 }
+
+/** Copia cookies de renovação/limpeza para a resposta efetivamente enviada ao navegador. */
+export function copyResponseCookies(source: NextResponse, target: NextResponse): NextResponse {
+  for (const cookie of source.cookies.getAll()) {
+    target.cookies.set(cookie);
+  }
+  return target;
+}
