@@ -14,25 +14,14 @@ function getGreeting() {
   return "Boa noite";
 }
 
-function getFormattedDate() {
-  const value = new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
-  return value.charAt(0).toLocaleUpperCase("pt-BR") + value.slice(1);
-}
 
 export default function Header() {
   const [greeting, setGreeting] = useState("Olá");
-  const [date, setDate] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
     setGreeting(getGreeting());
-    setDate(getFormattedDate());
 
     let active = true;
     async function loadProfile() {
@@ -83,7 +72,6 @@ export default function Header() {
           </svg>
         </button>
         <SearchButton />
-        <span className="nexo-header-date">{date}</span>
         <div className="nexo-header-popover">
           <button
             type="button"
@@ -113,12 +101,12 @@ export default function Header() {
 
       <style jsx>{`
         .nexo-header {
-          min-height: 78px;
+          min-height: 56px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 20px;
-          padding: 13px 30px;
+          gap: 12px;
+          padding: 8px 20px;
           background: #101012;
           border-bottom: 1px solid #29292d;
           position: relative;
@@ -151,7 +139,7 @@ export default function Header() {
         .nexo-header-actions {
           display: flex;
           align-items: center;
-          gap: 13px;
+          gap: 8px;
         }
 
         .nexo-header-search {
@@ -267,8 +255,8 @@ export default function Header() {
 
         @media (max-width: 760px) {
           .nexo-header {
-            min-height: 68px;
-            padding: 10px 14px;
+            min-height: 56px;
+            padding: 8px 12px;
           }
 
           .nexo-header-left strong {
