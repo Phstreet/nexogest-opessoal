@@ -4669,7 +4669,7 @@ tbody tr:hover {
 #nexo-app :is(.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) { padding-top:24px; padding-bottom:32px; }
 
 /* Componentes reutilizáveis da Central do Dia */
-#nexo-app .daily-center { gap:24px; padding:32px 0 32px; overflow:visible; }
+#nexo-app .daily-center { gap:24px; padding:32px 0 32px; overflow-x:clip; overflow-y:visible; }
 #nexo-app .daily-hero { width:100%; max-width:none; padding:0; margin:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
 #nexo-app .daily-date { color:#a1a1aa; font-size:12px; line-height:16px; letter-spacing:1.1px; text-transform:uppercase; }
 #nexo-app .daily-hero h1 { margin:8px 0 6px; color:#fafafa; font-size:clamp(30px,3vw,36px); font-weight:650; line-height:1.125; letter-spacing:-.8px; }
@@ -4683,7 +4683,7 @@ tbody tr:hover {
 #nexo-app .nexo-stat-copy small { color:#a1a1aa; font-size:12px; line-height:16px; }
 #nexo-app .nexo-stat-arrow { flex:0 0 auto; color:#71717a; font-size:18px; }
 #nexo-app .daily-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"priorities agenda quick" "habits bills tip"; grid-auto-rows:minmax(250px,auto); align-items:stretch; gap:24px; }
-#nexo-app .daily-card { display:flex; flex-direction:column; min-width:0; min-height:250px; height:100%; padding:24px; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:#111114; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+#nexo-app .daily-card { display:flex; flex-direction:column; min-width:0; min-height:250px; height:100%; padding:24px; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:#111114; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }\n#nexo-app .daily-card.area-tip { flex-direction:row; align-items:center; }
 #nexo-app .daily-card>header { min-height:36px; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
 #nexo-app .daily-card h3 { font-size:18px; line-height:24px; font-weight:650; }
 #nexo-app .daily-card>header>a { color:#a1a1aa; font-size:12px; }
@@ -4753,7 +4753,7 @@ tbody tr:hover {
   #nexo-app .nexo-stat-card { min-height:110px; padding:14px; gap:10px; border-radius:16px; }
   #nexo-app .nexo-stat-icon { width:36px; height:36px; flex-basis:36px; }
   #nexo-app .daily-grid { grid-template-columns:minmax(0,1fr); grid-template-areas:"priorities" "agenda" "quick" "habits" "bills" "tip"; grid-auto-rows:auto; gap:16px; }
-  #nexo-app .daily-card { min-height:0; padding:18px; }
+  #nexo-app .daily-card { min-height:0; padding:18px; }\n  #nexo-app .daily-card.area-tip { flex-direction:row; }
   #nexo-app .daily-close { padding:18px; }
 }
 @media (min-width:768px) and (max-width:1023px) {
