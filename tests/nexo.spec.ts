@@ -247,3 +247,89 @@ test.describe("NEXO - Objetivos pessoais", () => {
     }).toBe(1);
   });
 });
+
+
+test.describe("NEXO - Operações financeiras", () => {
+  test("deve cadastrar, editar, liquidar parcialmente, concluir e excluir um lançamento", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/financeiro");
+
+    await expect(page.locator(".finance-sync-status")).toContainText(
+      "Dados carregados diretamente do Supabase"
+    );
+
+    await page.locator(".finance-form input").nth(0).fill("Despesa automatizada");
+    await page.locator(".finance-form input[placeholder='0,00']").first().fill("100,00");
+    await page.getByRole("button", { name: /Adicionar lançamento/ }).click();
+
+    await expect(page.getByText("Despesa automatizada")).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(1);
+
+    let movement = page.locator(".finance-item").filter({ hasText: "Despesa automatizada" });
+    await movement.getByRole("button", { name: /Editar/ }).click();
+    await expect(page.getByRole("heading", { name: "Editar lançamento" })).toBeVisible();
+    await page.locator(".finance-form input").nth(0).fill("Despesa automatizada editada");
+    await page.locator(".finance-form input[placeholder='0,00']").first().fill("120,00");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    await expect(page.getByText("Despesa automatizada editada")).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(2);
+
+    movement = page.locator(".finance-item").filter({ hasText: "Despesa automatizada editada" });
+    await movement.getByRole("button", { name: "Pagar" }).click();
+    await page.getByLabel("Valor realmente pago").fill("35,00");
+    await movement.getByRole("button", { name: "Confirmar" }).click();
+
+    await expect(movement).toContainText("Paga parcialmente");
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(3);
+    expect(cloud.get("nexo_transactions")?.payload).toEqual([
+      expect.objectContaining({
+        description: "Despesa automatizada editada",
+        amount: 120,
+        settledAmount: 35,
+        status: "Paga parcialmente",
+      }),
+    ]);
+
+    movement = page.locator(".finance-item").filter({ hasText: "Despesa automatizada editada" });
+    await movement.getByRole("button", { name: "Atualizar valor" }).click();
+    await page.getByLabel("Valor realmente pago").fill("120,00");
+    await movement.getByRole("button", { name: "Confirmar" }).click();
+
+    await expect(movement).toContainText("Pago");
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(4);
+
+    movement = page.locator(".finance-item").filter({ hasText: "Despesa automatizada editada" });
+    await movement.getByRole("button", { name: "Excluir Despesa automatizada editada" }).click();
+    await page.getByRole("button", { name: "Excluir", exact: true }).click();
+
+    await expect(page.getByText("Despesa automatizada editada")).toHaveCount(0);
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(5);
+    expect(cloud.get("nexo_transactions")?.payload).toEqual([]);
+  });
+
+  test("deve expandir recorrência mensal sem duplicar ocorrências ao recarregar", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/financeiro");
+
+    await expect(page.locator(".finance-sync-status")).toContainText(
+      "Dados carregados diretamente do Supabase"
+    );
+
+    await page.locator(".finance-form input").nth(0).fill("Aluguel recorrente de teste");
+    await page.locator(".finance-form input[placeholder='0,00']").first().fill("1500,00");
+    await page.locator(".finance-form select").nth(6).selectOption("Mensal");
+    await page.getByRole("button", { name: /Adicionar lançamento/ }).click();
+
+    await expect.poll(() => {
+      const payload = cloud.get("nexo_transactions")?.payload as unknown[] | undefined;
+      return payload?.length;
+    }).toBe(4);
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(1);
+
+    await page.reload();
+    await expect(page.locator(".finance-item")).toHaveCount(4);
+    expect((cloud.get("nexo_transactions")?.payload as unknown[]).length).toBe(4);
+    expect(cloud.get("nexo_transactions")?.revision).toBe(1);
+  });
+});
