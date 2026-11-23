@@ -106,6 +106,7 @@ export default function Home() {
           #nexo-app .nexo-page-header.nexo-topbar-page {
             display: flex;
             flex-direction: row;
+            height: 52px;
             min-height: 52px;
             align-items: center;
             gap: 12px;
@@ -120,7 +121,7 @@ export default function Home() {
           #nexo-app .nexo-topbar-page .nexo-page-breadcrumb {
             color: var(--text-subtle);
             font-size: 11px;
-            line-height: 11px;
+            line-height: 10px;
             letter-spacing: 1px;
             text-transform: uppercase;
           }
@@ -129,7 +130,7 @@ export default function Home() {
             color: var(--text-primary);
             font-size: 20px;
             font-weight: 650;
-            line-height: 22px;
+            line-height: 24px;
             letter-spacing: -0.35px;
           }
 
@@ -183,10 +184,10 @@ export default function Home() {
           }
 
           #nexo-app .nexo-topbar-page .nexo-account-trigger {
-            width: 32px;
-            min-width: 32px;
-            min-height: 32px;
-            height: 32px;
+            width: 34px;
+            min-width: 34px;
+            min-height: 34px;
+            height: 34px;
             justify-content: center;
             padding: 0;
             border-radius: 50%;
@@ -215,6 +216,7 @@ export default function Home() {
             }
 
             #nexo-app .nexo-page-header.nexo-topbar-page {
+              height: 48px;
               min-height: 48px;
               padding-block: 8px;
             }
