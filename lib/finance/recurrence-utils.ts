@@ -1,4 +1,5 @@
 import type { Transaction } from "./types";
+import { isCancelledTransaction } from "./accounts";
 
 type RecurrenceLabel =
   | "Semanal"
@@ -65,7 +66,7 @@ export function expandRecurringTransactions(transactions: Transaction[]): Transa
     RECURRENCES.includes(item.recurrence as RecurrenceLabel) &&
     (item.type === "Receita" || item.type === "Despesa") &&
     !item.recurrenceGroupId &&
-    item.status !== "Cancelada" &&
+    !isCancelledTransaction(item) &&
     Boolean(item.date)
   );
 
@@ -83,7 +84,7 @@ export function expandRecurringTransactions(transactions: Transaction[]): Transa
       const exists = result.some((item) =>
         item.id !== root.id &&
         item.date === date &&
-        item.status !== "Cancelada" &&
+        !isCancelledTransaction(item) &&
         (item.recurrenceGroupId === groupId || (!item.recurrenceGroupId && !rootIds.has(item.id))) &&
         sameSeries(root, item)
       );

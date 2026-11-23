@@ -1,6 +1,8 @@
 import net from "node:net";
 import { defineConfig, devices } from "@playwright/test";
 
+if (process.env.CI) process.env.NEXO_E2E_TEST_MODE = "true";
+
 // Evita que ambientes com Node.js 24 iniciem conexões com timeout automático inválido.
 net.setDefaultAutoSelectFamilyAttemptTimeout(5000);
 

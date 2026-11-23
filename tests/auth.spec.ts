@@ -1,5 +1,3 @@
-"use client";
-
 import { test, expect, type Page } from "@playwright/test";
 
 const testSession = {
@@ -38,7 +36,7 @@ async function mockAuthApi(
     });
   });
 
-  await page.route("**/api/sync", async (route) => {
+  await page.route("**/api/sync**", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({ json: { data: [] } });
       return;
