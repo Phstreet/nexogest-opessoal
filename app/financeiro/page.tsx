@@ -11,6 +11,8 @@ import type { FormEvent } from "react";
 import type { Account, Transaction } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
 import SelectField from "./SelectField";
+import FinanceSummaryCards from "./FinanceSummaryCards";
+import FinanceMovementList from "./FinanceMovementList";
 import type { FormMovementType } from "@/lib/finance/finance-utils";
 import {
   getDefaultCategory,
@@ -784,43 +786,7 @@ export default function Page() {
           </section>
         )}
 
-        <section className="finance-cards">
-          <article className="finance-card">
-            <span>Receitas lançadas</span>
-            <strong>{money(totals.receitas)}</strong>
-            <small>Total cadastrado, inclusive pendente</small>
-          </article>
-
-          <article className="finance-card">
-            <span>Despesas lançadas</span>
-            <strong>{money(totals.despesas)}</strong>
-            <small>Total cadastrado, inclusive pendente</small>
-          </article>
-
-          <article className="finance-card highlight">
-            <span>Saldo disponível</span>
-            <strong>{money(totals.resultado)}</strong>
-            <small>
-              Recebido − pago − investimentos efetivamente aplicados
-            </small>
-          </article>
-        </section>
-
-        <section className="finance-investment-summary">
-          <span>◈</span>
-
-          <div>
-            <strong>Total investido</strong>
-
-            <p>
-              {money(totals.investimentosAplicados)} efetivamente
-              aplicados. Investimentos pendentes não reduzem o saldo
-              disponível.
-            </p>
-          </div>
-        </section>
-
-
+        <FinanceSummaryCards totals={totals} />
 
         <form
           ref={transactionFormRef}
@@ -1091,186 +1057,24 @@ export default function Page() {
           </div>
         </form>
 
-        <section className="finance-history">
-          <div className="finance-section-title">
-            <div>
-              <span className="finance-eyebrow">HISTÓRICO</span>
-              <h2>Movimentações</h2>
-            </div>
-
-            <select
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-            >
-              <option value="Todos">Todos</option>
-
-              {filterOptions.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="finance-empty">
-              <span>◎</span>
-
-              <strong>Nenhum lançamento encontrado</strong>
-
-              <p>
-                Cadastre uma receita, despesa, transferência ou
-                investimento.
-              </p>
-            </div>
-          ) : (
-            <div className="finance-list">
-              {filtered.map((item) => (
-                <article className="finance-item" key={item.id}>
-                  <div className="finance-item-icon">
-                    {movementIcon(item)}
-                  </div>
-
-                  <div className="finance-item-info">
-                    <strong>{item.description}</strong>
-
-                    <span>
-                      {item.type} · {item.category || "Sem categoria"}
-                      {item.subcategory
-                        ? ` / ${item.subcategory}`
-                        : ""}
-                    </span>
-
-                    <span>
-                      {item.account || "Sem conta"}
-                      {item.destinationAccount
-                        ? ` → ${item.destinationAccount}`
-                        : ""}
-                    </span>
-
-                    {(item.type === "Aplicação" ||
-                      item.type === "Investimento") && (
-                      <span>
-                        {item.investment ||
-                          item.subcategory ||
-                          "Investimento"}
-                        {" · "}
-                        {item.institution ||
-                          "Instituição não informada"}
-                      </span>
-                    )}
-
-                    {item.type === "Reserva" && (
-                      <span>
-                        Reserva: {item.reserveType || "Não especificada"}
-                      </span>
-                    )}
-
-                    <span>
-                      {item.date && isValidDate(item.date)
-                        ? new Date(
-                            `${item.date}T12:00:00`
-                          ).toLocaleDateString("pt-BR")
-                        : "Sem data"}
-                      {" · "}
-                      {item.status || "Pendente"}
-                    </span>
-
-                    {(item.status === "Recebida parcialmente" ||
-                      item.status === "Paga parcialmente") && (
-                      <span>
-                        {item.status === "Recebida parcialmente"
-                          ? "Recebido: "
-                          : "Pago: "}
-                        {money(Number(item.settledAmount || 0))}
-                        {" de "}
-                        {money(item.amount)}
-                      </span>
-                    )}
-                  </div>
-
-                  <strong className={movementClass(item)}>
-                    {movementValue(item)}
-                    {money(Number(item.amount || 0))}
-                  </strong>
-
-                  {settlementEditingId === item.id && (
-                    <div className="finance-settlement-editor">
-                      <label htmlFor={`settlement-${item.id}`}>
-                        {item.type === "Receita" ? "Valor realmente recebido" : "Valor realmente pago"}
-                      </label>
-                      <div className="finance-settlement-controls">
-                        <input
-                          id={`settlement-${item.id}`}
-                          type="text"
-                          inputMode="decimal"
-                          value={settlementInput}
-                          onChange={(event) => setSettlementInput(event.target.value)}
-                          placeholder="0,00"
-                          aria-label={item.type === "Receita" ? "Valor recebido" : "Valor pago"}
-                        />
-                        <button
-                          type="button"
-                          className="finance-edit"
-                          onClick={() => saveSettlement(item)}
-                          disabled={!safeToSave}
-                        >
-                          Confirmar
-                        </button>
-                        <button
-                          type="button"
-                          className="finance-cancel-edit"
-                          onClick={() => {
-                            setSettlementEditingId(null);
-                            setSettlementInput("");
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                      <small>Valor previsto: {money(item.amount)}. Se informar um valor menor, o lançamento ficará parcialmente {item.type === "Receita" ? "recebido" : "pago"}.</small>
-                    </div>
-                  )}
-
-                  <div className="finance-item-actions">
-                    {(item.type === "Receita" || item.type === "Despesa") &&
-                      (["Pendente", "Recebida parcialmente", "Paga parcialmente", "Prevista", "Atrasada", ""].includes(item.status || "")) && (
-                        <button
-                          type="button"
-                          className="finance-edit"
-                          onClick={() => openSettlementEditor(item)}
-                          disabled={!safeToSave}
-                          aria-label={item.type === "Receita" ? "Informar valor recebido" : "Informar valor pago"}
-                        >
-                          {item.status === "Recebida parcialmente" || item.status === "Paga parcialmente" ? "Atualizar valor" : item.type === "Receita" ? "Receber" : "Pagar"}
-                        </button>
-                      )}
-                    {(item.type === "Receita" || item.type === "Despesa") && (
-                      <button
-                        type="button"
-                        className="finance-edit"
-                        onClick={() => startEditingTransaction(item)}
-                        aria-label={"Editar " + item.description}
-                        disabled={!safeToSave}
-                      >
-                        Editar
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="finance-delete"
-                      onClick={() => removeTransaction(item.id)}
-                      aria-label={"Excluir " + item.description}
-                      disabled={!safeToSave}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+        <FinanceMovementList
+          filtered={filtered}
+          filter={filter}
+          filterOptions={filterOptions}
+          safeToSave={safeToSave}
+          settlementEditingId={settlementEditingId}
+          settlementInput={settlementInput}
+          onFilterChange={setFilter}
+          onSettlementInputChange={setSettlementInput}
+          onSaveSettlement={saveSettlement}
+          onCancelSettlement={() => {
+            setSettlementEditingId(null);
+            setSettlementInput("");
+          }}
+          onOpenSettlementEditor={openSettlementEditor}
+          onStartEditingTransaction={startEditingTransaction}
+          onRemoveTransaction={removeTransaction}
+        />
 
         <footer className="routine-footer">
           <span>© 2026 NEXO — GESTÃO PESSOAL</span>
