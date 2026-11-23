@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Account, Transaction } from "@/lib/finance/types";
 import { isValidTransaction, localDate } from "@/lib/finance/finance-utils";
 import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
+import type { NexoSession } from "@/lib/supabase/client";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
@@ -13,7 +14,7 @@ import {
 const STORAGE_KEY = "nexo_transactions";
 
 type UseFinanceCloudSyncParams = {
-  session: unknown;
+  session: NexoSession | null;
   authLoading: boolean;
   transactions: Transaction[];
   setTransactions: Dispatch<SetStateAction<Transaction[]>>;
@@ -37,6 +38,13 @@ export function useFinanceCloudSync({
   const remoteReadyRef = useRef(false);
   const lastSavedPayloadRef = useRef("");
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const sessionUserId = session?.user.id ?? null;
+  const sessionUserIdRef = useRef<string | null>(sessionUserId);
+
+  useLayoutEffect(() => {
+    sessionUserIdRef.current = sessionUserId;
+    remoteReadyRef.current = false;
+  }, [sessionUserId]);
 
   useEffect(() => {
     let active = true;
@@ -48,19 +56,23 @@ export function useFinanceCloudSync({
       setSafeToSave(false);
       setStorageError(null);
 
-      if (!session) {
+      if (!sessionUserId) {
         setTransactions([]);
         setRegisteredAccounts([]);
         setInvalidCount(0);
+        revisionRef.current = 0;
+        lastSavedPayloadRef.current = "";
         setSyncStatus("Aguardando autenticação");
         setLoaded(true);
         return;
       }
 
+      const requestedUserId = sessionUserId;
       setDate(localDate());
+
       try {
         const collections = await fetchRemoteCollections();
-        if (!active) return;
+        if (!active || sessionUserIdRef.current !== requestedUserId) return;
 
         const transactionRow = collections.find((item) => item.data_key === STORAGE_KEY);
         const accountRow = collections.find((item) => item.data_key === "nexo_accounts");
@@ -96,7 +108,7 @@ export function useFinanceCloudSync({
         remoteReadyRef.current = true;
         setLoaded(true);
       } catch (error) {
-        if (!active) return;
+        if (!active || sessionUserIdRef.current !== requestedUserId) return;
         console.error("Falha ao carregar os dados financeiros do Supabase:", error);
         setTransactions([]);
         setRegisteredAccounts([]);
@@ -109,18 +121,33 @@ export function useFinanceCloudSync({
     }
 
     void initializeFinanceData();
-    return () => { active = false; };
-  }, [authLoading, session, setDate, setTransactions]);
+    return () => {
+      active = false;
+    };
+  }, [authLoading, sessionUserId, setDate, setTransactions]);
 
   useEffect(() => {
-    if (!loaded || !safeToSave || !remoteReadyRef.current) return;
+    if (!loaded || !safeToSave || !remoteReadyRef.current || !sessionUserId) return;
+
+    const requestedUserId = sessionUserId;
     const serializedPayload = JSON.stringify(transactions);
     if (serializedPayload === lastSavedPayloadRef.current) return;
 
     saveQueueRef.current = saveQueueRef.current.then(async () => {
-      if (!remoteReadyRef.current) return;
+      if (
+        !remoteReadyRef.current ||
+        sessionUserIdRef.current !== requestedUserId
+      ) return;
+
       try {
-        const result = await saveRemoteCollection(STORAGE_KEY, transactions, revisionRef.current);
+        const result = await saveRemoteCollection(
+          STORAGE_KEY,
+          transactions,
+          revisionRef.current
+        );
+
+        if (sessionUserIdRef.current !== requestedUserId) return;
+
         if (!result.saved) {
           setSafeToSave(false);
           remoteReadyRef.current = false;
@@ -128,11 +155,13 @@ export function useFinanceCloudSync({
           setSyncStatus("Conflito de sincronização");
           return;
         }
+
         revisionRef.current = result.current_revision ?? revisionRef.current + 1;
         lastSavedPayloadRef.current = serializedPayload;
         setStorageError(null);
         setSyncStatus("Sincronizado com o Supabase");
       } catch (error) {
+        if (sessionUserIdRef.current !== requestedUserId) return;
         console.error("Não foi possível salvar os lançamentos no Supabase:", error);
         setSafeToSave(false);
         remoteReadyRef.current = false;
@@ -140,7 +169,7 @@ export function useFinanceCloudSync({
         setSyncStatus("Erro ao salvar na nuvem");
       }
     });
-  }, [transactions, loaded, safeToSave]);
+  }, [transactions, loaded, safeToSave, sessionUserId]);
 
   return {
     registeredAccounts,
