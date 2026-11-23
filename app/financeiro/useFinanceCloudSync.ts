@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Account, Transaction } from "@/lib/finance/types";
 import { isValidTransaction, localDate } from "@/lib/finance/finance-utils";
+import { FINANCE_TRANSACTIONS_KEY } from "@/lib/finance/constants";
 import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
 import type { NexoSession } from "@/lib/supabase/client";
 import {
@@ -11,7 +12,6 @@ import {
   saveRemoteCollection,
 } from "@/lib/supabase/client";
 
-const STORAGE_KEY = "nexo_transactions";
 
 type UseFinanceCloudSyncParams = {
   session: NexoSession | null;
@@ -33,7 +33,7 @@ export function useFinanceCloudSync({
   const [safeToSave, setSafeToSave] = useState(false);
   const [invalidCount, setInvalidCount] = useState(0);
   const [storageError, setStorageError] = useState<string | null>(null);
-  const [, setSyncStatus] = useState("Conectando ao banco de dados...");
+  const [syncStatus, setSyncStatus] = useState("Conectando ao banco de dados...");
   const revisionRef = useRef(0);
   const remoteReadyRef = useRef(false);
   const lastSavedPayloadRef = useRef("");
@@ -74,7 +74,7 @@ export function useFinanceCloudSync({
         const collections = await fetchRemoteCollections();
         if (!active || sessionUserIdRef.current !== requestedUserId) return;
 
-        const transactionRow = collections.find((item) => item.data_key === STORAGE_KEY);
+        const transactionRow = collections.find((item) => item.data_key === FINANCE_TRANSACTIONS_KEY);
         const accountRow = collections.find((item) => item.data_key === "nexo_accounts");
         const cloudTransactions = transactionRow?.payload ?? [];
         const cloudAccounts = accountRow?.payload ?? [];
@@ -91,8 +91,9 @@ export function useFinanceCloudSync({
         }
 
         const invalidRecords = cloudTransactions.filter((item) => !isValidTransaction(item));
+        setInvalidCount(invalidRecords.length);
         if (invalidRecords.length > 0) {
-          throw new Error(`Existem ${invalidRecords.length} lançamento(s) inválido(s) no Supabase. A gravação foi bloqueada para evitar perda de dados.`);
+          throw new Error(`Foram encontrados ${invalidRecords.length} lançamento(s) inválido(s) no Supabase. A gravação foi bloqueada para proteger os dados existentes.`);
         }
 
         const validTransactions = cloudTransactions as Transaction[];
@@ -112,7 +113,6 @@ export function useFinanceCloudSync({
         console.error("Falha ao carregar os dados financeiros do Supabase:", error);
         setTransactions([]);
         setRegisteredAccounts([]);
-        setInvalidCount(0);
         setSafeToSave(false);
         setStorageError(error instanceof Error ? error.message : "Não foi possível carregar os dados financeiros da nuvem.");
         setSyncStatus("Falha ao acessar o Supabase");
@@ -133,7 +133,7 @@ export function useFinanceCloudSync({
     const serializedPayload = JSON.stringify(transactions);
     if (serializedPayload === lastSavedPayloadRef.current) return;
 
-    saveQueueRef.current = saveQueueRef.current.then(async () => {
+    saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(async () => {
       if (
         !remoteReadyRef.current ||
         sessionUserIdRef.current !== requestedUserId
@@ -141,7 +141,7 @@ export function useFinanceCloudSync({
 
       try {
         const result = await saveRemoteCollection(
-          STORAGE_KEY,
+          FINANCE_TRANSACTIONS_KEY,
           transactions,
           revisionRef.current
         );
@@ -174,15 +174,12 @@ export function useFinanceCloudSync({
   return {
     registeredAccounts,
     safeToSave,
-    setSafeToSave,
     invalidCount,
     storageError,
+    syncStatus,
     setStorageError,
     setSyncStatus,
-    revisionRef,
     remoteReadyRef,
-    lastSavedPayloadRef,
-    saveQueueRef,
     sessionUserIdRef,
   };
 }

@@ -1010,3 +1010,12 @@
 
         
 }
+
+
+.finance-content-vertical .finance-sync-status {
+  margin: 0;
+  color: #85858d;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: right;
+}
