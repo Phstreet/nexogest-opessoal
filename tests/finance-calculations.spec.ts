@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { getAccountBalanceFrom, getSettledTransactionAmount } from "../lib/finance/accounts";
 import { getFinancialSummary } from "../lib/finance/calculations";
+import { calculateFinanceTotals, getSettledAmount, isInvestmentApplied } from "../lib/finance/finance-utils";
 import type { Account, Transaction } from "../lib/finance/types";
 
 const account: Account = {
@@ -43,6 +44,8 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
       settledAmount: 35,
     });
     expect(getSettledTransactionAmount(item)).toBe(35);
+    expect(getSettledAmount(item)).toBe(35);
+    expect(calculateFinanceTotals([item]).despesasRealizadas).toBe(35);
     expect(getAccountBalanceFrom(account, [item])).toBe(-35);
     const summary = getFinancialSummary([item], [account], [], []);
     expect(summary.totalExpenses).toBe(35);
@@ -63,6 +66,18 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
   test("reconhece status de cancelamento sem depender de caixa ou acento", () => {
     const item = transaction({ status: "CANCELÁDA" });
     expect(getSettledTransactionAmount(item)).toBe(0);
+    expect(getSettledAmount(item)).toBe(0);
+    expect(calculateFinanceTotals([item]).receitasRealizadas).toBe(0);
     expect(getAccountBalanceFrom(account, [item])).toBe(0);
   });
+  test("usa a mesma regra normalizada para investimentos aplicados e cancelados", () => {
+    const applied = transaction({ type: "Investimento", status: "APLICADO" });
+    expect(isInvestmentApplied(applied)).toBe(true);
+    expect(calculateFinanceTotals([applied]).investimentosAplicados).toBe(100);
+
+    const cancelled = transaction({ type: "Investimento", status: "CANCELADO" });
+    expect(isInvestmentApplied(cancelled)).toBe(false);
+    expect(calculateFinanceTotals([cancelled]).investimentosAplicados).toBe(0);
+  });
+
 });

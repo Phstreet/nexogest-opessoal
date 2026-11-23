@@ -22,8 +22,12 @@ function copyCookies(source: NextResponse, target: NextResponse) {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // O E2E usa endpoints mockados e não deve depender de uma conta Supabase real.
-  if (process.env.NODE_ENV !== "production" && process.env.NEXO_E2E_TEST_MODE === "true") {
+  // Os testes E2E usam autenticação mockada e não devem consultar o Supabase.
+  // A condição exclui produção, mesmo que a variável seja configurada por engano.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXO_E2E_TEST_MODE === "true"
+  ) {
     return NextResponse.next();
   }
 
