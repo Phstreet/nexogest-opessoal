@@ -529,9 +529,9 @@ export default function DailyCenter(props: Props) {
           margin: 4px 0 0;
           color: var(--text-primary);
           font-family: var(--font-heading);
-          font-size: 30px;
+          font-size: 26px;
           font-weight: 700;
-          line-height: 34px;
+          line-height: 30px;
           letter-spacing: -0.8px;
         }
         #nexo-app .daily-hero p {
