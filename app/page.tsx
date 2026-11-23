@@ -104,6 +104,8 @@ export default function Home() {
           }
 
           #nexo-app .nexo-page-header.nexo-topbar-page {
+            display: flex;
+            flex-direction: row;
             min-height: 52px;
             align-items: center;
             gap: 12px;
@@ -118,7 +120,7 @@ export default function Home() {
           #nexo-app .nexo-topbar-page .nexo-page-breadcrumb {
             color: var(--text-subtle);
             font-size: 11px;
-            line-height: 13px;
+            line-height: 11px;
             letter-spacing: 1px;
             text-transform: uppercase;
           }
@@ -127,8 +129,49 @@ export default function Home() {
             color: var(--text-primary);
             font-size: 20px;
             font-weight: 650;
-            line-height: 24px;
+            line-height: 22px;
             letter-spacing: -0.35px;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 32px;
+            min-height: 32px;
+            padding: 0 10px;
+            color: var(--text-secondary);
+            background: var(--surface-elevated, var(--surface-raised));
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1;
+            white-space: nowrap;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button:hover {
+            border-color: var(--border-strong);
+            background: var(--surface-raised);
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button svg {
+            display: block;
+            width: 14px;
+            height: 14px;
+            flex: 0 0 14px;
+            stroke-width: 1.8;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button kbd {
+            padding: 2px 6px;
+            color: var(--text-subtle);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 10px;
+            line-height: 12px;
           }
 
           #nexo-app .nexo-topbar-page .nexo-page-header-actions {
@@ -177,6 +220,17 @@ export default function Home() {
             }
 
             #nexo-app .nexo-topbar-page .nexo-page-breadcrumb {
+              display: none;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-search-button {
+              width: 32px;
+              min-width: 32px;
+              padding: 0;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-search-label,
+            #nexo-app .nexo-topbar-page .nexo-search-button kbd {
               display: none;
             }
 
