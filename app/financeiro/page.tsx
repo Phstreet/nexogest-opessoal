@@ -16,6 +16,8 @@ import FinanceMovementList from "./FinanceMovementList";
 import FinanceTransactionForm from "./FinanceTransactionForm";
 import type { FormMovementType } from "@/lib/finance/finance-utils";
 import {
+  calculateFinanceTotals,
+  getMovementFilterOptions,
   getDefaultCategory,
   getDefaultSubcategory,
   getNextTransactionId,
@@ -337,76 +339,17 @@ export default function Page() {
     }
   }
 
-  const totals = useMemo(() => {
-    const active = transactions.filter(
-      (item) => item.status !== "Cancelada"
-    );
+  const totals = useMemo(() => calculateFinanceTotals(transactions), [transactions]);
 
-    const receitas = active
-      .filter((item) => item.type === "Receita")
-      .reduce(
-        (sum, item) => sum + Number(item.amount || 0),
-        0
-      );
-
-    const despesas = active
-      .filter((item) => item.type === "Despesa")
-      .reduce(
-        (sum, item) => sum + Number(item.amount || 0),
-        0
-      );
-
-    const receitasRealizadas = active
-      .filter((item) => item.type === "Receita")
-      .reduce(
-        (sum, item) => sum + getSettledAmount(item),
-        0
-      );
-
-    const despesasRealizadas = active
-      .filter((item) => item.type === "Despesa")
-      .reduce(
-        (sum, item) => sum + getSettledAmount(item),
-        0
-      );
-
-    const investimentosAplicados = active
-      .filter(isInvestmentApplied)
-      .reduce(
-        (sum, item) => sum + Number(item.amount || 0),
-        0
-      );
-
-    return {
-      receitas,
-      despesas,
-      receitasRealizadas,
-      despesasRealizadas,
-      investimentosAplicados,
-      resultado:
-        receitasRealizadas -
-        despesasRealizadas -
-        investimentosAplicados,
-    };
-  }, [transactions]);
-
-  const filterOptions = useMemo(() => {
-    const existingTypes = transactions
-      .map((item) => item.type)
-      .filter(
-        (item) =>
-          item === "Aplicação" || item === "Reserva"
-      );
-
-    return [
-      ...movementTypes,
-      ...Array.from(new Set(existingTypes)),
-    ];
-  }, [transactions]);
+  const filterOptions = useMemo(
+    () => getMovementFilterOptions(transactions, movementTypes),
+    [transactions]
+  );
 
   const filtered = transactions.filter(
     (item) => filter === "Todos" || item.type === filter
   );
+
 
   function startEditingTransaction(item: Transaction) {
     if (item.type !== "Receita" && item.type !== "Despesa") return;
