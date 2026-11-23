@@ -333,3 +333,30 @@ test.describe("NEXO - Operações financeiras", () => {
     expect(cloud.get("nexo_transactions")?.revision).toBe(1);
   });
 });
+
+test.describe("NEXO - Responsividade da Central do Dia", () => {
+  test("mantém os cards alinhados e não cria rolagem horizontal nos breakpoints principais", async ({ page }) => {
+    await mockAuthenticatedCloud(page);
+
+    for (const width of [360, 768, 1024, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      await expect(page.locator(".daily-center")).toBeVisible();
+      await expect(page.locator(".daily-kpis .nexo-stat-card")).toHaveCount(4);
+      await expect(page.locator(".daily-grid > .daily-card")).toHaveCount(6);
+
+      const dimensions = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        document: document.documentElement.scrollWidth,
+      }));
+      expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+
+      if (width < 1024) {
+        await page.getByRole("button", { name: "Abrir menu de navegação" }).click();
+        await expect(page.locator(".sidebar.mobile-open")).toBeVisible();
+        await page.getByRole("button", { name: "Fechar menu de navegação" }).click();
+        await expect(page.locator(".sidebar.mobile-open")).toHaveCount(0);
+      }
+    }
+  });
+});
