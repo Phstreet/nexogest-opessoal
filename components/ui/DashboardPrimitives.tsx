@@ -1,0 +1,107 @@
+"use client";
+
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+type CardProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function Card({ children, className = "" }: CardProps) {
+  return <section className={`nexo-card ${className}`.trim()}>{children}</section>;
+}
+
+type CardHeaderProps = {
+  icon?: ReactNode;
+  title: string;
+  action?: ReactNode;
+};
+
+export function CardHeader({ icon, title, action }: CardHeaderProps) {
+  return (
+    <header className="nexo-card-header">
+      <h2>{icon && <span className="nexo-card-header-icon">{icon}</span>}{title}</h2>
+      {action && <div className="nexo-card-header-action">{action}</div>}
+    </header>
+  );
+}
+
+export function CardBody({ children, className = "" }: CardProps) {
+  return <div className={`nexo-card-body ${className}`.trim()}>{children}</div>;
+}
+
+type StatCardProps = {
+  href: string;
+  icon: ReactNode;
+  value: ReactNode;
+  label: string;
+  className?: string;
+};
+
+export function StatCard({ href, icon, value, label, className = "" }: StatCardProps) {
+  return (
+    <Link href={href} className={`nexo-stat-card ${className}`.trim()}>
+      <span className="nexo-stat-icon">{icon}</span>
+      <span className="nexo-stat-copy">
+        <strong>{value}</strong>
+        <small>{label}</small>
+      </span>
+      <span className="nexo-stat-arrow" aria-hidden="true">↗</span>
+    </Link>
+  );
+}
+
+type QuickActionProps = {
+  href: string;
+  icon: ReactNode;
+  label: string;
+};
+
+export function QuickAction({ href, icon, label }: QuickActionProps) {
+  return (
+    <Link href={href} className="nexo-quick-action">
+      <span className="nexo-quick-action-icon">{icon}</span>
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+type EmptyStateProps = {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  actionHref?: string;
+  actionLabel?: string;
+};
+
+export function EmptyState({ icon, title, description, actionHref, actionLabel }: EmptyStateProps) {
+  return (
+    <div className="nexo-empty-state">
+      <span className="nexo-empty-icon">{icon}</span>
+      <strong>{title}</strong>
+      <p>{description}</p>
+      {actionHref && actionLabel && (
+        <Link href={actionHref} className="nexo-empty-action">{actionLabel}</Link>
+      )}
+    </div>
+  );
+}
+
+export function SearchButton() {
+  return (
+    <button
+      type="button"
+      className="nexo-search-button"
+      onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
+      aria-label="Buscar no NEXO"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.8" />
+        <path d="m16 16 4.2 4.2" />
+      </svg>
+      <span>Buscar no NEXO</span>
+      <kbd>Ctrl K</kbd>
+    </button>
+  );
+}
