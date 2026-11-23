@@ -354,7 +354,7 @@ test.describe("NEXO - Responsividade da Central do Dia", () => {
       if (width < 1024) {
         await page.getByRole("button", { name: "Abrir menu de navegação" }).click();
         await expect(page.locator(".sidebar.mobile-open")).toBeVisible();
-        await page.getByRole("button", { name: "Fechar menu de navegação" }).click();
+        await page.getByRole("button", { name: "Fechar menu de navegação" }).click({ position: { x: width - 10, y: 450 } });
         await expect(page.locator(".sidebar.mobile-open")).toHaveCount(0);
       }
     }
