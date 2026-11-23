@@ -3,6 +3,37 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+
+type PageShellProps = {
+  children: ReactNode;
+};
+
+export function PageShell({ children }: PageShellProps) {
+  return <div className="nexo-page-shell">{children}</div>;
+}
+
+type PageHeaderProps = {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  breadcrumb?: ReactNode;
+  actions?: ReactNode;
+};
+
+export function PageHeader({ eyebrow, title, description, breadcrumb, actions }: PageHeaderProps) {
+  return (
+    <header className="nexo-page-header">
+      <div className="nexo-page-header-copy">
+        {breadcrumb && <nav className="nexo-page-breadcrumb" aria-label="Caminho da página">{breadcrumb}</nav>}
+        {eyebrow && <span className="nexo-page-eyebrow">{eyebrow}</span>}
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
+      </div>
+      {actions && <div className="nexo-page-header-actions">{actions}</div>}
+    </header>
+  );
+}
+
 type CardProps = {
   children: ReactNode;
   className?: string;
