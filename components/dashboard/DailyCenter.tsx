@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
-import { Card, CardHeader, EmptyState, PageHeader, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
+import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
 
 type Props = {
   tasks: RoutineTask[];
@@ -113,7 +113,7 @@ export default function DailyCenter(props: Props) {
     month: "long",
     year: "numeric",
   });
-  const dateLabel = rawDateLabel.charAt(0).toLocaleUpperCase("pt-BR") + rawDateLabel.slice(1).toLocaleLowerCase("pt-BR");
+  const dateLabel = rawDateLabel.toLocaleLowerCase("pt-BR");
 
   /* Tarefas */
   const todaysTasks = props.tasks.filter((task) => task.date === todayKey);
@@ -188,7 +188,7 @@ export default function DailyCenter(props: Props) {
       )}
 
       {/* HERO */}
-      <PageHeader eyebrow={dateLabel} title={greeting + "!"} description="Sua central de organização e controle." />
+      <section className="daily-hero" aria-label="Boas-vindas">\n        <span className="daily-date">{dateLabel}</span>\n        <h1>{greeting}!</h1>\n        <p>Sua central de organização e controle.</p>\n      </section>
 
       {/* INDICADORES */}
       <section className="daily-kpis" aria-label="Indicadores do dia">
@@ -374,7 +374,7 @@ export default function DailyCenter(props: Props) {
       <style jsx global>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
-        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
+        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0;color:#f1f1f3;overflow:hidden}
         .daily-center>*{position:relative;z-index:1}
         .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-200px;right:-170px;width:min(860px,72%);aspect-ratio:1;border-radius:50%;
           background-image:url("/moon.jpg");
@@ -498,6 +498,55 @@ export default function DailyCenter(props: Props) {
           .daily-close{padding:16px;border-radius:14px}
           .daily-close>header{align-items:flex-start;flex-direction:column}
           .daily-close-grid{grid-template-columns:minmax(0,1fr)}
+        }
+
+        /* Cabeçalho compacto da Central do Dia */
+        #nexo-app .daily-center { gap: 12px; padding: 0; }
+        #nexo-app .daily-hero {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          width: 100%;
+          max-width: none;
+          min-width: 0;
+          padding: 16px 0 12px;
+          margin: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+        }
+        #nexo-app .daily-hero .daily-date {
+          display: block;
+          color: var(--text-subtle);
+          font-size: 11px;
+          font-weight: 500;
+          line-height: 14px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+        #nexo-app .daily-hero h1 {
+          margin: 4px 0 0;
+          color: var(--text-primary);
+          font-family: var(--font-heading);
+          font-size: 30px;
+          font-weight: 700;
+          line-height: 34px;
+          letter-spacing: -0.8px;
+        }
+        #nexo-app .daily-hero p {
+          margin: 2px 0 0;
+          color: var(--text-secondary);
+          font-size: 13px;
+          font-weight: 400;
+          line-height: 18px;
+        }
+        #nexo-app .daily-kpis { margin-top: 0; }
+
+        @media (max-width: 639px) {
+          #nexo-app .daily-hero { padding: 12px 0; }
+          #nexo-app .daily-hero h1 { font-size: 22px; line-height: 26px; }
+          #nexo-app .daily-hero p { font-size: 13px; line-height: 18px; }
         }
 
       `}</style>
