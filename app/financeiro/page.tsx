@@ -651,6 +651,7 @@ export default function Page() {
           institution={institution}
           setInstitution={setInstitution}
           institutions={institutions}
+          paymentMethods={paymentMethods}
           date={date}
           setDate={setDate}
           account={account}
