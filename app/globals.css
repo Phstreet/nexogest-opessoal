@@ -4779,3 +4779,166 @@ tbody tr:hover {
   #nexo-app .nexo-page-header { align-items:flex-start; flex-direction:column; gap:12px; margin-bottom:16px; }
   #nexo-app .nexo-page-header h1 { font-size:28px; }
 }
+
+
+/* Padrão compartilhado aplicado aos módulos existentes */
+#nexo-app :is(
+  .payable-summary-card,.payable-editor-panel,.payable-panel,
+  .receivable-card,.receivable-editor-panel,.receivable-content,
+  .accounts-summary-card,.accounts-panel,.accounts-information,
+  .summary-card,.summary-panel,.panel,.form-card,.form-panel,
+  .content-section,.agenda-date-panel,.agenda-main-panel,.side-panel,
+  .weekly-progress-panel,.task-form-panel,.bottom-panel,.day-column,
+  .intelligence-panel,.objective-form-card,.objective-card,
+  .finance-form,.finance-history,.finance-section,.settings-card,
+  .settings-panel,.profile-panel,.report-card,.insight-card,
+  .planning-card,.reserve-card,.goal-card,.tracking-panel
+) {
+  box-sizing:border-box;
+  min-width:0;
+  color:var(--text-primary);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-card);
+  box-shadow:none;
+}
+#nexo-app :is(
+  .payable-summary-card,.payable-editor-panel,.payable-panel,
+  .receivable-card,.receivable-editor-panel,.receivable-content,
+  .accounts-summary-card,.accounts-panel,.accounts-information,
+  .summary-card,.summary-panel,.panel,.form-card,.form-panel,
+  .content-section,.agenda-date-panel,.agenda-main-panel,.side-panel,
+  .weekly-progress-panel,.task-form-panel,.bottom-panel,.day-column,
+  .intelligence-panel,.objective-form-card,.objective-card,
+  .finance-form,.finance-history,.finance-section,.settings-card,
+  .settings-panel,.profile-panel,.report-card,.insight-card,
+  .planning-card,.reserve-card,.goal-card,.tracking-panel
+) { padding:var(--nexo-card-padding); }
+#nexo-app :is(
+  .payable-summary,.receivable-summary,.accounts-summary-grid,
+  .summary-grid,.summary-cards,.metrics-grid,.finance-metrics,
+  .routine-metrics,.weekly-metrics,.intelligence-kpis,
+  .objectives-metrics,.insights-grid,.reserve-grid,.goals-grid,
+  .dashboard-grid,.content-grid,.lower-grid,.agenda-layout,
+  .weekly-bottom-grid,.planning-grid,.reports-grid
+) {
+  align-items:stretch;
+  min-width:0;
+  gap:16px;
+}
+#nexo-app :is(
+  .payable-summary,.receivable-summary,.accounts-summary-grid,
+  .summary-grid,.summary-cards,.metrics-grid,.finance-metrics,
+  .routine-metrics,.weekly-metrics,.intelligence-kpis,
+  .objectives-metrics,.insights-grid,.reserve-grid,.goals-grid,
+  .dashboard-grid,.content-grid,.lower-grid,.agenda-layout,
+  .weekly-bottom-grid,.planning-grid,.reports-grid
+) > * { min-width:0; }
+#nexo-app :is(.payable-summary-card,.receivable-card,.accounts-summary-card,.summary-card,.metric-card,.insight-card,.reserve-card,.goal-card,.objective-card) {
+  height:100%;
+  align-self:stretch;
+  border-radius:var(--radius-card);
+  background:var(--surface);
+  border-color:var(--border);
+  box-shadow:none;
+}
+#nexo-app :is(.payable-summary-card,.receivable-card,.accounts-summary-card,.summary-card,.metric-card,.insight-card,.reserve-card,.goal-card,.objective-card):hover {
+  background:var(--surface-light);
+  border-color:var(--border-strong);
+}
+#nexo-app :is(.page-heading,.intelligence-heading,.finance-header,.weekly-welcome,.agenda-welcome,.payable-intro,.receivable-intro,.accounts-intro,.planning-intro) {
+  margin-bottom:24px;
+}
+#nexo-app :is(.page-heading h1,.intelligence-heading h1,.finance-header h1,.weekly-welcome h1,.agenda-welcome h1,.payable-intro h1,.receivable-intro h1,.accounts-intro h1,.planning-intro h1) {
+  color:var(--text-primary);
+  font-family:var(--font-heading);
+  font-size:clamp(28px,3vw,36px);
+  font-weight:650;
+  line-height:1.15;
+  letter-spacing:-.7px;
+}
+#nexo-app :is(.page-heading p,.intelligence-heading p,.finance-header p,.weekly-welcome p,.agenda-welcome p,.payable-intro p,.receivable-intro p,.accounts-intro p,.planning-intro p) {
+  color:var(--text-secondary);
+  font-size:14px;
+  line-height:20px;
+}
+#nexo-app :is(.section-heading h2,.panel-heading h3,.panel-header h2,.section-title,.payable-section-heading h2,.receivable-heading h2,.accounts-section-heading h2,.intelligence-panel-heading h2) {
+  color:var(--text-primary);
+  font-size:18px;
+  line-height:24px;
+  font-weight:650;
+}
+#nexo-app :is(.section-eyebrow,.eyebrow,.section-kicker,.finance-eyebrow,.accounts-eyebrow,.intelligence-eyebrow,.payable-eyebrow) {
+  color:var(--text-secondary);
+  font-size:12px;
+  line-height:16px;
+  letter-spacing:1.1px;
+}
+#nexo-app :is(.payable-table-wrapper,.receivable-table-wrapper,.table-container,.table-wrapper,.table-responsive) {
+  max-width:100%;
+  min-width:0;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+#nexo-app :is(.payable-table,.receivable-table) { min-width:760px; width:100%; }
+#nexo-app :is(.payable-table th,.receivable-table th) { background:var(--surface-light); color:var(--text-secondary); }
+#nexo-app :is(.payable-table td,.receivable-table td) { border-bottom:1px solid var(--border); }
+#nexo-app :is(.payable-empty-state,.receivable-empty,.accounts-empty-state,.empty-state,.intelligence-empty) {
+  color:var(--text-secondary);
+}
+#nexo-app :is(.payable-empty-icon,.receivable-empty-icon,.accounts-empty-icon,.empty-icon) {
+  color:#a1a1aa;
+}
+#nexo-app :is(.primary-button,.routine-primary-button,.hero-button,.profile-submit,.payable-new-button,.receivable-new-button,.new-button) {
+  min-height:44px;
+  padding:0 16px;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:12px;
+  color:#111114;
+  background:linear-gradient(180deg,#e4e4e7,#a1a1aa);
+  font-size:13px;
+  font-weight:700;
+}
+#nexo-app :is(.secondary-button,.routine-secondary-button,.small-outline-button,.back-link,.finance-back-link,.accounts-back-link,.action-button,.icon-button,.today-button,.date-arrow,.week-arrow) {
+  min-height:42px;
+  border:1px solid var(--border-strong);
+  border-radius:12px;
+  color:#e4e4e7;
+  background:var(--surface-light);
+  font-size:13px;
+}
+#nexo-app :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) {
+  min-height:42px;
+  border:1px solid var(--border-strong);
+  border-radius:12px;
+  background:#0f0f12;
+  color:var(--text-primary);
+  font-size:14px;
+}
+#nexo-app :is(input,select,textarea)::placeholder { color:#85858f; opacity:1; }
+#nexo-app :is(.table-wrapper,.payable-table-wrapper,.receivable-table-wrapper) { overscroll-behavior-x:contain; }
+@media(max-width:767px) {
+  #nexo-app { overflow-x:clip; }
+  #nexo-app :is(.content,.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) {
+    padding:16px;
+  }
+  #nexo-app :is(
+    .payable-summary-card,.payable-editor-panel,.payable-panel,
+    .receivable-card,.receivable-editor-panel,.receivable-content,
+    .accounts-summary-card,.accounts-panel,.accounts-information,
+    .summary-card,.summary-panel,.panel,.form-card,.form-panel,
+    .content-section,.agenda-date-panel,.agenda-main-panel,.side-panel,
+    .weekly-progress-panel,.task-form-panel,.bottom-panel,.day-column,
+    .intelligence-panel,.objective-form-card,.objective-card,
+    .finance-form,.finance-history,.finance-section,.settings-card,
+    .settings-panel,.profile-panel,.report-card,.insight-card,
+    .planning-card,.reserve-card,.goal-card,.tracking-panel
+  ) { padding:16px; border-radius:16px; }
+  #nexo-app .nexo-header { padding:10px 12px; gap:8px; }
+  #nexo-app .nexo-header-left { flex:1; min-width:0; }
+  #nexo-app .nexo-header-greeting { display:none; }
+  #nexo-app .nexo-header-left strong { max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+  #nexo-app .nexo-header-actions { flex-shrink:0; gap:6px; }
+  #nexo-app .nexo-header-icon { width:38px; height:38px; }
+}
