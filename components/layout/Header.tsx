@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
-import AccountAccess from "@/components/auth/AccountAccess";
+import UserMenu from "@/components/ui/UserMenu";
 import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
 function getGreeting() {
@@ -108,7 +108,7 @@ export default function Header() {
           )}
         </div>
 
-        <AccountAccess />
+        <UserMenu />
       </div>
 
       <style jsx>{`
