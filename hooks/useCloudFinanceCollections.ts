@@ -154,7 +154,7 @@ export function useCloudFinanceCollections() {
         setLoaded(true);
       }
     }
-  }, [authLoading, session]);
+  }, [authLoading, session, sessionIdentity]);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -210,7 +210,7 @@ export function useCloudFinanceCollections() {
     const pending = queue.current.then(operation, operation);
     queue.current = pending.then(() => undefined, () => undefined);
     await pending;
-  }, [session, loaded, error]);
+  }, [session, loaded, error, sessionIdentity]);
 
   const saveTransactions = useCallback((value: Transaction[]) => saveCollection("nexo_transactions", value), [saveCollection]);
   const saveAccounts = useCallback((value: Account[]) => saveCollection("nexo_accounts", value), [saveCollection]);
