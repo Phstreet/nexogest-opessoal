@@ -4683,9 +4683,13 @@ tbody tr:hover {
 #nexo-app .nexo-stat-copy small { color:#a1a1aa; font-size:12px; line-height:16px; }
 #nexo-app .nexo-stat-arrow { flex:0 0 auto; color:#71717a; font-size:18px; }
 #nexo-app .daily-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"priorities agenda quick" "habits bills tip"; grid-auto-rows:minmax(250px,auto); align-items:stretch; gap:24px; }
-#nexo-app .daily-card { display:flex; flex-direction:column; min-width:0; min-height:250px; height:100%; padding:24px; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:#111114; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }\n#nexo-app .daily-card.area-tip { flex-direction:row; align-items:center; }
+#nexo-app .daily-card { display:flex; flex-direction:column; min-width:0; min-height:250px; height:100%; padding:24px; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:#111114; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+#nexo-app .daily-card.area-tip { flex-direction:row; align-items:center; }
 #nexo-app .daily-card>header { min-height:36px; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
-#nexo-app .daily-card h3,#nexo-app .daily-card .nexo-card-header h2 { display:flex; align-items:center; gap:10px; margin:0; color:#fafafa; font-size:18px; line-height:24px; font-weight:650; }\n#nexo-app .nexo-card-header-icon { display:inline-flex; color:#d4d4d8; }\n#nexo-app .nexo-card-header-action { display:inline-flex; align-items:center; flex-shrink:0; }\n#nexo-app .nexo-card-header-action a { display:inline-flex; align-items:center; gap:5px; color:#a1a1aa; font-size:12px; text-decoration:none; }
+#nexo-app .daily-card h3,#nexo-app .daily-card .nexo-card-header h2 { display:flex; align-items:center; gap:10px; margin:0; color:#fafafa; font-size:18px; line-height:24px; font-weight:650; }
+#nexo-app .nexo-card-header-icon { display:inline-flex; color:#d4d4d8; }
+#nexo-app .nexo-card-header-action { display:inline-flex; align-items:center; flex-shrink:0; }
+#nexo-app .nexo-card-header-action a { display:inline-flex; align-items:center; gap:5px; color:#a1a1aa; font-size:12px; text-decoration:none; }
 #nexo-app .daily-card>header>a { color:#a1a1aa; font-size:12px; }
 #nexo-app .daily-quick-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; flex:1; }
 #nexo-app .nexo-quick-action { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-width:0; min-height:92px; padding:12px 8px; color:#d4d4d8; text-align:center; text-decoration:none; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:#17171b; font-size:12px; line-height:16px; transition:background 150ms ease,border-color 150ms ease; }
@@ -4711,7 +4715,8 @@ tbody tr:hover {
 /* Busca e menu de conta no topo */
 #nexo-app .nexo-header { min-height:76px; padding:14px var(--nexo-page-gutter); gap:18px; }
 #nexo-app .nexo-header-actions { gap:12px; }
-#nexo-app .nexo-header-date { display:block; color:#a1a1aa; font-size:12px; line-height:16px; text-transform:none; white-space:nowrap; }\n#nexo-app .nexo-search-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:0 13px; color:#d4d4d8; background:#111114; border:1px solid rgba(255,255,255,.1); border-radius:12px; font-size:13px; white-space:nowrap; }
+#nexo-app .nexo-header-date { display:block; color:#a1a1aa; font-size:12px; line-height:16px; text-transform:none; white-space:nowrap; }
+#nexo-app .nexo-search-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:0 13px; color:#d4d4d8; background:#111114; border:1px solid rgba(255,255,255,.1); border-radius:12px; font-size:13px; white-space:nowrap; }
 #nexo-app .nexo-search-button svg { width:16px; height:16px; flex:0 0 16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 #nexo-app .nexo-search-button kbd { padding:3px 6px; color:#a1a1aa; border:1px solid rgba(255,255,255,.16); border-radius:6px; background:#17171b; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; line-height:14px; }
 #nexo-app .nexo-mobile-nav-toggle { display:none; width:42px; height:42px; flex:0 0 42px; align-items:center; justify-content:center; color:#e4e4e7; background:#111114; border:1px solid rgba(255,255,255,.1); border-radius:12px; }
@@ -4753,7 +4758,8 @@ tbody tr:hover {
   #nexo-app .nexo-stat-card { min-height:110px; padding:14px; gap:10px; border-radius:16px; }
   #nexo-app .nexo-stat-icon { width:36px; height:36px; flex-basis:36px; }
   #nexo-app .daily-grid { grid-template-columns:minmax(0,1fr); grid-template-areas:"priorities" "agenda" "quick" "habits" "bills" "tip"; grid-auto-rows:auto; gap:16px; }
-  #nexo-app .daily-card { min-height:0; padding:18px; }\n  #nexo-app .daily-card.area-tip { flex-direction:row; }
+  #nexo-app .daily-card { min-height:0; padding:18px; }
+  #nexo-app .daily-card.area-tip { flex-direction:row; }
   #nexo-app .daily-close { padding:18px; }
 }
 @media (min-width:768px) and (max-width:1023px) {
@@ -4776,7 +4782,8 @@ tbody tr:hover {
   }
 }
 
-#nexo-app .nexo-page-shell { display:flex; flex:1 1 auto; flex-direction:column; width:100%; max-width:1400px; min-width:0; margin-inline:auto; }\n#nexo-app .daily-center .nexo-page-header { margin-bottom:0; }
+#nexo-app .nexo-page-shell { display:flex; flex:1 1 auto; flex-direction:column; width:100%; max-width:1400px; min-width:0; margin-inline:auto; }
+#nexo-app .daily-center .nexo-page-header { margin-bottom:0; }
 #nexo-app .nexo-page-header { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; width:100%; margin:0 0 24px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
 #nexo-app .nexo-page-header-copy { display:flex; flex-direction:column; min-width:0; gap:6px; }
 #nexo-app .nexo-page-eyebrow { color:#a1a1aa; font-size:12px; font-weight:600; line-height:16px; letter-spacing:1.1px; text-transform:uppercase; }
@@ -4985,7 +4992,8 @@ tbody tr:hover {
 #nexo-app .nexo-page-header {
   min-height:56px; align-items:center; gap:12px; margin:0 0 16px;
 }
-#nexo-app .nexo-page-header-copy { display:flex; flex-direction:row; align-items:baseline; flex-wrap:wrap; gap:4px 8px; min-width:0; }\n#nexo-app .nexo-page-header-copy > p { flex-basis:100%; }
+#nexo-app .nexo-page-header-copy { display:flex; flex-direction:row; align-items:baseline; flex-wrap:wrap; gap:4px 8px; min-width:0; }
+#nexo-app .nexo-page-header-copy > p { flex-basis:100%; }
 #nexo-app .nexo-page-header h1,
 #nexo-app .page-heading h1,
 #nexo-app .intelligence-heading h1,
@@ -5004,7 +5012,8 @@ tbody tr:hover {
   font-size:13px; line-height:18px;
 }
 #nexo-app .nexo-page-eyebrow,
-#nexo-app .nexo-page-breadcrumb { font-size:11px; line-height:14px; letter-spacing:.04em; }\n#nexo-app .daily-center .nexo-page-eyebrow { text-transform:none; letter-spacing:0; }
+#nexo-app .nexo-page-breadcrumb { font-size:11px; line-height:14px; letter-spacing:.04em; }
+#nexo-app .daily-center .nexo-page-eyebrow { text-transform:none; letter-spacing:0; }
 #nexo-app .nexo-card {
   min-width:0; padding:var(--nexo-card-padding); border-radius:var(--nexo-card-radius);
 }
@@ -5190,4 +5199,49 @@ tbody tr:hover {
   #nexo-app .daily-ring { width:76px; height:76px; }
   #nexo-app .daily-ring strong { font-size:15px; }
 }
-@media (min-width:768px) and (max-width:1023px) {\n  #nexo-app .daily-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"priorities agenda" "quick quick" "habits bills" "tip tip"; }\n  #nexo-app .daily-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }\n}
+@media (min-width:768px) and (max-width:1023px) {
+  #nexo-app .daily-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"priorities agenda" "quick quick" "habits bills" "tip tip"; }
+  #nexo-app .daily-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+
+/* Densidade tipográfica e herança consistente entre módulos */
+#nexo-app { font-size:13px; line-height:18px; }
+#nexo-app h1 { font-size:24px; line-height:28px; font-weight:650; }
+#nexo-app h2,
+#nexo-app h3 { font-size:15px; line-height:20px; font-weight:650; }
+#nexo-app p { font-size:13px; line-height:18px; }
+#nexo-app :is(label,.field-label,.form-label,.section-eyebrow,.section-kicker,.finance-eyebrow,.accounts-eyebrow,.intelligence-eyebrow,.payable-eyebrow) {
+  font-size:11px; line-height:14px; letter-spacing:.06em; text-transform:uppercase;
+}
+#nexo-app :is(.content,.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) {
+  padding:0; min-width:0; max-width:100%;
+}
+#nexo-app :is(
+  .finance-card,.finance-backup-panel,.routine-metric-card,.routine-panel,
+  .agenda-metric-card,.agenda-form-panel,.timeline-card,.steps-panel,
+  .children-panel,.insights-panel
+) {
+  min-width:0; padding:var(--nexo-card-padding); border:1px solid var(--border);
+  border-radius:var(--nexo-card-radius); background:var(--surface); box-shadow:none;
+}
+#nexo-app :is(
+  .finance-cards,.routine-dashboard-grid,.intelligence-grid,.finance-fields-grid,
+  .secondary-grid,.form-grid,.quick-form-grid
+) { min-width:0; gap:var(--nexo-section-gap); }
+#nexo-app :is(.finance-intro,.routine-welcome,.routine-section-heading,.agenda-welcome,.intelligence-heading,.settings-heading,.objective-heading) {
+  margin-bottom:16px;
+}
+#nexo-app :is(.finance-intro,.routine-welcome,.agenda-welcome,.intelligence-heading,.settings-heading,.objective-heading) h1 {
+  font-size:24px; line-height:28px; font-weight:650; letter-spacing:-.45px;
+}
+#nexo-app :is(.finance-intro,.routine-welcome,.agenda-welcome,.intelligence-heading,.settings-heading,.objective-heading) p {
+  font-size:13px; line-height:18px;
+}
+#nexo-app :is(.routine-section-heading h2,.routine-panel-heading h2,.finance-section-title,.day-progress-heading h2,.intelligence-panel-heading h2,.settings-panel h2,.objective-card h2,.steps-panel h2,.children-panel h2) {
+  font-size:15px; line-height:20px; font-weight:650;
+}
+@media (max-width:767px) {
+  #nexo-app .nexo-page-shell { padding:16px 12px; }
+  #nexo-app :is(.finance-cards,.routine-dashboard-grid,.intelligence-grid,.secondary-grid,.form-grid,.quick-form-grid) { gap:12px; }
+}
