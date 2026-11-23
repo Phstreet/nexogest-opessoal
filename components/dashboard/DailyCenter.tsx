@@ -188,7 +188,11 @@ export default function DailyCenter(props: Props) {
       )}
 
       {/* HERO */}
-      <section className="daily-hero" aria-label="Boas-vindas">\n        <span className="daily-date">{dateLabel}</span>\n        <h1>{greeting}!</h1>\n        <p>Sua central de organização e controle.</p>\n      </section>
+      <section className="daily-hero" aria-label="Boas-vindas">
+        <span className="daily-date">{dateLabel}</span>
+        <h1>{greeting}!</h1>
+        <p>Sua central de organização e controle.</p>
+      </section>
 
       {/* INDICADORES */}
       <section className="daily-kpis" aria-label="Indicadores do dia">

@@ -138,7 +138,10 @@ export function SearchButton() {
       onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
       aria-label="Buscar"
     >
-      <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">\n        <circle cx="11" cy="11" r="7" />\n        <path d="m20 20-4-4" />\n      </svg>
+      <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-4-4" />
+      </svg>
       <span className="nexo-search-label">Buscar</span>
       <kbd>{shortcut}</kbd>
     </button>
