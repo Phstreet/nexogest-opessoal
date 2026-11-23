@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Account, Reserve, ReserveMovement, Transaction } from "@/lib/finance/types";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
@@ -79,23 +79,19 @@ export function useCloudFinanceCollections() {
   const [error, setError] = useState<string | null>(null);
   const revisions = useRef(new Map<CollectionKey, number>());
   const queue = useRef<Promise<void>>(Promise.resolve());
-  const sessionIdentityRef = useRef({
-    userId: session?.user.id ?? null,
-    generation: 0,
-  });
-  const currentUserId = session?.user.id ?? null;
+  const sessionIdentity = useMemo(
+    () => ({ userId: session?.user.id ?? null }),
+    [session?.user.id]
+  );
+  const sessionIdentityRef = useRef(sessionIdentity);
 
-  if (sessionIdentityRef.current.userId !== currentUserId) {
-    sessionIdentityRef.current = {
-      userId: currentUserId,
-      generation: sessionIdentityRef.current.generation + 1,
-    };
-  }
+  useLayoutEffect(() => {
+    sessionIdentityRef.current = sessionIdentity;
+  }, [sessionIdentity]);
 
   const reload = useCallback(async () => {
     if (authLoading) return;
-    const loadGeneration = sessionIdentityRef.current.generation;
-    const loadUserId = session?.user.id ?? null;
+    const loadIdentity = sessionIdentity;
 
     setLoaded(false);
     setError(null);
@@ -110,8 +106,7 @@ export function useCloudFinanceCollections() {
       const rows = await fetchRemoteCollections(KEYS);
 
       if (
-        sessionIdentityRef.current.generation !== loadGeneration ||
-        sessionIdentityRef.current.userId !== loadUserId
+        sessionIdentityRef.current !== loadIdentity
       ) {
         return;
       }
@@ -146,8 +141,7 @@ export function useCloudFinanceCollections() {
       setState(next);
     } catch (cause) {
       const sessionIsCurrent =
-        sessionIdentityRef.current.generation === loadGeneration &&
-        sessionIdentityRef.current.userId === loadUserId;
+        sessionIdentityRef.current === loadIdentity;
 
       if (sessionIsCurrent) {
         setState(EMPTY);
@@ -155,8 +149,7 @@ export function useCloudFinanceCollections() {
       }
     } finally {
       if (
-        sessionIdentityRef.current.generation === loadGeneration &&
-        sessionIdentityRef.current.userId === loadUserId
+        sessionIdentityRef.current === loadIdentity
       ) {
         setLoaded(true);
       }
@@ -176,13 +169,11 @@ export function useCloudFinanceCollections() {
     if (!loaded) throw new Error("Aguarde o carregamento dos dados antes de salvar.");
     if (error) throw new Error(error);
 
-    const expectedUserId = session.user.id;
-    const expectedGeneration = sessionIdentityRef.current.generation;
+    const expectedIdentity = sessionIdentity;
 
     const operation = async () => {
       const sessionIsCurrent = () =>
-        sessionIdentityRef.current.userId === expectedUserId &&
-        sessionIdentityRef.current.generation === expectedGeneration;
+        sessionIdentityRef.current === expectedIdentity;
 
       if (!sessionIsCurrent()) {
         throw new Error("A sessão foi alterada antes da gravação. Recarregue os dados da conta atual.");
