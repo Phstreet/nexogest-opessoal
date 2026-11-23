@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import type { NexoSyncKey } from "@/lib/supabase/sync-keys";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
@@ -13,7 +14,7 @@ type RoutineCollectionOptions = {
 };
 
 export function useRoutineCollection<T>(
-  key: string,
+  key: NexoSyncKey,
   isValidItem: (value: unknown) => value is T,
   options: RoutineCollectionOptions = {}
 ) {
