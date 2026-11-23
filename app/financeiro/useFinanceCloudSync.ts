@@ -183,5 +183,6 @@ export function useFinanceCloudSync({
     remoteReadyRef,
     lastSavedPayloadRef,
     saveQueueRef,
+    sessionUserIdRef,
   };
 }
