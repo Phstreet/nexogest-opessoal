@@ -23,10 +23,6 @@ import {
   isValidDate,
   isValidTransaction,
   localDate,
-  money,
-  movementClass,
-  movementIcon,
-  movementValue,
   parseAmount,
 } from "@/lib/finance/finance-utils";
 import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
