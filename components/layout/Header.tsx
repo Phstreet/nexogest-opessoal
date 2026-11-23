@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
 import AccountAccess from "@/components/auth/AccountAccess";
 import { SearchButton } from "@/components/ui/DashboardPrimitives";
@@ -16,12 +15,13 @@ function getGreeting() {
 }
 
 function getFormattedDate() {
-  return new Intl.DateTimeFormat("pt-BR", {
+  const value = new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric",
   }).format(new Date());
+  return value.charAt(0).toLocaleUpperCase("pt-BR") + value.slice(1);
 }
 
 export default function Header() {
@@ -92,7 +92,6 @@ export default function Header() {
             aria-expanded={notificationsOpen}
             onClick={() => {
               setNotificationsOpen((current) => !current);
-              setProfileOpen(false);
             }}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -146,7 +145,7 @@ export default function Header() {
         .nexo-header-date {
           color: #777d87;
           font-size: 10px;
-          text-transform: capitalize;
+          text-transform: none;
         }
 
         .nexo-header-actions {
