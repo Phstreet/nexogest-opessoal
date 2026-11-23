@@ -64,8 +64,9 @@ export async function updatePassword(password: string) {
   await request<{ ok: boolean }>("/api/auth", "POST", { action: "change-password", password });
 }
 
-export async function fetchRemoteCollections(): Promise<RemoteCollection[]> {
-  const result = await request<{ data: RemoteCollection[] }>("/api/sync");
+export async function fetchRemoteCollections(keys?: readonly string[]): Promise<RemoteCollection[]> {
+  const query = keys?.length ? `?keys=${encodeURIComponent(keys.join(","))}` : "";
+  const result = await request<{ data: RemoteCollection[] }>(`/api/sync${query}`);
   return result.data;
 }
 
