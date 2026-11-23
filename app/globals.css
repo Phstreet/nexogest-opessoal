@@ -4630,3 +4630,137 @@ tbody tr:hover {
     padding: 15px;
   }
 }
+
+
+/* Design tokens refinados — padrão de superfícies NEXO */
+:root {
+  --background: #0a0a0c;
+  --surface: #111114;
+  --surface-light: #17171b;
+  --surface-raised: #1d1d22;
+  --border: rgba(255,255,255,.08);
+  --border-strong: rgba(255,255,255,.16);
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-subtle: #85858f;
+  --radius-card: 20px;
+  --radius-control: 12px;
+  --nexo-page-width: 1400px;
+  --nexo-page-gutter: 24px;
+  --nexo-section-gap: 24px;
+  --nexo-card-padding: 24px;
+  --transition: 150ms ease;
+}
+#nexo-app .sidebar { width:264px; min-width:264px; flex-basis:264px; }
+#nexo-app .sidebar.sidebar-collapsed { width:72px; min-width:72px; flex-basis:72px; }
+#nexo-app .nav-item { min-height:40px; border-radius:12px; font-size:13px; }
+#nexo-app .nav-icon { width:20px; font-size:18px; }
+#nexo-app .sidebar-toggle { min-width:36px; min-height:36px; border-radius:10px; }
+#nexo-app .sidebar-brand-row .brand { margin-bottom:24px; }
+#nexo-app .main-area { min-width:0; width:calc(100% - 264px); }
+#nexo-app .nexo-account-slot { padding:10px var(--nexo-page-gutter) 0; background:transparent; }
+#nexo-app .nexo-account-access { min-height:42px; padding:6px 12px; border-radius:12px; font-size:12px; gap:10px; }
+#nexo-app .nexo-account-access button,#nexo-app .nexo-account-access a { min-height:30px; padding:5px 9px; border-radius:8px; font-size:12px; text-decoration:none; }
+#nexo-app :is(.content,.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) {
+  max-width:1400px;
+  padding-inline:var(--nexo-page-gutter);
+}
+#nexo-app :is(.content) { padding-top:24px; padding-bottom:32px; }
+#nexo-app :is(.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) { padding-top:24px; padding-bottom:32px; }
+
+/* Componentes reutilizáveis da Central do Dia */
+#nexo-app .daily-center { gap:24px; padding:32px 0 32px; overflow:visible; }
+#nexo-app .daily-hero { width:100%; max-width:none; padding:0; margin:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+#nexo-app .daily-date { color:#a1a1aa; font-size:12px; line-height:16px; letter-spacing:1.1px; text-transform:uppercase; }
+#nexo-app .daily-hero h1 { margin:8px 0 6px; color:#fafafa; font-size:clamp(30px,3vw,36px); font-weight:650; line-height:1.125; letter-spacing:-.8px; }
+#nexo-app .daily-hero p { margin:0; color:#a1a1aa; font-size:14px; line-height:20px; }
+#nexo-app .daily-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:0; }
+#nexo-app .nexo-stat-card { display:flex; align-items:center; gap:14px; min-width:0; min-height:124px; padding:20px; color:#fafafa; text-decoration:none; background:#111114; border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:none; transition:border-color 150ms ease,background 150ms ease,transform 150ms ease; }
+#nexo-app .nexo-stat-card:hover { border-color:rgba(255,255,255,.16); background:#17171b; transform:translateY(-1px); }
+#nexo-app .nexo-stat-icon { display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px; color:#d4d4d8; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:#17171b; }
+#nexo-app .nexo-stat-copy { display:flex; flex:1; flex-direction:column; min-width:0; gap:5px; }
+#nexo-app .nexo-stat-copy strong { color:#fafafa; font-size:clamp(20px,2vw,28px); font-weight:750; line-height:32px; overflow-wrap:anywhere; }
+#nexo-app .nexo-stat-copy small { color:#a1a1aa; font-size:12px; line-height:16px; }
+#nexo-app .nexo-stat-arrow { flex:0 0 auto; color:#71717a; font-size:18px; }
+#nexo-app .daily-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"priorities agenda quick" "habits bills tip"; grid-auto-rows:minmax(250px,auto); align-items:stretch; gap:24px; }
+#nexo-app .daily-card { display:flex; flex-direction:column; min-width:0; min-height:250px; height:100%; padding:24px; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:#111114; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+#nexo-app .daily-card>header { min-height:36px; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,.08); }
+#nexo-app .daily-card h3 { font-size:18px; line-height:24px; font-weight:650; }
+#nexo-app .daily-card>header>a { color:#a1a1aa; font-size:12px; }
+#nexo-app .daily-quick-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; flex:1; }
+#nexo-app .nexo-quick-action { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-width:0; min-height:92px; padding:12px 8px; color:#d4d4d8; text-align:center; text-decoration:none; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:#17171b; font-size:12px; line-height:16px; transition:background 150ms ease,border-color 150ms ease; }
+#nexo-app .nexo-quick-action:hover { background:#202026; border-color:rgba(255,255,255,.16); }
+#nexo-app .nexo-quick-action-icon { display:grid; place-items:center; color:#d4d4d8; }
+#nexo-app .nexo-empty-state { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; min-height:150px; padding:16px 10px; text-align:center; }
+#nexo-app .nexo-empty-icon { display:grid; place-items:center; width:42px; height:42px; margin-bottom:12px; color:#a1a1aa; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:#17171b; }
+#nexo-app .nexo-empty-state strong { color:#e4e4e7; font-size:14px; line-height:20px; }
+#nexo-app .nexo-empty-state p { max-width:260px; margin:6px 0 12px; color:#a1a1aa; font-size:12px; line-height:18px; }
+#nexo-app .nexo-empty-action { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:0 13px; color:#e4e4e7; border:1px solid rgba(255,255,255,.12); border-radius:12px; background:#17171b; font-size:12px; text-decoration:none; }
+#nexo-app .daily-row,#nexo-app .daily-agenda-item { font-size:14px; line-height:20px; }
+#nexo-app .daily-row { padding:12px 2px; }
+#nexo-app .daily-agenda-item { padding:12px 2px; }
+#nexo-app .daily-habits li { font-size:14px; line-height:20px; }
+#nexo-app .daily-bill>div strong { font-size:14px; }
+#nexo-app .daily-bill>div small { color:#a1a1aa; font-size:12px; }
+#nexo-app .daily-close { padding:24px; border:1px solid rgba(255,255,255,.08); border-radius:20px; background:#111114; box-shadow:none; }
+#nexo-app .daily-close-grid { gap:12px; }
+#nexo-app .daily-close-grid article { min-height:116px; padding:16px; border-color:rgba(255,255,255,.08); border-radius:12px; background:#17171b; }
+#nexo-app .daily-close-grid article>span { color:#a1a1aa; font-size:12px; line-height:16px; }
+#nexo-app .daily-close-grid article small { color:#a1a1aa; font-size:11px; line-height:16px; }
+
+/* Busca e menu de conta no topo */
+#nexo-app .nexo-header { min-height:76px; padding:14px var(--nexo-page-gutter); gap:18px; }
+#nexo-app .nexo-header-actions { gap:12px; }
+#nexo-app .nexo-search-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:0 13px; color:#d4d4d8; background:#111114; border:1px solid rgba(255,255,255,.1); border-radius:12px; font-size:13px; white-space:nowrap; }
+#nexo-app .nexo-search-button svg { width:16px; height:16px; flex:0 0 16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+#nexo-app .nexo-search-button kbd { padding:3px 6px; color:#a1a1aa; border:1px solid rgba(255,255,255,.16); border-radius:6px; background:#17171b; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; line-height:14px; }
+#nexo-app .nexo-mobile-nav-toggle { display:none; width:42px; height:42px; flex:0 0 42px; align-items:center; justify-content:center; color:#e4e4e7; background:#111114; border:1px solid rgba(255,255,255,.1); border-radius:12px; }
+#nexo-app .nexo-account-menu { position:relative; }
+#nexo-app .nexo-account-trigger { display:flex; align-items:center; gap:10px; min-height:42px; max-width:300px; padding:5px 10px 5px 6px; color:#e4e4e7; background:#111114; border:1px solid rgba(255,255,255,.1); border-radius:12px; font-size:12px; }
+#nexo-app .nexo-account-avatar { display:grid; place-items:center; width:30px; height:30px; flex:0 0 30px; color:#111114; border-radius:10px; background:linear-gradient(145deg,#e4e4e7,#a1a1aa); font-size:12px; font-weight:800; }
+#nexo-app .nexo-account-email { overflow:hidden; max-width:190px; color:#d4d4d8; text-overflow:ellipsis; white-space:nowrap; }
+#nexo-app .nexo-account-chevron { color:#a1a1aa; }
+#nexo-app .nexo-account-dropdown { position:absolute; z-index:100; top:calc(100% + 8px); right:0; display:flex; flex-direction:column; gap:5px; width:220px; padding:8px; background:#111114; border:1px solid rgba(255,255,255,.12); border-radius:14px; box-shadow:0 16px 40px rgba(0,0,0,.38); }
+#nexo-app .nexo-account-dropdown a,#nexo-app .nexo-account-dropdown button { display:flex; align-items:center; min-height:42px; padding:0 12px; color:#e4e4e7; border:0; border-radius:9px; background:transparent; font-size:13px; text-align:left; text-decoration:none; }
+#nexo-app .nexo-account-dropdown a:hover,#nexo-app .nexo-account-dropdown button:hover { background:#202026; }
+#nexo-app :is(button,a,input,select,textarea):focus-visible { outline:2px solid #d4d4d8; outline-offset:2px; }
+
+/* Sidebar drawer em telas menores */
+#nexo-app .nexo-mobile-nav-backdrop { display:none; }
+@media (max-width:1023px) {
+  #nexo-app .sidebar,#nexo-app .sidebar.sidebar-collapsed { position:fixed; z-index:300; inset:0 auto 0 0; width:264px; min-width:264px; max-width:calc(100vw - 56px); height:100dvh; min-height:100dvh; overflow-y:auto; transform:translateX(-105%); transition:transform 180ms ease; box-shadow:16px 0 45px rgba(0,0,0,.35); }
+  #nexo-app .sidebar.mobile-open { transform:translateX(0); }
+  #nexo-app .sidebar.sidebar-collapsed .brand-text,#nexo-app .sidebar.sidebar-collapsed .sidebar-section-label,#nexo-app .sidebar.sidebar-collapsed .nav-finance-label,#nexo-app .sidebar.sidebar-collapsed .nav-item-label,#nexo-app .sidebar.sidebar-collapsed .nav-subitem-label,#nexo-app .sidebar.sidebar-collapsed .sidebar-status-label,#nexo-app .sidebar.sidebar-collapsed .sidebar-version,#nexo-app .sidebar.sidebar-collapsed .favorites-empty-label { display:initial; }
+  #nexo-app .sidebar.sidebar-collapsed .nav-item { justify-content:flex-start; padding:10px 11px; }
+  #nexo-app .sidebar.sidebar-collapsed .sidebar-brand-row { justify-content:space-between; flex-wrap:nowrap; }
+  #nexo-app .sidebar.sidebar-collapsed .sidebar-brand-row .brand { justify-content:flex-start; }
+  #nexo-app .sidebar.sidebar-collapsed .sidebar-toggle { margin:0; }
+  #nexo-app .nexo-mobile-nav-backdrop.is-visible { position:fixed; z-index:299; inset:0; display:block; background:rgba(0,0,0,.62); backdrop-filter:blur(3px); }
+  #nexo-app .nexo-mobile-nav-toggle { display:inline-flex; }
+  #nexo-app .main-area { width:100%; }
+}
+@media (max-width:767px) {
+  #nexo-app .nexo-header { min-height:68px; padding:10px 16px; }
+  #nexo-app .nexo-header-left { min-width:0; }
+  #nexo-app .nexo-header-left strong { font-size:14px; }
+  #nexo-app .nexo-header-date { display:none; }
+  #nexo-app .nexo-search-button { width:42px; padding:0; }
+  #nexo-app .nexo-search-button>span,#nexo-app .nexo-search-button kbd { display:none; }
+  #nexo-app .nexo-account-trigger { width:42px; padding:5px; justify-content:center; }
+  #nexo-app .nexo-account-email,#nexo-app .nexo-account-chevron { display:none; }
+  #nexo-app .daily-center { gap:16px; padding:24px 0 24px; }
+  #nexo-app .daily-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  #nexo-app .nexo-stat-card { min-height:110px; padding:14px; gap:10px; border-radius:16px; }
+  #nexo-app .nexo-stat-icon { width:36px; height:36px; flex-basis:36px; }
+  #nexo-app .daily-grid { grid-template-columns:minmax(0,1fr); grid-template-areas:"priorities" "agenda" "quick" "habits" "bills" "tip"; grid-auto-rows:auto; gap:16px; }
+  #nexo-app .daily-card { min-height:0; padding:18px; }
+  #nexo-app .daily-close { padding:18px; }
+}
+@media (min-width:768px) and (max-width:1023px) {
+  #nexo-app .daily-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"priorities agenda" "quick quick" "habits bills" "tip tip"; gap:16px; }
+  #nexo-app .daily-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (min-width:1024px) and (max-width:1279px) {
+  #nexo-app .daily-grid { gap:16px; }
+  #nexo-app .daily-card { padding:18px; }
+}
