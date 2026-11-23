@@ -3,7 +3,7 @@
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
@@ -360,18 +360,15 @@ export default function Page() {
   const lastSavedPayloadRef = useRef("");
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const transactionFormRef = useRef<HTMLFormElement>(null);
-  const sessionIdentityRef = useRef({
-    userId: session?.user.id ?? null,
-    generation: 0,
-  });
-  const currentUserId = session?.user.id ?? null;
+  const sessionIdentity = useMemo(
+    () => ({ userId: session?.user.id ?? null }),
+    [session?.user.id]
+  );
+  const sessionIdentityRef = useRef(sessionIdentity);
 
-  if (sessionIdentityRef.current.userId !== currentUserId) {
-    sessionIdentityRef.current = {
-      userId: currentUserId,
-      generation: sessionIdentityRef.current.generation + 1,
-    };
-  }
+  useLayoutEffect(() => {
+    sessionIdentityRef.current = sessionIdentity;
+  }, [sessionIdentity]);
 
   useEffect(() => {
     if (editingTransactionId === null) return;
@@ -461,15 +458,13 @@ export default function Page() {
   useEffect(() => {
     if (!loaded || !safeToSave || !remoteReadyRef.current) return;
 
-    const sessionGeneration = sessionIdentityRef.current.generation;
-    const sessionUserId = session?.user.id ?? null;
+    const queuedSessionIdentity = sessionIdentity;
     const serializedPayload = JSON.stringify(transactions);
     if (serializedPayload === lastSavedPayloadRef.current) return;
 
     saveQueueRef.current = saveQueueRef.current.then(async () => {
       const sessionIsCurrent =
-        sessionIdentityRef.current.generation === sessionGeneration &&
-        sessionIdentityRef.current.userId === sessionUserId;
+        sessionIdentityRef.current === queuedSessionIdentity;
 
       if (!remoteReadyRef.current || !sessionIsCurrent) return;
 
@@ -477,8 +472,7 @@ export default function Page() {
         const result = await saveRemoteCollection(STORAGE_KEY, transactions, revisionRef.current);
 
         const sessionStillCurrent =
-          sessionIdentityRef.current.generation === sessionGeneration &&
-          sessionIdentityRef.current.userId === sessionUserId;
+          sessionIdentityRef.current === queuedSessionIdentity;
 
         if (!sessionStillCurrent) return;
 
@@ -495,8 +489,7 @@ export default function Page() {
         setSyncStatus("Sincronizado com o Supabase");
       } catch (error) {
         const sessionStillCurrent =
-          sessionIdentityRef.current.generation === sessionGeneration &&
-          sessionIdentityRef.current.userId === sessionUserId;
+          sessionIdentityRef.current === queuedSessionIdentity;
 
         if (!sessionStillCurrent) return;
 
