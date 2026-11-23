@@ -55,7 +55,7 @@ export default function MainNavigation() {
         return;
       }
       try {
-        const collections = await fetchRemoteCollections();
+        const collections = await fetchRemoteCollections(["nexo_preferences"]);
         if (!active) return;
         const row = collections.find((item) => item.data_key === "nexo_preferences");
         const payload = row?.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
@@ -80,7 +80,7 @@ export default function MainNavigation() {
 
   async function persistNavigationPreferences(nextFavorites: string[], nextCollapsed: boolean) {
     if (!session || !preferencesLoaded) throw new Error("As preferências ainda não foram carregadas.");
-    const collections = await fetchRemoteCollections();
+    const collections = await fetchRemoteCollections(["nexo_preferences"]);
     const row = collections.find((item) => item.data_key === "nexo_preferences");
     const latest = row?.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
       ? row.payload as Record<string, unknown>
@@ -91,7 +91,7 @@ export default function MainNavigation() {
       sidebarCollapsed: nextCollapsed,
     }, Number(row?.revision) || 0);
     if (!result.saved) {
-      const refreshed = await fetchRemoteCollections();
+      const refreshed = await fetchRemoteCollections(["nexo_preferences"]);
       const current = refreshed.find((item) => item.data_key === "nexo_preferences");
       const payload = current?.payload && typeof current.payload === "object" && !Array.isArray(current.payload)
         ? current.payload as Record<string, unknown>
