@@ -70,4 +70,14 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
     expect(calculateFinanceTotals([item]).receitasRealizadas).toBe(0);
     expect(getAccountBalanceFrom(account, [item])).toBe(0);
   });
+  test("usa a mesma regra normalizada para investimentos aplicados e cancelados", () => {
+    const applied = transaction({ type: "Investimento", status: "APLICADO" });
+    expect(isInvestmentApplied(applied)).toBe(true);
+    expect(calculateFinanceTotals([applied]).investimentosAplicados).toBe(100);
+
+    const cancelled = transaction({ type: "Investimento", status: "CANCELADO" });
+    expect(isInvestmentApplied(cancelled)).toBe(false);
+    expect(calculateFinanceTotals([cancelled]).investimentosAplicados).toBe(0);
+  });
+
 });
