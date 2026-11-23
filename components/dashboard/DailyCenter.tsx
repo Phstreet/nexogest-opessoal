@@ -501,6 +501,113 @@ export default function DailyCenter(props: Props) {
           .daily-close>header{align-items:flex-start;flex-direction:column}
           .daily-close-grid{grid-template-columns:minmax(0,1fr)}
         }
+
+        /* Padronização das caixas do Central do Dia */
+        .daily-center{gap:16px}
+        .daily-kpis{gap:14px;align-items:stretch}
+        .daily-kpi{
+          box-sizing:border-box;
+          min-height:146px;
+          height:100%;
+          padding:17px 18px;
+          border:1px solid #303238;
+          border-radius:12px;
+          background:linear-gradient(145deg,#1b1c20,#131417);
+          box-shadow:0 7px 22px rgba(0,0,0,.18);
+          backdrop-filter:none;
+          -webkit-backdrop-filter:none;
+        }
+        .daily-kpi:hover{border-color:#50525b;transform:translateY(-1px)}
+        .daily-grid{
+          grid-template-columns:repeat(3,minmax(0,1fr));
+          grid-auto-rows:minmax(220px,auto);
+          align-items:stretch;
+          gap:14px;
+        }
+        .daily-card{
+          box-sizing:border-box;
+          display:flex;
+          flex-direction:column;
+          min-width:0;
+          min-height:220px;
+          height:100%;
+          padding:18px;
+          border:1px solid #303238;
+          border-radius:12px;
+          background:linear-gradient(145deg,#1b1c20,#131417);
+          box-shadow:0 7px 22px rgba(0,0,0,.18);
+          backdrop-filter:none;
+          -webkit-backdrop-filter:none;
+        }
+        .daily-card>header{
+          min-height:30px;
+          margin-bottom:14px;
+          padding-bottom:11px;
+          border-bottom:1px solid #303238;
+        }
+        .daily-card h3{font-size:15px;line-height:1.35}
+        .daily-card>header>a{font-size:11px}
+        .daily-row,.daily-agenda-item{font-size:14px}
+        .daily-row{gap:10px;padding:9px 0}
+        .daily-agenda-item{gap:11px;padding:9px 0}
+        .daily-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+        .daily-quick-grid a{
+          box-sizing:border-box;
+          min-height:76px;
+          height:100%;
+          padding:10px 6px;
+          border:1px solid #303238;
+          border-radius:10px;
+          background:#202126;
+          color:#d5d6db;
+          font-size:12px;
+        }
+        .daily-quick-grid a:hover{border-color:#50525b;background:#292b30}
+        .daily-habits{gap:16px}
+        .daily-ring{width:92px;height:92px}
+        .daily-habits li{font-size:13px;padding:6px 0}
+        .daily-bill{gap:11px;padding:8px 0}
+        .daily-bill-icon{width:34px;height:34px;background:#24262b;border:1px solid #41434b}
+        .daily-bill>div strong{font-size:13px}
+        .daily-bill>div small{font-size:11px}
+        .daily-bill>b{font-size:13px}
+        .area-tip{flex-direction:row;justify-content:flex-start}
+        .area-tip .round{width:38px;height:38px}
+        .daily-close{
+          box-sizing:border-box;
+          padding:18px;
+          border:1px solid #303238;
+          border-radius:12px;
+          background:linear-gradient(145deg,#1b1c20,#131417);
+          box-shadow:0 7px 22px rgba(0,0,0,.18);
+        }
+        .daily-close-grid{gap:10px}
+        .daily-close-grid article{
+          box-sizing:border-box;
+          min-height:112px;
+          height:100%;
+          padding:13px;
+          border:1px solid #303238;
+          border-radius:10px;
+          background:#202126;
+        }
+        @media(max-width:1100px){
+          .daily-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(210px,auto)}
+          .daily-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+        }
+        @media(max-width:640px){
+          .daily-center{gap:12px}
+          .daily-kpis{gap:10px}
+          .daily-kpi{min-height:126px;padding:13px 12px;border-radius:11px}
+          .daily-grid{grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;gap:10px}
+          .daily-card{min-height:0;height:auto;padding:15px;border-radius:11px}
+          .daily-card>header{margin-bottom:11px}
+          .daily-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+          .daily-close{padding:15px;border-radius:11px}
+          .daily-close-grid{grid-template-columns:minmax(0,1fr)}
+          .daily-close-grid article{min-height:94px}
+        }
+
       `}</style>
     </div>
   );
