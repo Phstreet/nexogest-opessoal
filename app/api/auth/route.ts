@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  clearSessionCookies, fetchSupabaseUser, getSupabaseConfig, EXPIRY_COOKIE,
+  clearSessionCookies, copyResponseCookies, fetchSupabaseUser, getSupabaseConfig, EXPIRY_COOKIE,
   getValidAccessToken, setSessionCookies, hasValidOrigin,
 } from "@/lib/supabase/server";
 
@@ -24,12 +24,12 @@ export async function GET(request: NextRequest) {
       clearSessionCookies(response);
       return response;
     }
-    return NextResponse.json({
+    return copyResponseCookies(response, NextResponse.json({
       session: { user, expires_at: Number(response.cookies.get(EXPIRY_COOKIE)?.value || request.cookies.get(EXPIRY_COOKIE)?.value || Math.floor(Date.now() / 1000) + 300) },
-    }, { headers: response.headers });
-  } catch (error) {
+    }, { headers: response.headers }));
+  } catch {
     clearSessionCookies(response);
-    return NextResponse.json({ session: null, error: "Não foi possível validar a sessão. Entre novamente." }, { headers: response.headers });
+    return copyResponseCookies(response, NextResponse.json({ session: null, error: "Não foi possível validar a sessão. Entre novamente." }, { headers: response.headers }));
   }
 }
 
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       const user = await fetchSupabaseUser(access);
       if (!user) return NextResponse.json({ error: "Não foi possível validar o link de recuperação. Solicite outro e-mail." }, { status: 401 });
       const response = NextResponse.json({ session: { user, expires_at: Math.floor(Date.now() / 1000) + expiresIn } });
-      setSessionCookies(response, { access_token: access, refresh_token: refresh, expires_in: Number(body.expires_in || 3600) });
+      setSessionCookies(response, { access_token: access, refresh_token: refresh, expires_in: expiresIn });
       return response;
     }
 
@@ -101,13 +101,13 @@ export async function POST(request: NextRequest) {
       }
       const response = NextResponse.json({ ok: false });
       const access = await getValidAccessToken(request, response);
-      if (!access) return NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401, headers: response.headers });
+      if (!access) return copyResponseCookies(response, NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401, headers: response.headers }));
       const update = await fetch(`${url}/auth/v1/user`, {
         method: "PUT", headers: { apikey: key, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
         body: JSON.stringify({ password: body.password }), cache: "no-store",
       });
-      if (!update.ok) return NextResponse.json({ error: await readAuthError(update) }, { status: update.status, headers: response.headers });
-      return NextResponse.json({ ok: true }, { headers: response.headers });
+      if (!update.ok) return copyResponseCookies(response, NextResponse.json({ error: await readAuthError(update) }, { status: update.status, headers: response.headers }));
+      return copyResponseCookies(response, NextResponse.json({ ok: true }, { headers: response.headers }));
     }
 
     if (action === "logout") {
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       return response;
     }
     return NextResponse.json({ error: "Ação de autenticação desconhecida." }, { status: 400 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Não foi possível concluir a operação de autenticação. Tente novamente." }, { status: 500 });
   }
 }
