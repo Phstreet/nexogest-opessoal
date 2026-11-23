@@ -4661,7 +4661,7 @@ tbody tr:hover {
 #nexo-app .nexo-account-slot { padding:10px var(--nexo-page-gutter) 0; background:transparent; }
 #nexo-app .nexo-account-access { min-height:42px; padding:6px 12px; border-radius:12px; font-size:12px; gap:10px; }
 #nexo-app .nexo-account-access button,#nexo-app .nexo-account-access a { min-height:30px; padding:5px 9px; border-radius:8px; font-size:12px; text-decoration:none; }
-#nexo-app :is(.content,.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) {
+#nexo-app .nexo-page-shell > :is(.content,.finance-content-vertical,.routine-content,.objectives-page,.intelligence-page,.accounts-content,.planning-content,.profile-page,.nexo-settings) {
   max-width:1400px;
   padding-inline:var(--nexo-page-gutter);
 }
