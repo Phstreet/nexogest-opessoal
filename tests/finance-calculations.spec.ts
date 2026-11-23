@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { getAccountBalanceFrom, getSettledTransactionAmount } from "../lib/finance/accounts";
+import { getFinancialSummary } from "../lib/finance/calculations";
 import type { Account, Transaction } from "../lib/finance/types";
 
 const account: Account = {
@@ -29,6 +30,9 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
     const item = transaction({ status: "Pago" });
     expect(getSettledTransactionAmount(item)).toBe(100);
     expect(getAccountBalanceFrom(account, [item])).toBe(100);
+    const summary = getFinancialSummary([item], [account], [], []);
+    expect(summary.totalIncome).toBe(100);
+    expect(summary.accountsBalance).toBe(100);
   });
 
   test("usa o valor efetivamente pago em uma despesa parcial", () => {
@@ -40,6 +44,10 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
     });
     expect(getSettledTransactionAmount(item)).toBe(35);
     expect(getAccountBalanceFrom(account, [item])).toBe(-35);
+    const summary = getFinancialSummary([item], [account], [], []);
+    expect(summary.totalExpenses).toBe(35);
+    expect(summary.accountsBalance).toBe(-35);
+    expect(summary.payable).toBe(65);
   });
 
   test("não transforma settledAmount nulo em liquidação de valor integral", () => {
