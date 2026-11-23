@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import MainNavigation from "../navigation/MainNavigation";
 import Header from "./Header";
+import { PageShell } from "@/components/ui/DashboardPrimitives";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -17,7 +18,7 @@ export default function AppLayout({
 
       <section className="main-area">
         {header ?? <Header />}
-        {children}
+        <PageShell>{children}</PageShell>
       </section>
     </main>
   );
