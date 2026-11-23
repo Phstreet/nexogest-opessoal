@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
+import { EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
 
 type Props = {
   tasks: RoutineTask[];
@@ -106,11 +107,13 @@ export default function DailyCenter(props: Props) {
   const nextWeekKey = localDateKey(nextWeek);
   const hour = today.getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const dateLabel = today.toLocaleDateString("pt-BR", {
+  const rawDateLabel = today.toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
     month: "long",
+    year: "numeric",
   });
+  const dateLabel = rawDateLabel.charAt(0).toLocaleUpperCase("pt-BR") + rawDateLabel.slice(1);
 
   /* Tarefas */
   const todaysTasks = props.tasks.filter((task) => task.date === todayKey);
@@ -187,32 +190,16 @@ export default function DailyCenter(props: Props) {
       {/* HERO */}
       <section className="daily-hero">
         <span className="daily-date">{dateLabel}</span>
-        <h2>{greeting}!</h2>
+        <h1>{greeting}!</h1>
         <p>Sua central de organização e controle.</p>
       </section>
 
-      {/* KPIs */}
-      <section className="daily-kpis">
-        <Link href="/rotina/agenda" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="checkCircle" size={30} /></span>
-          <strong>{String(pendingCount).padStart(2, "0")}</strong>
-          <div><small>Tarefas pendentes</small><Icon name="arrow" size={18} /></div>
-        </Link>
-        <Link href="/rotina/agenda" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="calendar" size={30} /></span>
-          <strong>{String(agendaToday.length).padStart(2, "0")}</strong>
-          <div><small>Compromissos hoje</small><Icon name="arrow" size={18} /></div>
-        </Link>
-        <Link href="/financeiro" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="wallet" size={30} /></span>
-          <strong>{props.financeLoaded ? money(props.balance) : "Carregando…"}</strong>
-          <div><small>Saldo disponível</small><Icon name="arrow" size={18} /></div>
-        </Link>
-        <Link href="/rotina/agenda" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="checkCircle" size={30} /></span>
-          <strong>{taskRate}%</strong>
-          <div><small>Tarefas concluídas</small><Icon name="arrow" size={18} /></div>
-        </Link>
+      {/* INDICADORES */}
+      <section className="daily-kpis" aria-label="Indicadores do dia">
+        <StatCard href="/rotina/agenda" icon={<Icon name="checkCircle" size={22} />} value={String(pendingCount).padStart(2, "0")} label="Tarefas pendentes" />
+        <StatCard href="/rotina/agenda" icon={<Icon name="calendar" size={22} />} value={String(agendaToday.length).padStart(2, "0")} label="Compromissos hoje" />
+        <StatCard href="/financeiro" icon={<Icon name="wallet" size={22} />} value={props.financeLoaded ? money(props.balance) : "Carregando…"} label="Saldo disponível" />
+        <StatCard href="/rotina/agenda" icon={<Icon name="checkCircle" size={22} />} value={taskRate + "%"} label="Tarefas concluídas" />
       </section>
 
       {/* GRADE PRINCIPAL */}
@@ -249,7 +236,15 @@ export default function DailyCenter(props: Props) {
               <i />
               <span className={task.done ? "is-done" : ""}>{task.description}</span>
             </div>
-          )) : <p className="daily-empty">Nenhum compromisso com horário hoje.</p>}
+          )) : (
+            <EmptyState
+              icon={<Icon name="calendar" size={25} />}
+              title="Agenda livre"
+              description="Você não tem compromissos com horário para hoje."
+              actionHref="/rotina/agenda"
+              actionLabel="Ver agenda"
+            />
+          )}
         </section>
 
         {/* Acesso rápido */}
@@ -259,10 +254,7 @@ export default function DailyCenter(props: Props) {
           </header>
           <nav className="daily-quick-grid" aria-label="Acesso rápido">
             {quickLinks.map((item) => (
-              <Link href={item.href} key={item.label}>
-                <Icon name={item.icon} size={24} />
-                <span>{item.label}</span>
-              </Link>
+              <QuickAction key={item.label} href={item.href} icon={<Icon name={item.icon} size={22} />} label={item.label} />
             ))}
           </nav>
         </section>
@@ -296,7 +288,15 @@ export default function DailyCenter(props: Props) {
                 })}
               </ul>
             </div>
-          ) : <p className="daily-empty">Você ainda não cadastrou hábitos. <Link href="/rotina/habitos">Criar um hábito ↗</Link></p>}
+          ) : (
+            <EmptyState
+              icon={<Icon name="bars" size={25} />}
+              title="Nenhum hábito cadastrado"
+              description="Crie hábitos para acompanhar sua consistência diária."
+              actionHref="/rotina/habitos"
+              actionLabel="Criar hábito"
+            />
+          )}
         </section>
 
         {/* Contas próximas */}
@@ -305,7 +305,9 @@ export default function DailyCenter(props: Props) {
             <h3><Icon name="card" size={20} /> Contas próximas</h3>
             <Link href="/financeiro/contas-a-pagar">Ver todas <Icon name="arrow" size={13} /></Link>
           </header>
-          {!props.financeLoaded ? <p className="daily-empty">Carregando informações financeiras…</p> : (
+          {!props.financeLoaded ? (
+            <EmptyState icon={<Icon name="wallet" size={25} />} title="Carregando contas" description="Estamos atualizando suas informações financeiras." />
+          ) : (
             <>
               {overdueBills.length > 0 && (
                 <p className="daily-warning">{overdueBills.length} conta(s) com vencimento anterior ainda pendente(s).</p>
@@ -319,7 +321,15 @@ export default function DailyCenter(props: Props) {
                   </div>
                   <b>{money(Math.max(0, Number(item.amount || 0) - settledAmount(item)))}</b>
                 </div>
-              )) : <p className="daily-empty">Nenhuma conta vencendo nos próximos 7 dias.</p>}
+              )) : (
+                <EmptyState
+                  icon={<Icon name="checkCircle" size={25} />}
+                  title="Nenhuma conta próxima"
+                  description="Não há despesas pendentes com vencimento nos próximos sete dias."
+                  actionHref="/financeiro/contas-a-pagar"
+                  actionLabel="Ver contas"
+                />
+              )}
             </>
           )}
         </section>
