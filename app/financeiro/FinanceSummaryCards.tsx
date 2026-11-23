@@ -1,13 +1,5 @@
 import { money } from "@/lib/finance/finance-utils";
-
-type FinanceTotals = {
-  receitas: number;
-  despesas: number;
-  receitasRealizadas: number;
-  despesasRealizadas: number;
-  investimentosAplicados: number;
-  resultado: number;
-};
+import type { FinanceTotals } from "@/lib/finance/finance-utils";
 
 type FinanceSummaryCardsProps = {
   totals: FinanceTotals;
