@@ -500,7 +500,7 @@ export default function Page() {
         setSyncStatus("Erro ao salvar na nuvem");
       }
     });
-  }, [transactions, loaded, safeToSave, session?.user.id]);
+  }, [transactions, loaded, safeToSave, session?.user.id, sessionIdentity]);
 
   const accountOptions = useMemo(() => {
     const registeredNames = new Set(
