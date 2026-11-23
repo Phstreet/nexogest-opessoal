@@ -69,7 +69,6 @@ export default function Header() {
       <div className="nexo-header-left">
         <span className="nexo-header-greeting">{greeting}</span>
         <strong>{displayName.trim() ? `Bem-vindo, ${displayName.trim()}.` : "Bem-vindo ao NEXO."}</strong>
-        <span className="nexo-header-date">{date}</span>
       </div>
 
       <div className="nexo-header-actions">
@@ -84,6 +83,7 @@ export default function Header() {
           </svg>
         </button>
         <SearchButton />
+        <span className="nexo-header-date">{date}</span>
         <div className="nexo-header-popover">
           <button
             type="button"
