@@ -60,7 +60,7 @@ export function useCloudFinanceCollections() {
     }
 
     try {
-      const rows = await fetchRemoteCollections();
+      const rows = await fetchRemoteCollections(KEYS);
       const next: FinanceState = { ...EMPTY };
       for (const key of KEYS) {
         const row = rows.find((item) => item.data_key === key);
