@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
+import { isNexoSyncKey } from "@/lib/supabase/sync-keys";
 
 export const runtime = "nodejs";
 
-const ALLOWED_KEYS = new Set([
+const ARRAY_KEYS = new Set([
   "nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements",
-  "nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile",
-  "nexo_planning_budgets", "nexo_planning_goals", "nexo_personal_goals", "nexo_task_backups",
+  "nexo_tasks", "nexo_habits", "nexo_planning_budgets", "nexo_planning_goals",
+  "nexo_personal_goals", "nexo_task_backups",
 ]);
-const ARRAY_KEYS = new Set([...ALLOWED_KEYS].filter((key) => key !== "nexo_preferences" && key !== "nexo_profile"));
 const MAX_SYNC_BODY_BYTES = 1_048_576;
 
 async function authorized(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     let keys: string[] | null = null;
     if (requestedKeys) {
       keys = [...new Set(requestedKeys.split(",").map((key) => key.trim()).filter(Boolean))];
-      if (!keys.length || keys.some((key) => !ALLOWED_KEYS.has(key))) {
+      if (!keys.length || keys.some((key) => !isNexoSyncKey(key))) {
         return NextResponse.json({ error: "Uma ou mais coleções solicitadas não são permitidas." }, { status: 400, headers: response.headers });
       }
     }
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     const dataKey = typeof body.data_key === "string" ? body.data_key : "";
     const revision = Number(body.expected_revision);
-    if (!ALLOWED_KEYS.has(dataKey) || !Number.isSafeInteger(revision) || revision < 0) {
+    if (!isNexoSyncKey(dataKey) || !Number.isSafeInteger(revision) || revision < 0) {
       return NextResponse.json({ error: "Dados de sincronização inválidos." }, { status: 400 });
     }
     const payload = body.payload;
