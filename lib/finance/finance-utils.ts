@@ -52,8 +52,7 @@ export function getDefaultSubcategory(category: string) {
 
 export function isInvestmentApplied(item: Transaction) {
   const isInvestment = item.type === "Investimento" || item.type === "Aplicação";
-  if (!isInvestment || item.status === "Cancelada") return false;
-  return item.status === "Aplicado" || !item.status;
+  return isInvestment && getSettledTransactionAmount(item) > 0;
 }
 
 export function isValidTransaction(value: unknown): value is Transaction {
@@ -93,22 +92,7 @@ export function isValidTransaction(value: unknown): value is Transaction {
 }
 
 export function getSettledAmount(item: Transaction) {
-  if (item.status === "Cancelada") return 0;
-  if (item.type === "Receita") {
-    if (item.status === "Recebida") return item.amount;
-    if (item.status === "Recebida parcialmente") {
-      return Math.min(Number(item.settledAmount || 0), item.amount);
-    }
-    return item.status ? 0 : item.amount;
-  }
-  if (item.type === "Despesa") {
-    if (item.status === "Pago") return item.amount;
-    if (item.status === "Paga parcialmente") {
-      return Math.min(Number(item.settledAmount || 0), item.amount);
-    }
-    return item.status ? 0 : item.amount;
-  }
-  return isInvestmentApplied(item) ? item.amount : 0;
+  return getSettledTransactionAmount(item);
 }
 
 export function getNextTransactionId(transactions: Transaction[]) {
@@ -151,7 +135,7 @@ export type FinanceTotals = {
 };
 
 export function calculateFinanceTotals(transactions: Transaction[]): FinanceTotals {
-  const active = transactions.filter((item) => item.status !== "Cancelada");
+  const active = transactions.filter((item) => !isCancelledTransaction(item));
   const receitas = active
     .filter((item) => item.type === "Receita")
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -166,7 +150,7 @@ export function calculateFinanceTotals(transactions: Transaction[]): FinanceTota
     .reduce((sum, item) => sum + getSettledAmount(item), 0);
   const investimentosAplicados = active
     .filter(isInvestmentApplied)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    .reduce((sum, item) => sum + getSettledAmount(item), 0);
 
   return {
     receitas,
