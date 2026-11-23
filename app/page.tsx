@@ -53,6 +53,16 @@ export default function Home() {
               title="Central do Dia"
               actions={
                 <>
+                  <button
+                    type="button"
+                    className="nexo-mobile-nav-toggle"
+                    aria-label="Abrir menu de navegação"
+                    onClick={() => window.dispatchEvent(new Event("nexo:toggle-mobile-nav"))}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                      <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
                   <SearchButton />
                   <UserMenu />
                 </>
@@ -132,6 +142,15 @@ export default function Home() {
             font-weight: 650;
             line-height: 24px;
             letter-spacing: -0.35px;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-mobile-nav-toggle {
+            display: none;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            padding: 0;
+            border-radius: 10px;
           }
 
           #nexo-app .nexo-topbar-page .nexo-search-button {
@@ -223,6 +242,10 @@ export default function Home() {
 
             #nexo-app .nexo-topbar-page .nexo-page-breadcrumb {
               display: none;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-mobile-nav-toggle {
+              display: inline-flex;
             }
 
             #nexo-app .nexo-topbar-page .nexo-search-button {
