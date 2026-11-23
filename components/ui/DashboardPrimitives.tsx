@@ -20,9 +20,9 @@ type PageHeaderProps = {
   actions?: ReactNode;
 };
 
-export function PageHeader({ eyebrow, title, description, breadcrumb, actions }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, description, breadcrumb, actions, className = "" }: PageHeaderProps) {
   return (
-    <header className="nexo-page-header">
+    <header className={`nexo-page-header ${className}`.trim()}>
       <div className="nexo-page-header-copy">
         {breadcrumb && <nav className="nexo-page-breadcrumb" aria-label="Caminho da página">{breadcrumb}</nav>}
         {eyebrow && <span className="nexo-page-eyebrow">{eyebrow}</span>}
@@ -120,19 +120,25 @@ export function EmptyState({ icon, title, description, actionHref, actionLabel }
 }
 
 export function SearchButton() {
+  const [shortcut, setShortcut] = useState("Ctrl K");
+
+  useEffect(() => {
+    const platform = navigator.platform || "";
+    if (/Mac|iPhone|iPad|iPod/i.test(platform)) {
+      setShortcut("⌘K");
+    }
+  }, []);
+
   return (
     <button
       type="button"
       className="nexo-search-button"
       onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
-      aria-label="Buscar no NEXO"
+      aria-label="Buscar"
     >
-      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-        <circle cx="10.8" cy="10.8" r="6.8" />
-        <path d="m16 16 4.2 4.2" />
-      </svg>
-      <span>Buscar</span>
-      <kbd>Ctrl K</kbd>
+      <Search size={14} aria-hidden="true" />
+      <span className="nexo-search-label">Buscar</span>
+      <kbd>{shortcut}</kbd>
     </button>
   );
 }
