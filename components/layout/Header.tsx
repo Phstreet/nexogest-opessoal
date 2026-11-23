@@ -4,6 +4,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
+import AccountAccess from "@/components/auth/AccountAccess";
+import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -26,7 +28,6 @@ export default function Header() {
   const [greeting, setGreeting] = useState("Olá");
   const [date, setDate] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
@@ -74,14 +75,15 @@ export default function Header() {
       <div className="nexo-header-actions">
         <button
           type="button"
-          className="nexo-header-search"
-          onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
-          aria-label="Buscar no NEXO"
+          className="nexo-mobile-nav-toggle"
+          aria-label="Abrir menu de navegação"
+          onClick={() => window.dispatchEvent(new Event("nexo:toggle-mobile-nav"))}
         >
-          <span aria-hidden="true">⌕</span>
-          <span>Buscar no NEXO</span>
-          <kbd>Ctrl K</kbd>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
+        <SearchButton />
         <div className="nexo-header-popover">
           <button
             type="button"
@@ -107,31 +109,7 @@ export default function Header() {
           )}
         </div>
 
-        <div className="nexo-header-popover">
-          <button
-            type="button"
-            className="nexo-profile-button"
-            aria-label="Perfil"
-            aria-expanded={profileOpen}
-            onClick={() => {
-              setProfileOpen((current) => !current);
-              setNotificationsOpen(false);
-            }}
-          >
-            <span className="nexo-profile-avatar">{displayName.trim().charAt(0).toUpperCase() || "N"}</span>
-            <span className="nexo-profile-label">{displayName.trim() || "Perfil"}</span>
-            <span className="nexo-profile-chevron">⌄</span>
-          </button>
-
-          {profileOpen && (
-            <div className="nexo-header-dropdown profile-dropdown">
-              <strong>{displayName.trim() || "NEXO"}</strong>
-              <span>Perfil pessoal</span>
-              <p>Gerencie seus dados pessoais e informações da conta.</p>
-              <Link href="/perfil" className="profile-settings-link" onClick={() => setProfileOpen(false)}>Editar perfil</Link>
-            </div>
-          )}
-        </div>
+        <AccountAccess />
       </div>
 
       <style jsx>{`
