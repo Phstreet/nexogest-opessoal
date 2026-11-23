@@ -56,11 +56,9 @@ export default function Header() {
     }
 
     void loadProfile();
-    window.addEventListener("focus", loadProfile);
     window.addEventListener("nexo:profile-updated", loadProfile);
     return () => {
       active = false;
-      window.removeEventListener("focus", loadProfile);
       window.removeEventListener("nexo:profile-updated", loadProfile);
     };
   }, []);
