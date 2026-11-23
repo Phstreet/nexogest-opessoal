@@ -1,3 +1,6 @@
+import { NEXO_SYNC_KEYS, type NexoSyncKey } from "./sync-keys";
+export { NEXO_SYNC_KEYS, type NexoSyncKey } from "./sync-keys";
+
 /**
  * Cliente do NEXO para suas rotas seguras de autenticação e sincronização.
  * Os tokens Supabase permanecem em cookies HttpOnly no servidor.
@@ -64,7 +67,7 @@ export async function updatePassword(password: string) {
   await request<{ ok: boolean }>("/api/auth", "POST", { action: "change-password", password });
 }
 
-export async function fetchRemoteCollections(keys?: readonly string[]): Promise<RemoteCollection[]> {
+export async function fetchRemoteCollections(keys?: readonly NexoSyncKey[]): Promise<RemoteCollection[]> {
   const query = keys?.length ? `?keys=${encodeURIComponent(keys.join(","))}` : "";
   const result = await request<{ data: RemoteCollection[] }>(`/api/sync${query}`);
   return result.data;
@@ -79,9 +82,3 @@ export async function saveRemoteCollection(
   return result.result;
 }
 
-export const NEXO_SYNC_KEYS = [
-  "nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements",
-  "nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile", "nexo_planning_budgets", "nexo_planning_goals", "nexo_personal_goals", "nexo_task_backups",
-] as const;
-
-export type NexoSyncKey = (typeof NEXO_SYNC_KEYS)[number];
