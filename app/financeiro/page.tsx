@@ -10,7 +10,6 @@ import type { FormEvent } from "react";
 
 import type { Account, Transaction } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
-import SelectField from "./SelectField";
 import FinanceSummaryCards from "./FinanceSummaryCards";
 import FinanceMovementList from "./FinanceMovementList";
 import FinanceTransactionForm from "./FinanceTransactionForm";
@@ -21,8 +20,6 @@ import {
   getDefaultCategory,
   getDefaultSubcategory,
   getNextTransactionId,
-  getSettledAmount,
-  isInvestmentApplied,
   isValidDate,
   isValidTransaction,
   localDate,
