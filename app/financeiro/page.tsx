@@ -540,6 +540,7 @@ export default function Page() {
           : "Lançamento confirmado e sincronizado"
       );
     } catch (error) {
+      if (sessionUserIdRef.current !== requestedUserId) return;
       console.error("Erro ao registrar valor efetivo:", error);
       setSyncStatus("Não foi possível atualizar o lançamento");
     }
@@ -599,6 +600,7 @@ export default function Page() {
       setStorageError(null);
       setSyncStatus("Lançamento excluído e sincronizado");
     } catch (error) {
+      if (sessionUserIdRef.current !== requestedUserId) return;
       console.error("Não foi possível excluir o lançamento:", error);
       setStorageError(
         error instanceof Error
