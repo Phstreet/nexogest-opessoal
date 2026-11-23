@@ -375,7 +375,7 @@ export default function DailyCenter(props: Props) {
         </div>
       </section>
 
-      <style jsx>{`
+      <style jsx global>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
         .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
