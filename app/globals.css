@@ -4760,9 +4760,20 @@ tbody tr:hover {
   #nexo-app .daily-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"priorities agenda" "quick quick" "habits bills" "tip tip"; gap:16px; }
   #nexo-app .daily-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
-@media (min-width:1024px) and (max-width:1279px) {
-  #nexo-app .daily-grid { gap:16px; }
+@media (min-width:768px) and (max-width:1279px) {
+  #nexo-app .daily-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-areas:"priorities agenda" "quick quick" "habits bills" "tip tip";
+    gap:16px;
+  }
   #nexo-app .daily-card { padding:18px; }
+}
+@media (min-width:1280px) {
+  #nexo-app .daily-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-areas:"priorities agenda quick" "habits bills tip";
+    gap:24px;
+  }
 }
 
 #nexo-app .nexo-page-shell { display:flex; flex:1 1 auto; flex-direction:column; width:100%; min-width:0; }
