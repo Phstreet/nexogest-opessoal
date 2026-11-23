@@ -11,6 +11,8 @@ import {
 } from "@/lib/routine/types";
 import AppLayout from "../components/layout/AppLayout";
 import DailyCenter from "@/components/dashboard/DailyCenter";
+import { PageHeader, SearchButton } from "@/components/ui/DashboardPrimitives";
+import UserMenu from "@/components/ui/UserMenu";
 
 export default function Home() {
   // Usa o armazenamento centralizado para preservar dados inválidos
@@ -37,51 +39,37 @@ export default function Home() {
   } = useRoutineCollection<RoutineHabit>("nexo_habits", isValidRoutineHabit);
 
   // =====================================================
-  // CABEÇALHO
-  // =====================================================
-
-  const today = new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-  // =====================================================
   // INTERFACE
   // =====================================================
 
   return (
     <AppLayout
       header={
-        <header className="topbar">
-          <div>
-            <div className="breadcrumb">
-              NEXO / CENTRAL DO DIA
-            </div>
-
-            <h1>Central do Dia</h1>
+        <div className="nexo-page-header-bar">
+          <div className="nexo-page-header-container">
+            <PageHeader
+              className="nexo-topbar-page"
+              breadcrumb="NEXO / CENTRAL DO DIA"
+              title="Central do Dia"
+              actions={
+                <>
+                  <button
+                    type="button"
+                    className="nexo-mobile-nav-toggle"
+                    aria-label="Abrir menu de navegação"
+                    onClick={() => window.dispatchEvent(new Event("nexo:toggle-mobile-nav"))}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                      <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                  <SearchButton />
+                  <UserMenu />
+                </>
+              }
+            />
           </div>
-
-          <div className="topbar-right">
-            <button
-              type="button"
-              className="topbar-search-trigger"
-              onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
-            >
-              <span aria-hidden="true">⌕</span>
-              <span>Buscar no NEXO</span>
-              <kbd>Ctrl K</kbd>
-            </button>
-
-            <div className="date-display">
-              <span className="date-icon">◷</span>
-              {today}
-            </div>
-
-            <div className="profile-avatar">N</div>
-          </div>
-        </header>
+        </div>
       }
     >
       <div className="content daily-home-content">
@@ -111,46 +99,182 @@ export default function Home() {
             habitError={habitsStorageError}
         />
 
-        <style jsx>{`
-          .daily-home-content { padding-top: 0; }
-          :global(.nexo-account-slot) { padding: 3px 22px 0; background: transparent; }
-          :global(.nexo-account-access) { min-height: 23px; padding: 2px 7px; gap: 7px; border-color: #29292e; background: transparent; color: #85858e; font-size: 9px; }
-          :global(.nexo-account-access a), :global(.nexo-account-access button) { color: #a5a5ad; }
-          :global(.nexo-account-indicator) { width: 5px; height: 5px; }
-          .topbar { min-height: 58px; padding: 8px 24px; gap: 12px; background: rgba(12,12,14,.48); }
-          .breadcrumb { margin-bottom: 2px; font-size: 7px; letter-spacing: 1.2px; opacity: .72; }
-          .topbar h1 { font-size: 16px; font-weight: 650; letter-spacing: -.3px; }
-          .topbar-right { gap: 11px; }
-          .topbar-search-trigger { min-height: 32px; padding: 0 10px; border-color: #2b2c32; background: rgba(23,24,28,.55); font-size: 10px; }
-          .topbar-search-trigger>span:first-child { font-size: 17px; }
-          .date-display { font-size: 9px; color: #777b84; }
-          .date-icon { font-size: 13px; }
-          .profile-avatar { width: 27px; height: 27px; font-size: 10px; }
-          .topbar-search-trigger { min-height:42px; display:inline-flex; align-items:center; gap:9px; padding:0 13px; border:1px solid #34363d; border-radius:10px; background:#17181c; color:#c5cad2; font:inherit; font-size:12px; cursor:pointer; }
-          .topbar-search-trigger:hover { border-color:#777d88; background:#202126; color:#fff; }
-          .topbar-search-trigger>span:first-child { font-size:21px; line-height:1; }
-          .topbar-search-trigger kbd { padding:3px 5px; border:1px solid #414148; border-radius:4px; color:#858b95; font-size:9px; }
-          @media(max-width:760px) {
-            .topbar { padding: 8px 16px; }
-            .topbar-right { flex-wrap:wrap; gap: 8px; }
-            .topbar-search-trigger { order:3; }
+        <style jsx global>{`
+          #nexo-app .nexo-page-header-bar {
+            width: 100%;
+            border-bottom: 1px solid var(--border);
+            background: rgba(12, 12, 14, 0.48);
           }
-          @media(max-width:480px) {
-            .topbar-search-trigger { width:100%; justify-content:center; }
-          }
-          .daily-quick-links { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
-          .daily-quick-links a { color:#aaa; font-size:10px; text-decoration:none; }
-          .daily-quick-links a:hover { color:#fff; text-decoration:underline; }
-          .daily-overview-grid { margin-top:18px; }
-          .daily-completed { color:#888; text-decoration:line-through; }
-          @media(max-width:700px) {
-            .daily-quick-links { flex-direction:column; gap:10px; }
-            .daily-quick-entry .task-entry { align-items:stretch; flex-direction:column; }
-            .daily-quick-entry .task-entry button { width:100%; }
-          }
-        `}</style>
 
-        <footer className="footer">
+          #nexo-app .nexo-page-header-container {
+            width: 100%;
+            max-width: 1400px;
+            margin-inline: auto;
+            padding-inline: 20px;
+          }
+
+          #nexo-app .nexo-page-header.nexo-topbar-page {
+            display: flex;
+            flex-direction: row;
+            height: 52px;
+            min-height: 52px;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            padding: 8px 0;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-page-header-copy {
+            gap: 2px;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-page-breadcrumb {
+            color: var(--text-subtle);
+            font-size: 11px;
+            line-height: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+          }
+
+          #nexo-app .nexo-topbar-page h1 {
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 650;
+            line-height: 24px;
+            letter-spacing: -0.35px;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-mobile-nav-toggle {
+            display: none;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            padding: 0;
+            border-radius: 10px;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 32px;
+            min-height: 32px;
+            padding: 0 10px;
+            color: var(--text-secondary);
+            background: var(--surface-elevated, var(--surface-raised));
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1;
+            white-space: nowrap;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button:hover {
+            border-color: var(--border-strong);
+            background: var(--surface-raised);
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button svg {
+            display: block;
+            width: 14px;
+            height: 14px;
+            flex: 0 0 14px;
+            stroke-width: 1.8;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-search-button kbd {
+            padding: 2px 6px;
+            color: var(--text-subtle);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 10px;
+            line-height: 12px;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-page-header-actions {
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: nowrap;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-account-trigger {
+            width: 34px;
+            min-width: 34px;
+            min-height: 34px;
+            height: 34px;
+            justify-content: center;
+            padding: 0;
+            border-radius: 50%;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-account-avatar {
+            width: 32px;
+            height: 32px;
+            flex-basis: 32px;
+            border-radius: 50%;
+          }
+
+          #nexo-app .nexo-topbar-page .nexo-account-email,
+          #nexo-app .nexo-topbar-page .nexo-account-chevron {
+            display: none;
+          }
+
+          #nexo-app .daily-home-content {
+            padding-top: 0 !important;
+            padding-inline: 20px !important;
+          }
+
+          @media (max-width: 1023px) {
+            #nexo-app .nexo-topbar-page .nexo-mobile-nav-toggle {
+              display: inline-flex;
+            }
+          }
+
+          @media (max-width: 639px) {
+            #nexo-app .nexo-page-header-container {
+              padding-inline: 12px;
+            }
+
+            #nexo-app .nexo-page-header.nexo-topbar-page {
+              height: 48px;
+              min-height: 48px;
+              padding-block: 8px;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-page-breadcrumb {
+              display: none;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-mobile-nav-toggle {
+              display: inline-flex;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-search-button {
+              width: 32px;
+              min-width: 32px;
+              padding: 0;
+            }
+
+            #nexo-app .nexo-topbar-page .nexo-search-label,
+            #nexo-app .nexo-topbar-page .nexo-search-button kbd {
+              display: none;
+            }
+
+            #nexo-app .nexo-topbar-page h1 {
+              font-size: 18px;
+              line-height: 24px;
+            }
+
+            #nexo-app .daily-home-content {
+              padding-inline: 12px !important;
+            }
+          }
+        `}</style>      <footer className="footer">
           <span>
             © 2026 NEXO — GESTÃO PESSOAL
           </span>

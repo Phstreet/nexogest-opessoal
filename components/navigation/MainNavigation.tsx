@@ -33,6 +33,7 @@ export default function MainNavigation() {
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [preferencesError, setPreferencesError] = useState("");
@@ -115,8 +116,17 @@ export default function MainNavigation() {
     return () => window.removeEventListener("nexo:preferences-updated", handlePreferencesUpdated);
   }, []);
 
+  useEffect(() => {
+    function toggleMobileNavigation() {
+      setMobileOpen((current) => !current);
+    }
+    window.addEventListener("nexo:toggle-mobile-nav", toggleMobileNavigation);
+    return () => window.removeEventListener("nexo:toggle-mobile-nav", toggleMobileNavigation);
+  }, []);
+
   // Fecha os submenus sempre que a rota mudar.
   useEffect(() => {
+    setMobileOpen(false);
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
     setReportsMenuOpen(false);
@@ -149,6 +159,7 @@ export default function MainNavigation() {
       if (event.key === "Escape") {
         setSearchOpen(false);
         setSearchTerm("");
+        setMobileOpen(false);
       }
     }
 
@@ -221,6 +232,7 @@ export default function MainNavigation() {
 
   // Fecha os submenus ao navegar, mantendo a largura escolhida pelo usuário.
   function handleNavigation() {
+    setMobileOpen(false);
     setFinanceMenuOpen(false);
     setRoutineMenuOpen(false);
     setReportsMenuOpen(false);
@@ -230,6 +242,7 @@ export default function MainNavigation() {
   }
 
   function handleSearchNavigation() {
+    setMobileOpen(false);
     setSearchOpen(false);
     setSearchTerm("");
     setFinanceMenuOpen(false);
@@ -317,7 +330,15 @@ export default function MainNavigation() {
 
   return (
     <>
-      <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`}>
+      <button
+        type="button"
+        className={`nexo-mobile-nav-backdrop ${mobileOpen ? "is-visible" : ""}`}
+        aria-label="Fechar menu de navegação"
+        aria-hidden={!mobileOpen}
+        tabIndex={mobileOpen ? 0 : -1}
+        onClick={() => setMobileOpen(false)}
+      />
+      <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
         {preferencesError && <div role="alert" className="nav-preferences-error">{preferencesError}</div>}
         <div className="sidebar-brand-row">
           <Link

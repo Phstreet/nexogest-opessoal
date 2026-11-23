@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
+import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
 
 type Props = {
   tasks: RoutineTask[];
@@ -106,11 +107,13 @@ export default function DailyCenter(props: Props) {
   const nextWeekKey = localDateKey(nextWeek);
   const hour = today.getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const dateLabel = today.toLocaleDateString("pt-BR", {
+  const rawDateLabel = today.toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
     month: "long",
+    year: "numeric",
   });
+  const dateLabel = rawDateLabel.toLocaleLowerCase("pt-BR");
 
   /* Tarefas */
   const todaysTasks = props.tasks.filter((task) => task.date === todayKey);
@@ -185,44 +188,21 @@ export default function DailyCenter(props: Props) {
       )}
 
       {/* HERO */}
-      <section className="daily-hero">
-        <span className="daily-date">{dateLabel}</span>
-        <h2>{greeting}!</h2>
-        <p>Sua central de organização e controle.</p>
-      </section>
+      <section className="daily-hero" aria-label="Boas-vindas">\n        <span className="daily-date">{dateLabel}</span>\n        <h1>{greeting}!</h1>\n        <p>Sua central de organização e controle.</p>\n      </section>
 
-      {/* KPIs */}
-      <section className="daily-kpis">
-        <Link href="/rotina/agenda" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="checkCircle" size={30} /></span>
-          <strong>{String(pendingCount).padStart(2, "0")}</strong>
-          <div><small>Tarefas pendentes</small><Icon name="arrow" size={18} /></div>
-        </Link>
-        <Link href="/rotina/agenda" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="calendar" size={30} /></span>
-          <strong>{String(agendaToday.length).padStart(2, "0")}</strong>
-          <div><small>Compromissos hoje</small><Icon name="arrow" size={18} /></div>
-        </Link>
-        <Link href="/financeiro" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="wallet" size={30} /></span>
-          <strong>{props.financeLoaded ? money(props.balance) : "Carregando…"}</strong>
-          <div><small>Saldo disponível</small><Icon name="arrow" size={18} /></div>
-        </Link>
-        <Link href="/rotina/agenda" className="daily-kpi">
-          <span className="daily-kpi-icon"><Icon name="checkCircle" size={30} /></span>
-          <strong>{taskRate}%</strong>
-          <div><small>Tarefas concluídas</small><Icon name="arrow" size={18} /></div>
-        </Link>
+      {/* INDICADORES */}
+      <section className="daily-kpis" aria-label="Indicadores do dia">
+        <StatCard href="/rotina/agenda" icon={<Icon name="checkCircle" size={22} />} value={String(pendingCount).padStart(2, "0")} label="Tarefas pendentes" />
+        <StatCard href="/rotina/agenda" icon={<Icon name="calendar" size={22} />} value={String(agendaToday.length).padStart(2, "0")} label="Compromissos hoje" />
+        <StatCard href="/financeiro" icon={<Icon name="wallet" size={22} />} value={props.financeLoaded ? money(props.balance) : "Carregando…"} label="Saldo disponível" />
+        <StatCard href="/rotina/agenda" icon={<Icon name="checkCircle" size={22} />} value={taskRate + "%"} label="Tarefas concluídas" />
       </section>
 
       {/* GRADE PRINCIPAL */}
       <div className="daily-grid">
         {/* Prioridades de hoje */}
-        <section className="daily-card area-priorities">
-          <header>
-            <h3><Icon name="star" size={20} /> Prioridades de hoje</h3>
-            <Link href="/rotina/agenda">Ver todas <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-priorities">
+          <CardHeader icon={<Icon name="star" size={20} />} title="Prioridades de hoje" action={<Link href="/rotina/agenda">Ver todas <Icon name="arrow" size={13} /></Link>} />
           {focusTasks.length ? focusTasks.map((task) => (
             <div className="daily-row" key={task.id}>
               <span className={`daily-task-indicator${task.done ? " completed" : ""}`} aria-hidden="true">{task.done ? "✓" : "•"}</span>
@@ -234,45 +214,48 @@ export default function DailyCenter(props: Props) {
                   : null}
             </div>
           )) : (
-            <p className="daily-empty">{todaysTasks.length ? "Você concluiu todas as tarefas de hoje." : "Nenhuma tarefa programada para hoje."}</p>
-          )}</section>
+            <EmptyState
+              icon={<Icon name="checkCircle" size={25} />}
+              title={todaysTasks.length ? "Tudo em dia" : "Nenhuma prioridade"}
+              description={todaysTasks.length ? "Você concluiu todas as tarefas de hoje." : "As tarefas programadas para hoje aparecerão aqui."}
+              actionHref="/rotina/agenda"
+              actionLabel="Abrir tarefas"
+            />
+          )}</Card>
 
         {/* Minha agenda */}
-        <section className="daily-card area-agenda">
-          <header>
-            <h3><Icon name="calendar" size={20} /> Minha agenda</h3>
-            <Link href="/rotina/agenda">Ver agenda <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-agenda">
+          <CardHeader icon={<Icon name="calendar" size={20} />} title="Minha agenda" action={<Link href="/rotina/agenda">Ver agenda <Icon name="arrow" size={13} /></Link>} />
           {agendaToday.length ? agendaToday.slice(0, 4).map((task) => (
             <div className="daily-agenda-item" key={task.id}>
               <time>{task.time}</time>
               <i />
               <span className={task.done ? "is-done" : ""}>{task.description}</span>
             </div>
-          )) : <p className="daily-empty">Nenhum compromisso com horário hoje.</p>}
-        </section>
+          )) : (
+            <EmptyState
+              icon={<Icon name="calendar" size={25} />}
+              title="Agenda livre"
+              description="Você não tem compromissos com horário para hoje."
+              actionHref="/rotina/agenda"
+              actionLabel="Ver agenda"
+            />
+          )}
+        </Card>
 
         {/* Acesso rápido */}
-        <section className="daily-card area-quick">
-          <header>
-            <h3><Icon name="bolt" size={20} /> Acesso rápido</h3>
-          </header>
+        <Card className="daily-card area-quick">
+          <CardHeader icon={<Icon name="bolt" size={20} />} title="Acesso rápido" />
           <nav className="daily-quick-grid" aria-label="Acesso rápido">
             {quickLinks.map((item) => (
-              <Link href={item.href} key={item.label}>
-                <Icon name={item.icon} size={24} />
-                <span>{item.label}</span>
-              </Link>
+              <QuickAction key={item.label} href={item.href} icon={<Icon name={item.icon} size={22} />} label={item.label} />
             ))}
           </nav>
-        </section>
+        </Card>
 
         {/* Hábitos do dia */}
-        <section className="daily-card area-habits">
-          <header>
-            <h3><Icon name="bars" size={20} /> Hábitos do dia</h3>
-            <Link href="/rotina/habitos">Ver todos <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-habits">
+          <CardHeader icon={<Icon name="bars" size={20} />} title="Hábitos do dia" action={<Link href="/rotina/habitos">Ver todos <Icon name="arrow" size={13} /></Link>} />
           {activeHabits.length ? (
             <div className="daily-habits">
               <div className="daily-ring">
@@ -296,16 +279,23 @@ export default function DailyCenter(props: Props) {
                 })}
               </ul>
             </div>
-          ) : <p className="daily-empty">Você ainda não cadastrou hábitos. <Link href="/rotina/habitos">Criar um hábito ↗</Link></p>}
-        </section>
+          ) : (
+            <EmptyState
+              icon={<Icon name="bars" size={25} />}
+              title="Nenhum hábito cadastrado"
+              description="Crie hábitos para acompanhar sua consistência diária."
+              actionHref="/rotina/habitos"
+              actionLabel="Criar hábito"
+            />
+          )}
+        </Card>
 
         {/* Contas próximas */}
-        <section className="daily-card area-bills">
-          <header>
-            <h3><Icon name="card" size={20} /> Contas próximas</h3>
-            <Link href="/financeiro/contas-a-pagar">Ver todas <Icon name="arrow" size={13} /></Link>
-          </header>
-          {!props.financeLoaded ? <p className="daily-empty">Carregando informações financeiras…</p> : (
+        <Card className="daily-card area-bills">
+          <CardHeader icon={<Icon name="card" size={20} />} title="Contas próximas" action={<Link href="/financeiro/contas-a-pagar">Ver todas <Icon name="arrow" size={13} /></Link>} />
+          {!props.financeLoaded ? (
+            <EmptyState icon={<Icon name="wallet" size={25} />} title="Carregando contas" description="Estamos atualizando suas informações financeiras." />
+          ) : (
             <>
               {overdueBills.length > 0 && (
                 <p className="daily-warning">{overdueBills.length} conta(s) com vencimento anterior ainda pendente(s).</p>
@@ -319,20 +309,28 @@ export default function DailyCenter(props: Props) {
                   </div>
                   <b>{money(Math.max(0, Number(item.amount || 0) - settledAmount(item)))}</b>
                 </div>
-              )) : <p className="daily-empty">Nenhuma conta vencendo nos próximos 7 dias.</p>}
+              )) : (
+                <EmptyState
+                  icon={<Icon name="checkCircle" size={25} />}
+                  title="Nenhuma conta próxima"
+                  description="Não há despesas pendentes com vencimento nos próximos sete dias."
+                  actionHref="/financeiro/contas-a-pagar"
+                  actionLabel="Ver contas"
+                />
+              )}
             </>
           )}
-        </section>
+        </Card>
 
         {/* Dica do dia */}
-        <section className="daily-card area-tip">
+        <Card className="daily-card area-tip">
           <span className="daily-bill-icon round"><Icon name="bulb" size={20} /></span>
           <div>
             <strong>Dica do dia</strong>
             <p>Pequenas atitudes diárias constroem grandes resultados.</p>
           </div>
           <Icon name="arrow" size={18} />
-        </section>
+        </Card>
       </div>
 
       {/* Fechamento diário com dados efetivamente registrados. */}
@@ -373,10 +371,10 @@ export default function DailyCenter(props: Props) {
         </div>
       </section>
 
-      <style jsx>{`
+      <style jsx global>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
-        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
+        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0;color:#f1f1f3;overflow:hidden}
         .daily-center>*{position:relative;z-index:1}
         .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-200px;right:-170px;width:min(860px,72%);aspect-ratio:1;border-radius:50%;
           background-image:url("/moon.jpg");
@@ -501,6 +499,56 @@ export default function DailyCenter(props: Props) {
           .daily-close>header{align-items:flex-start;flex-direction:column}
           .daily-close-grid{grid-template-columns:minmax(0,1fr)}
         }
+
+        /* Cabeçalho compacto da Central do Dia */
+        #nexo-app .daily-center { gap: 12px; padding: 0; }
+        #nexo-app .daily-hero {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          width: 100%;
+          max-width: none;
+          min-width: 0;
+          padding: 16px 0 12px;
+          margin: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+        }
+        #nexo-app .daily-hero .daily-date {
+          display: block;
+          color: var(--text-subtle);
+          font-size: 11px;
+          font-weight: 500;
+          line-height: 14px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+        #nexo-app .daily-hero h1 {
+          margin: 4px 0 0;
+          color: var(--text-primary);
+          font-family: var(--font-heading);
+          font-size: 26px;
+          font-weight: 700;
+          line-height: 30px;
+          letter-spacing: -0.8px;
+        }
+        #nexo-app .daily-hero p {
+          margin: 2px 0 0;
+          color: var(--text-secondary);
+          font-size: 13px;
+          font-weight: 400;
+          line-height: 18px;
+        }
+        #nexo-app .daily-kpis { margin-top: 0; }
+
+        @media (max-width: 639px) {
+          #nexo-app .daily-hero { padding: 12px 0; }
+          #nexo-app .daily-hero h1 { font-size: 22px; line-height: 26px; }
+          #nexo-app .daily-hero p { font-size: 13px; line-height: 18px; }
+        }
+
       `}</style>
     </div>
   );

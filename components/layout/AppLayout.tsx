@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import MainNavigation from "../navigation/MainNavigation";
 import Header from "./Header";
-import AccountAccess from "@/components/auth/AccountAccess";
+import { PageShell } from "@/components/ui/DashboardPrimitives";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -13,13 +13,12 @@ export default function AppLayout({
   header,
 }: Readonly<AppLayoutProps>) {
   return (
-    <main className="app-shell">
+    <main id="nexo-app" className="app-shell">
       <MainNavigation />
 
       <section className="main-area">
-        <div className="nexo-account-slot"><AccountAccess /></div>
         {header ?? <Header />}
-        {children}
+        <PageShell>{children}</PageShell>
       </section>
     </main>
   );

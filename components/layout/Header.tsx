@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
+import UserMenu from "@/components/ui/UserMenu";
+import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -13,25 +14,14 @@ function getGreeting() {
   return "Boa noite";
 }
 
-function getFormattedDate() {
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
-}
 
 export default function Header() {
   const [greeting, setGreeting] = useState("Olá");
-  const [date, setDate] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
     setGreeting(getGreeting());
-    setDate(getFormattedDate());
 
     let active = true;
     async function loadProfile() {
@@ -68,20 +58,20 @@ export default function Header() {
       <div className="nexo-header-left">
         <span className="nexo-header-greeting">{greeting}</span>
         <strong>{displayName.trim() ? `Bem-vindo, ${displayName.trim()}.` : "Bem-vindo ao NEXO."}</strong>
-        <span className="nexo-header-date">{date}</span>
       </div>
 
       <div className="nexo-header-actions">
         <button
           type="button"
-          className="nexo-header-search"
-          onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
-          aria-label="Buscar no NEXO"
+          className="nexo-mobile-nav-toggle"
+          aria-label="Abrir menu de navegação"
+          onClick={() => window.dispatchEvent(new Event("nexo:toggle-mobile-nav"))}
         >
-          <span aria-hidden="true">⌕</span>
-          <span>Buscar no NEXO</span>
-          <kbd>Ctrl K</kbd>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
+        <SearchButton />
         <div className="nexo-header-popover">
           <button
             type="button"
@@ -90,7 +80,6 @@ export default function Header() {
             aria-expanded={notificationsOpen}
             onClick={() => {
               setNotificationsOpen((current) => !current);
-              setProfileOpen(false);
             }}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -107,41 +96,17 @@ export default function Header() {
           )}
         </div>
 
-        <div className="nexo-header-popover">
-          <button
-            type="button"
-            className="nexo-profile-button"
-            aria-label="Perfil"
-            aria-expanded={profileOpen}
-            onClick={() => {
-              setProfileOpen((current) => !current);
-              setNotificationsOpen(false);
-            }}
-          >
-            <span className="nexo-profile-avatar">{displayName.trim().charAt(0).toUpperCase() || "N"}</span>
-            <span className="nexo-profile-label">{displayName.trim() || "Perfil"}</span>
-            <span className="nexo-profile-chevron">⌄</span>
-          </button>
-
-          {profileOpen && (
-            <div className="nexo-header-dropdown profile-dropdown">
-              <strong>{displayName.trim() || "NEXO"}</strong>
-              <span>Perfil pessoal</span>
-              <p>Gerencie seus dados pessoais e informações da conta.</p>
-              <Link href="/perfil" className="profile-settings-link" onClick={() => setProfileOpen(false)}>Editar perfil</Link>
-            </div>
-          )}
-        </div>
+        <UserMenu />
       </div>
 
       <style jsx>{`
         .nexo-header {
-          min-height: 78px;
+          min-height: 56px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 20px;
-          padding: 13px 30px;
+          gap: 12px;
+          padding: 8px 20px;
           background: #101012;
           border-bottom: 1px solid #29292d;
           position: relative;
@@ -168,13 +133,13 @@ export default function Header() {
         .nexo-header-date {
           color: #777d87;
           font-size: 10px;
-          text-transform: capitalize;
+          text-transform: none;
         }
 
         .nexo-header-actions {
           display: flex;
           align-items: center;
-          gap: 13px;
+          gap: 8px;
         }
 
         .nexo-header-search {
@@ -290,8 +255,8 @@ export default function Header() {
 
         @media (max-width: 760px) {
           .nexo-header {
-            min-height: 68px;
-            padding: 10px 14px;
+            min-height: 56px;
+            padding: 8px 12px;
           }
 
           .nexo-header-left strong {
