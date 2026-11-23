@@ -47,7 +47,7 @@ export function useRoutineCollection<T>(
     setLoaded(false);
     setStorageError(null);
     try {
-      const collections = await fetchRemoteCollections();
+      const collections = await fetchRemoteCollections([key]);
       const remote = collections.find((item) => item.data_key === key);
       const payload = remote?.payload ?? [];
       if (!Array.isArray(payload) || !payload.every(isValidItem)) {
@@ -89,7 +89,7 @@ export function useRoutineCollection<T>(
     }
     const result = await saveRemoteCollection(key, next, revisionRef.current);
     if (!result.saved) {
-      const latest = await fetchRemoteCollections();
+      const latest = await fetchRemoteCollections([key]);
       const remote = latest.find((item) => item.data_key === key);
       if (remote && Array.isArray(remote.payload) && remote.payload.every(isValidItem)) {
         revisionRef.current = Number(remote.revision) || 0;
