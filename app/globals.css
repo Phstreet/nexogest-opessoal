@@ -4764,3 +4764,18 @@ tbody tr:hover {
   #nexo-app .daily-grid { gap:16px; }
   #nexo-app .daily-card { padding:18px; }
 }
+
+#nexo-app .nexo-page-shell { display:flex; flex:1 1 auto; flex-direction:column; width:100%; min-width:0; }
+#nexo-app .nexo-page-header { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; width:100%; margin:0 0 24px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+#nexo-app .nexo-page-header-copy { display:flex; flex-direction:column; min-width:0; gap:6px; }
+#nexo-app .nexo-page-eyebrow { color:#a1a1aa; font-size:12px; font-weight:600; line-height:16px; letter-spacing:1.1px; text-transform:uppercase; }
+#nexo-app .nexo-page-header h1 { margin:0; color:#fafafa; font-family:var(--font-heading); font-size:clamp(28px,3vw,36px); font-weight:650; line-height:1.125; letter-spacing:-.8px; }
+#nexo-app .nexo-page-header p { margin:0; color:#a1a1aa; font-size:14px; line-height:20px; }
+#nexo-app .nexo-page-breadcrumb { color:#a1a1aa; font-size:12px; }
+#nexo-app .nexo-page-header-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+#nexo-app .nexo-card { box-sizing:border-box; min-width:0; color:#fafafa; background:#111114; border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:none; }
+#nexo-app .nexo-card-body { min-width:0; }
+@media(max-width:767px) {
+  #nexo-app .nexo-page-header { align-items:flex-start; flex-direction:column; gap:12px; margin-bottom:16px; }
+  #nexo-app .nexo-page-header h1 { font-size:28px; }
+}
