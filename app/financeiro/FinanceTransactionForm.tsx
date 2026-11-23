@@ -25,6 +25,7 @@ type FinanceTransactionFormProps = {
   institution: string;
   setInstitution: (value: string) => void;
   institutions: string[];
+  paymentMethods: string[];
   date: string;
   setDate: (value: string) => void;
   account: string;
@@ -66,6 +67,7 @@ export default function FinanceTransactionForm({
   institution,
   setInstitution,
   institutions,
+  paymentMethods,
   date,
   setDate,
   account,
