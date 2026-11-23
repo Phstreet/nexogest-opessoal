@@ -147,6 +147,7 @@ export default function Page() {
     remoteReadyRef,
     lastSavedPayloadRef,
     saveQueueRef,
+    sessionUserIdRef,
   } = useFinanceCloudSync({
     session,
     authLoading,
@@ -467,6 +468,9 @@ export default function Page() {
   }
 
   async function saveSettlement(item: Transaction) {
+    const requestedUserId = session?.user.id;
+    if (!requestedUserId) return;
+
     const isIncome = item.type === "Receita";
     const isExpense = item.type === "Despesa";
 
@@ -497,6 +501,8 @@ export default function Page() {
 
     try {
       await saveQueueRef.current;
+      if (sessionUserIdRef.current !== requestedUserId || !remoteReadyRef.current) return;
+
       const updated = transactions.map((current) =>
         current.id === item.id
           ? {
@@ -513,6 +519,8 @@ export default function Page() {
         updated,
         revisionRef.current
       );
+
+      if (sessionUserIdRef.current !== requestedUserId) return;
 
       if (!result.saved) {
         setSafeToSave(false);
@@ -538,6 +546,9 @@ export default function Page() {
   }
 
   async function removeTransaction(id: number) {
+    const requestedUserId = session?.user.id;
+    if (!requestedUserId) return;
+
     if (!safeToSave || !remoteReadyRef.current) {
       setStorageError(
         "A exclusão está temporariamente bloqueada porque os dados ainda não foram sincronizados. Atualize a tela para carregar a versão mais recente."
@@ -556,11 +567,12 @@ export default function Page() {
       destructive: true,
     });
 
-    if (!accepted) return;
+    if (!accepted || sessionUserIdRef.current !== requestedUserId) return;
 
     try {
       // Aguarda qualquer gravação anterior para usar a revisão mais recente.
       await saveQueueRef.current;
+      if (sessionUserIdRef.current !== requestedUserId || !remoteReadyRef.current) return;
 
       const latestTransactions = transactions.filter((item) => item.id !== id);
       const result = await saveRemoteCollection(
@@ -568,6 +580,8 @@ export default function Page() {
         latestTransactions,
         revisionRef.current
       );
+
+      if (sessionUserIdRef.current !== requestedUserId) return;
 
       if (!result.saved) {
         setSafeToSave(false);
