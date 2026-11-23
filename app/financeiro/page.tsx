@@ -494,6 +494,12 @@ export default function Page() {
         setStorageError(null);
         setSyncStatus("Sincronizado com o Supabase");
       } catch (error) {
+        const sessionStillCurrent =
+          sessionIdentityRef.current.generation === sessionGeneration &&
+          sessionIdentityRef.current.userId === sessionUserId;
+
+        if (!sessionStillCurrent) return;
+
         console.error("Não foi possível salvar os lançamentos no Supabase:", error);
         setSafeToSave(false);
         remoteReadyRef.current = false;
