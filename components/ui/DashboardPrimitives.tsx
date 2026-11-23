@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 
 
@@ -18,6 +20,7 @@ type PageHeaderProps = {
   description?: string;
   breadcrumb?: ReactNode;
   actions?: ReactNode;
+  className?: string;
 };
 
 export function PageHeader({ eyebrow, title, description, breadcrumb, actions, className = "" }: PageHeaderProps) {
