@@ -11,8 +11,8 @@ import type { FormEvent } from "react";
 import type { Account, Transaction } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
 import SelectField from "./SelectField";
+import type { FormMovementType } from "@/lib/finance/finance-utils";
 import {
-  FormMovementType,
   getDefaultCategory,
   getDefaultSubcategory,
   getNextTransactionId,
