@@ -5,18 +5,14 @@ export const REFRESH_COOKIE = "nexo_refresh_token";
 export const EXPIRY_COOKIE = "nexo_token_expires_at";
 
 export function getSupabaseConfig() {
-  const dev = process.env.NODE_ENV !== "production";
-  // A integração oficial Supabase + Vercel disponibiliza tanto as variáveis
-  // NEXT_PUBLIC_* quanto SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY.
-  // Mantemos NEXT_PUBLIC_* como prioridade e aceitamos os aliases no servidor.
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
-    (dev ? "https://mmwkpwspyjvxsennvhic.supabase.co" : "");
+    "";
   const key =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.SUPABASE_PUBLISHABLE_KEY ||
-    (dev ? "sb_publishable_-TkcxAdmwC_Mt-bLwUPQvw_x9JwKDyk" : "");
+    "";
 
   if (!url || !key) {
     throw new Error(
