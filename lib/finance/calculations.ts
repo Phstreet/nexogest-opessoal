@@ -1,14 +1,5 @@
 import type { Account, FinancialSummary, Reserve, ReserveMovement, Transaction } from "./types";
-import { getTotalAccountsBalance } from "./accounts";
-
-function normalizeStatus(item: Transaction): string {
-  return (item.status ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-function isCancelled(item: Transaction): boolean {
-  const status = normalizeStatus(item);
-  return status === "cancelada" || status === "cancelado";
-}
+import { getTotalAccountsBalance, getSettledTransactionAmount, isCancelledTransaction } from "./accounts";
 
 function amount(item: Transaction): number {
   const value = Number(item.amount);
@@ -16,15 +7,7 @@ function amount(item: Transaction): number {
 }
 
 function settled(item: Transaction): number {
-  if (isCancelled(item)) return 0;
-  const total = amount(item);
-  const status = normalizeStatus(item);
-  if (item.settledAmount !== undefined) return Math.min(total, Math.max(0, Number(item.settledAmount) || 0));
-  if (!status) return item.type === "Receita" || item.type === "Despesa" ? total : 0;
-  if (["recebida", "recebido", "pago", "paga"].includes(status)) return total;
-  if (status === "recebida parcialmente" || status === "paga parcialmente") return Math.min(total, Math.max(0, Number(item.settledAmount) || 0));
-  if (["aplicado", "aplicada"].includes(status) && (item.type === "Investimento" || item.type === "Aplicação")) return total;
-  return 0;
+  return getSettledTransactionAmount(item);
 }
 
 function outstanding(item: Transaction): number {
@@ -46,7 +29,7 @@ function getTotalReserveBalanceFromCollections(reserves: Reserve[], movements: R
 }
 
 export function getFinancialSummary(transactions: Transaction[], accounts: Account[], reserves: Reserve[], movements: ReserveMovement[]): FinancialSummary {
-  const active = transactions.filter((item) => !isCancelled(item));
+  const active = transactions.filter((item) => !isCancelledTransaction(item));
   const incomes = active.filter((item) => item.type === "Receita");
   const expenses = active.filter((item) => item.type === "Despesa");
   const investments = active.filter((item) => (item.type === "Investimento" || item.type === "Aplicação") && settled(item) > 0);
@@ -75,7 +58,7 @@ function parseDate(date?: string): Date | null {
 
 export function getMonthlySummary(transactions: Transaction[], year: number, month: number) {
   const items = transactions.filter((item) => {
-    if (isCancelled(item)) return false;
+    if (isCancelledTransaction(item)) return false;
     const date = parseDate(item.date);
     return date && date.getFullYear() === year && date.getMonth() === month;
   });
@@ -90,7 +73,7 @@ export function getMonthlySummary(transactions: Transaction[], year: number, mon
 
 export function getExpensesByCategory(transactions: Transaction[]) {
   const result: Record<string, number> = {};
-  for (const item of transactions.filter((row) => row.type === "Despesa" && !isCancelled(row))) {
+  for (const item of transactions.filter((row) => row.type === "Despesa" && !isCancelledTransaction(row))) {
     const category = item.category?.trim() || "Sem categoria";
     result[category] = (result[category] || 0) + amount(item);
   }
@@ -99,7 +82,7 @@ export function getExpensesByCategory(transactions: Transaction[]) {
 
 export function getIncomeByCategory(transactions: Transaction[]) {
   const result: Record<string, number> = {};
-  for (const item of transactions.filter((row) => row.type === "Receita" && !isCancelled(row))) {
+  for (const item of transactions.filter((row) => row.type === "Receita" && !isCancelledTransaction(row))) {
     const category = item.category?.trim() || "Sem categoria";
     result[category] = (result[category] || 0) + amount(item);
   }
