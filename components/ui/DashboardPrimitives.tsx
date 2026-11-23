@@ -27,7 +27,7 @@ export function PageHeader({ eyebrow, title, description, breadcrumb, actions }:
         {breadcrumb && <nav className="nexo-page-breadcrumb" aria-label="Caminho da página">{breadcrumb}</nav>}
         {eyebrow && <span className="nexo-page-eyebrow">{eyebrow}</span>}
         <h1>{title}</h1>
-        {description && <p>{description}</p>}
+        {description && <p className="nexo-empty-description">{description}</p>}
       </div>
       {actions && <div className="nexo-page-header-actions">{actions}</div>}
     </header>
@@ -52,7 +52,7 @@ type CardHeaderProps = {
 export function CardHeader({ icon, title, action }: CardHeaderProps) {
   return (
     <header className="nexo-card-header">
-      <h2>{icon && <span className="nexo-card-header-icon">{icon}</span>}{title}</h2>
+      <h2 title={title}><span className="nexo-card-header-title">{icon && <span className="nexo-card-header-icon">{icon}</span>}{title}</span></h2>
       {action && <div className="nexo-card-header-action">{action}</div>}
     </header>
   );
@@ -75,7 +75,7 @@ export function StatCard({ href, icon, value, label, className = "" }: StatCardP
     <Link href={href} className={`nexo-stat-card ${className}`.trim()}>
       <span className="nexo-stat-icon">{icon}</span>
       <span className="nexo-stat-copy">
-        <strong>{value}</strong>
+        <strong className="nexo-stat-value">{value}</strong>
         <small>{label}</small>
       </span>
       <span className="nexo-stat-arrow" aria-hidden="true">↗</span>
@@ -93,7 +93,7 @@ export function QuickAction({ href, icon, label }: QuickActionProps) {
   return (
     <Link href={href} className="nexo-quick-action">
       <span className="nexo-quick-action-icon">{icon}</span>
-      <span>{label}</span>
+      <span className="nexo-quick-action-label">{label}</span>
     </Link>
   );
 }
@@ -110,7 +110,7 @@ export function EmptyState({ icon, title, description, actionHref, actionLabel }
   return (
     <div className="nexo-empty-state">
       <span className="nexo-empty-icon">{icon}</span>
-      <strong>{title}</strong>
+      <strong className="nexo-empty-title">{title}</strong>
       <p>{description}</p>
       {actionHref && actionLabel && (
         <Link href={actionHref} className="nexo-empty-action">{actionLabel}</Link>
@@ -127,11 +127,11 @@ export function SearchButton() {
       onClick={() => window.dispatchEvent(new Event("nexo:open-search"))}
       aria-label="Buscar no NEXO"
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
         <circle cx="10.8" cy="10.8" r="6.8" />
         <path d="m16 16 4.2 4.2" />
       </svg>
-      <span>Buscar no NEXO</span>
+      <span>Buscar</span>
       <kbd>Ctrl K</kbd>
     </button>
   );
