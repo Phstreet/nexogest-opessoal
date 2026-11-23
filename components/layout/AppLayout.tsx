@@ -13,7 +13,7 @@ export default function AppLayout({
   header,
 }: Readonly<AppLayoutProps>) {
   return (
-    <main className="app-shell">
+    <main id="nexo-app" className="app-shell">
       <MainNavigation />
 
       <section className="main-area">
