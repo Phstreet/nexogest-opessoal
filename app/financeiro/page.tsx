@@ -22,13 +22,11 @@ import {
   getDefaultSubcategory,
   getNextTransactionId,
   isValidDate,
-  isValidTransaction,
   localDate,
   parseAmount,
 } from "@/lib/finance/finance-utils";
 import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
 import {
-  fetchRemoteCollections,
   saveRemoteCollection,
 } from "@/lib/supabase/client";
 
@@ -139,7 +137,6 @@ export default function Page() {
 
   const {
     registeredAccounts,
-    loaded,
     safeToSave,
     setSafeToSave,
     invalidCount,
