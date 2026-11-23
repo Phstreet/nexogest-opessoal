@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
-import { EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
+import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
 
 type Props = {
   tasks: RoutineTask[];
@@ -205,11 +205,8 @@ export default function DailyCenter(props: Props) {
       {/* GRADE PRINCIPAL */}
       <div className="daily-grid">
         {/* Prioridades de hoje */}
-        <section className="daily-card area-priorities">
-          <header>
-            <h3><Icon name="star" size={20} /> Prioridades de hoje</h3>
-            <Link href="/rotina/agenda">Ver todas <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-priorities">
+          <CardHeader icon={<Icon name="star" size={20} />} title="Prioridades de hoje" action={<Link href="/rotina/agenda">Ver todas <Icon name="arrow" size={13} /></Link>} />
           {focusTasks.length ? focusTasks.map((task) => (
             <div className="daily-row" key={task.id}>
               <span className={`daily-task-indicator${task.done ? " completed" : ""}`} aria-hidden="true">{task.done ? "✓" : "•"}</span>
@@ -228,14 +225,11 @@ export default function DailyCenter(props: Props) {
               actionHref="/rotina/agenda"
               actionLabel="Abrir tarefas"
             />
-          )}</section>
+          )}</Card>
 
         {/* Minha agenda */}
-        <section className="daily-card area-agenda">
-          <header>
-            <h3><Icon name="calendar" size={20} /> Minha agenda</h3>
-            <Link href="/rotina/agenda">Ver agenda <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-agenda">
+          <CardHeader icon={<Icon name="calendar" size={20} />} title="Minha agenda" action={<Link href="/rotina/agenda">Ver agenda <Icon name="arrow" size={13} /></Link>} />
           {agendaToday.length ? agendaToday.slice(0, 4).map((task) => (
             <div className="daily-agenda-item" key={task.id}>
               <time>{task.time}</time>
@@ -251,26 +245,21 @@ export default function DailyCenter(props: Props) {
               actionLabel="Ver agenda"
             />
           )}
-        </section>
+        </Card>
 
         {/* Acesso rápido */}
-        <section className="daily-card area-quick">
-          <header>
-            <h3><Icon name="bolt" size={20} /> Acesso rápido</h3>
-          </header>
+        <Card className="daily-card area-quick">
+          <CardHeader icon={<Icon name="bolt" size={20} />} title="Acesso rápido" />
           <nav className="daily-quick-grid" aria-label="Acesso rápido">
             {quickLinks.map((item) => (
               <QuickAction key={item.label} href={item.href} icon={<Icon name={item.icon} size={22} />} label={item.label} />
             ))}
           </nav>
-        </section>
+        </Card>
 
         {/* Hábitos do dia */}
-        <section className="daily-card area-habits">
-          <header>
-            <h3><Icon name="bars" size={20} /> Hábitos do dia</h3>
-            <Link href="/rotina/habitos">Ver todos <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-habits">
+          <CardHeader icon={<Icon name="bars" size={20} />} title="Hábitos do dia" action={<Link href="/rotina/habitos">Ver todos <Icon name="arrow" size={13} /></Link>} />
           {activeHabits.length ? (
             <div className="daily-habits">
               <div className="daily-ring">
@@ -303,14 +292,11 @@ export default function DailyCenter(props: Props) {
               actionLabel="Criar hábito"
             />
           )}
-        </section>
+        </Card>
 
         {/* Contas próximas */}
-        <section className="daily-card area-bills">
-          <header>
-            <h3><Icon name="card" size={20} /> Contas próximas</h3>
-            <Link href="/financeiro/contas-a-pagar">Ver todas <Icon name="arrow" size={13} /></Link>
-          </header>
+        <Card className="daily-card area-bills">
+          <CardHeader icon={<Icon name="card" size={20} />} title="Contas próximas" action={<Link href="/financeiro/contas-a-pagar">Ver todas <Icon name="arrow" size={13} /></Link>} />
           {!props.financeLoaded ? (
             <EmptyState icon={<Icon name="wallet" size={25} />} title="Carregando contas" description="Estamos atualizando suas informações financeiras." />
           ) : (
@@ -338,17 +324,17 @@ export default function DailyCenter(props: Props) {
               )}
             </>
           )}
-        </section>
+        </Card>
 
         {/* Dica do dia */}
-        <section className="daily-card area-tip">
+        <Card className="daily-card area-tip">
           <span className="daily-bill-icon round"><Icon name="bulb" size={20} /></span>
           <div>
             <strong>Dica do dia</strong>
             <p>Pequenas atitudes diárias constroem grandes resultados.</p>
           </div>
           <Icon name="arrow" size={18} />
-        </section>
+        </Card>
       </div>
 
       {/* Fechamento diário com dados efetivamente registrados. */}
