@@ -229,6 +229,12 @@ export default function Home() {
             padding-inline: 20px !important;
           }
 
+          @media (max-width: 1023px) {
+            #nexo-app .nexo-topbar-page .nexo-mobile-nav-toggle {
+              display: inline-flex;
+            }
+          }
+
           @media (max-width: 639px) {
             #nexo-app .nexo-page-header-container {
               padding-inline: 12px;
