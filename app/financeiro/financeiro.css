@@ -875,8 +875,8 @@
 
         
 }
-.finance-content-vertical /* Correção específica da lista financeira em telas touch */
-        @media (max-width: 760px) {
+/* Ajustes específicos da lista financeira em telas touch */
+@media (max-width: 760px) {
 
           .finance-list {
             gap: 9px;
@@ -906,7 +906,7 @@
             gap: 4px;
           }
 
-          .finance-item-info strong,
+          .finance-content-vertical .finance-item-info strong,
           .finance-item-info span {
             display: block;
             width: 100%;
