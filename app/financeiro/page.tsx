@@ -360,6 +360,18 @@ export default function Page() {
   const lastSavedPayloadRef = useRef("");
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const transactionFormRef = useRef<HTMLFormElement>(null);
+  const sessionIdentityRef = useRef({
+    userId: session?.user.id ?? null,
+    generation: 0,
+  });
+  const currentUserId = session?.user.id ?? null;
+
+  if (sessionIdentityRef.current.userId !== currentUserId) {
+    sessionIdentityRef.current = {
+      userId: currentUserId,
+      generation: sessionIdentityRef.current.generation + 1,
+    };
+  }
 
   useEffect(() => {
     if (editingTransactionId === null) return;
@@ -448,13 +460,28 @@ export default function Page() {
 
   useEffect(() => {
     if (!loaded || !safeToSave || !remoteReadyRef.current) return;
+
+    const sessionGeneration = sessionIdentityRef.current.generation;
+    const sessionUserId = session?.user.id ?? null;
     const serializedPayload = JSON.stringify(transactions);
     if (serializedPayload === lastSavedPayloadRef.current) return;
 
     saveQueueRef.current = saveQueueRef.current.then(async () => {
-      if (!remoteReadyRef.current) return;
+      const sessionIsCurrent =
+        sessionIdentityRef.current.generation === sessionGeneration &&
+        sessionIdentityRef.current.userId === sessionUserId;
+
+      if (!remoteReadyRef.current || !sessionIsCurrent) return;
+
       try {
         const result = await saveRemoteCollection(STORAGE_KEY, transactions, revisionRef.current);
+
+        const sessionStillCurrent =
+          sessionIdentityRef.current.generation === sessionGeneration &&
+          sessionIdentityRef.current.userId === sessionUserId;
+
+        if (!sessionStillCurrent) return;
+
         if (!result.saved) {
           setSafeToSave(false);
           remoteReadyRef.current = false;
@@ -474,7 +501,7 @@ export default function Page() {
         setSyncStatus("Erro ao salvar na nuvem");
       }
     });
-  }, [transactions, loaded, safeToSave]);
+  }, [transactions, loaded, safeToSave, session?.user.id]);
 
   const accountOptions = useMemo(() => {
     const registeredNames = new Set(
