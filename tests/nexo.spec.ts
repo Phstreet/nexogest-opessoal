@@ -276,7 +276,7 @@ test.describe("NEXO - Operações financeiras", () => {
     await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(2);
 
     movement = page.locator(".finance-item").filter({ hasText: "Despesa automatizada editada" });
-    await movement.getByRole("button", { name: "Pagar" }).click();
+    await movement.getByRole("button", { name: "Informar valor pago" }).click();
     await page.getByLabel("Valor realmente pago").fill("35,00");
     await movement.getByRole("button", { name: "Confirmar" }).click();
 
@@ -292,7 +292,7 @@ test.describe("NEXO - Operações financeiras", () => {
     ]);
 
     movement = page.locator(".finance-item").filter({ hasText: "Despesa automatizada editada" });
-    await movement.getByRole("button", { name: "Atualizar valor" }).click();
+    await movement.getByRole("button", { name: "Informar valor pago" }).click();
     await page.getByLabel("Valor realmente pago").fill("120,00");
     await movement.getByRole("button", { name: "Confirmar" }).click();
 
