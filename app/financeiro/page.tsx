@@ -5,7 +5,7 @@ import "./financeiro.css";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { Transaction } from "@/lib/finance/types";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
@@ -112,6 +112,15 @@ export default function Page() {
   const [institution, setInstitution] = useState("Nubank");
   const [filter, setFilter] = useState("Todos");
   const transactionFormRef = useRef<HTMLFormElement>(null);
+  const sessionIdentity = useMemo(
+    () => ({ userId: session?.user.id ?? null }),
+    [session?.user.id]
+  );
+  const sessionIdentityRef = useRef(sessionIdentity);
+
+  useLayoutEffect(() => {
+    sessionIdentityRef.current = sessionIdentity;
+  }, [sessionIdentity]);
 
   useEffect(() => {
     if (editingTransactionId === null) return;

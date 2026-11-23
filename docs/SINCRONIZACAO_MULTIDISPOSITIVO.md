@@ -1,119 +1,98 @@
-# NEXO — preparação para sincronização multi-dispositivo
+# NEXO — autenticação, armazenamento e sincronização
 
-## Objetivo
+## Arquitetura atual
 
-Permitir que a mesma conta NEXO acesse seus dados em diferentes dispositivos, mantendo autenticação, isolamento por usuário e proteção contra gravações concorrentes.
+O NEXO usa Supabase Auth para autenticação e PostgreSQL para sincronizar coleções entre dispositivos. As chamadas passam pelas rotas servidoras Next.js `/api/auth` e `/api/sync`. Os tokens ficam em cookies `HttpOnly`; o navegador recebe apenas os dados públicos da sessão.
 
-A implementação será incremental. O armazenamento local atual continua sendo a fonte ativa até que a autenticação, a sincronização e a migração sejam testadas. Não apagar chaves `nexo_*` nem executar uma migração automática sem backup e confirmação.
+A API usa a chave publishable e o JWT da sessão. Não utiliza `service_role`. A tabela `public.nexo_user_data` deve manter RLS habilitado e políticas que comparem `user_id` com `auth.uid()`. A função `save_nexo_user_data` usa `SECURITY INVOKER`, `search_path` vazio e revisão otimista.
 
-## Serviço escolhido
+## Coleções sincronizadas
 
-Supabase:
-- Supabase Auth para identidade e sessões.
-- PostgreSQL para armazenamento persistente.
-- Row Level Security (RLS) para garantir que cada usuário leia e altere somente seus próprios registros.
-- Controle de revisão para detectar quando outro dispositivo alterou o mesmo conjunto de dados.
+A lista de chaves permitidas pela aplicação está centralizada em `lib/supabase/sync-keys.ts`:
+- `nexo_transactions`
+- `nexo_accounts`
+- `nexo_reserves`
+- `nexo_reserve_movements`
+- `nexo_tasks`
+- `nexo_habits`
+- `nexo_preferences`
+- `nexo_profile`
+- `nexo_planning_budgets`
+- `nexo_planning_goals`
+- `nexo_personal_goals`
+- `nexo_task_backups`
 
-A aplicação usa rotas servidoras Next.js (`/api/auth` e `/api/sync`) para intermediar as chamadas ao Supabase. Os tokens de acesso e renovação ficam em cookies `HttpOnly`, com `Secure` em produção e `SameSite=Lax`; o navegador recebe somente os dados públicos da sessão. As rotas renovam sessões expirando e validam a origem das operações POST. A chave publishable é usada no servidor e pode ser pública; a chave secreta/service role nunca é utilizada.
+A restrição SQL correspondente é mantida nas migrations do Supabase. Ao adicionar uma coleção, atualize a lista compartilhada e crie uma migration compatível com a restrição do banco.
 
-## Dados contemplados na primeira versão
+## Leitura e gravação
 
-| Chave local existente | Conteúdo |
-| --- | --- |
-| `nexo_transactions` | Movimentações financeiras e registros de investimento |
-| `nexo_accounts` | Contas financeiras |
-| `nexo_reserves` | Reservas e objetivos |
-| `nexo_reserve_movements` | Aportes, resgates e rendimentos |
-| `nexo_tasks` | Tarefas e agenda |
-| `nexo_habits` | Hábitos e conclusões |
-| `nexo_preferences` | Preferências do usuário |
-| `nexo_profile` | Perfil de exibição |
+- `GET /api/sync` lê todas as coleções permitidas, respeitando o RLS.
+- `GET /api/sync?keys=nexo_profile,nexo_preferences` lê somente as coleções solicitadas.
+- `POST /api/sync` valida a origem, a chave, a revisão, o formato esperado e limita o corpo a 1 MB.
+- A leitura não envia `user_id` como filtro: o isolamento é responsabilidade das políticas RLS aplicadas ao JWT autenticado.
 
-Backups locais, dados temporários e chaves internas não serão sincronizados como se fossem dados de negócio.
+Os hooks financeiros validam os campos essenciais dos registros antes de usá-los. Valores `settledAmount: null` são normalizados como ausentes para preservar a compatibilidade com dados JSON antigos.
 
-## Modelo de armazenamento
+## Proteção dos dados locais
 
-A migration `supabase/migrations/202611170001_nexo_user_data.sql` cria uma tabela por usuário e chave de coleção. O campo `payload` mantém o formato JSON atual para reduzir o risco de migração. Cada registro tem uma revisão crescente.
+**O NEXO não deve apagar automaticamente chaves `nexo_*` do navegador.** O componente antigo `LegacyLocalDataCleanup` foi removido porque uma resposta bem-sucedida da API, mesmo vazia, não comprova que os dados locais foram migrados ou existem na nuvem.
 
-A função `save_nexo_user_data` implementa compare-and-swap:
-- revisão esperada `0`: cria uma coleção que ainda não existe;
-- revisão esperada igual à revisão atual: atualiza e incrementa a revisão;
-- revisão diferente: não grava e informa a revisão atual para que a aplicação trate o conflito.
+Antes de qualquer migração ou limpeza de dados locais:
+1. gerar um backup exportável;
+2. validar o conteúdo do backup;
+3. comparar cada coleção local com a coleção remota correspondente;
+4. pedir confirmação explícita;
+5. preservar o backup até confirmar a restauração em outro dispositivo.
 
-As políticas RLS e a função usam a identidade autenticada. O acesso anônimo é revogado.
+Falha de rede, resposta vazia ou coleção inválida nunca autorizam apagar dados locais.
+
+## Conflitos entre dispositivos
+
+A função SQL usa compare-and-swap:
+- revisão esperada `0`: cria uma coleção inexistente;
+- revisão igual à atual: grava e incrementa a revisão;
+- revisão diferente: não grava e informa o conflito.
+
+Os hooks não devem substituir silenciosamente a edição que acabou de ser feita. Na ocorrência de conflito, a edição permanece na tela e a interface informa que ela ainda não foi enviada. O usuário deve preservar ou comparar a edição antes de recarregar a coleção. Uma resolução automática por mesclagem ainda não está implementada.
+
+## Migrations
+
+- `supabase/migrations/20261117173354_nexo_user_data.sql`: cria a tabela, RLS, políticas e função de gravação.
+- `supabase/migrations/20261117173356_restrict_rls_event_trigger.sql`: restringe a execução direta da função opcional de event trigger; agora verifica se ela existe antes de aplicar o revoke.
+- `supabase/migrations/20261119131206_expand_nexo_personal_objectives_sync_keys.sql`: amplia a whitelist de coleções e atualiza a função RPC.
+
+A migration de event trigger não deve pressupor que `public.rls_auto_enable()` exista em todo banco novo.
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env.local` no ambiente de desenvolvimento e preencha os valores no painel do Supabase. Configure as mesmas variáveis no ambiente Preview e Production da Vercel.
+Copie `.env.example` para `.env.local` e informe as credenciais publishable do projeto Supabase que deseja usar. O exemplo contém somente campos vazios para evitar que desenvolvimento e testes apontem automaticamente para um projeto real.
 
-Nunca coloque senha de banco, service role key ou secret key em variáveis públicas. Não envie segredos pelo chat nem os comite no Git.
+Variáveis aceitas:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- aliases de servidor: `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`
 
-## Plano de implementação
+Nunca use `service_role` no navegador, em variáveis `NEXT_PUBLIC_*` ou nos testes E2E.
 
-1. Criar o projeto Supabase e aplicar a migration em ambiente de teste.
-2. Integrar autenticação por e-mail e sessão SSR, mantendo o acesso local até o usuário entrar.
-3. Criar o adaptador remoto com leitura, gravação por revisão e tratamento de conflitos.
-4. Fazer migração local → nuvem com prévia, backup exportável, validação e confirmação explícita.
-5. Migrar primeiro tarefas e hábitos; depois preferências/perfil; por fim os dados financeiros.
-6. Testar dois navegadores/dispositivos, sessões expiradas, falha de rede, conflitos, logout e recuperação.
-7. Só habilitar sincronização como padrão depois dos testes e da aprovação da PR.
+## Segurança e operação
 
-## Critérios mínimos de aceite
+- As rotas POST verificam o cabeçalho `Origin`.
+- A API de sincronização rejeita payloads maiores que 1 MB e formatos incompatíveis.
+- As respostas de autenticação não repassam mensagens internas brutas do Supabase.
+- O servidor valida comprimento mínimo de senha no cadastro e na redefinição.
+- O tempo de expiração informado na sessão de recuperação é validado.
+- Cabeçalhos CSP, anti-iframe, MIME sniffing, política de referência e permissões estão configurados no Next.js.
 
-- Usuário A não consegue ler, alterar ou excluir dados do usuário B.
-- Nenhuma chave service role/secret aparece no bundle do navegador.
-- Uma falha de rede não apaga nem substitui os dados locais.
-- Um conflito entre dispositivos é detectado; nunca é sobrescrito silenciosamente.
-- A migração é idempotente ou bloqueia uma segunda execução, e oferece backup antes de gravar.
-- O modo local atual continua funcional enquanto a nuvem não estiver configurada.
+Rate limiting e CAPTCHA precisam ser configurados e verificados no painel Supabase Auth ou por um serviço externo apropriado. Um limitador em memória no Next.js serverless não garante proteção consistente entre instâncias.
 
+## Verificações antes de produção
 
-## Implementação da interface (PR em validação)
+1. Executar `npm ci`, `npm run lint`, `npx tsc --noEmit`, `npm run build` e `npm run test:e2e`.
+2. Verificar as migrations aplicadas no projeto Supabase correto.
+3. Confirmar RLS, grants, políticas e função RPC.
+4. Testar cadastro, confirmação de e-mail, recuperação de senha e logout.
+5. Testar duas sessões/dispositivos e conflito de revisão.
+6. Verificar as variáveis de ambiente e os redirecionamentos no Supabase e na Vercel.
+7. Confirmar a política de privacidade e o tratamento dos dados conforme a LGPD.
 
-A primeira camada de interface foi adicionada à branch de integração:
-- `/entrar`: login por e-mail e senha.
-- `/cadastro`: criação de conta.
-- `/recuperar-senha`: solicitação de link de recuperação.
-- `/redefinir-senha`: atualização de senha a partir do link enviado por e-mail.
-- `/configuracoes/conta`: estado da conta e saída.
-- Indicador de conta e painel de sincronização nas telas do sistema.
-
-As sessões são gerenciadas por rotas do servidor (`/api/auth`) e armazenadas em cookies `HttpOnly`, `Secure` em produção e `SameSite=Lax`. Os tokens não são gravados no `localStorage` nem expostos aos componentes do navegador. As rotas de sincronização (`/api/sync`) usam o token da sessão e continuam sujeitas às políticas RLS; não utilizam service role.
-
-## Migração e conflitos
-
-No primeiro acesso autenticado:
-- Se só houver dados locais, a interface solicita backup e confirmação antes do envio.
-- Se só houver dados remotos, eles são restaurados no armazenamento local.
-- Se houver versões diferentes nos dois lados, a aplicação bloqueia a sobrescrita automática e permite escolher a versão local ou a da nuvem.
-- Após a inicialização, alterações locais são enviadas com controle de revisão. A aplicação consulta a nuvem periodicamente para identificar atualizações feitas em outros dispositivos.
-
-O backup pré-migração é baixado pelo navegador. A aplicação não remove as chaves locais após o envio. Dados com JSON ou formato de coleção inválido bloqueiam a migração.
-
-## Configuração necessária por ambiente
-
-O arquivo `.env.example` contém a URL e a chave publishable do projeto NEXO-DEV para desenvolvimento. A chave publishable é pública e não substitui uma chave secreta. Em produção, configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente do host; o código não usa o projeto de desenvolvimento como fallback em produção.
-
-No painel Supabase, a URL base do aplicativo e os caminhos de redirecionamento devem incluir os domínios efetivos de Preview e Production:
-- `https://SEU-DOMINIO/entrar`
-- `https://SEU-DOMINIO/redefinir-senha`
-
-A configuração desses domínios depende do endereço definitivo da implantação e precisa ser conferida antes de liberar o cadastro em produção.
-
-## Limitações até a validação final
-
-A autenticação e as rotas de sincronização estão implementadas na branch, mas ainda dependem de:
-1. Execução bem-sucedida de lint, build e testes E2E na CI.
-2. Configuração das variáveis de ambiente no host de produção.
-3. Inclusão dos domínios reais na allowlist de redirecionamento do Supabase Auth.
-4. Teste prático de cadastro/confirmação de e-mail, recuperação de senha e sincronização em dois navegadores.
-5. Revisão dos conflitos e da restauração antes de mesclar a PR.
-
-Até concluir esses itens, o sistema mantém o modo local disponível e a PR não deve ser tratada como liberação de produção.
-
-
-## Isolamento local entre contas
-
-O navegador mantém um identificador de proprietário para as coleções locais. Quando uma conta diferente entra no mesmo navegador, os dados ativos da conta anterior são arquivados sob um identificador separado, as coleções ativas são limpas e, se existir, o arquivo local da nova conta é restaurado. A tela é recarregada para limpar estados React em memória. Se não for possível preservar o arquivo anterior, a troca é bloqueada.
-
-Ao resolver um conflito, a versão que será substituída também é preservada em uma chave de backup local por conta e coleção. Esses arquivos podem ser incluídos na exportação de backup da conta correspondente; os arquivos arquivados de outras contas são excluídos da exportação comum.
+A publicação só deve ser considerada validada depois de CI e testes práticos concluídos.

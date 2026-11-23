@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  clearSessionCookies, fetchSupabaseUser, getSupabaseConfig,
+  clearSessionCookies, copyResponseCookies, fetchSupabaseUser, getSupabaseConfig, EXPIRY_COOKIE,
   getValidAccessToken, setSessionCookies, hasValidOrigin,
 } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 async function readAuthError(response: Response) {
-  const body = await response.json().catch(() => ({}));
-  return body.msg || body.message || body.error_description || body.error || "Não foi possível concluir a solicitação.";
+  await response.json().catch(() => ({}));
+  if (response.status === 400 || response.status === 401) return "E-mail, senha ou dados de autenticação inválidos.";
+  if (response.status === 422) return "Os dados informados não atendem aos requisitos da conta.";
+  if (response.status === 429) return "Muitas tentativas em pouco tempo. Aguarde antes de tentar novamente.";
+  return "Não foi possível concluir a solicitação. Tente novamente mais tarde.";
 }
 
 export async function GET(request: NextRequest) {
@@ -21,12 +24,12 @@ export async function GET(request: NextRequest) {
       clearSessionCookies(response);
       return response;
     }
-    return NextResponse.json({
-      session: { user, expires_at: Number(request.cookies.get("nexo_token_expires_at")?.value || Math.floor(Date.now() / 1000) + 300) },
-    }, { headers: response.headers });
-  } catch (error) {
+    return copyResponseCookies(response, NextResponse.json({
+      session: { user, expires_at: Number(response.cookies.get(EXPIRY_COOKIE)?.value || request.cookies.get(EXPIRY_COOKIE)?.value || Math.floor(Date.now() / 1000) + 300) },
+    }, { headers: response.headers }));
+  } catch {
     clearSessionCookies(response);
-    return NextResponse.json({ session: null, error: error instanceof Error ? error.message : "Falha ao validar sessão." }, { headers: response.headers });
+    return copyResponseCookies(response, NextResponse.json({ session: null, error: "Não foi possível validar a sessão. Entre novamente." }, { headers: response.headers }));
   }
 }
 
@@ -40,6 +43,12 @@ export async function POST(request: NextRequest) {
     const { url, key } = getSupabaseConfig();
     const action = String(body.action || "");
     if (action === "login" || action === "signup") {
+      if (action === "signup" && (typeof body.password !== "string" || body.password.length < 8)) {
+        return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
+      }
+      if (typeof body.email !== "string" || !body.email.trim()) {
+        return NextResponse.json({ error: "Informe um endereço de e-mail válido." }, { status: 400 });
+      }
       const endpoint = action === "login"
         ? `${url}/auth/v1/token?grant_type=password`
         : `${url}/auth/v1/signup?redirect_to=${encodeURIComponent(new URL("/entrar", request.url).origin)}`;
@@ -75,24 +84,30 @@ export async function POST(request: NextRequest) {
     if (action === "recovery-session") {
       const access = String(body.access_token || "");
       const refresh = String(body.refresh_token || "");
-      if (!access || !refresh) return NextResponse.json({ error: "Link de recuperação inválido ou expirado." }, { status: 400 });
+      const expiresIn = Number(body.expires_in ?? 3600);
+      if (!access || !refresh || !Number.isFinite(expiresIn) || expiresIn < 60 || expiresIn > 86400) {
+        return NextResponse.json({ error: "Link de recuperação inválido ou expirado." }, { status: 400 });
+      }
       const user = await fetchSupabaseUser(access);
       if (!user) return NextResponse.json({ error: "Não foi possível validar o link de recuperação. Solicite outro e-mail." }, { status: 401 });
-      const response = NextResponse.json({ session: { user, expires_at: Math.floor(Date.now() / 1000) + Number(body.expires_in || 3600) } });
-      setSessionCookies(response, { access_token: access, refresh_token: refresh, expires_in: Number(body.expires_in || 3600) });
+      const response = NextResponse.json({ session: { user, expires_at: Math.floor(Date.now() / 1000) + expiresIn } });
+      setSessionCookies(response, { access_token: access, refresh_token: refresh, expires_in: expiresIn });
       return response;
     }
 
     if (action === "change-password") {
+      if (typeof body.password !== "string" || body.password.length < 8) {
+        return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
+      }
       const response = NextResponse.json({ ok: false });
       const access = await getValidAccessToken(request, response);
-      if (!access) return NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401, headers: response.headers });
+      if (!access) return copyResponseCookies(response, NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401, headers: response.headers }));
       const update = await fetch(`${url}/auth/v1/user`, {
         method: "PUT", headers: { apikey: key, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
         body: JSON.stringify({ password: body.password }), cache: "no-store",
       });
-      if (!update.ok) return NextResponse.json({ error: await readAuthError(update) }, { status: update.status, headers: response.headers });
-      return NextResponse.json({ ok: true }, { headers: response.headers });
+      if (!update.ok) return copyResponseCookies(response, NextResponse.json({ error: await readAuthError(update) }, { status: update.status, headers: response.headers }));
+      return copyResponseCookies(response, NextResponse.json({ ok: true }, { headers: response.headers }));
     }
 
     if (action === "logout") {
@@ -105,7 +120,7 @@ export async function POST(request: NextRequest) {
       return response;
     }
     return NextResponse.json({ error: "Ação de autenticação desconhecida." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro interno de autenticação." }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Não foi possível concluir a operação de autenticação. Tente novamente." }, { status: 500 });
   }
 }

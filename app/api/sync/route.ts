@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
+import { copyResponseCookies, getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
+import { isNexoSyncKey } from "@/lib/supabase/sync-keys";
 
 export const runtime = "nodejs";
-const ALLOWED_KEYS = new Set([
+
+const ARRAY_KEYS = new Set([
   "nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements",
-  "nexo_tasks", "nexo_habits", "nexo_preferences", "nexo_profile", "nexo_planning_budgets", "nexo_planning_goals", "nexo_personal_goals", "nexo_task_backups",
+  "nexo_tasks", "nexo_habits", "nexo_planning_budgets", "nexo_planning_goals",
+  "nexo_personal_goals", "nexo_task_backups",
 ]);
+const MAX_SYNC_BODY_BYTES = 1_048_576;
 
 async function authorized(request: NextRequest) {
   const response = NextResponse.json({});
@@ -16,45 +20,79 @@ async function authorized(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { access, response } = await authorized(request);
-    if (!access) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers });
+    if (!access) return copyResponseCookies(response, NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers }));
+
+    const requestedKeys = request.nextUrl.searchParams.get("keys");
+    let keys: string[] | null = null;
+    if (requestedKeys) {
+      keys = [...new Set(requestedKeys.split(",").map((key) => key.trim()).filter(Boolean))];
+      if (!keys.length || keys.some((key) => !isNexoSyncKey(key))) {
+        return NextResponse.json({ error: "Uma ou mais coleções solicitadas não são permitidas." }, { status: 400, headers: response.headers });
+      }
+    }
+
     const { url, key } = getSupabaseConfig();
-    const userResponse = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${access}` }, cache: "no-store" });
-    if (!userResponse.ok) return NextResponse.json({ error: "Sessão inválida." }, { status: 401, headers: response.headers });
-    const user = await userResponse.json();
-    const query = new URLSearchParams({ select: "data_key,payload,revision,updated_at", user_id: `eq.${user.id}`, order: "data_key.asc" });
+    const query = new URLSearchParams({ select: "data_key,payload,revision,updated_at", order: "data_key.asc" });
+    if (keys) query.set("data_key", `in.(${keys.join(",")})`);
+
+    // A política RLS restringe os registros ao auth.uid() do JWT.
+    // Não é necessário consultar /auth/v1/user para filtrar novamente por user_id.
     const dataResponse = await fetch(`${url}/rest/v1/nexo_user_data?${query}`, {
       headers: { apikey: key, Authorization: `Bearer ${access}` }, cache: "no-store",
     });
     const data = await dataResponse.json().catch(() => ({}));
-    if (!dataResponse.ok) return NextResponse.json({ error: data.message || "Não foi possível consultar os dados." }, { status: dataResponse.status, headers: response.headers });
-    return NextResponse.json({ data }, { headers: response.headers });
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Falha ao consultar a nuvem." }, { status: 500 });
+    if (!dataResponse.ok) return copyResponseCookies(response, NextResponse.json({ error: data.message || "Não foi possível consultar os dados." }, { status: dataResponse.status, headers: response.headers }));
+    return copyResponseCookies(response, NextResponse.json({ data }, { headers: response.headers }));
+  } catch {
+    return NextResponse.json({ error: "Falha ao consultar os dados da nuvem." }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   if (!hasValidOrigin(request)) return NextResponse.json({ error: "Origem da solicitação não autorizada." }, { status: 403 });
   try {
-    const body = await request.json();
-    const dataKey = String(body.data_key || "");
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_SYNC_BODY_BYTES) {
+      return NextResponse.json({ error: "O conteúdo excede o limite de 1 MB por coleção." }, { status: 413 });
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Formato de sincronização inválido." }, { status: 400 });
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+    }
+
+    const dataKey = typeof body.data_key === "string" ? body.data_key : "";
     const revision = Number(body.expected_revision);
-    if (!ALLOWED_KEYS.has(dataKey) || !Number.isInteger(revision) || revision < 0) {
+    if (!isNexoSyncKey(dataKey) || !Number.isSafeInteger(revision) || revision < 0) {
       return NextResponse.json({ error: "Dados de sincronização inválidos." }, { status: 400 });
     }
+    const payload = body.payload;
+    const validShape = ARRAY_KEYS.has(dataKey)
+      ? Array.isArray(payload)
+      : Boolean(payload) && typeof payload === "object" && !Array.isArray(payload);
+    if (!validShape) {
+      return NextResponse.json({ error: "O formato da coleção não corresponde ao tipo esperado." }, { status: 400 });
+    }
+
     const { access, response } = await authorized(request);
     if (!access) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers });
     const { url, key } = getSupabaseConfig();
     const save = await fetch(`${url}/rest/v1/rpc/save_nexo_user_data`, {
       method: "POST",
       headers: { apikey: key, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_data_key: dataKey, p_payload: body.payload, p_expected_revision: revision }),
+      body: JSON.stringify({ p_data_key: dataKey, p_payload: payload, p_expected_revision: revision }),
       cache: "no-store",
     });
     const result = await save.json().catch(() => ({}));
-    if (!save.ok) return NextResponse.json({ error: result.message || result.details || "Não foi possível salvar na nuvem." }, { status: save.status, headers: response.headers });
-    return NextResponse.json({ result: Array.isArray(result) ? result[0] : result }, { headers: response.headers });
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Falha ao salvar na nuvem." }, { status: 500 });
+    if (!save.ok) return copyResponseCookies(response, NextResponse.json({ error: result.message || result.details || "Não foi possível salvar na nuvem." }, { status: save.status, headers: response.headers }));
+    return copyResponseCookies(response, NextResponse.json({ result: Array.isArray(result) ? result[0] : result }, { headers: response.headers }));
+  } catch {
+    return NextResponse.json({ error: "Falha ao salvar os dados na nuvem." }, { status: 500 });
   }
 }
