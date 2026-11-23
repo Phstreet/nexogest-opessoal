@@ -878,11 +878,11 @@
 /* Ajustes específicos da lista financeira em telas touch */
 @media (max-width: 760px) {
 
-          .finance-list {
+          .finance-content-vertical .finance-list {
             gap: 9px;
           }
 
-          .finance-item {
+          .finance-content-vertical .finance-item {
             display: grid;
             grid-template-columns: 36px minmax(0, 1fr);
             align-items: start;
@@ -891,14 +891,14 @@
             padding: 13px;
           }
 
-          .finance-item-icon {
+          .finance-content-vertical .finance-item-icon {
             grid-column: 1;
             grid-row: 1 / span 3;
             width: 36px;
             height: 36px;
           }
 
-          .finance-item-info {
+          .finance-content-vertical .finance-item-info {
             grid-column: 2;
             width: 100%;
             min-width: 0;
@@ -907,7 +907,7 @@
           }
 
           .finance-content-vertical .finance-item-info strong,
-          .finance-item-info span {
+          .finance-content-vertical .finance-item-info span {
             display: block;
             width: 100%;
             max-width: 100%;
@@ -920,11 +920,11 @@
             line-height: 1.45;
           }
 
-          .finance-item-info strong {
+          .finance-content-vertical .finance-item-info strong {
             font-size: 13px;
           }
 
-          .finance-item > strong {
+          .finance-content-vertical .finance-item > strong {
             grid-column: 2;
             justify-self: start;
             margin: 0;
@@ -933,7 +933,7 @@
             font-size: 14px;
           }
 
-          .finance-item-actions {
+          .finance-content-vertical .finance-item-actions {
             grid-column: 1 / -1;
             display: flex;
             justify-content: flex-end;
@@ -944,7 +944,7 @@
             padding-top: 3px;
           }
 
-          .finance-item-actions .finance-edit {
+          .finance-content-vertical .finance-item-actions .finance-edit {
             flex: 1 1 88px;
             min-width: 0;
             min-height: 40px;
@@ -952,33 +952,33 @@
             font-size: 12px;
           }
 
-          .finance-item-actions .finance-delete {
+          .finance-content-vertical .finance-item-actions .finance-delete {
             flex: 0 0 40px;
             width: 40px;
             height: 40px;
           }
 
-          .finance-settlement-editor {
+          .finance-content-vertical .finance-settlement-editor {
             grid-column: 1 / -1;
             min-width: 0;
           }
 
-          .finance-settlement-controls {
+          .finance-content-vertical .finance-settlement-controls {
             align-items: stretch;
           }
 
-          .finance-settlement-controls input {
+          .finance-content-vertical .finance-settlement-controls input {
             flex: 1 1 130px;
             width: auto;
             min-height: 40px;
             font-size: 16px;
           }
 
-          .finance-settlement-controls button {
+          .finance-content-vertical .finance-settlement-controls button {
             min-height: 40px;
           }
 
-          .routine-footer {
+          .finance-content-vertical .routine-footer {
             display: flex;
             align-items: flex-start;
             flex-direction: column;
@@ -988,7 +988,7 @@
             overflow-wrap: anywhere;
           }
 
-          .routine-footer span {
+          .finance-content-vertical .routine-footer span {
             display: block;
             max-width: 100%;
           }
