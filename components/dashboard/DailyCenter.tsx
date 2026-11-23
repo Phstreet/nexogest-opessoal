@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
-import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
+import { Card, CardHeader, EmptyState, PageHeader, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
 
 type Props = {
   tasks: RoutineTask[];
@@ -188,11 +188,7 @@ export default function DailyCenter(props: Props) {
       )}
 
       {/* HERO */}
-      <section className="daily-hero">
-        <span className="daily-date">{dateLabel}</span>
-        <h1>{greeting}!</h1>
-        <p>Sua central de organização e controle.</p>
-      </section>
+      <PageHeader eyebrow={dateLabel} title={greeting + "!"} description="Sua central de organização e controle." />
 
       {/* INDICADORES */}
       <section className="daily-kpis" aria-label="Indicadores do dia">
