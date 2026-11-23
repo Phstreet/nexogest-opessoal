@@ -144,11 +144,6 @@ export function useCloudFinanceCollections() {
     const operation = async () => {
       setSaving(true);
       try {
-        const result = await saveRemoteCollection(key, payload, revisions.current.get(key) ?? 0);
-        if (!result.saved) {
-          throw new Error("Conflito de sincronização: outro dispositivo alterou esta coleção. Recarregue os dados para conferir a versão remota antes de tentar novamente.");
-        }
-        revisions.current.set(key, result.current_revision ?? (revisions.current.get(key) ?? 0) + 1);
         setState((current) => ({
           ...current,
           ...(key === "nexo_transactions" ? { transactions: payload as Transaction[] } : {}),
@@ -158,6 +153,12 @@ export function useCloudFinanceCollections() {
           ...(key === "nexo_planning_budgets" ? { planningBudgets: payload as unknown[] } : {}),
           ...(key === "nexo_planning_goals" ? { financialGoals: payload as unknown[] } : {}),
         }));
+        const result = await saveRemoteCollection(key, payload, revisions.current.get(key) ?? 0);
+        if (!result.saved) {
+          setError("Conflito de sincronização: a edição permanece nesta tela, mas ainda não foi enviada. Copie ou resolva a alteração antes de recarregar a coleção.");
+          throw new Error("Outro dispositivo alterou esta coleção. A edição atual foi mantida na tela.");
+        }
+        revisions.current.set(key, result.current_revision ?? (revisions.current.get(key) ?? 0) + 1);
       } finally {
         setSaving(false);
       }
