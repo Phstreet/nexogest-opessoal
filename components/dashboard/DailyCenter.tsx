@@ -113,7 +113,7 @@ export default function DailyCenter(props: Props) {
     month: "long",
     year: "numeric",
   });
-  const dateLabel = rawDateLabel.charAt(0).toLocaleUpperCase("pt-BR") + rawDateLabel.slice(1);
+  const dateLabel = rawDateLabel.charAt(0).toLocaleUpperCase("pt-BR") + rawDateLabel.slice(1).toLocaleLowerCase("pt-BR");
 
   /* Tarefas */
   const todaysTasks = props.tasks.filter((task) => task.date === todayKey);
@@ -374,7 +374,7 @@ export default function DailyCenter(props: Props) {
       <style jsx global>{`
         /* Foto da Lua: NASA/JPL/USGS — domínio público.
            Arquivo local: /public/moon.jpg */
-        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:12px;min-width:0;padding:0 0 28px;color:#f1f1f3;overflow:hidden}
+        .daily-center{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:16px;min-width:0;padding:0 0 16px;color:#f1f1f3;overflow:hidden}
         .daily-center>*{position:relative;z-index:1}
         .daily-center::before{content:"";position:absolute;z-index:0;pointer-events:none;top:-200px;right:-170px;width:min(860px,72%);aspect-ratio:1;border-radius:50%;
           background-image:url("/moon.jpg");
@@ -388,25 +388,25 @@ export default function DailyCenter(props: Props) {
         /* Hero */
         .daily-hero{padding:2px 0 0;max-width:640px}
         .daily-date{display:block;color:#858791;font-size:10px;font-weight:500;letter-spacing:1.7px;text-transform:uppercase}
-        .daily-hero h2{margin:4px 0 3px;color:#f5f5f7;font-size:clamp(30px,3.7vw,44px);font-weight:680;letter-spacing:-1.5px;line-height:1.04}
-        .daily-hero p{margin:0;color:#999ba4;font-size:clamp(12px,1.15vw,15px);font-weight:300}
+        .daily-hero h2{margin:4px 0 3px;color:#f5f5f7;font-size:28px;font-weight:700;letter-spacing:-.7px;line-height:32px}
+        .daily-hero p{margin:0;color:#999ba4;font-size:13px;line-height:18px;font-weight:400}
 
         /* KPIs */
         .daily-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:0}
-        .daily-kpi{display:flex;flex-direction:column;gap:2px;min-width:0;padding:15px 18px 13px;border:1px solid #2d2d34;border-radius:15px;background:rgba(20,20,24,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f1f1f3;text-decoration:none;box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .2s ease,transform .2s ease}
+        .daily-kpi{display:flex;flex-direction:row;align-items:center;gap:10px;min-width:0;padding:12px;border:1px solid #2d2d34;border-radius:14px;background:rgba(20,20,24,.62);color:#f1f1f3;text-decoration:none;box-shadow:none;transition:border-color .2s ease,transform .2s ease}
         .daily-kpi:hover{border-color:#55555f;transform:translateY(-2px)}
-        .daily-kpi-icon{display:flex;color:#c9cbd1;margin-bottom:3px}
-        .daily-kpi strong{overflow-wrap:anywhere;font-size:clamp(23px,2.2vw,31px);font-weight:700;letter-spacing:-.8px;line-height:1.15}
+        .daily-kpi-icon{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;color:#c9cbd1;border:1px solid #45474e;border-radius:9px}
+        .daily-kpi strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(15px,1.5vw,22px);font-weight:700;letter-spacing:-.5px;line-height:26px;font-variant-numeric:tabular-nums}
         .daily-kpi>div{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#b4b4bd}
-        .daily-kpi small{font-size:13px;font-weight:400}
+        .daily-kpi small{font-size:12px;line-height:16px;font-weight:400}
 
         /* Grade */
         .daily-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1.08fr) minmax(0,.9fr);gap:16px;grid-template-areas:"priorities agenda quick" "habits bills tip"}
         .area-priorities{grid-area:priorities}.area-agenda{grid-area:agenda}.area-quick{grid-area:quick}
         .area-habits{grid-area:habits}.area-bills{grid-area:bills}.area-tip{grid-area:tip}
-        .daily-card{min-width:0;padding:20px 22px;border:1px solid #2d2d34;border-radius:18px;background:rgba(20,20,24,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 14px 34px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.04)}
+        .daily-card{min-width:0;min-height:0;padding:16px;border:1px solid #2d2d34;border-radius:14px;background:rgba(20,20,24,.78);box-shadow:none}
         .daily-card>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-        .daily-card h3{display:flex;align-items:center;gap:10px;margin:0;color:#f4f4f6;font-size:17px;font-weight:650;letter-spacing:-.2px}
+        .daily-card h3{display:flex;align-items:center;gap:8px;margin:0;color:#f4f4f6;font-size:15px;font-weight:650;line-height:20px;letter-spacing:-.1px}
         .daily-card>header>a{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;color:#c9c9d0;font-size:12px;text-decoration:none;transition:color .18s ease}
         .daily-card>header>a:hover{color:#fff}
         .daily-empty{margin:8px 0;color:#9999a3;font-size:13px;line-height:1.6}
@@ -414,7 +414,7 @@ export default function DailyCenter(props: Props) {
         .daily-warning{margin:0 0 8px;padding:9px 11px;border:1px solid #654b4b;border-radius:8px;background:#241b1d;color:#dcb5b5;font-size:12px;line-height:1.5}
 
         /* Prioridades */
-        .daily-row{display:flex;align-items:center;gap:14px;padding:11px 2px;border-top:1px solid #2a2a30;color:#ececf0;font-size:16px}
+        .daily-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-top:1px solid #2a2a30;color:#ececf0;font-size:13px;line-height:18px}
         .daily-row>span{min-width:0;overflow-wrap:anywhere}
         .daily-row .is-overdue{color:#d9b3b3}
         .daily-task-badge{flex-shrink:0;padding:3px 6px;border:1px solid #45454d;border-radius:5px;color:#bfc0c8;font-size:9px;font-weight:700;letter-spacing:.35px}
@@ -425,15 +425,15 @@ export default function DailyCenter(props: Props) {
         .daily-task-indicator.completed{border-color:#718b79;color:#a9cbb5}
 
         /* Agenda */
-        .daily-agenda-item{display:flex;align-items:center;gap:14px;padding:11px 2px;color:#ececf0;font-size:16px}
-        .daily-agenda-item time{flex-shrink:0;width:48px;color:#c3c3cb;font-size:15px;font-variant-numeric:tabular-nums}
+        .daily-agenda-item{display:flex;align-items:center;gap:10px;padding:8px 2px;color:#ececf0;font-size:13px;line-height:18px}
+        .daily-agenda-item time{flex-shrink:0;width:42px;color:#c3c3cb;font-size:12px;font-variant-numeric:tabular-nums}
         .daily-agenda-item i{flex-shrink:0;width:2px;height:30px;border-radius:2px;background:#8c8c96}
         .daily-agenda-item span{min-width:0;overflow-wrap:anywhere}
         .daily-agenda-item .is-done{color:#8d8d97;text-decoration:line-through}
 
         /* Acesso rápido */
-        .daily-quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-        .daily-quick-grid a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:88px;padding:10px 6px;border:1px solid #2d2d34;border-radius:14px;background:rgba(255,255,255,.035);color:#e6e6ea;font-size:13px;text-decoration:none;transition:border-color .18s ease,background .18s ease}
+        .daily-quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+        .daily-quick-grid a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:64px;min-height:64px;padding:6px;border:1px solid #2d2d34;border-radius:10px;background:rgba(255,255,255,.035);color:#e6e6ea;font-size:12px;line-height:16px;text-decoration:none;transition:border-color .18s ease,background .18s ease}
         .daily-quick-grid a:hover{border-color:#55555f;background:rgba(255,255,255,.07)}
 
         /* Hábitos */
@@ -447,7 +447,7 @@ export default function DailyCenter(props: Props) {
         .daily-ring strong{font-size:19px;font-weight:650}
         .daily-ring small{color:#9a9aa4;font-size:10px}
         .daily-habits ul{flex:1;min-width:0;margin:0;padding:0;list-style:none}
-        .daily-habits li{display:flex;align-items:center;gap:12px;padding:7px 0;color:#ececf0;font-size:15px}
+        .daily-habits li{display:flex;align-items:center;gap:10px;padding:6px 0;color:#ececf0;font-size:13px;line-height:18px}
         .daily-habits li span{min-width:0;overflow-wrap:anywhere}
 
         /* Contas */
@@ -466,7 +466,7 @@ export default function DailyCenter(props: Props) {
         .area-tip p{margin:5px 0 0;font-size:14px;line-height:1.5}
 
         .daily-alert{display:flex;flex-direction:column;gap:5px;padding:13px 15px;border:1px solid #704e4e;border-radius:12px;background:#261c1e;color:#e1baba;font-size:13px}
-        .daily-close{padding:20px 22px;border:1px solid #2d2d34;border-radius:18px;background:rgba(20,20,24,.82);box-shadow:0 14px 34px rgba(0,0,0,.24)}
+        .daily-close{padding:16px;border:1px solid #2d2d34;border-radius:14px;background:rgba(20,20,24,.82);box-shadow:none}
         .daily-close>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
         .daily-close-eyebrow{color:#8f9099;font-size:9px;font-weight:750;letter-spacing:1.5px}
         .daily-close h3{margin:5px 0 0;color:#f4f4f6;font-size:17px}
@@ -480,7 +480,7 @@ export default function DailyCenter(props: Props) {
         .daily-close-grid .is-negative strong{color:#e1a3a3}
 
         @media(max-width:1100px){
-          .daily-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"priorities agenda" "habits bills" "quick tip"}
+          .daily-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"priorities agenda" "quick quick" "habits bills" "tip tip"}
           .daily-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
           .daily-close-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
@@ -492,8 +492,8 @@ export default function DailyCenter(props: Props) {
           .daily-kpi{padding:13px 12px 11px;border-radius:13px}
           .daily-kpi small{font-size:13px}
           .daily-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"priorities" "agenda" "habits" "bills" "quick" "tip"}
-          .daily-card{padding:16px;border-radius:14px}
-          .daily-row,.daily-agenda-item{font-size:15px}
+          .daily-card{padding:12px;border-radius:14px}
+          .daily-row,.daily-agenda-item{font-size:13px}
           .daily-habits{gap:16px}
           .daily-close{padding:16px;border-radius:14px}
           .daily-close>header{align-items:flex-start;flex-direction:column}
