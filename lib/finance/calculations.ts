@@ -15,13 +15,8 @@ function outstanding(item: Transaction): number {
 }
 
 export function getTotalReserveBalance(reserves: Reserve[], movements: ReserveMovement[]): number {
-  return getTotalReserveBalancePure(reserves, movements);
-}
-function getTotalReserveBalancePure(reserves: Reserve[], movements: ReserveMovement[]): number {
-  return getTotalReserveBalanceFromCollections(reserves, movements);
-}
-function getTotalReserveBalanceFromCollections(reserves: Reserve[], movements: ReserveMovement[]): number {
-  return reserves.reduce((total, reserve) => total + movements.filter((item) => item.reserveId === reserve.id).reduce((balance, item) => {
+  return reserves.reduce((total, reserve) => total + movements.reduce((balance, item) => {
+    if (item.reserveId !== reserve.id) return balance;
     if (item.type === "Aporte" || item.type === "Rendimento" || item.type === "Ajuste") return balance + item.amount;
     if (item.type === "Resgate") return balance - item.amount;
     return balance;
@@ -36,7 +31,7 @@ export function getFinancialSummary(transactions: Transaction[], accounts: Accou
   const totalIncome = incomes.reduce((sum, item) => sum + settled(item), 0);
   const totalExpenses = expenses.reduce((sum, item) => sum + settled(item), 0);
   const totalInvestments = investments.reduce((sum, item) => sum + settled(item), 0);
-  const totalReserves = getTotalReserveBalancePure(reserves, movements);
+  const totalReserves = getTotalReserveBalance(reserves, movements);
   const payable = expenses.reduce((sum, item) => sum + outstanding(item), 0);
   const receivable = incomes.reduce((sum, item) => sum + outstanding(item), 0);
   const accountsBalance = getTotalAccountsBalance(accounts, transactions);
