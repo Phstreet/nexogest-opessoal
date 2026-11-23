@@ -11,13 +11,13 @@ export function money(value: number) {
 }
 
 export function parseAmount(value: string) {
-  const normalized = value.trim().replace(/\\s/g, "");
+  const normalized = value.trim().replace(/\s/g, "");
   if (!normalized) return NaN;
   if (normalized.includes(",")) {
-    return Number(normalized.replace(/\\./g, "").replace(",", "."));
+    return Number(normalized.replace(/\./g, "").replace(",", "."));
   }
-  if (/^-?\\d{1,3}(\\.\\d{3})+$/.test(normalized)) {
-    return Number(normalized.replace(/\\./g, ""));
+  if (/^-?\d{1,3}(\.\d{3})+$/.test(normalized)) {
+    return Number(normalized.replace(/\./g, ""));
   }
   return Number(normalized);
 }
@@ -31,7 +31,7 @@ export function localDate() {
 }
 
 export function isValidDate(value: string) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   return date.getFullYear() === year &&
