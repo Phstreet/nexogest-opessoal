@@ -1,11 +1,13 @@
 import "./globals.css";
 import "./progress-utilities.css";
+import "./settings.css";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NexoAuthProvider } from "@/contexts/NexoAuthProvider";
 import { NexoConfirmProvider } from "@/contexts/NexoConfirmProvider";
+import { SettingsProvider } from "@/contexts/SettingsProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,13 +34,14 @@ export const metadata: Metadata = {
   },
 };
 
+const settingsBootstrap =
+  'try { var appearanceCookie = document.cookie.split("; ").find(function(item) { return item.indexOf("nexo_appearance_v2=") === 0; }); var cached = appearanceCookie ? JSON.parse(decodeURIComponent(appearanceCookie.slice("nexo_appearance_v2=".length))) : JSON.parse((localStorage.getItem("nexo_settings_bootstrap_v2") || localStorage.getItem("nexo_settings_bootstrap_v1")) || "{}"); var root = document.documentElement; var appearance = cached.appearance || {}; var finance = cached.finance || {}; var theme = appearance.theme || "graphite"; if (theme === "dark") theme = "graphite"; if (theme === "system") theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "graphite"; root.dataset.theme = theme; root.dataset.accent = appearance.accent || "silver"; root.dataset.density = appearance.density || "comfortable"; root.dataset.fontScale = appearance.fontScale || "normal"; root.dataset.cornerRadius = appearance.cornerRadius || "medium"; root.dataset.reduceMotion = String(appearance.reduceMotion === true); root.dataset.highContrast = String(appearance.highContrast === true); root.dataset.privacyMode = String(finance.hideValues === true); } catch (_) {}';
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // A leitura dos headers torna o layout dinâmico e permite ao Next.js
-  // aplicar o nonce de proxy.ts aos scripts SSR do framework.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? "";
 
@@ -46,10 +49,17 @@ export default async function RootLayout({
     <html lang="pt-BR">
       <head>
         <meta name="csp-nonce" content={nonce} />
+        <script
+          id="nexo-settings-bootstrap"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: settingsBootstrap }}
+        />
       </head>
       <body className={inter.className}>
         <NexoConfirmProvider>
-          <NexoAuthProvider>{children}</NexoAuthProvider>
+          <NexoAuthProvider>
+            <SettingsProvider>{children}</SettingsProvider>
+          </NexoAuthProvider>
         </NexoConfirmProvider>
         <Analytics />
       </body>

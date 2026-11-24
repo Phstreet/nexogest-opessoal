@@ -4,6 +4,7 @@ import {
   getValidAccessToken, setSessionCookies, hasValidOrigin,
 } from "@/lib/supabase/server";
 import { validateNewPassword } from "@/lib/auth/password-policy";
+import { migrateUserSettings } from "@/lib/settings/schema";
 
 export const runtime = "nodejs";
 
@@ -69,7 +70,32 @@ export async function POST(request: NextRequest) {
         session: hasSession ? { user, expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600) } : null,
         confirmationRequired: !hasSession,
       });
-      if (data.access_token && data.refresh_token) setSessionCookies(response, data);
+      if (data.access_token && data.refresh_token) {
+        setSessionCookies(response, data);
+        try {
+          const preferencesResponse = await fetch(
+            `${url}/rest/v1/nexo_user_data?select=payload&data_key=eq.nexo_preferences`,
+            { headers: { apikey: key, Authorization: `Bearer ${data.access_token}` }, cache: "no-store" }
+          );
+          if (preferencesResponse.ok) {
+            const rows = await preferencesResponse.json() as Array<{ payload?: unknown }>;
+            const settings = migrateUserSettings(rows[0]?.payload);
+            const bootstrap = {
+              appearance: settings.appearance,
+              finance: { hideValues: settings.finance.hideValues },
+            };
+            response.cookies.set("nexo_appearance_v2", encodeURIComponent(JSON.stringify(bootstrap)), {
+              httpOnly: false,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+              path: "/",
+              maxAge: 60 * 60 * 24 * 365,
+            });
+          }
+        } catch {
+          // O bootstrap cai no tema Grafite/localStorage quando a leitura da preferência falha.
+        }
+      }
       return response;
     }
 

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { copyResponseCookies, getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
+import { copyResponseCookies, fetchSupabaseUser, getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
 import { isNexoSyncKey } from "@/lib/supabase/sync-keys";
 import { isValidBackupCollection } from "@/lib/supabase/backup";
+import { userSettingsSchema } from "@/lib/settings/schema";
+import { userProfileSchema } from "@/lib/settings/profile-schema";
 
 export const runtime = "nodejs";
 
@@ -73,8 +75,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A coleção contém registros inválidos ou incompatíveis. Nenhum dado foi gravado." }, { status: 400 });
     }
 
+    if (dataKey === "nexo_preferences" && payload && typeof payload === "object" && !Array.isArray(payload)) {
+      const settingsPayload = (payload as Record<string, unknown>).settingsV1;
+      if (settingsPayload !== undefined && !userSettingsSchema.safeParse(settingsPayload).success) {
+        return NextResponse.json({ error: "As preferências possuem campos inválidos ou versão incompatível." }, { status: 400 });
+      }
+    }
+    if (dataKey === "nexo_profile" && !userProfileSchema.safeParse(payload).success) {
+      return NextResponse.json({ error: "Os dados do perfil são inválidos." }, { status: 400 });
+    }
     const { access, response } = await authorized(request);
     if (!access) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers });
+    if (dataKey === "nexo_profile" && payload && typeof payload === "object" && !Array.isArray(payload)) {
+      const user = await fetchSupabaseUser(access) as { id?: unknown } | null;
+      const avatarPath = (payload as Record<string, unknown>).avatarPath;
+      if (typeof avatarPath === "string" && avatarPath && (
+        typeof user?.id !== "string" ||
+        !avatarPath.startsWith(user.id + "/")
+      )) {
+        return NextResponse.json({ error: "O avatar precisa pertencer à conta autenticada." }, { status: 403, headers: response.headers });
+      }
+    }
     const { url, key } = getSupabaseConfig();
     const save = await fetch(`${url}/rest/v1/rpc/save_nexo_user_data`, {
       method: "POST",

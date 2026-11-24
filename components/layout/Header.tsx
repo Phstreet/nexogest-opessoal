@@ -4,10 +4,13 @@
 import { useEffect, useState } from "react";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
 import UserMenu from "@/components/ui/UserMenu";
+import { useSettings } from "@/contexts/SettingsProvider";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
-function getGreeting() {
-  const hour = new Date().getHours();
+function getGreeting(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", hourCycle: "h23", timeZone }).formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
 
   if (hour < 12) return "Bom dia";
   if (hour < 18) return "Boa tarde";
@@ -16,12 +19,15 @@ function getGreeting() {
 
 
 export default function Header() {
+  const { settings, togglePrivacy } = useSettings();
+  const { session } = useNexoAuth();
   const [greeting, setGreeting] = useState("Olá");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
-    setGreeting(getGreeting());
+    setDisplayName("");
+    setGreeting(getGreeting(settings.general.timeZone));
 
     let active = true;
     async function loadProfile() {
@@ -51,7 +57,7 @@ export default function Header() {
       active = false;
       window.removeEventListener("nexo:profile-updated", loadProfile);
     };
-  }, []);
+  }, [session, settings.general.timeZone]);
 
   return (
     <header className="nexo-header">
@@ -70,6 +76,16 @@ export default function Header() {
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
+        </button>
+        <button
+          type="button"
+          className="nexo-header-icon nexo-privacy-toggle"
+          aria-label={settings.finance.hideValues ? "Mostrar valores financeiros" : "Ocultar valores financeiros"}
+          aria-pressed={settings.finance.hideValues}
+          title={settings.finance.hideValues ? "Mostrar valores" : "Ocultar valores"}
+          onClick={togglePrivacy}
+        >
+          {settings.finance.hideValues ? "◉" : "◎"}
         </button>
         <SearchButton />
         <div className="nexo-header-popover">
@@ -91,7 +107,7 @@ export default function Header() {
           {notificationsOpen && (
             <div className="nexo-header-dropdown notifications-dropdown">
               <strong>Notificações</strong>
-              <p>Você não possui notificações no momento.</p>
+              <p>Central de notificações: Em breve. Os alertas ainda não possuem um serviço ativo no aplicativo.</p>
             </div>
           )}
         </div>

@@ -37,6 +37,13 @@ export function clearSessionCookies(response: NextResponse) {
   for (const name of [ACCESS_COOKIE, REFRESH_COOKIE, EXPIRY_COOKIE]) {
     response.cookies.set(name, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
   }
+  response.cookies.set("nexo_appearance_v2", "", {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
 }
 
 export async function getValidAccessToken(request: NextRequest, response: NextResponse): Promise<string | null> {

@@ -8,6 +8,42 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        nexo: {
+          background: "var(--nexo-background)",
+          sidebar: "var(--nexo-sidebar)",
+          surface: "var(--nexo-surface)",
+          elevated: "var(--nexo-surface-elevated)",
+          border: "var(--nexo-border)",
+          text: "var(--nexo-text-primary)",
+          muted: "var(--nexo-text-secondary)",
+          accent: "var(--nexo-accent-color)",
+          success: "var(--nexo-success)",
+          warning: "var(--nexo-warning)",
+          danger: "var(--nexo-danger)",
+        },
+      },
+      borderRadius: {
+        nexo: "var(--nexo-radius)",
+        "nexo-card": "var(--nexo-radius-card)",
+      },
+      spacing: {
+        nexo: "var(--nexo-space-unit)",
+      },
+      fontFamily: {
+        nexo: ["var(--font-body)"],
+        "nexo-heading": ["var(--font-heading)"],
+      },
+      fontSize: {
+        "nexo-xs": "var(--font-size-xs)",
+        "nexo-sm": "var(--font-size-sm)",
+        "nexo-base": "var(--font-size-base)",
+        "nexo-lg": "var(--font-size-lg)",
+        "nexo-xl": "var(--font-size-xl)",
+      },
+      boxShadow: {
+        nexo: "var(--nexo-shadow-card)",
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

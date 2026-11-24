@@ -1,0 +1,354 @@
+/* Preferências globais do NEXO — aplicadas pelo SettingsProvider */
+:root { --nexo-font-scale: 1; --nexo-accent-color: #c5cbd4; }
+html[data-density="compact"] #nexo-app {
+  --nexo-card-padding: 12px;
+  --nexo-section-gap: 10px;
+  --nexo-content-top: 12px;
+}
+html[data-font-scale="small"] #nexo-app { font-size: calc(13px * .92); }
+html[data-font-scale="large"] #nexo-app { font-size: calc(13px * 1.08); }
+html[data-accent] #nexo-app :is(a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible) {
+  outline: 2px solid var(--nexo-accent-color); outline-offset: 2px;
+}
+html[data-high-contrast="true"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.settings-panel,.form-card,.routine-panel) { border-color: currentColor; }
+html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, html[data-reduce-motion="true"] *::after {
+  scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-reduce-motion="true"]) *, html:not([data-reduce-motion="true"]) *::before, html:not([data-reduce-motion="true"]) *::after {
+    scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+  }
+}
+html[data-privacy-mode="true"] #nexo-app :is(.nexo-stat-value,.nexo-stat-copy strong,.daily-bill>b,.finance-card strong,.finance-item>strong,.metric-value,.account-balance,.balance-value,.summary-amount,.money-value,.kpi-value,.amount-value) {
+  filter: blur(7px); user-select: none;
+}
+html[data-theme="light"] body, html[data-theme="light"] #nexo-app, html[data-theme="light"] .main-area {
+  background: #f2f4f7 !important; color: #20242b !important;
+}
+html[data-theme="light"] #nexo-app :is(.nexo-header,.sidebar,.settings-tabs,.settings-panel,.daily-card,.metric-card,.finance-card,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel) {
+  background: #fff !important; color: #20242b !important; border-color: #d7dce3 !important; box-shadow: 0 5px 18px rgba(25,35,50,.05);
+}
+html[data-theme="light"] #nexo-app :is(h1,h2,h3,strong,.nexo-header-left strong,.daily-card h3,.settings-panel h2) { color: #20242b !important; }
+html[data-theme="light"] #nexo-app :is(p,small,label,.eyebrow,.nexo-header-greeting,.daily-date) { color: #596273 !important; }
+html[data-theme="light"] #nexo-app :is(input,select,textarea) { color: #20242b !important; background: #fff !important; border-color: #cbd2dc !important; color-scheme: light; }
+html[data-theme="light"] #nexo-app .settings-tabs button.active { background: var(--nexo-accent-color) !important; color: #15191f !important; }
+
+
+/* Componentes da central de configurações e perfil */
+#nexo-app .settings-controls-stack { display:flex; flex-direction:column; gap:14px; }
+#nexo-app .settings-subsection { padding:16px; border:1px solid #303036; border-radius:10px; background:rgba(255,255,255,.015); }
+#nexo-app .settings-subsection-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+#nexo-app .settings-subsection-heading h3 { margin:0 0 4px; color:#e6e8ec; font-size:13px; }
+#nexo-app .settings-subsection-heading p { margin:0; color:#8e949e; font-size:11px; line-height:1.5; }
+#nexo-app .settings-reset-button { min-height:30px; padding:0 9px; border:1px solid #41434a; border-radius:7px; background:transparent; color:#aeb4be; font-size:10px; cursor:pointer; }
+#nexo-app .settings-reset-button:hover { border-color:#8b929d; color:#f2f3f5; }
+#nexo-app .settings-save-status { margin:0; color:#9ba4b0; font-size:11px; }
+#nexo-app .settings-save-error { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:11px; border:1px solid #704444; border-radius:8px; color:#efb1b1; background:#281c1c; font-size:11px; }
+#nexo-app .settings-save-error button { min-height:30px; padding:0 10px; border:1px solid #8c5c5c; border-radius:6px; background:transparent; color:#f4cccc; cursor:pointer; }
+#nexo-app .settings-accent-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:8px; }
+#nexo-app .settings-accent { display:flex; align-items:center; gap:8px; min-height:38px; padding:6px 9px; border:1px solid #373940; border-radius:7px; background:#17181b; color:#c2c7d0; font-size:11px; cursor:pointer; }
+#nexo-app .settings-accent i { width:12px; height:12px; border-radius:50%; background:#c5cbd4; }
+#nexo-app .settings-accent[data-accent="blue"] i { background:#78a9e8; }
+#nexo-app .settings-accent[data-accent="violet"] i { background:#a995e8; }
+#nexo-app .settings-accent[data-accent="emerald"] i { background:#78c4a2; }
+#nexo-app .settings-accent[data-accent="amber"] i { background:#d8b16c; }
+#nexo-app .settings-accent[data-accent="rose"] i { background:#d994a6; }
+#nexo-app .settings-accent.active { border-color:var(--nexo-accent-color); box-shadow:0 0 0 1px var(--nexo-accent-color); }
+#nexo-app .settings-preview-live { display:flex; flex-direction:column; align-items:flex-start; gap:7px; padding:17px; border:1px solid var(--nexo-accent-color); border-radius:10px; background:var(--surface,#19191c); }
+#nexo-app .settings-preview-live strong { color:var(--text-primary,#eee); font-size:15px; }
+#nexo-app .settings-preview-live p { margin:0; color:var(--text-secondary,#999); font-size:11px; }
+#nexo-app .settings-preview-live button { min-height:32px; padding:0 12px; border:1px solid var(--nexo-accent-color); border-radius:7px; background:var(--nexo-accent-color); color:#111318; font-size:11px; font-weight:700; }
+#nexo-app .settings-profile-link { display:flex; flex-direction:column; gap:6px; padding:15px; margin-top:18px; border:1px solid #34353b; border-radius:9px; background:rgba(255,255,255,.02); }
+#nexo-app .settings-profile-link strong { color:#e6e8ec; font-size:12px; }
+#nexo-app .settings-profile-link span { color:#969ca6; font-size:11px; }
+#nexo-app .settings-profile-link a { color:var(--nexo-accent-color); font-size:11px; text-decoration:underline; }
+#nexo-app .profile-editor { display:flex; align-items:center; gap:16px; margin:18px 0; }
+#nexo-app .profile-avatar-preview { width:84px; height:84px; flex:0 0 84px; display:grid; place-items:center; overflow:hidden; border:1px solid #444; border-radius:50%; background:#27282d; color:#e5e7eb; font-size:28px; font-weight:700; }
+#nexo-app .profile-avatar-preview img { width:100%; height:100%; object-fit:cover; }
+#nexo-app .profile-editor small { display:block; max-width:340px; margin-top:8px; color:#9298a2; font-size:11px; line-height:1.5; }
+#nexo-app .profile-form-grid,#nexo-app .profile-data-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px; margin:12px 0 18px; }
+#nexo-app .profile-wide { grid-column:1/-1; max-width:none; }
+#nexo-app .profile-wide textarea { width:100%; padding:10px; border:1px solid #393939; border-radius:7px; background:#222; color:#eee; resize:vertical; }
+#nexo-app .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+#nexo-app .danger-zone { border-color:#704444; }
+#nexo-app .danger-zone h2 { color:#e7aaaa; }
+html[data-theme="light"] #nexo-app .settings-subsection,
+html[data-theme="light"] #nexo-app .settings-preview-live,
+html[data-theme="light"] #nexo-app .settings-profile-link { background:#f7f8fa !important; border-color:#d7dce3 !important; }
+html[data-theme="light"] #nexo-app .settings-subsection-heading h3,
+html[data-theme="light"] #nexo-app .settings-profile-link strong { color:#20242b !important; }
+html[data-theme="light"] #nexo-app .settings-accent { background:#fff; color:#20242b; border-color:#d7dce3; }
+@media(max-width:650px) {
+  #nexo-app .profile-form-grid,#nexo-app .profile-data-grid { grid-template-columns:1fr; }
+  #nexo-app .profile-wide { grid-column:auto; }
+  #nexo-app .profile-editor { align-items:flex-start; }
+  #nexo-app .settings-accent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #nexo-app .settings-subsection-heading { flex-direction:column; }
+}
+
+#nexo-app .nexo-account-avatar-image { display:block; object-fit:cover; border:1px solid #41444c; }
+
+
+#nexo-app .settings-field { display:flex; flex-direction:column; gap:7px; max-width:440px; margin:14px 0; }
+#nexo-app .settings-field > span { color:#c8c8c8; font-size:12px; }
+#nexo-app .settings-field input,
+#nexo-app .settings-field select,
+#nexo-app .settings-field textarea { width:100%; min-height:36px; padding:9px 10px; border:1px solid #393939; border-radius:7px; background:#222; color:#eee; color-scheme:dark; }
+#nexo-app .settings-toggle { display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:560px; padding:12px 0; margin:10px 0; border-top:1px solid #303036; border-bottom:1px solid #303036; color:#ccc; }
+#nexo-app .settings-toggle > span { display:flex; flex-direction:column; gap:5px; }
+#nexo-app .settings-toggle strong { font-size:12px; }
+#nexo-app .settings-toggle small { color:#888; font-size:10px; line-height:1.5; }
+#nexo-app .settings-toggle input { width:19px; height:19px; flex:0 0 19px; accent-color:var(--nexo-accent-color); cursor:pointer; }
+#nexo-app .settings-note { color:#9298a2; font-size:11px; line-height:1.6; }
+#nexo-app [data-sensitive] { transition:filter .15s ease; }
+html[data-privacy-mode="true"] #nexo-app [data-sensitive] { filter:blur(7px); user-select:none; }
+html[data-theme="light"] #nexo-app .settings-field > span,
+html[data-theme="light"] #nexo-app .settings-toggle { color:#303640 !important; }
+html[data-theme="light"] #nexo-app .settings-field input,
+html[data-theme="light"] #nexo-app .settings-field select,
+html[data-theme="light"] #nexo-app .settings-field textarea { background:#fff !important; color:#20242b !important; border-color:#cbd2dc !important; color-scheme:light; }
+
+
+#nexo-app .sidebar-profile { display:flex; align-items:center; gap:9px; min-width:0; padding:10px 9px; margin:10px 0 8px; border:1px solid #34363d; border-radius:9px; color:#d9dde5; text-decoration:none; }
+#nexo-app .sidebar-profile img,#nexo-app .sidebar-profile-avatar { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; overflow:hidden; border-radius:50%; background:#333943; color:#f3f4f6; object-fit:cover; font-size:13px; font-weight:700; }
+#nexo-app .sidebar-profile-copy { display:flex; flex-direction:column; min-width:0; gap:2px; }
+#nexo-app .sidebar-profile-copy strong { overflow:hidden; color:#e5e7eb; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+#nexo-app .sidebar-profile-copy small { color:#8f98a6; font-size:9px; }
+#nexo-app .sidebar.sidebar-collapsed .sidebar-profile { justify-content:center; padding:7px 3px; }
+#nexo-app .sidebar.sidebar-collapsed .sidebar-profile-copy { display:none; }
+html[data-theme="light"] #nexo-app .sidebar-profile { background:#f7f8fa; border-color:#d7dce3; color:#20242b; }
+html[data-theme="light"] #nexo-app .sidebar-profile-copy strong { color:#20242b; }
+
+
+html[data-accent] #nexo-app :is(.primary-button,.routine-primary-button,.profile-submit) {
+  background:var(--nexo-accent-color) !important;
+  border-color:var(--nexo-accent-color) !important;
+  color:#111318 !important;
+}
+html[data-font-scale="small"] #nexo-app :is(p,small,button,input,select,textarea,label) { font-size:calc(1em * .94); }
+html[data-font-scale="large"] #nexo-app :is(p,small,button,input,select,textarea,label) { font-size:calc(1em * 1.06); }
+
+
+html[data-accent="silver"] { --nexo-accent-color:#c5cbd4; }
+html[data-accent="blue"] { --nexo-accent-color:#78a9e8; }
+html[data-accent="violet"] { --nexo-accent-color:#a995e8; }
+html[data-accent="emerald"] { --nexo-accent-color:#78c4a2; }
+html[data-accent="amber"] { --nexo-accent-color:#d8b16c; }
+html[data-accent="rose"] { --nexo-accent-color:#d994a6; }
+
+
+/* Design tokens NEXO v2 — o Grafite preserva a paleta original. */
+:root {
+  --nexo-background:#0a0a0b;
+  --nexo-sidebar:#0d0d0f;
+  --nexo-surface:#151517;
+  --nexo-surface-elevated:#222326;
+  --nexo-surface-input:#101012;
+  --nexo-surface-soft:#1b1b1e;
+  --nexo-border:#29292d;
+  --nexo-border-strong:#414149;
+  --nexo-text-primary:#f1f1f3;
+  --nexo-text-secondary:#b5b6bd;
+  --nexo-text-muted:#8b8d95;
+  --nexo-text-subtle:#70727a;
+  --nexo-success:#a8c7b3;
+  --nexo-warning:#d5bd8a;
+  --nexo-danger:#d18c8c;
+  --nexo-chart-income:#82bd98;
+  --nexo-chart-expense:#d18c8c;
+  --nexo-info:#aeb9c9;
+  --nexo-accent-color:#c3c7ce;
+  --nexo-accent-foreground:#111214;
+  --nexo-accent-text:#e1e3e7;
+  --nexo-radius:8px;
+  --nexo-radius-card:10px;
+  --nexo-space-unit:4px;
+  --nexo-font-scale:1;
+  --nexo-shadow-card:0 8px 24px rgba(0,0,0,.18);
+  --background:var(--nexo-background);
+  --sidebar:var(--nexo-sidebar);
+  --surface:var(--nexo-surface);
+  --surface-light:var(--nexo-surface-soft);
+  --surface-raised:var(--nexo-surface-elevated);
+  --surface-input:var(--nexo-surface-input);
+  --border:var(--nexo-border);
+  --border-strong:var(--nexo-border-strong);
+  --white:var(--nexo-text-primary);
+  --text-primary:var(--nexo-text-primary);
+  --text-secondary:var(--nexo-text-secondary);
+  --muted:var(--nexo-text-muted);
+  --text-subtle:var(--nexo-text-subtle);
+  --radius:var(--nexo-radius);
+  --accent:var(--nexo-accent-color);
+  --accent-strong:var(--nexo-accent-text);
+  --green:var(--nexo-success);
+  --positive:var(--nexo-success);
+  --red:var(--nexo-danger);
+  --negative:var(--nexo-danger);
+  --warning:var(--nexo-warning);
+  --info:var(--nexo-info);
+}
+html[data-theme="graphite"] { color-scheme:dark; }
+html[data-theme="midnight"] {
+  color-scheme:dark;
+  --nexo-background:#070b14;
+  --nexo-sidebar:#090f1c;
+  --nexo-surface:#101827;
+  --nexo-surface-soft:#151f31;
+  --nexo-surface-elevated:#1c2a40;
+  --nexo-surface-input:#0b1220;
+  --nexo-border:#2a3a53;
+  --nexo-border-strong:#405575;
+  --nexo-text-primary:#edf3ff;
+  --nexo-text-secondary:#bdc9dc;
+  --nexo-text-muted:#91a0b8;
+  --nexo-text-subtle:#71809a;
+  --nexo-success:#86d6b1;
+  --nexo-warning:#f2cb83;
+  --nexo-danger:#f29b9b;
+  --nexo-chart-income:#65c99a;
+  --nexo-chart-expense:#f08d9a;
+  --nexo-info:#9bc4f5;
+  --nexo-shadow-card:0 10px 28px rgba(0,0,0,.3);
+}
+html[data-theme="warm"] {
+  color-scheme:dark;
+  --nexo-background:#100d0a;
+  --nexo-sidebar:#15110d;
+  --nexo-surface:#1d1711;
+  --nexo-surface-soft:#251d15;
+  --nexo-surface-elevated:#30251a;
+  --nexo-surface-input:#15100c;
+  --nexo-border:#493a2a;
+  --nexo-border-strong:#66513a;
+  --nexo-text-primary:#f7eddf;
+  --nexo-text-secondary:#d8c8b3;
+  --nexo-text-muted:#b19b80;
+  --nexo-text-subtle:#8e7b67;
+  --nexo-success:#a7c49a;
+  --nexo-warning:#e8bd78;
+  --nexo-danger:#e29a8b;
+  --nexo-chart-income:#a5c68f;
+  --nexo-chart-expense:#df927e;
+  --nexo-info:#b5c5d4;
+  --nexo-shadow-card:0 10px 28px rgba(0,0,0,.28);
+}
+html[data-theme="light"] {
+  color-scheme:light;
+  --nexo-background:#f2f4f7;
+  --nexo-sidebar:#e9edf2;
+  --nexo-surface:#ffffff;
+  --nexo-surface-soft:#f7f8fa;
+  --nexo-surface-elevated:#edf0f4;
+  --nexo-surface-input:#ffffff;
+  --nexo-border:#d7dce3;
+  --nexo-border-strong:#b9c2ce;
+  --nexo-text-primary:#20242b;
+  --nexo-text-secondary:#4f5968;
+  --nexo-text-muted:#687384;
+  --nexo-text-subtle:#8591a1;
+  --nexo-success:#176b49;
+  --nexo-warning:#8a4b08;
+  --nexo-danger:#a32336;
+  --nexo-chart-income:#16764f;
+  --nexo-chart-expense:#b4233d;
+  --nexo-info:#245c9a;
+  --nexo-shadow-card:0 5px 18px rgba(25,35,50,.06);
+}
+html[data-accent="silver"] { --nexo-accent-color:#c5cbd4; --nexo-accent-foreground:#11151b; --nexo-accent-text:#e1e3e7; }
+html[data-accent="blue"] { --nexo-accent-color:#60a5fa; --nexo-accent-foreground:#0b1020; --nexo-accent-text:#93c5fd; }
+html[data-accent="violet"] { --nexo-accent-color:#a78bfa; --nexo-accent-foreground:#1a1030; --nexo-accent-text:#c4b5fd; }
+html[data-accent="emerald"] { --nexo-accent-color:#34d399; --nexo-accent-foreground:#052e22; --nexo-accent-text:#6ee7b7; }
+html[data-accent="amber"] { --nexo-accent-color:#fbbf24; --nexo-accent-foreground:#422006; --nexo-accent-text:#fcd34d; }
+html[data-accent="rose"] { --nexo-accent-color:#fb7185; --nexo-accent-foreground:#4c0519; --nexo-accent-text:#fda4af; }
+html[data-theme="light"][data-accent="silver"] { --nexo-accent-color:#596579; --nexo-accent-foreground:#fff; --nexo-accent-text:#465366; }
+html[data-theme="light"][data-accent="blue"] { --nexo-accent-color:#1d4ed8; --nexo-accent-foreground:#fff; --nexo-accent-text:#1d4ed8; }
+html[data-theme="light"][data-accent="violet"] { --nexo-accent-color:#6d28d9; --nexo-accent-foreground:#fff; --nexo-accent-text:#6d28d9; }
+html[data-theme="light"][data-accent="emerald"] { --nexo-accent-color:#047857; --nexo-accent-foreground:#fff; --nexo-accent-text:#047857; }
+html[data-theme="light"][data-accent="amber"] { --nexo-accent-color:#92400e; --nexo-accent-foreground:#fff; --nexo-accent-text:#92400e; }
+html[data-theme="light"][data-accent="rose"] { --nexo-accent-color:#be123c; --nexo-accent-foreground:#fff; --nexo-accent-text:#be123c; }
+
+/* Consumo dos tokens pelos componentes compartilhados. */
+html[data-theme] body { color:var(--nexo-text-primary); background:var(--nexo-background); }
+html[data-theme] #nexo-app { color:var(--nexo-text-primary); background:var(--nexo-background); }
+html[data-theme] #nexo-app :is(.app-shell,.main-area,.content,.finance-page,.routine-page,.planning-page,.reports-page) { background-color:var(--nexo-background); color:var(--nexo-text-primary); }
+html[data-theme] #nexo-app :is(.sidebar,.topbar,.nexo-header,.sidebar-bottom) { background-color:var(--nexo-sidebar); color:var(--nexo-text-primary); border-color:var(--nexo-border); }
+html[data-theme] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.report-card,.planning-card,.settings-subsection,.settings-preview-live) { background-color:var(--nexo-surface); color:var(--nexo-text-primary); border-color:var(--nexo-border); box-shadow:var(--nexo-shadow-card); }
+html[data-theme] #nexo-app :is(h1,h2,h3,h4,.settings-panel h2,.settings-subsection-heading h3,.nexo-header-left strong,.metric-value,.finance-card strong) { color:var(--nexo-text-primary); }
+html[data-theme] #nexo-app :is(p,small,label,.muted,.description,.subtitle,.settings-subsection-heading p,.settings-note,.nexo-header-greeting,.daily-date) { color:var(--nexo-text-secondary); }
+html[data-theme] #nexo-app :is(input,select,textarea,.form-input) { color:var(--nexo-text-primary); background:var(--nexo-surface-elevated); border-color:var(--nexo-border-strong); color-scheme:inherit; }
+html[data-theme] #nexo-app :is(.primary-button,.hero-button,.settings-preview-live button,.settings-tabs button.active,.nav-item.active) { color:var(--nexo-accent-foreground); background:var(--nexo-accent-color); border-color:var(--nexo-accent-color); }
+html[data-theme] #nexo-app :is(a.text-link,.text-link,.nav-item.active .nav-icon,.date-icon) { color:var(--nexo-accent-text); }
+html[data-theme] #nexo-app :is(input[type="checkbox"],input[type="radio"],progress) { accent-color:var(--nexo-accent-color); }
+html[data-theme] #nexo-app :is(.nav-item:hover,.secondary-button:hover,.small-outline-button:hover) { border-color:var(--nexo-border-strong); }
+html[data-theme="light"] #nexo-app :is(.sidebar,.topbar,.nexo-header) { color:var(--nexo-text-primary); }
+html[data-theme="light"] #nexo-app :is(.nav-item,.nav-item.active,.sidebar .brand-name) { color:var(--nexo-text-primary); }
+html[data-theme="light"] #nexo-app :is(.settings-tabs button,.nav-item) { border-color:var(--nexo-border); }
+html[data-theme="light"] #nexo-app :is(.settings-field input,.settings-field select,.settings-field textarea) { background:var(--nexo-surface); color:var(--nexo-text-primary); }
+html[data-theme="midnight"] #nexo-app :is(.hero-panel,.featured-metric,.summary-panel) { background:linear-gradient(135deg,var(--nexo-surface-elevated),var(--nexo-surface)); border-color:var(--nexo-border-strong); }
+html[data-theme="warm"] #nexo-app :is(.hero-panel,.featured-metric,.summary-panel) { background:linear-gradient(135deg,var(--nexo-surface-elevated),var(--nexo-surface)); border-color:var(--nexo-border-strong); }
+
+html[data-corner-radius="sharp"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.settings-subsection,.settings-preview-live,.primary-button,.secondary-button,.settings-tabs button,input,select,textarea) { border-radius:3px !important; }
+html[data-corner-radius="medium"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.settings-subsection,.settings-preview-live,.primary-button,.secondary-button,.settings-tabs button,input,select,textarea) { border-radius:var(--nexo-radius) !important; }
+html[data-corner-radius="rounded"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.settings-subsection,.settings-preview-live,.primary-button,.secondary-button,.settings-tabs button,input,select,textarea) { border-radius:16px !important; }
+html[data-density="compact"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel) { padding:12px !important; }
+html[data-density="comfortable"] #nexo-app { --nexo-card-padding:18px; --nexo-section-gap:16px; }
+html[data-font-scale="small"] #nexo-app { font-size:12px; }
+html[data-font-scale="normal"] #nexo-app { font-size:14px; }
+html[data-font-scale="large"] #nexo-app { font-size:16px; }
+html[data-high-contrast="true"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.settings-panel,.form-card,.routine-panel,.settings-subsection) { border-width:2px; border-color:var(--nexo-text-secondary); }
+html[data-theme] #nexo-app :is(button,a,input,select,textarea):focus-visible { outline-color:var(--nexo-accent-text); }
+
+#nexo-app .settings-appearance-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap; }
+#nexo-app .settings-unsaved { margin:0; padding:10px 12px; color:var(--nexo-warning); background:color-mix(in srgb,var(--nexo-warning) 9%,transparent); border:1px solid color-mix(in srgb,var(--nexo-warning) 35%,transparent); border-radius:var(--nexo-radius); font-size:11px; }
+#nexo-app .settings-preview-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin:12px 0; }
+#nexo-app .settings-preview-metrics span { display:flex; flex-direction:column; gap:5px; padding:12px; background:var(--nexo-surface-elevated); border:1px solid var(--nexo-border); border-radius:var(--nexo-radius); }
+#nexo-app .settings-preview-metrics small { color:var(--nexo-text-secondary); font-size:10px; }
+#nexo-app .settings-preview-metrics strong { color:var(--nexo-text-primary); font-size:15px; }
+#nexo-app .settings-accent { border:1px solid var(--nexo-border); border-radius:var(--nexo-radius); color:var(--nexo-text-primary); background:var(--nexo-surface-elevated); }
+#nexo-app .settings-accent.active { border-color:var(--nexo-accent-color); box-shadow:0 0 0 2px color-mix(in srgb,var(--nexo-accent-color) 28%,transparent); }
+#nexo-app .settings-accent i { display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:middle; margin-right:6px; background:var(--nexo-accent-color); }
+@media(max-width:600px) {
+  #nexo-app .settings-appearance-actions { display:grid; grid-template-columns:1fr 1fr; }
+  #nexo-app .settings-appearance-actions button { width:100%; }
+}
+
+#nexo-app .settings-accent[data-accent="silver"] i { background:#c5cbd4; }
+#nexo-app .settings-accent[data-accent="blue"] i { background:#60a5fa; }
+#nexo-app .settings-accent[data-accent="violet"] i { background:#a78bfa; }
+#nexo-app .settings-accent[data-accent="emerald"] i { background:#34d399; }
+#nexo-app .settings-accent[data-accent="amber"] i { background:#fbbf24; }
+#nexo-app .settings-accent[data-accent="rose"] i { background:#fb7185; }
+
+/* Complemento de tokens para estilos locais dos módulos existentes. */
+html[data-theme] #nexo-app :is(.finance-intro,.finance-investment-summary,.finance-content-vertical .finance-table,.finance-content-vertical .finance-table-wrap,.finance-content-vertical .finance-account-card) {
+  background-color:var(--nexo-surface); color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.agenda-content,.agenda-panel,.agenda-calendar,.agenda-card,.agenda-toolbar,.agenda-day-panel,.agenda-event-card,.agenda-metrics-card) {
+  color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.agenda-panel,.agenda-calendar,.agenda-card,.agenda-toolbar,.agenda-day-panel,.agenda-event-card,.agenda-metrics-card) {
+  background-color:var(--nexo-surface);
+}
+html[data-theme] #nexo-app :is(.habits-page,.habits-header,.habit-card,.habit-form-card,.habit-stat-card,.habit-calendar,.habit-day-card) {
+  color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.habit-card,.habit-form-card,.habit-stat-card,.habit-calendar,.habit-day-card) { background-color:var(--nexo-surface); }
+html[data-theme] #nexo-app :is(.objectives-page,.objectives-hero,.objectives-metrics article,.objective-form-card,.objective-card,.tracking-panel,.objective-chart-card,.objective-progress-card) {
+  color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.objectives-metrics article,.objective-form-card,.objective-card,.tracking-panel,.objective-chart-card,.objective-progress-card) {
+  background-color:var(--nexo-surface);
+}
+html[data-theme] #nexo-app :is(.agenda-content,.habits-page,.objectives-page) { background-color:var(--nexo-background); }
+html[data-theme] #nexo-app :is(.finance-intro h2,.finance-card strong,.objective-form-card h2,.objective-card h3,.agenda-content h2,.habits-page h2) { color:var(--nexo-text-primary); }
+html[data-theme] #nexo-app :is(.finance-intro p,.finance-card span,.finance-card small,.objective-card p,.agenda-content p,.habits-page p) { color:var(--nexo-text-secondary); }
+
+/* Indicadores e gráficos reagem ao tema sem cores embutidas no JSX. */
+html[data-theme] #nexo-app :is(.income-bar,.legend-income) { background-color:var(--nexo-chart-income); }
+html[data-theme] #nexo-app :is(.expense-bar,.legend-expense) { background-color:var(--nexo-chart-expense); }
+html[data-theme] #nexo-app .positive-text { color:var(--nexo-success); }
+html[data-theme] #nexo-app .negative-text { color:var(--nexo-danger); }
+html[data-theme] #nexo-app :is(.daily-kpi,.daily-priority-card,.daily-agenda-card,.daily-habit-card,.daily-payable-card,.daily-quick-access,.daily-tip-card) {
+  background-color:var(--nexo-surface); color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}

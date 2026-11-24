@@ -6,7 +6,7 @@ export { NEXO_SYNC_KEYS, type NexoSyncKey } from "./sync-keys";
  * Os tokens Supabase permanecem em cookies HttpOnly no servidor.
  */
 export type NexoSession = {
-  user: { id: string; email?: string; user_metadata?: Record<string, unknown> };
+  user: { id: string; email?: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown>; created_at?: string; last_sign_in_at?: string };
   expires_at: number;
 };
 

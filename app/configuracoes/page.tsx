@@ -1,6 +1,7 @@
 "use client";
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+import { PreferencesControls, AppearanceControls } from "@/components/settings/SettingsControls";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -15,22 +16,10 @@ import {
 } from "@/lib/finance/categories";
 
 type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao" | "seguranca";
-type Preferences = {
-  weekStartsOn: "monday" | "sunday";
-  navigationFavorites?: string[];
-  sidebarCollapsed?: boolean;
-};
-type Profile = { displayName: string; fullName?: string; sex?: string; monthlyIncome?: string; birthDate?: string; profession?: string };
-
-const PREFERENCES_KEY = "nexo_preferences";
-const PROFILE_KEY = "nexo_profile";
-
 export default function ConfiguracoesPage() {
   const confirm = useNexoConfirm();
   const { session } = useNexoAuth();
   const [tab, setTab] = useState<SettingsTab>("preferencias");
-  const [preferences, setPreferences] = useState<Preferences>({ weekStartsOn: "monday" });
-  const [profile, setProfile] = useState<Profile>({ displayName: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [backupDate, setBackupDate] = useState("");
@@ -64,35 +53,6 @@ export default function ConfiguracoesPage() {
           const row = collections.find((item) => item.data_key === key);
           revisions.current.set(key, Number(row?.revision) || 0);
         }
-        const remotePreferences = collections.find((item) => item.data_key === PREFERENCES_KEY);
-        const remoteProfile = collections.find((item) => item.data_key === PROFILE_KEY);
-        const nextPreferences = remotePreferences?.payload;
-        if (nextPreferences && typeof nextPreferences === "object" && !Array.isArray(nextPreferences)) {
-          const data = nextPreferences as Record<string, unknown>;
-          setPreferences({
-            weekStartsOn: data.weekStartsOn === "sunday" ? "sunday" : "monday",
-            navigationFavorites: Array.isArray(data.navigationFavorites)
-              ? data.navigationFavorites.filter((item): item is string => typeof item === "string")
-              : [],
-            sidebarCollapsed: data.sidebarCollapsed === true,
-          });
-        } else {
-          setPreferences({ weekStartsOn: "monday" });
-        }
-        const nextProfile = remoteProfile?.payload;
-        if (nextProfile && typeof nextProfile === "object" && !Array.isArray(nextProfile)) {
-          const data = nextProfile as Record<string, unknown>;
-          setProfile({
-            displayName: typeof data.displayName === "string" ? data.displayName : "",
-            fullName: typeof data.fullName === "string" ? data.fullName : undefined,
-            sex: typeof data.sex === "string" ? data.sex : undefined,
-            monthlyIncome: typeof data.monthlyIncome === "string" ? data.monthlyIncome : undefined,
-            birthDate: typeof data.birthDate === "string" ? data.birthDate : undefined,
-            profession: typeof data.profession === "string" ? data.profession : undefined
-          });
-        } else {
-          setProfile({ displayName: "" });
-        }
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : "Não foi possível carregar as configurações da nuvem.");
       } finally {
@@ -111,54 +71,6 @@ export default function ConfiguracoesPage() {
     ],
     []
   );
-
-  async function persistSetting(key: NexoSyncKey, payload: unknown) {
-    if (!session) throw new Error("Entre na sua conta para salvar suas configurações.");
-    const revision = revisions.current.get(key) ?? 0;
-    const result = await saveRemoteCollection(key, payload, revision);
-    if (!result.saved) {
-      const latest = await fetchRemoteCollections();
-      const row = latest.find((item) => item.data_key === key);
-      revisions.current.set(key, Number(row?.revision) || 0);
-      throw new Error("Esta configuração foi alterada em outro dispositivo. Atualize a página e tente novamente.");
-    }
-    revisions.current.set(key, result.current_revision ?? revision + 1);
-  }
-
-  async function savePreferences(next: Preferences) {
-    setSaving(true);
-    setMessage("");
-    setError("");
-    try {
-      const merged = { ...preferences, ...next };
-      await persistSetting(PREFERENCES_KEY, merged);
-      setPreferences(merged);
-      window.dispatchEvent(new CustomEvent("nexo:preferences-updated", { detail: { sidebarCollapsed: merged.sidebarCollapsed === true } }));
-      setMessage("Preferências salvas no Supabase.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível salvar as preferências.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setMessage("");
-    setError("");
-    try {
-      const next = { ...profile, displayName: profile.displayName.trim() };
-      await persistSetting(PROFILE_KEY, next);
-      setProfile(next);
-      window.dispatchEvent(new Event("nexo:profile-updated"));
-      setMessage("Personalização salva no Supabase.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível salvar a personalização.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function saveNewPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -217,8 +129,16 @@ export default function ConfiguracoesPage() {
           if (!isValidBackupCollection(key, payload)) throw new Error(`A coleção ${key} possui formato inválido. Nenhum dado foi importado.`);
           return [key, payload] as const;
         });
-        if (!(await confirm({ title: "Confirmar importação", message: "As coleções do backup serão enviadas ao Supabase e poderão substituir os dados atuais. Deseja continuar?", confirmLabel: "Importar", destructive: true }))) return;
+        if (!(await confirm({ title: "Prévia e confirmação da restauração", message: "O arquivo contém " + normalized.length + " coleções válidas. As coleções correspondentes poderão substituir os dados atuais. Antes de restaurar, o NEXO baixará uma cópia de segurança do estado atual. Deseja continuar?", confirmLabel: "Criar cópia e restaurar", destructive: true }))) return;
         const latest = await fetchRemoteCollections();
+        const safetyBackup = { application: "NEXO", version: 2, createdAt: new Date().toISOString(), entries: latest.map((row) => [row.data_key, row.payload]) };
+        const safetyBlob = new Blob([JSON.stringify(safetyBackup, null, 2)], { type: "application/json" });
+        const safetyUrl = URL.createObjectURL(safetyBlob);
+        const safetyAnchor = document.createElement("a");
+        safetyAnchor.href = safetyUrl;
+        safetyAnchor.download = "nexo-backup-antes-restauracao-" + new Date().toISOString().slice(0, 10) + ".json";
+        safetyAnchor.click();
+        window.setTimeout(() => URL.revokeObjectURL(safetyUrl), 1000);
         const revisionsByKey = new Map(latest.map((row) => [row.data_key, Number(row.revision) || 0]));
         for (const [key, payload] of normalized) {
           const result = await saveRemoteCollection(key, payload, revisionsByKey.get(key) ?? 0);
@@ -275,24 +195,17 @@ export default function ConfiguracoesPage() {
 
         {tab === "preferencias" && (
           <section className="settings-panel">
-            <h2>Preferências gerais</h2>
-            <p>Defina como deseja organizar sua experiência no NEXO.</p>
-            <label className="settings-field">
-              <span>Primeiro dia da semana</span>
-              <select value={preferences.weekStartsOn} onChange={(event) => void savePreferences({ ...preferences, weekStartsOn: event.target.value as Preferences["weekStartsOn"] })} disabled={saving || loading}>
-                <option value="monday">Segunda-feira</option>
-                <option value="sunday">Domingo</option>
-              </select>
-            </label>
-                    <label className="settings-toggle"><span><strong>Menu lateral compacto</strong><small>Recolher a navegação para liberar espaço na tela.</small></span><input type="checkbox" checked={preferences.sidebarCollapsed === true} disabled={saving || loading} onChange={(event) => void savePreferences({ ...preferences, sidebarCollapsed: event.target.checked })} /></label>
-            <small>As preferências são salvas na sua conta e sincronizadas entre dispositivos.</small>
+            <h2>Preferências</h2>
+            <p>Configurações com efeito imediato no comportamento do NEXO.</p>
+            <PreferencesControls />
+            <p className="settings-note">Primeiro dia da semana, formatos de data/hora e parâmetros avançados da agenda estão identificados para integração. Não são apresentados como controles ativos enquanto não forem consumidos pelos calendários e formulários correspondentes.</p>
           </section>
         )}
 
         {tab === "categorias" && (
           <section className="settings-panel">
             <h2>Categorias disponíveis</h2>
-            <p>Consulta do catálogo de categorias de referência disponível no projeto. Os formulários financeiros ainda mantêm listas próprias; a edição centralizada será habilitada após a unificação dessas fontes.</p>
+            <p>Consulta do catálogo de referência. CRUD, arquivamento, reordenação, mesclagem e migração de lançamentos: Em breve, após a unificação das listas independentes usadas pelos formulários financeiros, de rotina e metas.</p>
             <div className="category-groups">
               {categoryGroups.map((group) => (
                 <div className="category-group" key={group.title}>
@@ -325,29 +238,19 @@ export default function ConfiguracoesPage() {
               </label>
             </div>
             <div className="backup-note">
-              <strong>Último backup exportado</strong>
-              <span>{backupDate ? new Date(backupDate).toLocaleString("pt-BR") : "Nenhum backup exportado por esta tela."}</span>
+              <strong>Último backup exportado nesta sessão</strong>
+              <span>{backupDate ? new Date(backupDate).toLocaleString("pt-BR") : "Nenhum backup exportado por esta tela nesta sessão."}</span>
             </div>
-            <p className="settings-warning">Os backups são gerados a partir da nuvem. A importação substitui as coleções correspondentes no Supabase.</p>
+            <p className="settings-warning">A restauração valida as coleções e baixa uma cópia JSON do estado atual antes de sobrescrever. Histórico persistente, agendamento automático e prévia detalhada por registro: Em breve.</p>
           </section>
         )}
 
         {tab === "personalizacao" && (
           <section className="settings-panel">
             <h2>Personalização</h2>
-            <p>Defina seu nome de exibição ou complete suas informações pessoais na página de perfil.</p>
-            <form onSubmit={saveProfile}>
-              <label className="settings-field">
-                <span>Nome de exibição</span>
-                <input value={profile.displayName} maxLength={60} placeholder="Como deseja ser identificado?" onChange={(event) => setProfile({ ...profile, displayName: event.target.value })} />
-              </label>
-              <div className="settings-preview">
-                <span>Prévia do perfil</span>
-                <strong>{profile.displayName.trim() || "NEXO"}</strong>
-              </div>
-              <button className="primary-button" type="submit" disabled={saving || loading}>{saving ? "Salvando..." : "Salvar personalização"}</button>
-            </form>
-            <p className="settings-note">O padrão visual monocromático atual foi preservado. Novos temas só serão adicionados quando todas as telas compartilharem o mesmo sistema de estilos.</p>
+            <p>Altere o tema, o destaque visual, a densidade e a acessibilidade. A prévia acompanha suas escolhas.</p>
+            <AppearanceControls />
+            <div className="settings-profile-link"><strong>Dados do perfil</strong><span>Foto, nome, informações pessoais e resumo dos seus dados.</span><a href="/configuracoes/perfil">Abrir Perfil e Dados →</a></div>
           </section>
         )}
 
@@ -363,6 +266,7 @@ export default function ConfiguracoesPage() {
               <button className="primary-button" type="submit" disabled={saving || loading || !session}>{saving ? "Atualizando..." : "Alterar senha"}</button>
             </form>
             <p className="settings-note">A alteração é processada pela autenticação do Supabase. Sua senha não é armazenada nas configurações do NEXO.</p>
+            <p className="settings-note">2FA, sessões ativas, histórico de acessos e bloqueio por PIN: Em breve. O fluxo de autenticação atual usa cookies HttpOnly e ainda não expõe operações de MFA ou gerenciamento de sessões nesta interface.</p>
           </section>
         )}
 
@@ -403,7 +307,7 @@ export default function ConfiguracoesPage() {
           .backup-note span,.settings-preview strong { color:#eee; font-size:13px; }
           .settings-warning { margin-top:18px !important; color:#c2a98b !important; }
           .settings-preview { max-width:440px; margin:15px 0; }
-          @media(max-width:650px) { .category-groups { grid-template-columns:1fr; } .settings-panel { padding:16px; } }
+          @media(max-width:650px) { .category-groups { grid-template-columns:1fr; } .settings-panel { padding:16px; } .settings-tabs { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; } .settings-tabs button { flex:0 0 auto; white-space:nowrap; } }
         `}</style>
       </div>
     </AppLayout>

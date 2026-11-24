@@ -456,3 +456,84 @@ test("deve exibir a página 404 para uma rota inexistente", async ({ page }) => 
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
 });
+
+
+test.describe("NEXO - Personalização visual", () => {
+  test("pré-visualiza tema e destaque, salva e restaura após recarregar sem erro de console", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => consoleErrors.push(error.message));
+
+    await page.goto("/configuracoes?tab=personalizacao");
+    await expect(page.getByRole("heading", { name: "Personalização" })).toBeVisible();
+    await page.getByLabel("Tema do NEXO").selectOption("midnight");
+    await page.getByRole("button", { name: "Cor de destaque Azul" }).click();
+
+    await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("midnight");
+    await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBe("blue");
+    expect(cloud.get("nexo_preferences")).toBeUndefined();
+
+    await page.getByRole("button", { name: "Salvar personalização" }).click();
+    await expect.poll(() => cloud.get("nexo_preferences")?.revision).toBe(1);
+
+    await page.addInitScript(() => {
+      const target = window as Window & { __nexoFirstThemeFrame?: string };
+      requestAnimationFrame(() => {
+        target.__nexoFirstThemeFrame = document.documentElement.dataset.theme || "";
+      });
+    });
+    await page.reload();
+    await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("midnight");
+    await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBe("blue");
+    const firstFrameTheme = await page.evaluate(() =>
+      (window as Window & { __nexoFirstThemeFrame?: string }).__nexoFirstThemeFrame
+    );
+    expect(firstFrameTheme).toBe("midnight");
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test("descarta a prévia sem gravar no Supabase", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/configuracoes?tab=personalizacao");
+    await page.getByLabel("Tema do NEXO").selectOption("warm");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "warm");
+    await page.getByRole("button", { name: "Descartar" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "graphite");
+    expect(cloud.get("nexo_preferences")).toBeUndefined();
+  });
+});
+
+
+test.describe("NEXO - Privacidade financeira", () => {
+  test("oculta valores monetários em telas financeiras e permite restaurar a visualização", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    cloud.set("nexo_accounts", {
+      data_key: "nexo_accounts",
+      payload: [{
+        id: 1,
+        name: "Conta de privacidade",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1500,
+        createdAt: new Date().toISOString(),
+        active: true,
+        isPrimary: true,
+      }],
+      revision: 1,
+      updated_at: new Date().toISOString(),
+    });
+
+    await page.goto("/financeiro/contas");
+    await expect(page.getByText("Conta de privacidade")).toBeVisible();
+    await page.getByRole("button", { name: "Ocultar valores financeiros" }).click();
+    await expect.poll(() => page.locator('#nexo-app [data-sensitive="auto"]').count()).toBeGreaterThan(0);
+    await expect.poll(() => page.locator("html").getAttribute("data-privacy-mode")).toBe("true");
+
+    await page.getByRole("button", { name: "Mostrar valores financeiros" }).click();
+    await expect(page.locator('#nexo-app [data-sensitive="auto"]')).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute("data-privacy-mode", "false");
+  });
+});
