@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
 import UserMenu from "@/components/ui/UserMenu";
+import { useSettings } from "@/contexts/SettingsProvider";
 import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
 function getGreeting() {
@@ -16,6 +17,7 @@ function getGreeting() {
 
 
 export default function Header() {
+  const { settings, togglePrivacy } = useSettings();
   const [greeting, setGreeting] = useState("Olá");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -70,6 +72,16 @@ export default function Header() {
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
+        </button>
+        <button
+          type="button"
+          className="nexo-header-icon nexo-privacy-toggle"
+          aria-label={settings.finance.hideValues ? "Mostrar valores financeiros" : "Ocultar valores financeiros"}
+          aria-pressed={settings.finance.hideValues}
+          title={settings.finance.hideValues ? "Mostrar valores" : "Ocultar valores"}
+          onClick={togglePrivacy}
+        >
+          {settings.finance.hideValues ? "◉" : "◎"}
         </button>
         <SearchButton />
         <div className="nexo-header-popover">
