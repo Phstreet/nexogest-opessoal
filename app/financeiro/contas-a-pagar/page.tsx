@@ -454,7 +454,7 @@ export default function ContasAPagarPage() {
 
                       <td className="payable-amount">
                         <span>{formatCurrency(Number(item.amount || 0))}</span>
-                        {isPartiallyPaid(item) && <small style={{ display: "block", color: "#a8c7b3", marginTop: 4 }}>Pago: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
+                        {isPartiallyPaid(item) && <small className="partial-settlement-note">Pago: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
                       </td>
 
                       <td>
