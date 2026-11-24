@@ -1,3 +1,4 @@
+import { progressWidthClass, progressHeightClass } from "@/lib/ui/progress-class";
 
 "use client";
 
@@ -205,8 +206,7 @@ export default function ProdutividadePage() {
               </div>
               <div className="metric-progress">
                 <div
-                  className="metric-progress-fill"
-                  style={{ width: `${overallRate}%` }}
+                  className={progressWidthClass(overallRate, "metric-progress-fill")}
                 />
               </div>
             </article>
@@ -291,13 +291,11 @@ export default function ProdutividadePage() {
                       <div className="bar-area">
                         <div className="bar-stack">
                           <div
-                            className="bar-task"
-                            style={{ height: `${taskHeight}%` }}
+                            className={progressHeightClass(taskHeight, "bar-task")}
                             title={`${day.tasks} tarefas`}
                           />
                           <div
-                            className="bar-habit"
-                            style={{ height: `${habitHeight}%` }}
+                            className={progressHeightClass(habitHeight, "bar-habit")}
                             title={`${day.habits} hábitos`}
                           />
                         </div>
