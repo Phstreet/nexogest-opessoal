@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "image/webp",
         "x-upsert": "false",
       },
-      body: bytes,
+      body: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
       cache: "no-store",
     });
 
