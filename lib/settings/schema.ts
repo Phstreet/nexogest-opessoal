@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const SETTINGS_SCHEMA_VERSION = 1;
+export const SETTINGS_SCHEMA_VERSION = 2;
 
 const clockSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
@@ -34,7 +34,8 @@ export const userSettingsSchema = z.object({
     defaultMonth: z.enum(["current", "previous"]),
   }),
   appearance: z.object({
-    theme: z.enum(["dark", "light", "system"]),
+    theme: z.enum(["graphite", "light", "system", "midnight", "warm"]),
+    cornerRadius: z.enum(["sharp", "medium", "rounded"]),
     accent: z.enum(["silver", "blue", "violet", "emerald", "amber", "rose"]),
     density: z.enum(["comfortable", "compact"]),
     fontScale: z.enum(["small", "normal", "large"]),
@@ -80,8 +81,9 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
     defaultMonth: "current",
   },
   appearance: {
-    theme: "dark",
+    theme: "graphite",
     accent: "silver",
+    cornerRadius: "medium",
     density: "comfortable",
     fontScale: "normal",
     reduceMotion: false,
@@ -140,6 +142,16 @@ export function migrateUserSettings(input: unknown): UserSettings {
     appearance: {
       ...DEFAULT_USER_SETTINGS.appearance,
       ...(isRecord(candidate.appearance) ? candidate.appearance : {}),
+      theme: isRecord(candidate.appearance) &&
+        ["graphite", "light", "system", "midnight", "warm"].includes(String(candidate.appearance.theme))
+        ? candidate.appearance.theme
+        : candidate.appearance && isRecord(candidate.appearance) && candidate.appearance.theme === "light"
+          ? "light"
+          : "graphite",
+      cornerRadius: isRecord(candidate.appearance) &&
+        ["sharp", "medium", "rounded"].includes(String(candidate.appearance.cornerRadius))
+        ? candidate.appearance.cornerRadius
+        : "medium",
     },
     security: {
       ...DEFAULT_USER_SETTINGS.security,
