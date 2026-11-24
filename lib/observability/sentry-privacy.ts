@@ -27,8 +27,8 @@ function redactText(value: string): string {
  * remove identidade, corpo/cabeçalhos/query, dados livres e valores de breadcrumbs.
  * Mensagens e valores de exceções são substituídos para não transmitir nomes de contas.
  */
-export function scrubSentryEvent(event: SentryEventLike): SentryEventLike {
-  const clean = { ...event };
+export function scrubSentryEvent<T>(event: T): T {
+  const clean = { ...(event as unknown as SentryEventLike) };
   delete clean.user;
   delete clean.extra;
   delete clean.contexts;
@@ -70,5 +70,5 @@ export function scrubSentryEvent(event: SentryEventLike): SentryEventLike {
       Object.entries(clean.tags).filter(([key]) => SAFE_TAGS.has(key))
     );
   }
-  return clean;
+  return clean as unknown as T;
 }
