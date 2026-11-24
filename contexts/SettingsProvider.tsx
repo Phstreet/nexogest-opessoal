@@ -280,6 +280,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   useEffect(() => {
+    if (settings.appearance.theme !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const handleChange = () => applySettings(settings);
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, [settings]);
+
+  useEffect(() => {
     const homePage = settings.general.homePage;
     if (pathname === "/" && homePage !== "/") router.replace(homePage);
   }, [pathname, router, settings.general.homePage]);
