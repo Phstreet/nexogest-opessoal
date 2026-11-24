@@ -12,10 +12,6 @@ type SentryEventLike = {
   [key: string]: unknown;
 };
 
-const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi;
-const MONEY = /(?:R\\$\\s*)?\\d{1,3}(?:\\.\\d{3})*,\\d{2}|R\\$\\s*\\d+(?:[.,]\\d{2})?/gi;
-const BEARER = /Bearer\\s+[A-Z0-9._~+/-]+=*/gi;
-const JWT = /\\beyJ[A-Z0-9_-]{10,}\\.[A-Z0-9_-]{10,}\\.[A-Z0-9_-]{10,}\\b/gi;
 const SAFE_TAGS = new Set(["environment", "release", "runtime", "route", "test_event", "source"]);
 
 function redactText(value: string): string {
