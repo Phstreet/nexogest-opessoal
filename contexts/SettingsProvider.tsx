@@ -168,7 +168,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (typeof BroadcastChannel !== "undefined") {
         const channel = new BroadcastChannel("nexo-settings");
         channel.postMessage({ userId, settings: latest.current });
-        channel.close();
+        channel?.close();
       }
     } catch (caught) {
       setSaveState("error");
@@ -239,16 +239,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [authLoading, session, refresh]);
 
   useEffect(() => {
-    if (!userId || typeof BroadcastChannel === "undefined") return;
-    const channel = new BroadcastChannel("nexo-settings");
-    channel.onmessage = (event: MessageEvent<{ userId?: string; settings?: unknown }>) => {
-      if (event.data?.userId !== userId || !event.data.settings) return;
-      const next = migrateUserSettings(event.data.settings);
-      latest.current = next;
-      setSettings(next);
-      writeCache(userId, next);
-      applySettings(next);
-    };
+    if (!userId) return;
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("nexo-settings") : null;
+    if (channel) {
+      channel.onmessage = (event: MessageEvent<{ userId?: string; settings?: unknown }>) => {
+        if (event.data?.userId !== userId || !event.data.settings) return;
+        const next = migrateUserSettings(event.data.settings);
+        latest.current = next;
+        setSettings(next);
+        writeCache(userId, next);
+        applySettings(next);
+      };
+    }
     const onStorage = (event: StorageEvent) => {
       if (event.key !== cacheKey(userId) || !event.newValue) return;
       try {
