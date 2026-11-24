@@ -47,3 +47,20 @@
   outline: 2px solid #c3c7ce;
   outline-offset: 3px;
 }
+
+.heading {
+  margin: 0 0 10px;
+  font-size: 24px;
+}
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #e8e8eb;
+  color: #141418;
+  font-weight: 650;
+  text-decoration: none;
+}
