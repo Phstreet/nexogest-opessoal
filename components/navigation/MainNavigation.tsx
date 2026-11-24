@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { useSettings } from "@/contexts/SettingsProvider";
+import SidebarProfile from "@/components/ui/SidebarProfile";
 import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
 
 import {
@@ -589,6 +590,8 @@ export default function MainNavigation() {
             </div>
           )}
         </section>
+
+        <SidebarProfile />
 
         <div className="sidebar-bottom">
           <div className="sidebar-status">
