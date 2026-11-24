@@ -258,6 +258,7 @@ export default function ConfiguracoesPage() {
               <button className="primary-button" type="submit" disabled={saving || loading || !session}>{saving ? "Atualizando..." : "Alterar senha"}</button>
             </form>
             <p className="settings-note">A alteração é processada pela autenticação do Supabase. Sua senha não é armazenada nas configurações do NEXO.</p>
+            <p className="settings-note">2FA, sessões ativas, histórico de acessos e bloqueio por PIN: Em breve. O fluxo de autenticação atual usa cookies HttpOnly e ainda não expõe operações de MFA ou gerenciamento de sessões nesta interface.</p>
           </section>
         )}
 
