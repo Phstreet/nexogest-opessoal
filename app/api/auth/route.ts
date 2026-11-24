@@ -44,12 +44,12 @@ export async function POST(request: NextRequest) {
     const { url, key } = getSupabaseConfig();
     const action = String(body.action || "");
     if (action === "login" || action === "signup") {
+      if (typeof body.email !== "string" || !body.email.trim()) {
+        return NextResponse.json({ error: "Informe um endereço de e-mail válido." }, { status: 400 });
+      }
       if (action === "signup") {
         const passwordError = await validateNewPassword(body.password);
         if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 });
-      }
-      if (typeof body.email !== "string" || !body.email.trim()) {
-        return NextResponse.json({ error: "Informe um endereço de e-mail válido." }, { status: 400 });
       }
       const endpoint = action === "login"
         ? `${url}/auth/v1/token?grant_type=password`
@@ -98,12 +98,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "change-password") {
-      const passwordError = await validateNewPassword(body.password);
-      if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 });
-
       const response = NextResponse.json({ ok: false });
       const access = await getValidAccessToken(request, response);
       if (!access) return copyResponseCookies(response, NextResponse.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401, headers: response.headers }));
+
+      const passwordError = await validateNewPassword(body.password);
+      if (passwordError) return copyResponseCookies(response, NextResponse.json({ error: passwordError }, { status: 400, headers: response.headers }));
+
       const update = await fetch(`${url}/auth/v1/user`, {
         method: "PUT", headers: { apikey: key, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
         body: JSON.stringify({ password: body.password }), cache: "no-store",
