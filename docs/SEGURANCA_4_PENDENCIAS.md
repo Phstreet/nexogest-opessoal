@@ -160,7 +160,13 @@ Se algum segredo for encontrado:
 1. **Revogue/rotacione primeiro** no provedor original (Supabase, Sentry, Vercel ou outro). Apagar o arquivo não invalida uma chave exposta.
 2. Atualize o segredo nas variáveis da Vercel e em qualquer ambiente de desenvolvimento.
 3. Faça redeploy e invalide sessões/tokens afetados quando aplicável.
-4. Só depois avalie limpar o histórico com `git filter-repo` ou BFG. Isso exige force-push de branches/tags e coordenação com todos os clones/forks. Uma reescrita de histórico não substitui a rotação.
+4. Só depois avalie limpar o histórico. Para remover um arquivo inteiro do histórico:
+   ```bash
+   git filter-repo --path .env --invert-paths
+   git push --force --all
+   git push --force --tags
+   ```
+   Para substituir um valor em commits antigos, crie um arquivo de substituições **fora do repositório** e rode `git filter-repo --replace-text /caminho/seguro/replacements.txt`; depois faça force-push de branches/tags. Isso exige coordenação com todos os clones/forks. Uma reescrita de histórico não substitui a rotação.
 
 ### Tornar privado e manter Vercel
 
@@ -173,9 +179,9 @@ Se algum segredo for encontrado:
 
 ### Proteções recomendadas
 
-- **main:** exigir PR, bloquear force-push/deleção, exigir checks de CI verdes e resolução de conversas. Em GitHub Free, branch protection está disponível para repositórios públicos; para privado em conta pessoal, pode exigir GitHub Pro.
-- **Secret scanning/push protection:** repositórios públicos têm secret scanning gratuito. Para repositórios privados de usuário individual, GitHub documenta limitações de disponibilidade; Secret Protection em privado é voltado a organizações Team/Enterprise e a cenários Enterprise Managed Users. Se não estiver disponível no plano, mantenha Gitleaks/TruffleHog em CI e push protection pessoal para repositórios públicos.
-- **Dependabot:** habilite alertas e atualizações de dependências. A configuração semanal de npm e GitHub Actions está em `.github/dependabot.yml`.
+- **main:** GitHub → Settings → Branches → Add branch protection rule → pattern `main`. Marque Require a pull request before merging, Require status checks to pass before merging, Require branches to be up to date, Require conversation resolution e Block force pushes. Depois selecione o check `Testes E2E do NEXO / Executar testes Playwright`. Em GitHub Free, branch protection está disponível para repositórios públicos; para privado em conta pessoal, pode exigir GitHub Pro.
+- **Secret scanning/push protection:** GitHub → Settings → Code security and analysis. Habilite Secret scanning e Push protection se os controles estiverem disponíveis. Repositórios públicos têm secret scanning gratuito. Para repositórios privados de usuário individual, GitHub documenta limitações de disponibilidade; Secret Protection em privado é voltado a organizações Team/Enterprise e a cenários Enterprise Managed Users. Se não estiver disponível no plano, mantenha Gitleaks/TruffleHog em CI.
+- **Dependabot:** GitHub → Settings → Code security and analysis → Dependabot alerts e Dependabot security updates. A configuração semanal de npm e GitHub Actions está em `.github/dependabot.yml`.
 - **2FA:** GitHub → Settings → Password and authentication → Two-factor authentication. Prefira passkey ou app autenticador; guarde recovery codes fora do repositório.
 
 ## 5. Verificações que ainda dependem do ambiente
