@@ -118,3 +118,12 @@ html[data-theme="light"] #nexo-app .settings-field textarea { background:#fff !i
 #nexo-app .sidebar.sidebar-collapsed .sidebar-profile-copy { display:none; }
 html[data-theme="light"] #nexo-app .sidebar-profile { background:#f7f8fa; border-color:#d7dce3; color:#20242b; }
 html[data-theme="light"] #nexo-app .sidebar-profile-copy strong { color:#20242b; }
+
+
+html[data-accent] #nexo-app :is(.primary-button,.routine-primary-button,.profile-submit) {
+  background:var(--nexo-accent-color) !important;
+  border-color:var(--nexo-accent-color) !important;
+  color:#111318 !important;
+}
+html[data-font-scale="small"] #nexo-app :is(p,small,button,input,select,textarea,label) { font-size:calc(1em * .94); }
+html[data-font-scale="large"] #nexo-app :is(p,small,button,input,select,textarea,label) { font-size:calc(1em * 1.06); }
