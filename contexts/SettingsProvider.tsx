@@ -66,6 +66,10 @@ function writeCache(userId: string, settings: UserSettings) {
   try {
     const envelope: CacheEnvelope = { userId, settings };
     localStorage.setItem(cacheKey(userId), JSON.stringify(envelope));
+    localStorage.setItem("nexo_settings_bootstrap_v1", JSON.stringify({
+      appearance: settings.appearance,
+      finance: { hideValues: settings.finance.hideValues },
+    }));
   } catch {
     // O cache é auxiliar; a persistência remota continua sendo a fonte oficial.
   }
