@@ -37,10 +37,12 @@ npm run typecheck
 npm run test
 npm run test:e2e
 npm run build
-npm start
 
-# E2E do service worker em build de produção
+# E2E do service worker em build de produção (Playwright inicia o servidor)
 NEXO_PWA_E2E_PRODUCTION=true npm run test:pwa
+
+# Para abrir manualmente o build em outra sessão
+npm start
 ```
 
 O comando `npm install` é necessário após atualizar o projeto para sincronizar o lockfile e instalar Sharp. Em seguida, use `npm ci` em CI somente quando `package.json` e `package-lock.json` estiverem sincronizados.
@@ -53,10 +55,15 @@ O service worker fica desativado em desenvolvimento para não interferir no hot 
 npm install
 npm run generate:pwa-icons
 npm run build
+```
+
+Inicie o servidor em um terminal:
+
+```bash
 npm start
 ```
 
-Acesse `http://localhost:3000` no próprio dispositivo ou use um túnel HTTPS, por exemplo:
+Em outro terminal, acesse `http://localhost:3000` no próprio dispositivo ou use um túnel HTTPS, por exemplo:
 
 ```bash
 cloudflared tunnel --url http://localhost:3000
