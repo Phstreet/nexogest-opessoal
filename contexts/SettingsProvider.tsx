@@ -47,7 +47,7 @@ const POLL_INTERVAL = 60_000;
 type CacheEnvelope = { userId: string; settings: UserSettings };
 
 function cacheKey(userId: string) {
-  return \`\${CACHE_PREFIX}:\${userId}\`;
+  return CACHE_PREFIX + ":" + userId;
 }
 
 function readCache(userId: string): UserSettings | null {
