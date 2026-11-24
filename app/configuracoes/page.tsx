@@ -129,8 +129,16 @@ export default function ConfiguracoesPage() {
           if (!isValidBackupCollection(key, payload)) throw new Error(`A coleção ${key} possui formato inválido. Nenhum dado foi importado.`);
           return [key, payload] as const;
         });
-        if (!(await confirm({ title: "Confirmar importação", message: "As coleções do backup serão enviadas ao Supabase e poderão substituir os dados atuais. Deseja continuar?", confirmLabel: "Importar", destructive: true }))) return;
+        if (!(await confirm({ title: "Prévia e confirmação da restauração", message: "O arquivo contém " + normalized.length + " coleções válidas. As coleções correspondentes poderão substituir os dados atuais. Antes de restaurar, o NEXO baixará uma cópia de segurança do estado atual. Deseja continuar?", confirmLabel: "Criar cópia e restaurar", destructive: true }))) return;
         const latest = await fetchRemoteCollections();
+        const safetyBackup = { application: "NEXO", version: 2, createdAt: new Date().toISOString(), entries: latest.map((row) => [row.data_key, row.payload]) };
+        const safetyBlob = new Blob([JSON.stringify(safetyBackup, null, 2)], { type: "application/json" });
+        const safetyUrl = URL.createObjectURL(safetyBlob);
+        const safetyAnchor = document.createElement("a");
+        safetyAnchor.href = safetyUrl;
+        safetyAnchor.download = "nexo-backup-antes-restauracao-" + new Date().toISOString().slice(0, 10) + ".json";
+        safetyAnchor.click();
+        window.setTimeout(() => URL.revokeObjectURL(safetyUrl), 1000);
         const revisionsByKey = new Map(latest.map((row) => [row.data_key, Number(row.revision) || 0]));
         for (const [key, payload] of normalized) {
           const result = await saveRemoteCollection(key, payload, revisionsByKey.get(key) ?? 0);
@@ -197,7 +205,7 @@ export default function ConfiguracoesPage() {
         {tab === "categorias" && (
           <section className="settings-panel">
             <h2>Categorias disponíveis</h2>
-            <p>Consulta do catálogo de categorias de referência disponível no projeto. Os formulários financeiros ainda mantêm listas próprias; a edição centralizada será habilitada após a unificação dessas fontes.</p>
+            <p>Consulta do catálogo de referência. CRUD, arquivamento, reordenação, mesclagem e migração de lançamentos: Em breve, após a unificação das listas independentes usadas pelos formulários financeiros, de rotina e metas.</p>
             <div className="category-groups">
               {categoryGroups.map((group) => (
                 <div className="category-group" key={group.title}>
@@ -230,10 +238,10 @@ export default function ConfiguracoesPage() {
               </label>
             </div>
             <div className="backup-note">
-              <strong>Último backup exportado</strong>
-              <span>{backupDate ? new Date(backupDate).toLocaleString("pt-BR") : "Nenhum backup exportado por esta tela."}</span>
+              <strong>Último backup exportado nesta sessão</strong>
+              <span>{backupDate ? new Date(backupDate).toLocaleString("pt-BR") : "Nenhum backup exportado por esta tela nesta sessão."}</span>
             </div>
-            <p className="settings-warning">Os backups são gerados a partir da nuvem. A importação substitui as coleções correspondentes no Supabase.</p>
+            <p className="settings-warning">A restauração valida as coleções e baixa uma cópia JSON do estado atual antes de sobrescrever. Histórico persistente, agendamento automático e prévia detalhada por registro: Em breve.</p>
           </section>
         )}
 
