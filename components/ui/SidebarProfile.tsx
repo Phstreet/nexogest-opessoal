@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
+import { getNexoAvatarUrl } from "@/lib/settings/avatar-url";
 
 export default function SidebarProfile() {
   const { session } = useNexoAuth();
@@ -22,7 +23,9 @@ export default function SidebarProfile() {
         if (!payload || typeof payload !== "object" || Array.isArray(payload)) return;
         const profile = payload as Record<string, unknown>;
         setName(typeof profile.displayName === "string" ? profile.displayName : "");
-        setAvatar(typeof profile.avatarUrl === "string" && profile.avatarUrl.startsWith("data:image/webp;base64,") ? profile.avatarUrl : "");
+        const storedAvatar = typeof profile.avatarPath === "string" ? getNexoAvatarUrl(profile.avatarPath) : "";
+        const legacyAvatar = typeof profile.avatarUrl === "string" && profile.avatarUrl.startsWith("data:image/webp;base64,") ? profile.avatarUrl : "";
+        setAvatar(storedAvatar || legacyAvatar);
       } catch {
         if (active) { setName(""); setAvatar(""); }
       }
