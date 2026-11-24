@@ -1,5 +1,6 @@
 "use client";
 
+import { progressWidthClass, progressHeightClass } from "@/lib/ui/progress-class";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
@@ -264,12 +265,12 @@ export default function RelatoriosPage() {
               <article className="intelligence-panel chart-panel">
                 <div className="intelligence-panel-heading"><div><span className="intelligence-eyebrow">EVOLUÇÃO FINANCEIRA</span><h2>Receitas x despesas</h2></div><span className="chart-legend"><i className="legend-income"/> Receitas <i className="legend-expense"/> Despesas</span></div>
                 {periodTransactions.length ? (
-                  <div className="monthly-chart" style={{ gridTemplateColumns: `repeat(${chartBuckets.length}, minmax(0, 1fr))` }}>
+                  <div className="monthly-chart">
                     {chartBuckets.map((month) => (
                       <div className="month-column" key={month.key}>
                         <div className="month-bars">
-                          <div className="bar income-bar" style={{ height: `${Math.max(2, month.revenue / maxChartValue * 100)}%` }} title={`Receitas: ${money(month.revenue)}`} />
-                          <div className="bar expense-bar" style={{ height: `${Math.max(2, month.expenses / maxChartValue * 100)}%` }} title={`Despesas: ${money(month.expenses)}`} />
+                          <div className={progressHeightClass(Math.max(2, month.revenue / maxChartValue * 100), "bar income-bar")} title={`Receitas: ${money(month.revenue)}`} />
+                          <div className={progressHeightClass(Math.max(2, month.expenses / maxChartValue * 100), "bar expense-bar")} title={`Despesas: ${money(month.expenses)}`} />
                         </div>
                         <small>{month.label}</small>
                       </div>
@@ -282,7 +283,7 @@ export default function RelatoriosPage() {
                 <div className="intelligence-panel-heading"><div><span className="intelligence-eyebrow">SAÚDE FINANCEIRA</span><h2>Comprometimento da renda</h2></div></div>
                 <div className="health-value">{totals.commitmentRate === null ? "—" : `${totals.commitmentRate.toFixed(1)}%`}</div>
                 <p className="health-description">Percentual das receitas recebidas que foi utilizado em despesas pagas no período.</p>
-                <div className="health-track"><i style={{ width: `${Math.min(100, Math.max(0, totals.commitmentRate || 0))}%` }}/></div>
+                <div className="health-track"><i className={progressWidthClass(Math.min(100, Math.max(0, totals.commitmentRate || 0)))} /></div>
                 <div className="health-foot"><span>Despesas: {money(totals.expenses)}</span><span>Receitas: {money(totals.revenue)}</span></div>
                 <div className="health-extra"><span>Investimentos aplicados</span><strong>{money(totals.investments)}</strong></div>
                 <div className="health-extra"><span>Movimentações para reservas</span><strong>{money(totals.reserves)}</strong></div>
@@ -295,7 +296,7 @@ export default function RelatoriosPage() {
                 {categoryTotals.length ? categoryTotals.slice(0, 7).map((item) => (
                   <div className="category-row" key={item.category}>
                     <div><span>{item.category}</span><strong>{money(item.amount)}</strong></div>
-                    <div className="category-track"><i style={{ width: `${totals.expenses > 0 ? item.amount / totals.expenses * 100 : 0}%` }}/></div>
+                    <div className="category-track"><i className={progressWidthClass(totals.expenses > 0 ? item.amount / totals.expenses * 100 : 0)} /></div>
                     <small>{totals.expenses > 0 ? (item.amount / totals.expenses * 100).toFixed(1) : "0.0"}% das despesas</small>
                   </div>
                 )) : <p className="intelligence-empty">Ainda não há despesas realizadas por categoria neste período.</p>}
