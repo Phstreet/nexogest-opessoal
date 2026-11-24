@@ -34,23 +34,8 @@ export const metadata: Metadata = {
   },
 };
 
-const settingsBootstrap = \`try {
-  var cached = JSON.parse(localStorage.getItem("nexo_settings_bootstrap_v1") || "{}");
-  var root = document.documentElement;
-  var appearance = cached.appearance || {};
-  var finance = cached.finance || {};
-  var theme = appearance.theme || "dark";
-  if (theme === "system") theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  root.dataset.theme = theme;
-  root.dataset.accent = appearance.accent || "silver";
-  root.dataset.density = appearance.density || "comfortable";
-  root.dataset.fontScale = appearance.fontScale || "normal";
-  root.dataset.reduceMotion = String(appearance.reduceMotion === true);
-  root.dataset.highContrast = String(appearance.highContrast === true);
-  root.dataset.privacyMode = String(finance.hideValues === true);
-  var accents = { silver: "#c5cbd4", blue: "#78a9e8", violet: "#a995e8", emerald: "#78c4a2", amber: "#d8b16c", rose: "#d994a6" };
-  root.style.setProperty("--nexo-accent-color", accents[appearance.accent] || accents.silver);
-} catch (_) {}\`;
+const settingsBootstrap =
+  'try { var cached = JSON.parse(localStorage.getItem("nexo_settings_bootstrap_v1") || "{}"); var root = document.documentElement; var appearance = cached.appearance || {}; var finance = cached.finance || {}; var theme = appearance.theme || "dark"; if (theme === "system") theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"; root.dataset.theme = theme; root.dataset.accent = appearance.accent || "silver"; root.dataset.density = appearance.density || "comfortable"; root.dataset.fontScale = appearance.fontScale || "normal"; root.dataset.reduceMotion = String(appearance.reduceMotion === true); root.dataset.highContrast = String(appearance.highContrast === true); root.dataset.privacyMode = String(finance.hideValues === true); var accents = { silver: "#c5cbd4", blue: "#78a9e8", violet: "#a995e8", emerald: "#78c4a2", amber: "#d8b16c", rose: "#d994a6" }; root.style.setProperty("--nexo-accent-color", accents[appearance.accent] || accents.silver); } catch (_) {}';
 
 export default async function RootLayout({
   children,
