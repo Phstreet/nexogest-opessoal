@@ -150,7 +150,7 @@ export default function ContasAPagarPage() {
     () =>
       activeExpenses
         .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + getOpenAmount(item), 0),
+        .reduce((total, item) => addMoney(total, getOpenAmount(item)), 0),
     [activeExpenses]
   );
 
