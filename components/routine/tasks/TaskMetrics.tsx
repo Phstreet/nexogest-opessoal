@@ -1,5 +1,7 @@
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 interface TaskMetricsData {
   total: number;
   completed: number;
@@ -74,7 +76,7 @@ export default function TaskMetrics({ metrics }: TaskMetricsProps) {
             <div className="progress-track">
               <div
                 className="progress-fill"
-                style={{ width: `${metrics.percentage}%` }}
+                className={progressWidthClass(metrics.percentage)}
               />
             </div>
     
