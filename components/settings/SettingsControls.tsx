@@ -109,6 +109,7 @@ export function AppearanceControls() {
       <section className="settings-preview-live" aria-live="polite">
         <span className="eyebrow">PRÉ-VISUALIZAÇÃO AO VIVO</span><strong>NEXO — Gestão Pessoal</strong><p>Seu espaço de organização, com a aparência selecionada.</p><button type="button">Ação de destaque</button>
       </section>
+      <p className="settings-note">Ativar, ocultar e reordenar os blocos da Central do Dia: Em breve. A tela inicial ainda precisa ser reorganizada em componentes configuráveis antes de oferecer essa personalização.</p>
       <SaveStatus />
     </div>
   );
