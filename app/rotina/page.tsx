@@ -1,3 +1,4 @@
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 "use client";
 
@@ -646,8 +647,7 @@ export default function RoutineDashboard() {
 
               <div className="today-progress-track">
                 <div
-                  className="today-progress-fill"
-                  style={{ width: `${todayProgress}%` }}
+                  className={progressWidthClass(todayProgress, "today-progress-fill")}
                 />
               </div>
             </div>
