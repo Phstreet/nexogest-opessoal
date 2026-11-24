@@ -124,7 +124,7 @@ Antes de promover a CSP de Report-Only para bloqueio, analisar os relatórios em
 
 ## Lighthouse e critérios de instalação
 
-O Lighthouse 12 removeu a categoria PWA e suas auditorias. Portanto, não use `--only-categories=pwa` nas versões atuais. Use Lighthouse para desempenho, acessibilidade, boas práticas e SEO, e valide manifesto, worker, instalação e modo offline com os testes Playwright do projeto e a interface de instalação do Chrome.
+O Lighthouse 12 removeu a categoria PWA e suas auditorias ([issue oficial do Lighthouse](https://github.com/GoogleChrome/lighthouse/issues/15535)). Portanto, não use `--only-categories=pwa` nas versões atuais. Use Lighthouse para desempenho, acessibilidade, boas práticas e SEO, e valide manifesto, worker, instalação e modo offline com os testes Playwright do projeto e a interface de instalação do Chrome.
 
 ```bash
 npx lighthouse https://URL-DO-PREVIEW --only-categories=performance,accessibility,best-practices,seo --view
@@ -150,8 +150,8 @@ O mesmo projeto pode ser empacotado com Capacitor. Como o NEXO usa Next.js App R
 1. Instalar Capacitor, criar `capacitor.config.ts` com a URL de produção e adicionar plataformas Android/iOS.
 2. Criar projetos nativos e abrir no Android Studio e Xcode.
 3. Configurar deep links, status bar, splash, ícones, permissões mínimas, armazenamento seguro e política de privacidade.
-4. Google Play Console: conta de desenvolvedor com taxa de cadastro normalmente cobrada uma única vez (US$ 25; confirmar no momento da inscrição).
-5. Apple Developer Program: assinatura normalmente de US$ 99/ano (ou preço local equivalente; confirmar na página oficial).
+4. Google Play Console: conta de distribuição completa com taxa de cadastro de US$ 25, paga uma vez. Contas pessoais também precisam cumprir os requisitos de teste e verificação de dispositivo antes da distribuição pública ([regras oficiais](https://support.google.com/googleplay/android-developer/answer/6112435)).
+5. Apple Developer Program: assinatura de US$ 99 por ano, cobrada em moeda local onde disponível; organizações precisam passar pela verificação da entidade e podem precisar de D‑U‑N‑S ([preços e inscrição oficiais](https://developer.apple.com/help/account/membership/program-enrollment/)).
 6. Preparar screenshots por tamanho de tela, ícones de loja, descrição, classificação etária, URL de suporte e política de privacidade.
 7. Revisar políticas de coleta/compartilhamento de dados, exclusão de conta, compras digitais (se houver), login e permissões.
 8. Testar distribuição interna/TestFlight antes de submeter.
