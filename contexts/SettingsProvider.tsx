@@ -43,7 +43,7 @@ type SettingsContextValue = {
 };
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
-const CACHE_PREFIX = "nexo_settings_cache_v1";
+const CACHE_PREFIX = "nexo_settings_cache_v2";
 const SAVE_DELAY = 650;
 const POLL_INTERVAL = 60_000;
 
@@ -55,7 +55,7 @@ function cacheKey(userId: string) {
 
 function readCache(userId: string): UserSettings | null {
   try {
-    const raw = localStorage.getItem(cacheKey(userId));
+    const raw = localStorage.getItem(cacheKey(userId)) ?? localStorage.getItem("nexo_settings_cache_v1:" + userId);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
@@ -69,7 +69,7 @@ function writeCache(userId: string, settings: UserSettings) {
   try {
     const envelope: CacheEnvelope = { userId, settings };
     localStorage.setItem(cacheKey(userId), JSON.stringify(envelope));
-    localStorage.setItem("nexo_settings_bootstrap_v1", JSON.stringify({
+    localStorage.setItem("nexo_settings_bootstrap_v2", JSON.stringify({
       appearance: settings.appearance,
       finance: { hideValues: settings.finance.hideValues },
     }));
