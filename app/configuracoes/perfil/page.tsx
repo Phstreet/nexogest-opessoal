@@ -7,8 +7,9 @@ import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { fetchRemoteCollections, saveRemoteCollection, type RemoteCollection } from "@/lib/supabase/client";
 import { userProfileSchema, type UserProfile } from "@/lib/settings/profile-schema";
+import { getNexoAvatarUrl } from "@/lib/settings/avatar-url";
 
-const emptyProfile: UserProfile = { displayName: "", fullName: "", phone: "", birthDate: "", motto: "", avatarUrl: "" };
+const emptyProfile: UserProfile = { displayName: "", fullName: "", phone: "", birthDate: "", motto: "", avatarUrl: "", avatarPath: "" };
 
 function downloadJson(fileName: string, value: unknown) {
   const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json;charset=utf-8" });
@@ -51,6 +52,7 @@ export default function PerfilDadosPage() {
   const { session } = useNexoAuth();
   const confirm = useNexoConfirm();
   const fileRef = useRef<HTMLInputElement>(null);
+  const savedAvatarPath = useRef("");
   const [profile, setProfile] = useState<UserProfile>(emptyProfile);
   const [collections, setCollections] = useState<RemoteCollection[]>([]);
   const [revision, setRevision] = useState(0);
@@ -75,7 +77,9 @@ export default function PerfilDadosPage() {
         const row = rows.find((item) => item.data_key === "nexo_profile");
         setRevision(Number(row?.revision) || 0);
         const parsed = userProfileSchema.safeParse(row?.payload ?? emptyProfile);
-        setProfile(parsed.success ? { ...emptyProfile, ...parsed.data } : emptyProfile);
+        const loadedProfile = parsed.success ? { ...emptyProfile, ...parsed.data } : emptyProfile;
+        setProfile(loadedProfile);
+        savedAvatarPath.current = loadedProfile.avatarPath || "";
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : "Não foi possível carregar seus dados.");
       } finally {
@@ -95,6 +99,7 @@ export default function PerfilDadosPage() {
     goals: countRecords(collections, "nexo_personal_goals") + countRecords(collections, "nexo_planning_goals"),
   }), [collections]);
   const estimatedBytes = useMemo(() => new Blob([JSON.stringify(collections)]).size, [collections]);
+  const avatarPreviewUrl = getNexoAvatarUrl(profile.avatarPath) || profile.avatarUrl || "";
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,7 +115,18 @@ export default function PerfilDadosPage() {
       const result = await saveRemoteCollection("nexo_profile", parsed.data, revision);
       if (!result.saved) throw new Error("O perfil foi alterado em outro dispositivo. Atualize a página antes de salvar novamente.");
       setRevision(result.current_revision ?? revision + 1);
+      const previousAvatarPath = savedAvatarPath.current;
+      const nextAvatarPath = parsed.data.avatarPath || "";
       setProfile({ ...emptyProfile, ...parsed.data });
+      savedAvatarPath.current = nextAvatarPath;
+      if (previousAvatarPath && previousAvatarPath !== nextAvatarPath) {
+        const removal = await fetch("/api/profile/avatar", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: previousAvatarPath }),
+        });
+        if (!removal.ok) setMessage("Perfil salvo. Não foi possível remover o arquivo antigo do avatar.");
+      }
       window.dispatchEvent(new Event("nexo:profile-updated"));
       setMessage("Perfil salvo na sua conta.");
     } catch (caught) {
@@ -143,10 +159,17 @@ export default function PerfilDadosPage() {
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Seu navegador não permite processar esta imagem.");
       context.drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
-      const dataUrl = canvas.toDataURL("image/webp", 0.82);
-      if (dataUrl.length > 240000) throw new Error("A imagem processada ficou grande demais. Escolha uma imagem mais simples.");
-      setProfile((current) => ({ ...current, avatarUrl: dataUrl }));
-      setMessage("Imagem preparada. Salve o perfil para aplicar em todos os dispositivos.");
+      const webpBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Não foi possível converter a imagem para WebP.")), "image/webp", 0.82);
+      });
+      if (webpBlob.size > 2 * 1024 * 1024) throw new Error("A imagem processada deve ter no máximo 2 MB.");
+      const formData = new FormData();
+      formData.append("file", webpBlob, "avatar.webp");
+      const upload = await fetch("/api/profile/avatar", { method: "POST", body: formData });
+      const result = await upload.json() as { path?: string; error?: string };
+      if (!upload.ok || !result.path) throw new Error(result.error || "Não foi possível enviar o avatar.");
+      setProfile((current) => ({ ...current, avatarPath: result.path, avatarUrl: "" }));
+      setMessage("Avatar enviado ao Supabase Storage. Salve o perfil para vinculá-lo à sua conta.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível processar a imagem.");
     } finally {
@@ -194,9 +217,9 @@ export default function PerfilDadosPage() {
           <form onSubmit={saveProfile}>
             <div className="profile-editor">
               <div className="profile-avatar-preview">
-                {profile.avatarUrl ? <img src={profile.avatarUrl} alt="Prévia do avatar" /> : <span>{(profile.displayName || profile.fullName || "N").trim().charAt(0).toLocaleUpperCase("pt-BR")}</span>}
+                {avatarPreviewUrl ? <img src={avatarPreviewUrl} alt="Prévia do avatar" /> : <span>{(profile.displayName || profile.fullName || "N").trim().charAt(0).toLocaleUpperCase("pt-BR")}</span>}
               </div>
-              <div><button type="button" className="secondary-button" onClick={() => fileRef.current?.click()} disabled={avatarBusy}>{avatarBusy ? "Processando imagem…" : "Enviar foto"}</button><input ref={fileRef} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleAvatar(event)} /><small>JPG, PNG ou WebP · até 2 MB. Recorte central quadrado e conversão para WebP.</small></div>
+              <div><button type="button" className="secondary-button" onClick={() => fileRef.current?.click()} disabled={avatarBusy}>{avatarBusy ? "Processando imagem…" : "Enviar foto"}</button><input ref={fileRef} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void handleAvatar(event)} /><button type="button" className="settings-reset-button" disabled={!avatarPreviewUrl || avatarBusy} onClick={() => setProfile((current) => ({ ...current, avatarPath: "", avatarUrl: "" }))}>Remover foto</button><small>JPG, PNG ou WebP · até 2 MB. Recorte central quadrado, conversão para WebP e envio ao Supabase Storage.</small></div>
             </div>
             <div className="profile-form-grid">
               <label className="settings-field"><span>Nome completo</span><input value={profile.fullName || ""} maxLength={120} onChange={(event) => setProfile((current) => ({ ...current, fullName: event.target.value }))} /></label>
