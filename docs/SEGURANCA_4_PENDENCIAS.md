@@ -71,7 +71,7 @@ curl -X POST https://SEU_DOMINIO/api/sentry-test \
   -H "Authorization: Bearer $SENTRY_TEST_TOKEN"
 ```
 
-Confirme o evento `NEXO_SENTRY_TEST_EVENT` no Sentry. Depois do teste, **remova** `app/api/sentry-test/route.ts` e a variável `SENTRY_TEST_TOKEN` da Vercel e faça novo deploy.
+Confirme um evento de exceção com as tags `test_event=true` e `source=temporary-test-route` no Sentry (a mensagem é removida pela política de privacidade). Depois do teste, **remova** `app/api/sentry-test/route.ts` e a variável `SENTRY_TEST_TOKEN` da Vercel e faça novo deploy.
 
 ### Alertas recomendados
 
