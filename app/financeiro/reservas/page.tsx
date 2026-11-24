@@ -5,6 +5,9 @@ import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
+import { addMoney, subtractMoney, sumMoney } from "@/lib/finance/money";
+import { calculateReserveBalance } from "@/lib/finance/reserves";
+import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 
 type ReserveCategory =
   | "Emergência"
@@ -60,12 +63,7 @@ const movementTypes: MovementType[] = [
 ];
 
 function getLocalDate() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return getSaoPauloDateKey();
 }
 
 const emptyReserveForm = {
@@ -106,27 +104,8 @@ function formatDate(value?: string) {
   return date.toLocaleDateString("pt-BR");
 }
 
-function getReserveBalance(
-  reserve: Reserve,
-  movements: ReserveMovement[]
-) {
-  return movements
-    .filter((movement) => movement.reserveId === reserve.id)
-    .reduce((balance, movement) => {
-      if (
-        movement.type === "Aporte" ||
-        movement.type === "Rendimento" ||
-        movement.type === "Ajuste"
-      ) {
-        return balance + movement.amount;
-      }
-
-      if (movement.type === "Resgate") {
-        return balance - movement.amount;
-      }
-
-      return balance;
-    }, reserve.initialBalance);
+function getReserveBalance(reserve: Reserve, movements: ReserveMovement[]) {
+  return calculateReserveBalance(reserve, movements);
 }
 
 function getMovementColor(type: MovementType) {
@@ -168,25 +147,15 @@ export default function ReservasFinanceirasPage() {
     [reserves, movements]
   );
 
-  const totalBalance = reserveBalances.reduce(
-    (total, item) => total + item.balance,
-    0
-  );
+  const totalBalance = sumMoney(reserveBalances.map((item) => item.balance));
 
-  const totalGoals = reserves.reduce(
-    (total, reserve) => total + reserve.targetAmount,
-    0
-  );
+  const totalGoals = sumMoney(reserves.map((reserve) => reserve.targetAmount));
 
-  const totalRemaining = reserveBalances.reduce(
-    (total, item) =>
-      total + Math.max(item.reserve.targetAmount - item.balance, 0),
-    0
-  );
+  const totalRemaining = sumMoney(reserveBalances.map((item) => Math.max(subtractMoney(item.reserve.targetAmount, item.balance), 0)));
 
   const totalMonthlyContribution = reserves
     .filter((reserve) => reserve.status === "Ativa")
-    .reduce((total, reserve) => total + reserve.monthlyContribution, 0);
+    .reduce((total, reserve) => addMoney(total, reserve.monthlyContribution), 0);
 
   const completedGoals = reserveBalances.filter(
     (item) =>
@@ -196,15 +165,15 @@ export default function ReservasFinanceirasPage() {
 
   const totalContributions = movements
     .filter((movement) => movement.type === "Aporte")
-    .reduce((total, movement) => total + movement.amount, 0);
+    .reduce((total, movement) => addMoney(total, movement.amount), 0);
 
   const totalWithdrawals = movements
     .filter((movement) => movement.type === "Resgate")
-    .reduce((total, movement) => total + movement.amount, 0);
+    .reduce((total, movement) => addMoney(total, movement.amount), 0);
 
   const totalEarnings = movements
     .filter((movement) => movement.type === "Rendimento")
-    .reduce((total, movement) => total + movement.amount, 0);
+    .reduce((total, movement) => addMoney(total, movement.amount), 0);
 
   const filteredReserves = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
