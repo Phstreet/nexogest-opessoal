@@ -6,6 +6,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "re
 import AppLayout from "@/components/layout/AppLayout";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections, saveRemoteCollection, updatePassword, NEXO_SYNC_KEYS, type NexoSyncKey } from "@/lib/supabase/client";
+import { isValidBackupCollection } from "@/lib/supabase/backup";
 import {
   INCOME_CATEGORIES,
   EXPENSE_CATEGORIES,
@@ -206,11 +207,15 @@ export default function ConfiguracoesPage() {
         const parsed = JSON.parse(String(reader.result)) as { application?: unknown; version?: unknown; entries?: unknown };
         if (parsed.application !== "NEXO" || ![1, 2].includes(Number(parsed.version)) || !Array.isArray(parsed.entries)) throw new Error("Arquivo de backup incompatível.");
         const allowed = new Set<string>(NEXO_SYNC_KEYS);
+        const seenKeys = new Set<NexoSyncKey>();
         const normalized = (parsed.entries as unknown[]).map((entry) => {
           if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !allowed.has(entry[0])) throw new Error("O backup contém uma coleção não reconhecida.");
+          const key = entry[0] as NexoSyncKey;
+          if (seenKeys.has(key)) throw new Error(`O backup contém a coleção ${key} mais de uma vez.`);
+          seenKeys.add(key);
           const payload = parsed.version === 1 ? (typeof entry[1] === "string" ? JSON.parse(entry[1]) : entry[1]) : entry[1];
-          if (payload === null || payload === undefined) throw new Error("O backup contém uma coleção vazia/inválida.");
-          return [entry[0] as NexoSyncKey, payload] as const;
+          if (!isValidBackupCollection(key, payload)) throw new Error(`A coleção ${key} possui formato inválido. Nenhum dado foi importado.`);
+          return [key, payload] as const;
         });
         if (!(await confirm({ title: "Confirmar importação", message: "As coleções do backup serão enviadas ao Supabase e poderão substituir os dados atuais. Deseja continuar?", confirmLabel: "Importar", destructive: true }))) return;
         const latest = await fetchRemoteCollections();
