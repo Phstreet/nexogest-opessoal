@@ -1,5 +1,6 @@
 import type { Account, FinancialSummary, Reserve, ReserveMovement, Transaction } from "./types";
 import { getTotalAccountsBalance, getSettledTransactionAmount, isCancelledTransaction } from "./accounts";
+import { addMoney, fromCents, subtractMoney, sumMoney, toCents } from "./money";
 
 function amount(item: Transaction): number {
   const value = Number(item.amount);
@@ -11,16 +12,21 @@ function settled(item: Transaction): number {
 }
 
 function outstanding(item: Transaction): number {
-  return item.type === "Receita" || item.type === "Despesa" ? Math.max(0, amount(item) - settled(item)) : 0;
+  return item.type === "Receita" || item.type === "Despesa" ? fromCents(Math.max(0, toCents(amount(item)) - toCents(settled(item)))) : 0;
 }
 
 export function getTotalReserveBalance(reserves: Reserve[], movements: ReserveMovement[]): number {
-  return reserves.reduce((total, reserve) => total + movements.reduce((balance, item) => {
-    if (item.reserveId !== reserve.id) return balance;
-    if (item.type === "Aporte" || item.type === "Rendimento" || item.type === "Ajuste") return balance + item.amount;
-    if (item.type === "Resgate") return balance - item.amount;
-    return balance;
-  }, reserve.initialBalance), 0);
+  const totalCents = reserves.reduce((total, reserve) => {
+    const reserveCents = movements.reduce((balance, item) => {
+      if (item.reserveId !== reserve.id) return balance;
+      const movementCents = toCents(item.amount);
+      if (item.type === "Aporte" || item.type === "Rendimento" || item.type === "Ajuste") return balance + movementCents;
+      if (item.type === "Resgate") return balance - movementCents;
+      return balance;
+    }, toCents(reserve.initialBalance));
+    return total + reserveCents;
+  }, 0);
+  return fromCents(totalCents);
 }
 
 export function getFinancialSummary(transactions: Transaction[], accounts: Account[], reserves: Reserve[], movements: ReserveMovement[]): FinancialSummary {
@@ -28,15 +34,15 @@ export function getFinancialSummary(transactions: Transaction[], accounts: Accou
   const incomes = active.filter((item) => item.type === "Receita");
   const expenses = active.filter((item) => item.type === "Despesa");
   const investments = active.filter((item) => (item.type === "Investimento" || item.type === "Aplicação") && settled(item) > 0);
-  const totalIncome = incomes.reduce((sum, item) => sum + settled(item), 0);
-  const totalExpenses = expenses.reduce((sum, item) => sum + settled(item), 0);
-  const totalInvestments = investments.reduce((sum, item) => sum + settled(item), 0);
+  const totalIncome = sumMoney(incomes.map(settled));
+  const totalExpenses = sumMoney(expenses.map(settled));
+  const totalInvestments = sumMoney(investments.map(settled));
   const totalReserves = getTotalReserveBalance(reserves, movements);
   const payable = expenses.reduce((sum, item) => sum + outstanding(item), 0);
   const receivable = incomes.reduce((sum, item) => sum + outstanding(item), 0);
   const accountsBalance = getTotalAccountsBalance(accounts, transactions);
-  const realizedBalance = totalIncome - totalExpenses;
-  return { totalIncome, totalExpenses, totalInvestments, totalReserves, realizedBalance, projectedBalance: realizedBalance + receivable - payable, accountsBalance, payable, receivable };
+  const realizedBalance = subtractMoney(totalIncome, totalExpenses);
+  return { totalIncome, totalExpenses, totalInvestments, totalReserves, realizedBalance, projectedBalance: addMoney(subtractMoney(realizedBalance, payable), receivable), accountsBalance, payable, receivable };
 }
 
 function parseDate(date?: string): Date | null {
@@ -59,18 +65,18 @@ export function getMonthlySummary(transactions: Transaction[], year: number, mon
   });
   const income = items.filter((item) => item.type === "Receita");
   const expenses = items.filter((item) => item.type === "Despesa");
-  const totalIncome = income.reduce((sum, item) => sum + amount(item), 0);
-  const totalExpenses = expenses.reduce((sum, item) => sum + amount(item), 0);
-  const received = income.reduce((sum, item) => sum + settled(item), 0);
-  const paid = expenses.reduce((sum, item) => sum + settled(item), 0);
-  return { income: totalIncome, expenses: totalExpenses, balance: totalIncome - totalExpenses, received, paid, pendingIncome: income.reduce((sum, item) => sum + outstanding(item), 0), pendingExpenses: expenses.reduce((sum, item) => sum + outstanding(item), 0) };
+  const totalIncome = sumMoney(income.map((item) => amount(item)));
+  const totalExpenses = sumMoney(expenses.map((item) => amount(item)));
+  const received = sumMoney(income.map(settled));
+  const paid = sumMoney(expenses.map(settled));
+  return { income: totalIncome, expenses: totalExpenses, balance: subtractMoney(totalIncome, totalExpenses), received, paid, pendingIncome: sumMoney(income.map(outstanding)), pendingExpenses: sumMoney(expenses.map(outstanding)) };
 }
 
 export function getExpensesByCategory(transactions: Transaction[]) {
   const result: Record<string, number> = {};
   for (const item of transactions.filter((row) => row.type === "Despesa" && !isCancelledTransaction(row))) {
     const category = item.category?.trim() || "Sem categoria";
-    result[category] = (result[category] || 0) + amount(item);
+    result[category] = addMoney(result[category] || 0, amount(item));
   }
   return Object.entries(result).map(([category, value]) => ({ category, amount: value }));
 }
@@ -85,5 +91,5 @@ export function getIncomeByCategory(transactions: Transaction[]) {
 }
 
 export function getAccountsInitialBalance(accounts: Account[]): number {
-  return accounts.filter((account) => account.active).reduce((sum, account) => sum + (Number(account.initialBalance) || 0), 0);
+  return sumMoney(accounts.filter((account) => account.active).map((account) => Number(account.initialBalance) || 0));
 }
