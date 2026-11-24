@@ -13,6 +13,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
           <p style={{ color: "#a5a5af", fontSize: 11, letterSpacing: 1.5 }}>NEXO · SISTEMA</p>
           <h1>Falha ao iniciar o NEXO</h1>
           <p style={{ color: "#b8b8c1", lineHeight: 1.6 }}>Ocorreu um erro ao carregar a estrutura principal. Tente novamente.</p>
+          {error.digest ? <p style={{ color: "#85858f", fontSize: 11 }}>Código: {error.digest}</p> : null}
           <button type="button" onClick={reset} style={{ minHeight: 42, padding: "0 16px", border: "1px solid #666", borderRadius: 10, background: "#e8e8eb", color: "#141418", fontWeight: 650, cursor: "pointer" }}>Tentar novamente</button>
           {error.digest ? <p style={{ color: "#85858f", fontSize: 11 }}>Código: {error.digest}</p> : null}
         </main>
