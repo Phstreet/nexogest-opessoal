@@ -48,6 +48,8 @@ const settingsBootstrap = \`try {
   root.dataset.reduceMotion = String(appearance.reduceMotion === true);
   root.dataset.highContrast = String(appearance.highContrast === true);
   root.dataset.privacyMode = String(finance.hideValues === true);
+  var accents = { silver: "#c5cbd4", blue: "#78a9e8", violet: "#a995e8", emerald: "#78c4a2", amber: "#d8b16c", rose: "#d994a6" };
+  root.style.setProperty("--nexo-accent-color", accents[appearance.accent] || accents.silver);
 } catch (_) {}\`;
 
 export default async function RootLayout({
