@@ -24,6 +24,18 @@ Densidade, escala tipográfica, raio dos cantos, movimento reduzido e alto contr
 
 A base ainda não está completamente tokenizada. A auditoria encontrou cores fixas em folhas globais e estilos locais de Financeiro, Contas a pagar, Agenda, Hábitos, Metas e Central do Dia. O sistema de temas adiciona tokens e sobrescreve superfícies compartilhadas, mas não substitui cada cor literal existente.
 
+### Amostra quantitativa da auditoria
+
+- app/globals.css: 582 ocorrências hex (278 valores distintos), 74 ocorrências RGB/RGBA, 426 declarações de espaçamento, 123 raios, 46 sombras e 424 declarações tipográficas.
+- app/financeiro/financeiro.css: 100 hex, 2 RGB/RGBA, 67 espaçamentos, 19 raios, 1 sombra e 74 declarações tipográficas.
+- Financeiro: Contas a pagar 90 hex; Contas a receber 85; Contas 70; Investimentos 78; Reservas 125; Histórico 91; Planejamento 144.
+- Rotina: Agenda 96 hex; Hábitos 87; Tarefas 97; Planejamento 88; página inicial da Rotina 101 hex e 7 RGB/RGBA.
+- Metas: 88 hex e 9 RGB/RGBA.
+- Central do Dia: 75 hex e 13 RGB/RGBA.
+- Navegação: MainNavigation 32 hex e 18 RGB/RGBA; Header 29 hex e 1 RGB/RGBA.
+
+Os estilos locais ainda repetem espaçamentos, raios e fontes por página. Esta amostra é uma auditoria estática dos principais arquivos, não uma declaração de que todos os arquivos do repositório foram convertidos.
+
 O comando npm run check:design-tokens lista cores fixas, classes Tailwind de cor e estilos inline. Ele deve retornar zero violações antes de ser incluído como bloqueio obrigatório de CI e antes da publicação. Não promova esta versão enquanto a checagem reportar violações.
 
 ## 4. Perfil e avatar
