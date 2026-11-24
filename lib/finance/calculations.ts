@@ -38,8 +38,8 @@ export function getFinancialSummary(transactions: Transaction[], accounts: Accou
   const totalExpenses = sumMoney(expenses.map(settled));
   const totalInvestments = sumMoney(investments.map(settled));
   const totalReserves = getTotalReserveBalance(reserves, movements);
-  const payable = expenses.reduce((sum, item) => sum + outstanding(item), 0);
-  const receivable = incomes.reduce((sum, item) => sum + outstanding(item), 0);
+  const payable = sumMoney(expenses.map(outstanding));
+  const receivable = sumMoney(incomes.map(outstanding));
   const accountsBalance = getTotalAccountsBalance(accounts, transactions);
   const realizedBalance = subtractMoney(totalIncome, totalExpenses);
   return { totalIncome, totalExpenses, totalInvestments, totalReserves, realizedBalance, projectedBalance: addMoney(subtractMoney(realizedBalance, payable), receivable), accountsBalance, payable, receivable };
