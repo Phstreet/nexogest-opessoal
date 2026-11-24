@@ -90,10 +90,10 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
 
   test("mantém totais, saldos e pendências em centavos", () => {
     const entries = [
-      transaction({ id: 1, amount: 0.1, status: "Pago" }),
-      transaction({ id: 2, amount: 0.2, status: "Pago" }),
-      transaction({ id: 3, type: "Despesa", amount: 0.1, status: "Pago" }),
-      transaction({ id: 4, type: "Despesa", amount: 0.2, status: "Pendente" }),
+      transaction({ id: 1, amount: 0.1, status: "Pago", date: "2026-11-24" }),
+      transaction({ id: 2, amount: 0.2, status: "Pago", date: "2026-11-24" }),
+      transaction({ id: 3, type: "Despesa", amount: 0.1, status: "Pago", date: "2026-11-24" }),
+      transaction({ id: 4, type: "Despesa", amount: 0.2, status: "Pendente", date: "2026-11-24" }),
     ];
     const summary = getFinancialSummary(entries, [account], [], []);
     expect(summary.totalIncome).toBe(0.3);
