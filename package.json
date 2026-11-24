@@ -12,7 +12,10 @@
     "test:e2e:report": "playwright show-report",
     "typecheck": "tsc --noEmit",
     "test": "playwright test tests/finance-calculations.spec.ts tests/persistence.spec.ts tests/password-policy.spec.ts tests/settings.spec.ts",
-    "check:design-tokens": "node scripts/check-design-tokens.mjs"
+    "check:design-tokens": "node scripts/check-design-tokens.mjs",
+    "pwa:icons": "node scripts/generate-pwa-icons.mjs",
+    "test:pwa": "playwright test tests/pwa.spec.ts",
+    "test:pwa:production": "PLAYWRIGHT_PWA_PRODUCTION=true playwright test tests/pwa.spec.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -32,7 +35,8 @@
     "eslint-config-next": "16.4.6",
     "postcss": "8.5.33",
     "tailwindcss": "3.3.3",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "sharp": "^0.35.5"
   },
   "overrides": {
     "sucrase": {
