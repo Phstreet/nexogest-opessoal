@@ -1,4 +1,5 @@
 import type { Transaction } from "./types";
+import { addMoney, sumMoney } from "./money";
 
 export function getAllInvestments(transactions: Transaction[]): Transaction[] {
   return transactions.filter((item) => item.type === "Investimento" || item.type === "Aplicação");
@@ -17,14 +18,14 @@ export function getCancelledInvestments(transactions: Transaction[]): Transactio
 }
 
 export function getTotalInvested(transactions: Transaction[]): number {
-  return getActiveInvestments(transactions).reduce((total, item) => total + (Number(item.amount) || 0), 0);
+  return sumMoney(getActiveInvestments(transactions).map((item) => Number(item.amount) || 0));
 }
 
 export function getInvestmentByInstitution(transactions: Transaction[]) {
   const result: Record<string, number> = {};
   for (const investment of getActiveInvestments(transactions)) {
     const institution = investment.institution || "Não informada";
-    result[institution] = (result[institution] || 0) + (Number(investment.amount) || 0);
+    result[institution] = addMoney(result[institution] || 0, Number(investment.amount) || 0);
   }
   return Object.entries(result).map(([institution, amount]) => ({ institution, amount }));
 }
@@ -33,7 +34,7 @@ export function getInvestmentByType(transactions: Transaction[]) {
   const result: Record<string, number> = {};
   for (const investment of getActiveInvestments(transactions)) {
     const type = investment.investment || investment.subcategory || investment.category || "Outros";
-    result[type] = (result[type] || 0) + (Number(investment.amount) || 0);
+    result[type] = addMoney(result[type] || 0, Number(investment.amount) || 0);
   }
   return Object.entries(result).map(([type, amount]) => ({ type, amount }));
 }
