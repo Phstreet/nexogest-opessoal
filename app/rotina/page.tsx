@@ -747,9 +747,7 @@ export default function RoutineDashboard() {
                   cy="80"
                   r="66"
                   className="progress-circle-value"
-                  strokeDasharray={`
-                      (progress / 100) * 414.69
-                     414.69`}
+                  strokeDasharray={`${(progress / 100) * 414.69} 414.69`}
                 />
               </svg>
 
