@@ -1,6 +1,7 @@
 
 "use client";
 
+import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -25,11 +26,11 @@ const FREQUENCIES: Frequency[] = [
   "3 vezes por semana",
 ];
 
-function getLocalDate(date = new Date()) {
+function getLocalDate(date?: Date) {
+  if (!date) return getSaoPauloDateKey();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
