@@ -143,12 +143,14 @@ html[data-accent="rose"] { --nexo-accent-color:#d994a6; }
   --nexo-sidebar:#0d0d0f;
   --nexo-surface:#151517;
   --nexo-surface-elevated:#222326;
+  --nexo-surface-input:#101012;
   --nexo-surface-soft:#1b1b1e;
   --nexo-border:#29292d;
   --nexo-border-strong:#414149;
   --nexo-text-primary:#f1f1f3;
   --nexo-text-secondary:#b5b6bd;
   --nexo-text-muted:#8b8d95;
+  --nexo-text-subtle:#70727a;
   --nexo-success:#a8c7b3;
   --nexo-warning:#d5bd8a;
   --nexo-danger:#d18c8c;
@@ -166,12 +168,15 @@ html[data-accent="rose"] { --nexo-accent-color:#d994a6; }
   --surface:var(--nexo-surface);
   --surface-light:var(--nexo-surface-soft);
   --surface-raised:var(--nexo-surface-elevated);
+  --surface-input:var(--nexo-surface-input);
   --border:var(--nexo-border);
   --border-strong:var(--nexo-border-strong);
   --white:var(--nexo-text-primary);
   --text-primary:var(--nexo-text-primary);
   --text-secondary:var(--nexo-text-secondary);
   --muted:var(--nexo-text-muted);
+  --text-subtle:var(--nexo-text-subtle);
+  --radius:var(--nexo-radius);
   --accent:var(--nexo-accent-color);
   --accent-strong:var(--nexo-accent-text);
   --green:var(--nexo-success);
@@ -189,11 +194,13 @@ html[data-theme="midnight"] {
   --nexo-surface:#101827;
   --nexo-surface-soft:#151f31;
   --nexo-surface-elevated:#1c2a40;
+  --nexo-surface-input:#0b1220;
   --nexo-border:#2a3a53;
   --nexo-border-strong:#405575;
   --nexo-text-primary:#edf3ff;
   --nexo-text-secondary:#bdc9dc;
   --nexo-text-muted:#91a0b8;
+  --nexo-text-subtle:#71809a;
   --nexo-success:#86d6b1;
   --nexo-warning:#f2cb83;
   --nexo-danger:#f29b9b;
@@ -207,11 +214,13 @@ html[data-theme="warm"] {
   --nexo-surface:#1d1711;
   --nexo-surface-soft:#251d15;
   --nexo-surface-elevated:#30251a;
+  --nexo-surface-input:#15100c;
   --nexo-border:#493a2a;
   --nexo-border-strong:#66513a;
   --nexo-text-primary:#f7eddf;
   --nexo-text-secondary:#d8c8b3;
   --nexo-text-muted:#b19b80;
+  --nexo-text-subtle:#8e7b67;
   --nexo-success:#a7c49a;
   --nexo-warning:#e8bd78;
   --nexo-danger:#e29a8b;
@@ -225,11 +234,13 @@ html[data-theme="light"] {
   --nexo-surface:#ffffff;
   --nexo-surface-soft:#f7f8fa;
   --nexo-surface-elevated:#edf0f4;
+  --nexo-surface-input:#ffffff;
   --nexo-border:#d7dce3;
   --nexo-border-strong:#b9c2ce;
   --nexo-text-primary:#20242b;
   --nexo-text-secondary:#4f5968;
   --nexo-text-muted:#687384;
+  --nexo-text-subtle:#8591a1;
   --nexo-success:#176b49;
   --nexo-warning:#8a4b08;
   --nexo-danger:#a32336;
@@ -300,3 +311,27 @@ html[data-theme] #nexo-app :is(button,a,input,select,textarea):focus-visible { o
 #nexo-app .settings-accent[data-accent="emerald"] i { background:#34d399; }
 #nexo-app .settings-accent[data-accent="amber"] i { background:#fbbf24; }
 #nexo-app .settings-accent[data-accent="rose"] i { background:#fb7185; }
+
+/* Complemento de tokens para estilos locais dos módulos existentes. */
+html[data-theme] #nexo-app :is(.finance-intro,.finance-investment-summary,.finance-content-vertical .finance-table,.finance-content-vertical .finance-table-wrap,.finance-content-vertical .finance-account-card) {
+  background-color:var(--nexo-surface); color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.agenda-content,.agenda-panel,.agenda-calendar,.agenda-card,.agenda-toolbar,.agenda-day-panel,.agenda-event-card,.agenda-metrics-card) {
+  color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.agenda-panel,.agenda-calendar,.agenda-card,.agenda-toolbar,.agenda-day-panel,.agenda-event-card,.agenda-metrics-card) {
+  background-color:var(--nexo-surface);
+}
+html[data-theme] #nexo-app :is(.habits-page,.habits-header,.habit-card,.habit-form-card,.habit-stat-card,.habit-calendar,.habit-day-card) {
+  color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.habit-card,.habit-form-card,.habit-stat-card,.habit-calendar,.habit-day-card) { background-color:var(--nexo-surface); }
+html[data-theme] #nexo-app :is(.objectives-page,.objectives-hero,.objectives-metrics article,.objective-form-card,.objective-card,.tracking-panel,.objective-chart-card,.objective-progress-card) {
+  color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
+html[data-theme] #nexo-app :is(.objectives-metrics article,.objective-form-card,.objective-card,.tracking-panel,.objective-chart-card,.objective-progress-card) {
+  background-color:var(--nexo-surface);
+}
+html[data-theme] #nexo-app :is(.agenda-content,.habits-page,.objectives-page) { background-color:var(--nexo-background); }
+html[data-theme] #nexo-app :is(.finance-intro h2,.finance-card strong,.objective-form-card h2,.objective-card h3,.agenda-content h2,.habits-page h2) { color:var(--nexo-text-primary); }
+html[data-theme] #nexo-app :is(.finance-intro p,.finance-card span,.finance-card small,.objective-card p,.agenda-content p,.habits-page p) { color:var(--nexo-text-secondary); }
