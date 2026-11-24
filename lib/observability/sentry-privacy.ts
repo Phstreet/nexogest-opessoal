@@ -14,14 +14,6 @@ type SentryEventLike = {
 
 const SAFE_TAGS = new Set(["environment", "release", "runtime", "route", "test_event", "source"]);
 
-function redactText(value: string): string {
-  return value
-    .replace(EMAIL, "[e-mail removido]")
-    .replace(MONEY, "[valor removido]")
-    .replace(BEARER, "Bearer [token removido]")
-    .replace(JWT, "[token removido]");
-}
-
 /**
  * Política conservadora para telemetria financeira:
  * remove identidade, corpo/cabeçalhos/query, dados livres e valores de breadcrumbs.
@@ -38,7 +30,7 @@ export function scrubSentryEvent<T>(event: T): T {
     ? {
         method: clean.request.method,
         url: typeof clean.request.url === "string"
-          ? clean.request.url.split("?")[0].replace(/\\/[A-F0-9-]{16,}(?=\\/|$)/gi, "/[id]")
+          ? clean.request.url.split("?")[0]
           : undefined,
       }
     : undefined;
