@@ -154,6 +154,8 @@ html[data-accent="rose"] { --nexo-accent-color:#d994a6; }
   --nexo-success:#a8c7b3;
   --nexo-warning:#d5bd8a;
   --nexo-danger:#d18c8c;
+  --nexo-chart-income:#82bd98;
+  --nexo-chart-expense:#d18c8c;
   --nexo-info:#aeb9c9;
   --nexo-accent-color:#c3c7ce;
   --nexo-accent-foreground:#111214;
@@ -204,6 +206,8 @@ html[data-theme="midnight"] {
   --nexo-success:#86d6b1;
   --nexo-warning:#f2cb83;
   --nexo-danger:#f29b9b;
+  --nexo-chart-income:#65c99a;
+  --nexo-chart-expense:#f08d9a;
   --nexo-info:#9bc4f5;
   --nexo-shadow-card:0 10px 28px rgba(0,0,0,.3);
 }
@@ -224,6 +228,8 @@ html[data-theme="warm"] {
   --nexo-success:#a7c49a;
   --nexo-warning:#e8bd78;
   --nexo-danger:#e29a8b;
+  --nexo-chart-income:#a5c68f;
+  --nexo-chart-expense:#df927e;
   --nexo-info:#b5c5d4;
   --nexo-shadow-card:0 10px 28px rgba(0,0,0,.28);
 }
@@ -244,6 +250,8 @@ html[data-theme="light"] {
   --nexo-success:#176b49;
   --nexo-warning:#8a4b08;
   --nexo-danger:#a32336;
+  --nexo-chart-income:#16764f;
+  --nexo-chart-expense:#b4233d;
   --nexo-info:#245c9a;
   --nexo-shadow-card:0 5px 18px rgba(25,35,50,.06);
 }
@@ -335,3 +343,12 @@ html[data-theme] #nexo-app :is(.objectives-metrics article,.objective-form-card,
 html[data-theme] #nexo-app :is(.agenda-content,.habits-page,.objectives-page) { background-color:var(--nexo-background); }
 html[data-theme] #nexo-app :is(.finance-intro h2,.finance-card strong,.objective-form-card h2,.objective-card h3,.agenda-content h2,.habits-page h2) { color:var(--nexo-text-primary); }
 html[data-theme] #nexo-app :is(.finance-intro p,.finance-card span,.finance-card small,.objective-card p,.agenda-content p,.habits-page p) { color:var(--nexo-text-secondary); }
+
+/* Indicadores e gráficos reagem ao tema sem cores embutidas no JSX. */
+html[data-theme] #nexo-app :is(.income-bar,.legend-income) { background-color:var(--nexo-chart-income); }
+html[data-theme] #nexo-app :is(.expense-bar,.legend-expense) { background-color:var(--nexo-chart-expense); }
+html[data-theme] #nexo-app .positive-text { color:var(--nexo-success); }
+html[data-theme] #nexo-app .negative-text { color:var(--nexo-danger); }
+html[data-theme] #nexo-app :is(.daily-kpi,.daily-priority-card,.daily-agenda-card,.daily-habit-card,.daily-payable-card,.daily-quick-access,.daily-tip-card) {
+  background-color:var(--nexo-surface); color:var(--nexo-text-primary); border-color:var(--nexo-border);
+}
