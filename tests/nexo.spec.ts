@@ -456,3 +456,42 @@ test("deve exibir a página 404 para uma rota inexistente", async ({ page }) => 
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
 });
+
+
+test.describe("NEXO - Personalização visual", () => {
+  test("pré-visualiza tema e destaque, salva e restaura após recarregar sem erro de console", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => consoleErrors.push(error.message));
+
+    await page.goto("/configuracoes?tab=personalizacao");
+    await expect(page.getByRole("heading", { name: "Personalização" })).toBeVisible();
+    await page.getByLabel("Tema do NEXO").selectOption("midnight");
+    await page.getByRole("button", { name: "Cor de destaque Azul" }).click();
+
+    await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("midnight");
+    await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBe("blue");
+    expect(cloud.get("nexo_preferences")).toBeUndefined();
+
+    await page.getByRole("button", { name: "Salvar personalização" }).click();
+    await expect.poll(() => cloud.get("nexo_preferences")?.revision).toBe(1);
+
+    await page.reload();
+    await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("midnight");
+    await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBe("blue");
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test("descarta a prévia sem gravar no Supabase", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/configuracoes?tab=personalizacao");
+    await page.getByLabel("Tema do NEXO").selectOption("warm");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "warm");
+    await page.getByRole("button", { name: "Descartar" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "graphite");
+    expect(cloud.get("nexo_preferences")).toBeUndefined();
+  });
+});
