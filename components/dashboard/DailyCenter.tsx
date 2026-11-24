@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
 import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
+import { getSaoPauloDateKey, getSaoPauloHour } from "@/lib/date/sao-paulo";
 
 type Props = {
   tasks: RoutineTask[];
@@ -47,7 +48,8 @@ function Icon({ name, size = 20 }: { name: keyof typeof icons; size?: number }) 
 }
 
 /* ---------- Utilitários ---------- */
-function localDateKey(date = new Date()) {
+function localDateKey(date?: Date) {
+  if (!date) return getSaoPauloDateKey();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
@@ -101,11 +103,11 @@ const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
 export default function DailyCenter(props: Props) {
   const today = new Date();
-  const todayKey = localDateKey(today);
+  const todayKey = getSaoPauloDateKey(today);
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
   const nextWeekKey = localDateKey(nextWeek);
-  const hour = today.getHours();
+  const hour = getSaoPauloHour(today);
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const rawDateLabel = today.toLocaleDateString("pt-BR", {
     weekday: "long",
