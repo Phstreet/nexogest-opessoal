@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./progress-utilities.css";
 import "./settings.css";
+import "./pwa.css";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter } from "next/font/google";
