@@ -287,15 +287,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: light)");
-    const handleSystemTheme = () => {
-      if (latest.current.appearance.theme === "system") applySettings(latest.current);
-    };
-    media.addEventListener("change", handleSystemTheme);
-    return () => media.removeEventListener("change", handleSystemTheme);
-  }, []);
-
-  useEffect(() => {
     const root = document.getElementById("nexo-app");
     if (!root) return;
     const moneyPattern = /(?:R\$|BRL)\s*[-+]?\d[\d.]*,\d{2}/i;
