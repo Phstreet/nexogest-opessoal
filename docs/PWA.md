@@ -141,7 +141,14 @@ A pontuação Lighthouse não certifica a instalação. A aprovação final depe
 5. Abrir o Preview em Android e iPhone reais; validar login, instalação e modo avião.
 6. Fazer merge somente após CI e testes manuais aprovados.
 7. Após deploy, validar `/manifest.webmanifest`, `/sw.js`, ícones e `/offline`.
-8. Para rollback, reverter o commit/merge PWA na branch principal e publicar novamente. No navegador, atualizar o app conectado para receber o novo worker; se necessário, remover o app da tela inicial e limpar os dados do site nas configurações do navegador.
+
+Deploy manual pela CLI (somente depois do merge e de conferir o projeto/variáveis):
+
+```bash
+npx vercel --prod
+```
+
+8. Para rollback, reverta o commit de merge/squash na `main` e deixe a Vercel publicar novamente. Para merge commit, use `git revert -m 1 SHA_DO_MERGE`; para squash commit, use `git revert SHA_DO_SQUASH`. Depois, atualize o app conectado para receber o worker novo; se necessário, remova o app da tela inicial e limpe os dados do site nas configurações do navegador.
 
 ## Etapa 2 — lojas com Capacitor (somente plano)
 
