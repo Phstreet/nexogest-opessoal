@@ -107,3 +107,14 @@ html[data-theme="light"] #nexo-app .settings-toggle { color:#303640 !important; 
 html[data-theme="light"] #nexo-app .settings-field input,
 html[data-theme="light"] #nexo-app .settings-field select,
 html[data-theme="light"] #nexo-app .settings-field textarea { background:#fff !important; color:#20242b !important; border-color:#cbd2dc !important; color-scheme:light; }
+
+
+#nexo-app .sidebar-profile { display:flex; align-items:center; gap:9px; min-width:0; padding:10px 9px; margin:10px 0 8px; border:1px solid #34363d; border-radius:9px; color:#d9dde5; text-decoration:none; }
+#nexo-app .sidebar-profile img,#nexo-app .sidebar-profile-avatar { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; overflow:hidden; border-radius:50%; background:#333943; color:#f3f4f6; object-fit:cover; font-size:13px; font-weight:700; }
+#nexo-app .sidebar-profile-copy { display:flex; flex-direction:column; min-width:0; gap:2px; }
+#nexo-app .sidebar-profile-copy strong { overflow:hidden; color:#e5e7eb; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+#nexo-app .sidebar-profile-copy small { color:#8f98a6; font-size:9px; }
+#nexo-app .sidebar.sidebar-collapsed .sidebar-profile { justify-content:center; padding:7px 3px; }
+#nexo-app .sidebar.sidebar-collapsed .sidebar-profile-copy { display:none; }
+html[data-theme="light"] #nexo-app .sidebar-profile { background:#f7f8fa; border-color:#d7dce3; color:#20242b; }
+html[data-theme="light"] #nexo-app .sidebar-profile-copy strong { color:#20242b; }
