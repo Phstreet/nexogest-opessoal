@@ -2,6 +2,7 @@
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { PreferencesControls, AppearanceControls } from "@/components/settings/SettingsControls";
+import PwaInstallSettings from "@/components/pwa/PwaInstallSettings";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -15,7 +16,7 @@ import {
   RESERVE_CATEGORIES,
 } from "@/lib/finance/categories";
 
-type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao" | "seguranca";
+type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao" | "seguranca" | "aplicativo";
 export default function ConfiguracoesPage() {
   const confirm = useNexoConfirm();
   const { session } = useNexoAuth();
@@ -33,7 +34,7 @@ export default function ConfiguracoesPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get("tab") as SettingsTab | null;
-    if (requested && ["preferencias", "categorias", "dados", "personalizacao", "seguranca"].includes(requested)) setTab(requested);
+    if (requested && ["preferencias", "categorias", "dados", "personalizacao", "seguranca", "aplicativo"].includes(requested)) setTab(requested);
   }, []);
 
   useEffect(() => {
@@ -183,6 +184,7 @@ export default function ConfiguracoesPage() {
             ["dados", "Dados e backups"],
             ["personalizacao", "Personalização"],
             ["seguranca", "Segurança"],
+            ["aplicativo", "Aplicativo"],
           ] as [SettingsTab, string][]).map(([value, label]) => (
             <button key={value} type="button" className={tab === value ? "active" : ""} onClick={() => setTab(value)}>
               {label}
@@ -254,6 +256,12 @@ export default function ConfiguracoesPage() {
           </section>
         )}
 
+
+        {tab === "aplicativo" && (
+          <section className="settings-panel">
+            <PwaInstallSettings />
+          </section>
+        )}
 
         {tab === "seguranca" && (
           <section className="settings-panel">
