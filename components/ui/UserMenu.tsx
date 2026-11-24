@@ -14,6 +14,8 @@ export default function UserMenu() {
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
+    setDisplayName("");
+    setAvatarUrl("");
     if (!session) return;
     let active = true;
     async function loadProfile() {
