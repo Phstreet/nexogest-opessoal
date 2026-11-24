@@ -15,7 +15,8 @@
     "check:design-tokens": "node scripts/check-design-tokens.mjs",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "predev": "npm run generate:pwa-icons",
-    "prebuild": "npm run generate:pwa-icons"
+    "prebuild": "npm run generate:pwa-icons",
+    "test:pwa": "playwright test tests/pwa.spec.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
