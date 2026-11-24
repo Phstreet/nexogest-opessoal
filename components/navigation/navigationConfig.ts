@@ -45,6 +45,7 @@ export const settingsMenuItems: MenuItem[] = [
   { label: "Dados e backups", href: "/configuracoes?tab=dados", icon: "◫" },
   { label: "Personalização", href: "/configuracoes?tab=personalizacao", icon: "◐" },
   { label: "Segurança", href: "/configuracoes?tab=seguranca", icon: "⌑" },
+  { label: "Aplicativo", href: "/configuracoes?tab=aplicativo", icon: "▣" },
 ];
 
 export const mainMenuItems: MenuItem[] = [
