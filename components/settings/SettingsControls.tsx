@@ -108,22 +108,27 @@ export function AppearanceControls() {
     discardAppearance,
   } = useSettings();
   const [draft, setDraft] = useState<UserSettings["appearance"]>(settings.appearance);
-  const hasChanges = JSON.stringify(draft) !== JSON.stringify(settings.appearance);
+  const [dirty, setDirty] = useState(false);
+  const hasChanges = dirty && JSON.stringify(draft) !== JSON.stringify(settings.appearance);
 
   useEffect(() => {
-    if (loaded && !hasChanges) setDraft(settings.appearance);
-  }, [settings.appearance, loaded, hasChanges]);
+    if (!loaded || dirty) return;
+    const frame = window.requestAnimationFrame(() => setDraft(settings.appearance));
+    return () => window.cancelAnimationFrame(frame);
+  }, [settings.appearance, loaded, dirty]);
 
   useEffect(() => () => discardAppearance(), [discardAppearance]);
 
   function updateDraft(patch: Partial<UserSettings["appearance"]>) {
     const next = { ...draft, ...patch };
     setDraft(next);
+    setDirty(true);
     previewAppearance(next);
   }
 
   function discardDraft() {
     setDraft(settings.appearance);
+    setDirty(false);
     discardAppearance();
   }
 
@@ -137,6 +142,7 @@ export function AppearanceControls() {
     if (accepted) {
       const next = DEFAULT_USER_SETTINGS.appearance;
       setDraft(next);
+      setDirty(true);
       previewAppearance(next);
     }
   }
@@ -246,7 +252,7 @@ export function AppearanceControls() {
 
       <div className="settings-appearance-actions">
         <button className="settings-reset-button" type="button" disabled={!hasChanges} onClick={discardDraft}>Descartar</button>
-        <button className="primary-button" type="button" disabled={!loaded || !hasChanges || saveState === "saving"} onClick={() => saveAppearance(draft)}>
+        <button className="primary-button" type="button" disabled={!loaded || !hasChanges || saveState === "saving"} onClick={() => { saveAppearance(draft); setDirty(false); }}>
           {saveState === "saving" ? "Salvando…" : "Salvar personalização"}
         </button>
       </div>
