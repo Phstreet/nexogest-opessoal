@@ -87,3 +87,23 @@ html[data-theme="light"] #nexo-app .settings-accent { background:#fff; color:#20
 }
 
 #nexo-app .nexo-account-avatar-image { display:block; object-fit:cover; border:1px solid #41444c; }
+
+
+#nexo-app .settings-field { display:flex; flex-direction:column; gap:7px; max-width:440px; margin:14px 0; }
+#nexo-app .settings-field > span { color:#c8c8c8; font-size:12px; }
+#nexo-app .settings-field input,
+#nexo-app .settings-field select,
+#nexo-app .settings-field textarea { width:100%; min-height:36px; padding:9px 10px; border:1px solid #393939; border-radius:7px; background:#222; color:#eee; color-scheme:dark; }
+#nexo-app .settings-toggle { display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:560px; padding:12px 0; margin:10px 0; border-top:1px solid #303036; border-bottom:1px solid #303036; color:#ccc; }
+#nexo-app .settings-toggle > span { display:flex; flex-direction:column; gap:5px; }
+#nexo-app .settings-toggle strong { font-size:12px; }
+#nexo-app .settings-toggle small { color:#888; font-size:10px; line-height:1.5; }
+#nexo-app .settings-toggle input { width:19px; height:19px; flex:0 0 19px; accent-color:var(--nexo-accent-color); cursor:pointer; }
+#nexo-app .settings-note { color:#9298a2; font-size:11px; line-height:1.6; }
+#nexo-app [data-sensitive] { transition:filter .15s ease; }
+html[data-privacy-mode="true"] #nexo-app [data-sensitive] { filter:blur(7px); user-select:none; }
+html[data-theme="light"] #nexo-app .settings-field > span,
+html[data-theme="light"] #nexo-app .settings-toggle { color:#303640 !important; }
+html[data-theme="light"] #nexo-app .settings-field input,
+html[data-theme="light"] #nexo-app .settings-field select,
+html[data-theme="light"] #nexo-app .settings-field textarea { background:#fff !important; color:#20242b !important; border-color:#cbd2dc !important; color-scheme:light; }
