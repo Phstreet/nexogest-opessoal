@@ -58,6 +58,7 @@ export function PreferencesControls() {
           <input aria-label="Menu lateral compacto" type="checkbox" disabled={!loaded} checked={settings.navigation.sidebarCompact} onChange={(event) => updateSettings({ navigation: { sidebarCompact: event.target.checked } })} />
         </div>
         <p className="settings-note">Idioma e moeda são mantidos em pt-BR e R$. O fuso horário padrão é America/Sao_Paulo. Primeiro dia da semana e formatos alternativos: Em breve, até a integração dos calendários e formulários que os consomem.</p>
+        <p className="settings-note">Ordem e visibilidade personalizada dos itens do menu lateral: Em breve. A navegação ainda é declarada estaticamente; favoritos e menu compacto continuam disponíveis.</p>
       </section>
 
       <section className="settings-subsection">
