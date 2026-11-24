@@ -56,7 +56,7 @@ function isPrivateOrUncacheable(response) {
 
 function isFrameworkDataRequest(request, url) {
   return url.pathname.startsWith("/api/") ||
-    url.pathname.startsWith("/_next/") ||
+    (url.pathname.startsWith("/_next/") && !url.pathname.startsWith("/_next/static/")) ||
     url.pathname.startsWith("/auth/") ||
     url.pathname.startsWith("/rest/") ||
     url.pathname.startsWith("/storage/") ||
