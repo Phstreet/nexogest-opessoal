@@ -105,7 +105,7 @@ export default function MainNavigation() {
   }
 
   useEffect(() => {
-    function handlePreferencesUpdated(event: Event) {
+    function handlePreferencesUpdated() {
       // A fonte da verdade é SettingsProvider; o evento serve apenas para compatibilidade.
     }
     window.addEventListener("nexo:preferences-updated", handlePreferencesUpdated);
@@ -273,7 +273,7 @@ export default function MainNavigation() {
 
   function renderSubmenu(items: MenuItem[], id: string, isOpen: boolean) {
     return (
-      <div className={`nav-submenu ${isOpen ? "is-open" : ""}`} id={id} aria-hidden={!isOpen} style={isOpen ? floatingSubmenuStyle : undefined}>
+      <div className={`nav-submenu ${isOpen ? "is-open" : ""}`} id={id} aria-hidden={!isOpen} >
         {items.map((item) => (
           <div className="nav-subitem-row" key={item.href}>
             <Link
@@ -431,7 +431,7 @@ export default function MainNavigation() {
               onClick={(event) => {
                 prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
-                  setCollapsed(false);
+                  updateSettings({ navigation: { sidebarCompact: false } });
                   setRoutineMenuOpen(true);
                   setFinanceMenuOpen(false);
                   setReportsMenuOpen(false);
@@ -462,7 +462,7 @@ export default function MainNavigation() {
               onClick={(event) => {
                 prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
-                  setCollapsed(false);
+                  updateSettings({ navigation: { sidebarCompact: false } });
                   setReportsMenuOpen(true);
                   setFinanceMenuOpen(false);
                   setRoutineMenuOpen(false);
@@ -493,7 +493,7 @@ export default function MainNavigation() {
               onClick={(event) => {
                 prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
-                  setCollapsed(false);
+                  updateSettings({ navigation: { sidebarCompact: false } });
                   setSettingsMenuOpen(true);
                   setFinanceMenuOpen(false);
                   setRoutineMenuOpen(false);
