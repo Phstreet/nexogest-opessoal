@@ -8,8 +8,9 @@ import { useSettings } from "@/contexts/SettingsProvider";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
-function getGreeting() {
-  const hour = new Date().getHours();
+function getGreeting(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", hourCycle: "h23", timeZone }).formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
 
   if (hour < 12) return "Bom dia";
   if (hour < 18) return "Boa tarde";
@@ -26,7 +27,7 @@ export default function Header() {
 
   useEffect(() => {
     setDisplayName("");
-    setGreeting(getGreeting());
+    setGreeting(getGreeting(settings.general.timeZone));
 
     let active = true;
     async function loadProfile() {
@@ -56,7 +57,7 @@ export default function Header() {
       active = false;
       window.removeEventListener("nexo:profile-updated", loadProfile);
     };
-  }, [session]);
+  }, [session, settings.general.timeZone]);
 
   return (
     <header className="nexo-header">
