@@ -191,8 +191,8 @@ export default function RelatoriosPage() {
     periodTransactions.forEach((item) => {
       const bucket = buckets.find((entry) => Boolean(item.date) && item.date! >= entry.start && item.date! <= entry.end);
       if (!bucket) return;
-      if (item.type === "Receita") bucket.revenue += settledAmount(item);
-      if (item.type === "Despesa") bucket.expenses += settledAmount(item);
+      if (item.type === "Receita") bucket.revenue = addMoney(bucket.revenue, settledAmount(item));
+      if (item.type === "Despesa") bucket.expenses = addMoney(bucket.expenses, settledAmount(item));
     });
     return buckets;
   }, [periodTransactions, period, startKey, todayKey]);
