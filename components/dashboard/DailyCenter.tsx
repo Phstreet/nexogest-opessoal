@@ -104,7 +104,7 @@ const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 export default function DailyCenter(props: Props) {
   const today = new Date();
   const todayKey = getSaoPauloDateKey(today);
-  const nextWeek = new Date(today);
+  const nextWeek = new Date(`${todayKey}T12:00:00`);
   nextWeek.setDate(nextWeek.getDate() + 7);
   const nextWeekKey = localDateKey(nextWeek);
   const hour = getSaoPauloHour(today);
