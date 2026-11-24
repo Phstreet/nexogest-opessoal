@@ -5245,3 +5245,102 @@ tbody tr:hover {
   #nexo-app .nexo-page-shell { padding:16px 12px; }
   #nexo-app :is(.finance-cards,.routine-dashboard-grid,.intelligence-grid,.secondary-grid,.form-grid,.quick-form-grid) { gap:12px; }
 }
+
+
+/* NEXO PWA — safe areas, navegação inferior e estados de conectividade */
+html, body { min-height: 100%; overscroll-behavior-y: contain; }
+#nexo-app .nexo-header {
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+#nexo-app .sidebar {
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.nexo-mobile-tabbar { display: none; }
+.nexo-pwa-connection, .nexo-pwa-update {
+  position: fixed;
+  z-index: 1200;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(calc(100vw - 24px), 520px);
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid #5c4a35;
+  border-radius: 12px;
+  background: #211c16;
+  color: #f0d6a8;
+  box-shadow: 0 12px 32px #0008;
+  font-size: 12px;
+  text-align: center;
+}
+.nexo-pwa-connection span { color: #e1a04c; font-size: 9px; }
+.nexo-pwa-update { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); border-color: #46556a; background: #171d27; color: #e0e8f5; }
+.nexo-pwa-update button, .nexo-pwa-install-banner button {
+  min-height: 40px; padding: 0 14px; border: 1px solid #aeb8c8; border-radius: 9px;
+  background: #dfe4ec; color: #15171b; font-weight: 700; font-size: 12px;
+}
+.nexo-pwa-install-banner {
+  position: fixed; z-index: 1100; left: 12px; right: 12px;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  border: 1px solid #3a3a43; border-radius: 15px; background: #1a1a20;
+  color: #f0f1f4; box-shadow: 0 14px 38px #0009;
+}
+.nexo-pwa-install-banner div { display:flex; flex:1; flex-direction:column; gap:3px; min-width:0; }
+.nexo-pwa-install-banner strong { font-size: 12px; }
+.nexo-pwa-install-banner span { color:#aeb3bd; font-size:11px; }
+.nexo-pwa-install-banner .dismiss { width:40px; padding:0; border:0; background:transparent; color:#b9bec8; font-size:22px; }
+.nexo-offline-page { min-height:100dvh; display:grid; place-items:center; padding:24px; background:#101012; color:#f0f1f4; }
+.nexo-offline-card { width:min(100%,440px); padding:30px; border:1px solid #303038; border-radius:22px; background:#19191e; text-align:center; }
+.nexo-offline-mark,.nexo-pwa-symbol { display:grid; place-items:center; width:56px; height:56px; border-radius:16px; background:#e5e7eb; color:#111318; font-size:31px; font-weight:800; }
+.nexo-offline-mark { margin:0 auto 22px; }
+.nexo-offline-eyebrow { color:#9ea6b4; font-size:10px; letter-spacing:.14em; }
+.nexo-offline-card h1 { margin:8px 0 14px; font-size:25px; }
+.nexo-offline-card p:not(.nexo-offline-eyebrow) { color:#aeb3bd; font-size:13px; line-height:1.65; }
+.nexo-offline-card a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; margin-top:16px; padding:0 18px; border-radius:10px; background:#e5e7eb; color:#111318; font-size:12px; font-weight:700; text-decoration:none; }
+.nexo-pwa-settings { display:flex; flex-direction:column; gap:18px; }
+.nexo-pwa-settings-heading { display:flex; align-items:center; gap:14px; }
+.nexo-pwa-settings-heading h2 { margin:0 0 5px; }
+.nexo-pwa-settings-heading p,.nexo-pwa-note,.nexo-pwa-security-note p { margin:0; color:#a4aab5; font-size:12px; line-height:1.65; }
+.nexo-pwa-instructions { padding:18px; border:1px solid #333640; border-radius:14px; background:rgba(255,255,255,.02); }
+.nexo-pwa-instructions h3 { margin:0 0 14px; font-size:14px; }
+.nexo-pwa-instructions ol { display:flex; flex-direction:column; gap:14px; margin:0; padding:0; list-style:none; }
+.nexo-pwa-instructions li { display:flex; align-items:center; gap:12px; color:#d6d9df; font-size:12px; line-height:1.6; }
+.nexo-pwa-step-icon { display:grid; flex:0 0 38px; width:38px; height:38px; place-items:center; border:1px solid #555b68; border-radius:11px; background:#24262d; color:#f0f1f4; font-size:19px; font-weight:700; }
+.nexo-pwa-note { margin-top:15px; }
+.nexo-pwa-install-button { min-height:44px; margin-top:16px; padding:0 16px; border:0; border-radius:10px; background:#e5e7eb; color:#111318; font-size:12px; font-weight:700; }
+.nexo-pwa-security-note { padding:15px; border:1px solid #3b3b43; border-radius:12px; background:#151519; }
+.nexo-pwa-security-note strong { display:block; margin-bottom:5px; color:#e2e5eb; font-size:12px; }
+.nexo-pwa-installed { padding:13px; border:1px solid #3c654e; border-radius:10px; color:#a9dfbd; background:#15231b; font-size:12px; }
+@media (max-width: 767px) {
+  #nexo-app .nexo-page-shell { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  #nexo-app input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+  #nexo-app select, #nexo-app textarea { min-height:44px; font-size:16px !important; }
+  .nexo-mobile-tabbar {
+    position:fixed; z-index:250; inset:auto 0 0; display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px;
+    min-height:64px; padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-top:1px solid #303038; background:rgba(17,17,21,.97);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  }
+  .nexo-mobile-tabbar a {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    min-width:0; min-height:48px; border-radius:10px; color:#9da4b0;
+    text-decoration:none; -webkit-tap-highlight-color:transparent;
+  }
+  .nexo-mobile-tabbar a span { font-size:20px; line-height:22px; }
+  .nexo-mobile-tabbar a small { font-size:10px; line-height:14px; }
+  .nexo-mobile-tabbar a.active { color:#f0f1f4; background:#282a31; }
+  .nexo-pwa-install-banner { bottom:calc(76px + env(safe-area-inset-bottom)); }
+}
+@media (display-mode: standalone) {
+  .nexo-browser-only { display:none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexo-mobile-tabbar *, .nexo-pwa-install-banner * { scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+}
