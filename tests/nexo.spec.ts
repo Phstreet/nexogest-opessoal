@@ -479,9 +479,19 @@ test.describe("NEXO - Personalização visual", () => {
     await page.getByRole("button", { name: "Salvar personalização" }).click();
     await expect.poll(() => cloud.get("nexo_preferences")?.revision).toBe(1);
 
+    await page.addInitScript(() => {
+      const target = window as Window & { __nexoFirstThemeFrame?: string };
+      requestAnimationFrame(() => {
+        target.__nexoFirstThemeFrame = document.documentElement.dataset.theme || "";
+      });
+    });
     await page.reload();
     await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("midnight");
     await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBe("blue");
+    const firstFrameTheme = await page.evaluate(() =>
+      (window as Window & { __nexoFirstThemeFrame?: string }).__nexoFirstThemeFrame
+    );
+    expect(firstFrameTheme).toBe("midnight");
     expect(consoleErrors).toEqual([]);
   });
 
