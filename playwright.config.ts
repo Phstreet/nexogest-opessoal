@@ -4,7 +4,6 @@ import { defineConfig, devices } from "@playwright/test";
 const productionPwaTest = process.env.NEXO_PWA_E2E_PRODUCTION === "true";
 
 // Em CI, os testes usam APIs mockadas e não dependem de uma sessão real do Supabase.
-// Em CI, os testes usam APIs mockadas e não dependem de uma sessão real do Supabase.
 if (process.env.CI) process.env.NEXO_E2E_TEST_MODE = "true";
 
 // Evita que ambientes com Node.js 24 iniciem conexões com timeout automático inválido.
