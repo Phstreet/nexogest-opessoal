@@ -1,3 +1,4 @@
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 "use client";
 
@@ -1067,8 +1068,7 @@ export default function ReservasFinanceirasPage() {
 
                       <div className="progress-track">
                         <div
-                          className="progress-fill"
-                          style={{ width: `${progress}%` }}
+                          className={progressWidthClass(progress, "progress-fill")}
                         />
                       </div>
 
