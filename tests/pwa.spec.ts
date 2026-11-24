@@ -90,6 +90,22 @@ test("o service worker é registrado em produção", async ({ page }) => {
     if (!("serviceWorker" in navigator)) return false;
     return Boolean(await navigator.serviceWorker.getRegistration("/"));
   }), { timeout: 15000 }).toBe(true);
+  await expect.poll(async () => page.evaluate(() => Boolean(navigator.serviceWorker.controller)), {
+    timeout: 15000,
+  }).toBe(true);
+});
+
+test("navegação offline retorna somente a tela pública de fallback", async ({ page }) => {
+  test.skip(process.env.NEXO_PWA_E2E_PRODUCTION !== "true", "Requer build de produção e service worker ativo.");
+  await page.goto("/offline");
+  await expect.poll(async () => page.evaluate(() => Boolean(navigator.serviceWorker.controller)), {
+    timeout: 15000,
+  }).toBe(true);
+
+  await page.context().setOffline(true);
+  await page.goto("/financeiro");
+  await expect(page.getByRole("heading", { name: "Você está sem conexão." })).toBeVisible();
+  await expect(page.getByText(/não são armazenados/i)).toBeVisible();
 });
 
 test("o registro do service worker fica desativado em desenvolvimento", async ({ page }) => {
