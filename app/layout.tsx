@@ -1,13 +1,14 @@
 import "./globals.css";
 import "./progress-utilities.css";
 import "./settings.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NexoAuthProvider } from "@/contexts/NexoAuthProvider";
 import { NexoConfirmProvider } from "@/contexts/NexoConfirmProvider";
 import { SettingsProvider } from "@/contexts/SettingsProvider";
+import InstallPrompt from "@/components/pwa/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,23 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ),
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/favicon.svg",
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "NEXO",
+    statusBarStyle: "black-translucent",
+    startupImage: [
+      { url: "/icons/apple-splash-1179x2556.png", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/icons/apple-splash-1206x2622.png", media: "(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/icons/apple-splash-1290x2796.png", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/icons/apple-splash-2048x2732.png", media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" },
+    ],
+  },
+  formatDetection: { telephone: false },
   openGraph: {
     title: "NEXO | Gestão Pessoal",
     description:
@@ -32,6 +50,16 @@ export const metadata: Metadata = {
     title: "NEXO | Gestão Pessoal",
     description: "Sua plataforma inteligente de gestão pessoal.",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#101012" },
+    { media: "(prefers-color-scheme: light)", color: "#101012" },
+  ],
 };
 
 const settingsBootstrap =
@@ -61,6 +89,7 @@ export default async function RootLayout({
             <SettingsProvider>{children}</SettingsProvider>
           </NexoAuthProvider>
         </NexoConfirmProvider>
+        <InstallPrompt mode="banner" />
         <Analytics />
       </body>
     </html>
