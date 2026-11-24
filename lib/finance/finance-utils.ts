@@ -1,6 +1,7 @@
 import type { MovementType, Transaction } from "@/lib/finance/types";
 import { subcategories } from "@/lib/finance/categories";
 import { getSettledTransactionAmount, isCancelledTransaction } from "@/lib/finance/accounts";
+import { addMoney, sumMoney } from "@/lib/finance/money";
 
 export type FormMovementType = Extract<MovementType, "Receita" | "Despesa" | "Transferência" | "Investimento">;
 
@@ -139,13 +140,13 @@ export function calculateFinanceTotals(transactions: Transaction[]): FinanceTota
   const active = transactions.filter((item) => !isCancelledTransaction(item));
   const receitas = active
     .filter((item) => item.type === "Receita")
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    .reduce((sum, item) => addMoney(sum, Number(item.amount || 0)), 0);
   const despesas = active
     .filter((item) => item.type === "Despesa")
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const receitasRealizadas = active
     .filter((item) => item.type === "Receita")
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
+    .reduce((sum, item) => addMoney(sum, getSettledAmount(item)), 0);
   const despesasRealizadas = active
     .filter((item) => item.type === "Despesa")
     .reduce((sum, item) => sum + getSettledAmount(item), 0);
@@ -159,7 +160,7 @@ export function calculateFinanceTotals(transactions: Transaction[]): FinanceTota
     receitasRealizadas,
     despesasRealizadas,
     investimentosAplicados,
-    resultado: receitasRealizadas - despesasRealizadas - investimentosAplicados,
+    resultado: sumMoney([receitasRealizadas, -despesasRealizadas, -investimentosAplicados]),
   };
 }
 
