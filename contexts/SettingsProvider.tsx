@@ -296,6 +296,34 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const root = document.getElementById("nexo-app");
+    if (!root) return;
+    const moneyPattern = /(?:R\$|BRL)\s*[-+]?\d[\d.]*,\d{2}/i;
+
+    function markMoneyValues() {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node: Node | null = walker.nextNode();
+      while (node) {
+        const parent = node.parentElement;
+        if (parent && parent.id !== "nexo-app" && moneyPattern.test(parent.textContent || "")) {
+          parent.setAttribute("data-sensitive", "auto");
+        }
+        node = walker.nextNode();
+      }
+    }
+
+    if (!settings.finance.hideValues) {
+      root.querySelectorAll('[data-sensitive="auto"]').forEach((element) => element.removeAttribute("data-sensitive"));
+      return;
+    }
+
+    markMoneyValues();
+    const observer = new MutationObserver(markMoneyValues);
+    observer.observe(root, { subtree: true, childList: true, characterData: true });
+    return () => observer.disconnect();
+  }, [settings.finance.hideValues]);
+
+  useEffect(() => {
     if (settings.appearance.theme !== "system") return;
     const media = window.matchMedia("(prefers-color-scheme: light)");
     const handleChange = () => applySettings(settings);
