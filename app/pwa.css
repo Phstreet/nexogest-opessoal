@@ -1,0 +1,86 @@
+:root {
+  --nexo-safe-top: env(safe-area-inset-top, 0px);
+  --nexo-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { min-height: 100%; overscroll-behavior-y: contain; }
+body { min-height: 100dvh; padding-top: 0; overscroll-behavior-y: contain; }
+@media (max-width: 760px) {
+  .nexo-header { padding-top: calc(8px + var(--nexo-safe-top)) !important; }
+  .sidebar { padding-top: var(--nexo-safe-top) !important; padding-bottom: var(--nexo-safe-bottom) !important; }
+  .main-area { padding-bottom: calc(72px + var(--nexo-safe-bottom)) !important; }
+  .nexo-bottom-nav {
+    position: fixed; z-index: 1200; left: 0; right: 0; bottom: 0;
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: calc(62px + var(--nexo-safe-bottom));
+    padding: 5px 8px calc(5px + var(--nexo-safe-bottom));
+    background: rgba(16,16,18,.97); border-top: 1px solid #34343a;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  }
+  .nexo-bottom-nav a {
+    display: flex; min-width: 0; min-height: 48px; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    color: #9ca3af; text-decoration: none; border-radius: 9px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nexo-bottom-nav a > span { font-size: 19px; line-height: 1.15; }
+  .nexo-bottom-nav a small { font-size: 10px; line-height: 1.2; }
+  .nexo-bottom-nav a.active { color: #f1f3f5; background: rgba(220,225,232,.1); }
+  .nexo-header-icon, .nexo-mobile-nav-toggle { min-width: 44px !important; min-height: 44px !important; }
+  input, select, textarea { font-size: 16px !important; }
+  .nexo-connection-status { top: var(--nexo-safe-top); }
+}
+@media (min-width: 761px) { .nexo-bottom-nav { display: none; } }
+
+.nexo-connection-status, .nexo-update-banner {
+  position: fixed; z-index: 1500; top: 8px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 9px; max-width: calc(100vw - 24px);
+  padding: 9px 13px; border: 1px solid #474750; border-radius: 999px;
+  background: #1d1d22; color: #e7e9ed; font-size: 11px; box-shadow: 0 8px 30px #0005;
+}
+.nexo-connection-status > span { width: 7px; height: 7px; border-radius: 50%; background: #d2a45c; }
+.nexo-update-banner { top: 52px; border-radius: 12px; }
+.nexo-update-banner button, .nexo-install-banner button, .nexo-install-banner a {
+  min-height: 36px; padding: 0 12px; border: 1px solid #666b75; border-radius: 8px;
+  background: #d7dce4; color: #151619; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;
+}
+.nexo-install-banner {
+  position: fixed; z-index: 1100; right: 18px; bottom: 82px; display: flex; align-items: center;
+  gap: 12px; max-width: min(440px, calc(100vw - 28px)); padding: 13px 42px 13px 14px;
+  border: 1px solid #414149; border-radius: 14px; background: #1b1b20; color: #f0f0f2;
+  box-shadow: 0 16px 42px #0008;
+}
+.nexo-install-banner > div { display: flex; flex-direction: column; gap: 4px; }
+.nexo-install-banner strong { font-size: 12px; }
+.nexo-install-banner span { color: #aeb4be; font-size: 10px; }
+.nexo-install-dismiss { position: absolute; top: 5px; right: 5px; min-width: 32px !important; min-height: 32px !important; padding: 0 !important; background: transparent !important; border: 0 !important; color: #c9cbd1 !important; font-size: 20px; }
+.nexo-pwa-settings { padding: 18px; border: 1px solid #34353b; border-radius: 12px; background: #17171b; color: #e9eaee; }
+.nexo-pwa-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+.nexo-pwa-icon, .nexo-offline-mark { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border: 1px solid #666b75; border-radius: 13px; background: #101012; color: #e0e4eb; font-size: 26px; font-weight: 800; }
+.nexo-pwa-heading h3 { margin: 0 0 4px; font-size: 15px; }
+.nexo-pwa-heading p, .nexo-pwa-settings > p { margin: 0; color: #a4a8b0; font-size: 11px; line-height: 1.6; }
+.nexo-pwa-primary, .nexo-pwa-secondary { min-height: 44px; padding: 0 16px; border: 1px solid #aeb4be; border-radius: 8px; background: #d7dce4; color: #151619; font-weight: 700; cursor: pointer; }
+.nexo-pwa-secondary { margin-top: 12px; }
+.nexo-pwa-instructions { margin: 16px 0; padding: 14px; border: 1px solid #34343c; border-radius: 10px; background: #1d1d22; }
+.nexo-pwa-instructions h4 { margin: 0 0 12px; font-size: 13px; }
+.nexo-pwa-instructions ol { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.nexo-pwa-instructions li { display: flex; align-items: center; gap: 11px; }
+.nexo-pwa-instructions li > span { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 9px; background: #303039; color: #f2f3f5; font-size: 17px; }
+.nexo-pwa-instructions li div { display: flex; flex-direction: column; gap: 3px; }
+.nexo-pwa-instructions li strong { font-size: 11px; }
+.nexo-pwa-instructions li small, .nexo-pwa-instructions > p { color: #9ea3ac; font-size: 10px; line-height: 1.5; }
+.nexo-pwa-privacy { margin-top: 15px !important; padding-top: 12px; border-top: 1px solid #34343c; }
+.nexo-pwa-success { margin: 10px 0 !important; color: #c5d7c8 !important; }
+.nexo-pwa-dismiss { display: block; margin-top: 12px; border: 0; background: transparent; color: #9da3ad; font-size: 10px; text-decoration: underline; cursor: pointer; }
+.nexo-offline-page { display: grid; place-items: center; min-height: 100dvh; padding: 24px; background: radial-gradient(ellipse at 50% 0%, #25252d 0%, #101012 55%); color: #f0f0f2; }
+.nexo-offline-card { width: min(100%, 440px); padding: 28px; border: 1px solid #393941; border-radius: 20px; background: rgba(24,24,29,.94); box-shadow: 0 22px 70px #0008; }
+.nexo-offline-mark { margin-bottom: 22px; width: 58px; height: 58px; font-size: 32px; }
+.nexo-offline-eyebrow { color: #aeb4be; font-size: 10px; letter-spacing: .16em; }
+.nexo-offline-card h1 { margin: 12px 0; font-size: clamp(25px, 7vw, 34px); line-height: 1.12; }
+.nexo-offline-card p { color: #aeb4be; font-size: 13px; line-height: 1.7; }
+.nexo-offline-status { display: flex; align-items: center; gap: 8px; margin: 20px 0; color: #c4d4c8; font-size: 11px; }
+.nexo-offline-status span { width: 7px; height: 7px; border-radius: 50%; background: #86b495; }
+.nexo-offline-retry { width: 100%; min-height: 46px; border: 1px solid #aeb4be; border-radius: 9px; background: #d7dce4; color: #151619; font-weight: 700; }
+.nexo-offline-link { display: block; margin-top: 15px; color: #c8ccd4; text-align: center; font-size: 11px; }
+@media (prefers-reduced-motion: reduce) {
+  .nexo-bottom-nav *, .nexo-install-banner, .nexo-update-banner { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
