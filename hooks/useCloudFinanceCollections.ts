@@ -87,6 +87,10 @@ export function useCloudFinanceCollections() {
 
   useLayoutEffect(() => {
     sessionIdentityRef.current = sessionIdentity;
+    setState(EMPTY);
+    revisions.current.clear();
+    setLoaded(false);
+    setError(null);
   }, [sessionIdentity]);
 
   const reload = useCallback(async () => {
