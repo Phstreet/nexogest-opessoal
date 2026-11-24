@@ -3,7 +3,7 @@ type SentryEventLike = {
   request?: Record<string, unknown>;
   message?: string;
   logentry?: { message?: string; params?: unknown[] };
-  exception?: { values?: Array<{ value?: string; mechanism?: unknown }> };
+  exception?: { values?: Array<{ type?: string; value?: string; stacktrace?: unknown }> };
   breadcrumbs?: Array<{ timestamp?: number; category?: string; type?: string; level?: string; [key: string]: unknown }>;
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
@@ -44,8 +44,9 @@ export function scrubSentryEvent<T>(event: T): T {
     clean.exception = {
       ...clean.exception,
       values: clean.exception.values.map((item) => ({
-        ...item,
+        type: item.type,
         value: "[detalhe removido por privacidade]",
+        stacktrace: item.stacktrace,
       })),
     };
   }
