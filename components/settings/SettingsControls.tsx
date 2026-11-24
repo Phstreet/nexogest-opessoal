@@ -47,7 +47,7 @@ export function PreferencesControls() {
   return (
     <div className="settings-controls-stack">
       <section className="settings-subsection">
-        <div className="settings-subsection-heading"><div><h3>Geral</h3><p>Escolha como o NEXO deve abrir e organizar sua navegação.</p></div><RestoreButton section="general" /></div>
+        <div className="settings-subsection-heading"><div><h3>Geral</h3><p>Escolha como o NEXO deve abrir e organizar sua navegação.</p></div><div className="settings-reset-actions"><RestoreButton section="general" /><RestoreButton section="navigation" /></div></div>
         <label className="settings-field"><span>Página inicial ao abrir o NEXO</span>
           <select value={settings.general.homePage} onChange={(event) => updateSettings({ general: { homePage: event.target.value as UserSettings["general"]["homePage"] } })}>
             {pageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
