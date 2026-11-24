@@ -60,6 +60,9 @@ jobs:
       - name: Validar TypeScript
         run: npm run typecheck
 
+      - name: Executar testes unitários de domínio
+        run: npm run test
+
       - name: Validar build de produção
         run: npm run build
 
