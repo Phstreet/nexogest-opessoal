@@ -1,0 +1,310 @@
+/* Classes discretas substituem style={{ width/height }} para permitir style-src-attr 'none'. */
+.nexo-progress-width-0 { width: 0% !important; }
+.nexo-progress-width-1 { width: 1% !important; }
+.nexo-progress-width-2 { width: 2% !important; }
+.nexo-progress-width-3 { width: 3% !important; }
+.nexo-progress-width-4 { width: 4% !important; }
+.nexo-progress-width-5 { width: 5% !important; }
+.nexo-progress-width-6 { width: 6% !important; }
+.nexo-progress-width-7 { width: 7% !important; }
+.nexo-progress-width-8 { width: 8% !important; }
+.nexo-progress-width-9 { width: 9% !important; }
+.nexo-progress-width-10 { width: 10% !important; }
+.nexo-progress-width-11 { width: 11% !important; }
+.nexo-progress-width-12 { width: 12% !important; }
+.nexo-progress-width-13 { width: 13% !important; }
+.nexo-progress-width-14 { width: 14% !important; }
+.nexo-progress-width-15 { width: 15% !important; }
+.nexo-progress-width-16 { width: 16% !important; }
+.nexo-progress-width-17 { width: 17% !important; }
+.nexo-progress-width-18 { width: 18% !important; }
+.nexo-progress-width-19 { width: 19% !important; }
+.nexo-progress-width-20 { width: 20% !important; }
+.nexo-progress-width-21 { width: 21% !important; }
+.nexo-progress-width-22 { width: 22% !important; }
+.nexo-progress-width-23 { width: 23% !important; }
+.nexo-progress-width-24 { width: 24% !important; }
+.nexo-progress-width-25 { width: 25% !important; }
+.nexo-progress-width-26 { width: 26% !important; }
+.nexo-progress-width-27 { width: 27% !important; }
+.nexo-progress-width-28 { width: 28% !important; }
+.nexo-progress-width-29 { width: 29% !important; }
+.nexo-progress-width-30 { width: 30% !important; }
+.nexo-progress-width-31 { width: 31% !important; }
+.nexo-progress-width-32 { width: 32% !important; }
+.nexo-progress-width-33 { width: 33% !important; }
+.nexo-progress-width-34 { width: 34% !important; }
+.nexo-progress-width-35 { width: 35% !important; }
+.nexo-progress-width-36 { width: 36% !important; }
+.nexo-progress-width-37 { width: 37% !important; }
+.nexo-progress-width-38 { width: 38% !important; }
+.nexo-progress-width-39 { width: 39% !important; }
+.nexo-progress-width-40 { width: 40% !important; }
+.nexo-progress-width-41 { width: 41% !important; }
+.nexo-progress-width-42 { width: 42% !important; }
+.nexo-progress-width-43 { width: 43% !important; }
+.nexo-progress-width-44 { width: 44% !important; }
+.nexo-progress-width-45 { width: 45% !important; }
+.nexo-progress-width-46 { width: 46% !important; }
+.nexo-progress-width-47 { width: 47% !important; }
+.nexo-progress-width-48 { width: 48% !important; }
+.nexo-progress-width-49 { width: 49% !important; }
+.nexo-progress-width-50 { width: 50% !important; }
+.nexo-progress-width-51 { width: 51% !important; }
+.nexo-progress-width-52 { width: 52% !important; }
+.nexo-progress-width-53 { width: 53% !important; }
+.nexo-progress-width-54 { width: 54% !important; }
+.nexo-progress-width-55 { width: 55% !important; }
+.nexo-progress-width-56 { width: 56% !important; }
+.nexo-progress-width-57 { width: 57% !important; }
+.nexo-progress-width-58 { width: 58% !important; }
+.nexo-progress-width-59 { width: 59% !important; }
+.nexo-progress-width-60 { width: 60% !important; }
+.nexo-progress-width-61 { width: 61% !important; }
+.nexo-progress-width-62 { width: 62% !important; }
+.nexo-progress-width-63 { width: 63% !important; }
+.nexo-progress-width-64 { width: 64% !important; }
+.nexo-progress-width-65 { width: 65% !important; }
+.nexo-progress-width-66 { width: 66% !important; }
+.nexo-progress-width-67 { width: 67% !important; }
+.nexo-progress-width-68 { width: 68% !important; }
+.nexo-progress-width-69 { width: 69% !important; }
+.nexo-progress-width-70 { width: 70% !important; }
+.nexo-progress-width-71 { width: 71% !important; }
+.nexo-progress-width-72 { width: 72% !important; }
+.nexo-progress-width-73 { width: 73% !important; }
+.nexo-progress-width-74 { width: 74% !important; }
+.nexo-progress-width-75 { width: 75% !important; }
+.nexo-progress-width-76 { width: 76% !important; }
+.nexo-progress-width-77 { width: 77% !important; }
+.nexo-progress-width-78 { width: 78% !important; }
+.nexo-progress-width-79 { width: 79% !important; }
+.nexo-progress-width-80 { width: 80% !important; }
+.nexo-progress-width-81 { width: 81% !important; }
+.nexo-progress-width-82 { width: 82% !important; }
+.nexo-progress-width-83 { width: 83% !important; }
+.nexo-progress-width-84 { width: 84% !important; }
+.nexo-progress-width-85 { width: 85% !important; }
+.nexo-progress-width-86 { width: 86% !important; }
+.nexo-progress-width-87 { width: 87% !important; }
+.nexo-progress-width-88 { width: 88% !important; }
+.nexo-progress-width-89 { width: 89% !important; }
+.nexo-progress-width-90 { width: 90% !important; }
+.nexo-progress-width-91 { width: 91% !important; }
+.nexo-progress-width-92 { width: 92% !important; }
+.nexo-progress-width-93 { width: 93% !important; }
+.nexo-progress-width-94 { width: 94% !important; }
+.nexo-progress-width-95 { width: 95% !important; }
+.nexo-progress-width-96 { width: 96% !important; }
+.nexo-progress-width-97 { width: 97% !important; }
+.nexo-progress-width-98 { width: 98% !important; }
+.nexo-progress-width-99 { width: 99% !important; }
+.nexo-progress-width-100 { width: 100% !important; }
+.nexo-progress-height-0 { height: 0% !important; }
+.nexo-progress-height-1 { height: 1% !important; }
+.nexo-progress-height-2 { height: 2% !important; }
+.nexo-progress-height-3 { height: 3% !important; }
+.nexo-progress-height-4 { height: 4% !important; }
+.nexo-progress-height-5 { height: 5% !important; }
+.nexo-progress-height-6 { height: 6% !important; }
+.nexo-progress-height-7 { height: 7% !important; }
+.nexo-progress-height-8 { height: 8% !important; }
+.nexo-progress-height-9 { height: 9% !important; }
+.nexo-progress-height-10 { height: 10% !important; }
+.nexo-progress-height-11 { height: 11% !important; }
+.nexo-progress-height-12 { height: 12% !important; }
+.nexo-progress-height-13 { height: 13% !important; }
+.nexo-progress-height-14 { height: 14% !important; }
+.nexo-progress-height-15 { height: 15% !important; }
+.nexo-progress-height-16 { height: 16% !important; }
+.nexo-progress-height-17 { height: 17% !important; }
+.nexo-progress-height-18 { height: 18% !important; }
+.nexo-progress-height-19 { height: 19% !important; }
+.nexo-progress-height-20 { height: 20% !important; }
+.nexo-progress-height-21 { height: 21% !important; }
+.nexo-progress-height-22 { height: 22% !important; }
+.nexo-progress-height-23 { height: 23% !important; }
+.nexo-progress-height-24 { height: 24% !important; }
+.nexo-progress-height-25 { height: 25% !important; }
+.nexo-progress-height-26 { height: 26% !important; }
+.nexo-progress-height-27 { height: 27% !important; }
+.nexo-progress-height-28 { height: 28% !important; }
+.nexo-progress-height-29 { height: 29% !important; }
+.nexo-progress-height-30 { height: 30% !important; }
+.nexo-progress-height-31 { height: 31% !important; }
+.nexo-progress-height-32 { height: 32% !important; }
+.nexo-progress-height-33 { height: 33% !important; }
+.nexo-progress-height-34 { height: 34% !important; }
+.nexo-progress-height-35 { height: 35% !important; }
+.nexo-progress-height-36 { height: 36% !important; }
+.nexo-progress-height-37 { height: 37% !important; }
+.nexo-progress-height-38 { height: 38% !important; }
+.nexo-progress-height-39 { height: 39% !important; }
+.nexo-progress-height-40 { height: 40% !important; }
+.nexo-progress-height-41 { height: 41% !important; }
+.nexo-progress-height-42 { height: 42% !important; }
+.nexo-progress-height-43 { height: 43% !important; }
+.nexo-progress-height-44 { height: 44% !important; }
+.nexo-progress-height-45 { height: 45% !important; }
+.nexo-progress-height-46 { height: 46% !important; }
+.nexo-progress-height-47 { height: 47% !important; }
+.nexo-progress-height-48 { height: 48% !important; }
+.nexo-progress-height-49 { height: 49% !important; }
+.nexo-progress-height-50 { height: 50% !important; }
+.nexo-progress-height-51 { height: 51% !important; }
+.nexo-progress-height-52 { height: 52% !important; }
+.nexo-progress-height-53 { height: 53% !important; }
+.nexo-progress-height-54 { height: 54% !important; }
+.nexo-progress-height-55 { height: 55% !important; }
+.nexo-progress-height-56 { height: 56% !important; }
+.nexo-progress-height-57 { height: 57% !important; }
+.nexo-progress-height-58 { height: 58% !important; }
+.nexo-progress-height-59 { height: 59% !important; }
+.nexo-progress-height-60 { height: 60% !important; }
+.nexo-progress-height-61 { height: 61% !important; }
+.nexo-progress-height-62 { height: 62% !important; }
+.nexo-progress-height-63 { height: 63% !important; }
+.nexo-progress-height-64 { height: 64% !important; }
+.nexo-progress-height-65 { height: 65% !important; }
+.nexo-progress-height-66 { height: 66% !important; }
+.nexo-progress-height-67 { height: 67% !important; }
+.nexo-progress-height-68 { height: 68% !important; }
+.nexo-progress-height-69 { height: 69% !important; }
+.nexo-progress-height-70 { height: 70% !important; }
+.nexo-progress-height-71 { height: 71% !important; }
+.nexo-progress-height-72 { height: 72% !important; }
+.nexo-progress-height-73 { height: 73% !important; }
+.nexo-progress-height-74 { height: 74% !important; }
+.nexo-progress-height-75 { height: 75% !important; }
+.nexo-progress-height-76 { height: 76% !important; }
+.nexo-progress-height-77 { height: 77% !important; }
+.nexo-progress-height-78 { height: 78% !important; }
+.nexo-progress-height-79 { height: 79% !important; }
+.nexo-progress-height-80 { height: 80% !important; }
+.nexo-progress-height-81 { height: 81% !important; }
+.nexo-progress-height-82 { height: 82% !important; }
+.nexo-progress-height-83 { height: 83% !important; }
+.nexo-progress-height-84 { height: 84% !important; }
+.nexo-progress-height-85 { height: 85% !important; }
+.nexo-progress-height-86 { height: 86% !important; }
+.nexo-progress-height-87 { height: 87% !important; }
+.nexo-progress-height-88 { height: 88% !important; }
+.nexo-progress-height-89 { height: 89% !important; }
+.nexo-progress-height-90 { height: 90% !important; }
+.nexo-progress-height-91 { height: 91% !important; }
+.nexo-progress-height-92 { height: 92% !important; }
+.nexo-progress-height-93 { height: 93% !important; }
+.nexo-progress-height-94 { height: 94% !important; }
+.nexo-progress-height-95 { height: 95% !important; }
+.nexo-progress-height-96 { height: 96% !important; }
+.nexo-progress-height-97 { height: 97% !important; }
+.nexo-progress-height-98 { height: 98% !important; }
+.nexo-progress-height-99 { height: 99% !important; }
+.nexo-progress-height-100 { height: 100% !important; }
+.nexo-progress-ring-0 { background: conic-gradient(#d6d9de 0%, #292f37 0% 100%) !important; }
+.nexo-progress-ring-1 { background: conic-gradient(#d6d9de 1%, #292f37 1% 100%) !important; }
+.nexo-progress-ring-2 { background: conic-gradient(#d6d9de 2%, #292f37 2% 100%) !important; }
+.nexo-progress-ring-3 { background: conic-gradient(#d6d9de 3%, #292f37 3% 100%) !important; }
+.nexo-progress-ring-4 { background: conic-gradient(#d6d9de 4%, #292f37 4% 100%) !important; }
+.nexo-progress-ring-5 { background: conic-gradient(#d6d9de 5%, #292f37 5% 100%) !important; }
+.nexo-progress-ring-6 { background: conic-gradient(#d6d9de 6%, #292f37 6% 100%) !important; }
+.nexo-progress-ring-7 { background: conic-gradient(#d6d9de 7%, #292f37 7% 100%) !important; }
+.nexo-progress-ring-8 { background: conic-gradient(#d6d9de 8%, #292f37 8% 100%) !important; }
+.nexo-progress-ring-9 { background: conic-gradient(#d6d9de 9%, #292f37 9% 100%) !important; }
+.nexo-progress-ring-10 { background: conic-gradient(#d6d9de 10%, #292f37 10% 100%) !important; }
+.nexo-progress-ring-11 { background: conic-gradient(#d6d9de 11%, #292f37 11% 100%) !important; }
+.nexo-progress-ring-12 { background: conic-gradient(#d6d9de 12%, #292f37 12% 100%) !important; }
+.nexo-progress-ring-13 { background: conic-gradient(#d6d9de 13%, #292f37 13% 100%) !important; }
+.nexo-progress-ring-14 { background: conic-gradient(#d6d9de 14%, #292f37 14% 100%) !important; }
+.nexo-progress-ring-15 { background: conic-gradient(#d6d9de 15%, #292f37 15% 100%) !important; }
+.nexo-progress-ring-16 { background: conic-gradient(#d6d9de 16%, #292f37 16% 100%) !important; }
+.nexo-progress-ring-17 { background: conic-gradient(#d6d9de 17%, #292f37 17% 100%) !important; }
+.nexo-progress-ring-18 { background: conic-gradient(#d6d9de 18%, #292f37 18% 100%) !important; }
+.nexo-progress-ring-19 { background: conic-gradient(#d6d9de 19%, #292f37 19% 100%) !important; }
+.nexo-progress-ring-20 { background: conic-gradient(#d6d9de 20%, #292f37 20% 100%) !important; }
+.nexo-progress-ring-21 { background: conic-gradient(#d6d9de 21%, #292f37 21% 100%) !important; }
+.nexo-progress-ring-22 { background: conic-gradient(#d6d9de 22%, #292f37 22% 100%) !important; }
+.nexo-progress-ring-23 { background: conic-gradient(#d6d9de 23%, #292f37 23% 100%) !important; }
+.nexo-progress-ring-24 { background: conic-gradient(#d6d9de 24%, #292f37 24% 100%) !important; }
+.nexo-progress-ring-25 { background: conic-gradient(#d6d9de 25%, #292f37 25% 100%) !important; }
+.nexo-progress-ring-26 { background: conic-gradient(#d6d9de 26%, #292f37 26% 100%) !important; }
+.nexo-progress-ring-27 { background: conic-gradient(#d6d9de 27%, #292f37 27% 100%) !important; }
+.nexo-progress-ring-28 { background: conic-gradient(#d6d9de 28%, #292f37 28% 100%) !important; }
+.nexo-progress-ring-29 { background: conic-gradient(#d6d9de 29%, #292f37 29% 100%) !important; }
+.nexo-progress-ring-30 { background: conic-gradient(#d6d9de 30%, #292f37 30% 100%) !important; }
+.nexo-progress-ring-31 { background: conic-gradient(#d6d9de 31%, #292f37 31% 100%) !important; }
+.nexo-progress-ring-32 { background: conic-gradient(#d6d9de 32%, #292f37 32% 100%) !important; }
+.nexo-progress-ring-33 { background: conic-gradient(#d6d9de 33%, #292f37 33% 100%) !important; }
+.nexo-progress-ring-34 { background: conic-gradient(#d6d9de 34%, #292f37 34% 100%) !important; }
+.nexo-progress-ring-35 { background: conic-gradient(#d6d9de 35%, #292f37 35% 100%) !important; }
+.nexo-progress-ring-36 { background: conic-gradient(#d6d9de 36%, #292f37 36% 100%) !important; }
+.nexo-progress-ring-37 { background: conic-gradient(#d6d9de 37%, #292f37 37% 100%) !important; }
+.nexo-progress-ring-38 { background: conic-gradient(#d6d9de 38%, #292f37 38% 100%) !important; }
+.nexo-progress-ring-39 { background: conic-gradient(#d6d9de 39%, #292f37 39% 100%) !important; }
+.nexo-progress-ring-40 { background: conic-gradient(#d6d9de 40%, #292f37 40% 100%) !important; }
+.nexo-progress-ring-41 { background: conic-gradient(#d6d9de 41%, #292f37 41% 100%) !important; }
+.nexo-progress-ring-42 { background: conic-gradient(#d6d9de 42%, #292f37 42% 100%) !important; }
+.nexo-progress-ring-43 { background: conic-gradient(#d6d9de 43%, #292f37 43% 100%) !important; }
+.nexo-progress-ring-44 { background: conic-gradient(#d6d9de 44%, #292f37 44% 100%) !important; }
+.nexo-progress-ring-45 { background: conic-gradient(#d6d9de 45%, #292f37 45% 100%) !important; }
+.nexo-progress-ring-46 { background: conic-gradient(#d6d9de 46%, #292f37 46% 100%) !important; }
+.nexo-progress-ring-47 { background: conic-gradient(#d6d9de 47%, #292f37 47% 100%) !important; }
+.nexo-progress-ring-48 { background: conic-gradient(#d6d9de 48%, #292f37 48% 100%) !important; }
+.nexo-progress-ring-49 { background: conic-gradient(#d6d9de 49%, #292f37 49% 100%) !important; }
+.nexo-progress-ring-50 { background: conic-gradient(#d6d9de 50%, #292f37 50% 100%) !important; }
+.nexo-progress-ring-51 { background: conic-gradient(#d6d9de 51%, #292f37 51% 100%) !important; }
+.nexo-progress-ring-52 { background: conic-gradient(#d6d9de 52%, #292f37 52% 100%) !important; }
+.nexo-progress-ring-53 { background: conic-gradient(#d6d9de 53%, #292f37 53% 100%) !important; }
+.nexo-progress-ring-54 { background: conic-gradient(#d6d9de 54%, #292f37 54% 100%) !important; }
+.nexo-progress-ring-55 { background: conic-gradient(#d6d9de 55%, #292f37 55% 100%) !important; }
+.nexo-progress-ring-56 { background: conic-gradient(#d6d9de 56%, #292f37 56% 100%) !important; }
+.nexo-progress-ring-57 { background: conic-gradient(#d6d9de 57%, #292f37 57% 100%) !important; }
+.nexo-progress-ring-58 { background: conic-gradient(#d6d9de 58%, #292f37 58% 100%) !important; }
+.nexo-progress-ring-59 { background: conic-gradient(#d6d9de 59%, #292f37 59% 100%) !important; }
+.nexo-progress-ring-60 { background: conic-gradient(#d6d9de 60%, #292f37 60% 100%) !important; }
+.nexo-progress-ring-61 { background: conic-gradient(#d6d9de 61%, #292f37 61% 100%) !important; }
+.nexo-progress-ring-62 { background: conic-gradient(#d6d9de 62%, #292f37 62% 100%) !important; }
+.nexo-progress-ring-63 { background: conic-gradient(#d6d9de 63%, #292f37 63% 100%) !important; }
+.nexo-progress-ring-64 { background: conic-gradient(#d6d9de 64%, #292f37 64% 100%) !important; }
+.nexo-progress-ring-65 { background: conic-gradient(#d6d9de 65%, #292f37 65% 100%) !important; }
+.nexo-progress-ring-66 { background: conic-gradient(#d6d9de 66%, #292f37 66% 100%) !important; }
+.nexo-progress-ring-67 { background: conic-gradient(#d6d9de 67%, #292f37 67% 100%) !important; }
+.nexo-progress-ring-68 { background: conic-gradient(#d6d9de 68%, #292f37 68% 100%) !important; }
+.nexo-progress-ring-69 { background: conic-gradient(#d6d9de 69%, #292f37 69% 100%) !important; }
+.nexo-progress-ring-70 { background: conic-gradient(#d6d9de 70%, #292f37 70% 100%) !important; }
+.nexo-progress-ring-71 { background: conic-gradient(#d6d9de 71%, #292f37 71% 100%) !important; }
+.nexo-progress-ring-72 { background: conic-gradient(#d6d9de 72%, #292f37 72% 100%) !important; }
+.nexo-progress-ring-73 { background: conic-gradient(#d6d9de 73%, #292f37 73% 100%) !important; }
+.nexo-progress-ring-74 { background: conic-gradient(#d6d9de 74%, #292f37 74% 100%) !important; }
+.nexo-progress-ring-75 { background: conic-gradient(#d6d9de 75%, #292f37 75% 100%) !important; }
+.nexo-progress-ring-76 { background: conic-gradient(#d6d9de 76%, #292f37 76% 100%) !important; }
+.nexo-progress-ring-77 { background: conic-gradient(#d6d9de 77%, #292f37 77% 100%) !important; }
+.nexo-progress-ring-78 { background: conic-gradient(#d6d9de 78%, #292f37 78% 100%) !important; }
+.nexo-progress-ring-79 { background: conic-gradient(#d6d9de 79%, #292f37 79% 100%) !important; }
+.nexo-progress-ring-80 { background: conic-gradient(#d6d9de 80%, #292f37 80% 100%) !important; }
+.nexo-progress-ring-81 { background: conic-gradient(#d6d9de 81%, #292f37 81% 100%) !important; }
+.nexo-progress-ring-82 { background: conic-gradient(#d6d9de 82%, #292f37 82% 100%) !important; }
+.nexo-progress-ring-83 { background: conic-gradient(#d6d9de 83%, #292f37 83% 100%) !important; }
+.nexo-progress-ring-84 { background: conic-gradient(#d6d9de 84%, #292f37 84% 100%) !important; }
+.nexo-progress-ring-85 { background: conic-gradient(#d6d9de 85%, #292f37 85% 100%) !important; }
+.nexo-progress-ring-86 { background: conic-gradient(#d6d9de 86%, #292f37 86% 100%) !important; }
+.nexo-progress-ring-87 { background: conic-gradient(#d6d9de 87%, #292f37 87% 100%) !important; }
+.nexo-progress-ring-88 { background: conic-gradient(#d6d9de 88%, #292f37 88% 100%) !important; }
+.nexo-progress-ring-89 { background: conic-gradient(#d6d9de 89%, #292f37 89% 100%) !important; }
+.nexo-progress-ring-90 { background: conic-gradient(#d6d9de 90%, #292f37 90% 100%) !important; }
+.nexo-progress-ring-91 { background: conic-gradient(#d6d9de 91%, #292f37 91% 100%) !important; }
+.nexo-progress-ring-92 { background: conic-gradient(#d6d9de 92%, #292f37 92% 100%) !important; }
+.nexo-progress-ring-93 { background: conic-gradient(#d6d9de 93%, #292f37 93% 100%) !important; }
+.nexo-progress-ring-94 { background: conic-gradient(#d6d9de 94%, #292f37 94% 100%) !important; }
+.nexo-progress-ring-95 { background: conic-gradient(#d6d9de 95%, #292f37 95% 100%) !important; }
+.nexo-progress-ring-96 { background: conic-gradient(#d6d9de 96%, #292f37 96% 100%) !important; }
+.nexo-progress-ring-97 { background: conic-gradient(#d6d9de 97%, #292f37 97% 100%) !important; }
+.nexo-progress-ring-98 { background: conic-gradient(#d6d9de 98%, #292f37 98% 100%) !important; }
+.nexo-progress-ring-99 { background: conic-gradient(#d6d9de 99%, #292f37 99% 100%) !important; }
+.nexo-progress-ring-100 { background: conic-gradient(#d6d9de 100%, #292f37 100% 100%) !important; }
+.monthly-chart { grid-template-columns: repeat(auto-fit, minmax(42px, 1fr)) !important; }
+.partial-settlement-note {
+  display: block;
+  margin-top: 4px;
+  color: #a8c7b3;
+}
