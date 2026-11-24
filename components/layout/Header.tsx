@@ -103,7 +103,7 @@ export default function Header() {
           {notificationsOpen && (
             <div className="nexo-header-dropdown notifications-dropdown">
               <strong>Notificações</strong>
-              <p>Você não possui notificações no momento.</p>
+              <p>Central de notificações: Em breve. Os alertas ainda não possuem um serviço ativo no aplicativo.</p>
             </div>
           )}
         </div>
