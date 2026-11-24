@@ -40,7 +40,7 @@ function countTransactionsByType(collections: RemoteCollection[], type: "Receita
   const payload = collections.find((item) => item.data_key === "nexo_transactions")?.payload;
   if (!Array.isArray(payload)) return 0;
   return payload.filter((item) =>
-    Boolean(item) &&
+    item !== null &&
     typeof item === "object" &&
     !Array.isArray(item) &&
     (item as Record<string, unknown>).type === type
