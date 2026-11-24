@@ -101,6 +101,34 @@ A política está inicialmente em **Content-Security-Policy-Report-Only**. Os re
 
 **Impacto:** ler `headers()` torna o layout dinâmico. As páginas com nonce deixam de aproveitar a pré-renderização estática/ISR e passam a ser renderizadas por requisição, com maior custo de servidor e possível aumento de TTFB. O nonce não pode ser reutilizado em HTML cacheado. A política CSP em Report-Only não bloqueia recursos durante a observação.
 
+
+### Inventário de estilos inline e injeção CSS
+
+A varredura dos componentes TSX encontrou atributos React `style={{...}}` em relatórios, planejamento financeiro, rotina, produtividade, metas, gráficos do dashboard, métricas de tarefas e boundaries de erro. Eles foram substituídos por classes em `app/progress-utilities.css` e `lib/ui/progress-class.ts`; os boundaries usam `app/global-error.module.css`.
+
+Os blocos `<style jsx>` restantes pertencem ao **styled-jsx integrado ao Next.js**, não a uma biblioteca externa adicional. Eles estão em:
+- `app/page.tsx`
+- `app/financeiro/dashboard/page.tsx`
+- `app/financeiro/contas/page.tsx`
+- `app/financeiro/historico/page.tsx`
+- `app/financeiro/investimentos/page.tsx`
+- `app/financeiro/reservas/page.tsx`
+- `app/financeiro/contas-a-pagar/page.tsx`
+- `app/financeiro/contas-a-receber/page.tsx`
+- `app/perfil/page.tsx`
+- `app/configuracoes/page.tsx`
+- `app/rotina/page.tsx`
+- `app/rotina/agenda/page.tsx`
+- `app/rotina/habitos/page.tsx`
+- `app/rotina/planejamento/page.tsx`
+- `app/rotina/produtividade/page.tsx`
+- `app/rotina/tarefas/page.tsx`
+- `components/dashboard/DailyCenter.tsx`
+- `components/layout/Header.tsx`
+- `components/navigation/MainNavigation.tsx`
+
+O Next.js aplica o nonce aos scripts/estilos inline que ele próprio gera quando recebe o cabeçalho CSP no request. A suíte Playwright verifica as violações em todas as rotas; essa validação ainda precisa ser executada no ambiente com dependências instaladas.
+
 ### Diretivas e terceiros
 
 A política inclui Supabase (`*.supabase.co`, WebSocket), Vercel Analytics, Sentry ingest, Google Fonts e assets HTTPS. `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`, HSTS em produção, X-Content-Type-Options, Referrer-Policy e Permissions-Policy estão incluídos.
