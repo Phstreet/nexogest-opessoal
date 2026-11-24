@@ -182,17 +182,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const updateSettings = useCallback((patch: SettingsPatch) => {
-    setSettings((current) => {
-      const next = mergeUserSettings(current, patch);
-      latest.current = next;
-      if (userId) writeCache(userId, next);
-      applySettings(next);
-      window.dispatchEvent(new CustomEvent("nexo:preferences-updated", {
-        detail: { sidebarCollapsed: next.navigation.sidebarCompact },
-      }));
-      scheduleSave();
-      return next;
-    });
+    const next = mergeUserSettings(latest.current, patch);
+    latest.current = next;
+    setSettings(next);
+    if (userId) writeCache(userId, next);
+    applySettings(next);
+    window.dispatchEvent(new CustomEvent("nexo:preferences-updated", {
+      detail: { sidebarCollapsed: next.navigation.sidebarCompact },
+    }));
+    scheduleSave();
   }, [scheduleSave, userId]);
 
   const resetSection = useCallback((section: SettingsSection) => {
