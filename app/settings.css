@@ -135,3 +135,147 @@ html[data-accent="violet"] { --nexo-accent-color:#a995e8; }
 html[data-accent="emerald"] { --nexo-accent-color:#78c4a2; }
 html[data-accent="amber"] { --nexo-accent-color:#d8b16c; }
 html[data-accent="rose"] { --nexo-accent-color:#d994a6; }
+
+
+/* Design tokens NEXO v2 — o Grafite preserva a paleta original. */
+:root {
+  --nexo-background:#0a0a0b;
+  --nexo-sidebar:#0d0d0f;
+  --nexo-surface:#151517;
+  --nexo-surface-elevated:#222326;
+  --nexo-surface-soft:#1b1b1e;
+  --nexo-border:#29292d;
+  --nexo-border-strong:#414149;
+  --nexo-text-primary:#f1f1f3;
+  --nexo-text-secondary:#b5b6bd;
+  --nexo-text-muted:#8b8d95;
+  --nexo-success:#a8c7b3;
+  --nexo-warning:#d5bd8a;
+  --nexo-danger:#d18c8c;
+  --nexo-info:#aeb9c9;
+  --nexo-accent-color:#c3c7ce;
+  --nexo-accent-foreground:#111214;
+  --nexo-accent-text:#e1e3e7;
+  --nexo-radius:8px;
+  --nexo-radius-card:10px;
+  --nexo-space-unit:4px;
+  --nexo-font-scale:1;
+  --nexo-shadow-card:0 8px 24px rgba(0,0,0,.18);
+  --background:var(--nexo-background);
+  --sidebar:var(--nexo-sidebar);
+  --surface:var(--nexo-surface);
+  --surface-light:var(--nexo-surface-soft);
+  --surface-raised:var(--nexo-surface-elevated);
+  --border:var(--nexo-border);
+  --border-strong:var(--nexo-border-strong);
+  --white:var(--nexo-text-primary);
+  --text-primary:var(--nexo-text-primary);
+  --text-secondary:var(--nexo-text-secondary);
+  --muted:var(--nexo-text-muted);
+  --accent:var(--nexo-accent-color);
+  --accent-strong:var(--nexo-accent-text);
+  --green:var(--nexo-success);
+  --positive:var(--nexo-success);
+  --red:var(--nexo-danger);
+  --negative:var(--nexo-danger);
+  --warning:var(--nexo-warning);
+  --info:var(--nexo-info);
+}
+html[data-theme="graphite"] { color-scheme:dark; }
+html[data-theme="midnight"] {
+  color-scheme:dark;
+  --nexo-background:#070b14;
+  --nexo-sidebar:#090f1c;
+  --nexo-surface:#101827;
+  --nexo-surface-soft:#151f31;
+  --nexo-surface-elevated:#1c2a40;
+  --nexo-border:#2a3a53;
+  --nexo-border-strong:#405575;
+  --nexo-text-primary:#edf3ff;
+  --nexo-text-secondary:#bdc9dc;
+  --nexo-text-muted:#91a0b8;
+  --nexo-success:#86d6b1;
+  --nexo-warning:#f2cb83;
+  --nexo-danger:#f29b9b;
+  --nexo-info:#9bc4f5;
+  --nexo-shadow-card:0 10px 28px rgba(0,0,0,.3);
+}
+html[data-theme="warm"] {
+  color-scheme:dark;
+  --nexo-background:#100d0a;
+  --nexo-sidebar:#15110d;
+  --nexo-surface:#1d1711;
+  --nexo-surface-soft:#251d15;
+  --nexo-surface-elevated:#30251a;
+  --nexo-border:#493a2a;
+  --nexo-border-strong:#66513a;
+  --nexo-text-primary:#f7eddf;
+  --nexo-text-secondary:#d8c8b3;
+  --nexo-text-muted:#b19b80;
+  --nexo-success:#a7c49a;
+  --nexo-warning:#e8bd78;
+  --nexo-danger:#e29a8b;
+  --nexo-info:#b5c5d4;
+  --nexo-shadow-card:0 10px 28px rgba(0,0,0,.28);
+}
+html[data-theme="light"] {
+  color-scheme:light;
+  --nexo-background:#f2f4f7;
+  --nexo-sidebar:#e9edf2;
+  --nexo-surface:#ffffff;
+  --nexo-surface-soft:#f7f8fa;
+  --nexo-surface-elevated:#edf0f4;
+  --nexo-border:#d7dce3;
+  --nexo-border-strong:#b9c2ce;
+  --nexo-text-primary:#20242b;
+  --nexo-text-secondary:#4f5968;
+  --nexo-text-muted:#687384;
+  --nexo-success:#176b49;
+  --nexo-warning:#8a4b08;
+  --nexo-danger:#a32336;
+  --nexo-info:#245c9a;
+  --nexo-shadow-card:0 5px 18px rgba(25,35,50,.06);
+}
+html[data-accent="silver"] { --nexo-accent-color:#c5cbd4; --nexo-accent-foreground:#11151b; --nexo-accent-text:#e1e3e7; }
+html[data-accent="blue"] { --nexo-accent-color:#60a5fa; --nexo-accent-foreground:#0b1020; --nexo-accent-text:#93c5fd; }
+html[data-accent="violet"] { --nexo-accent-color:#a78bfa; --nexo-accent-foreground:#1a1030; --nexo-accent-text:#c4b5fd; }
+html[data-accent="emerald"] { --nexo-accent-color:#34d399; --nexo-accent-foreground:#052e22; --nexo-accent-text:#6ee7b7; }
+html[data-accent="amber"] { --nexo-accent-color:#fbbf24; --nexo-accent-foreground:#422006; --nexo-accent-text:#fcd34d; }
+html[data-accent="rose"] { --nexo-accent-color:#fb7185; --nexo-accent-foreground:#4c0519; --nexo-accent-text:#fda4af; }
+html[data-theme="light"][data-accent="silver"] { --nexo-accent-color:#596579; --nexo-accent-foreground:#fff; --nexo-accent-text:#465366; }
+html[data-theme="light"][data-accent="blue"] { --nexo-accent-color:#1d4ed8; --nexo-accent-foreground:#fff; --nexo-accent-text:#1d4ed8; }
+html[data-theme="light"][data-accent="violet"] { --nexo-accent-color:#6d28d9; --nexo-accent-foreground:#fff; --nexo-accent-text:#6d28d9; }
+html[data-theme="light"][data-accent="emerald"] { --nexo-accent-color:#047857; --nexo-accent-foreground:#fff; --nexo-accent-text:#047857; }
+html[data-theme="light"][data-accent="amber"] { --nexo-accent-color:#92400e; --nexo-accent-foreground:#fff; --nexo-accent-text:#92400e; }
+html[data-theme="light"][data-accent="rose"] { --nexo-accent-color:#be123c; --nexo-accent-foreground:#fff; --nexo-accent-text:#be123c; }
+
+/* Consumo dos tokens pelos componentes compartilhados. */
+html[data-theme] body { color:var(--nexo-text-primary); background:var(--nexo-background); }
+html[data-theme] #nexo-app { color:var(--nexo-text-primary); background:var(--nexo-background); }
+html[data-theme] #nexo-app :is(.app-shell,.main-area,.content,.finance-page,.routine-page,.planning-page,.reports-page) { background-color:var(--nexo-background); color:var(--nexo-text-primary); }
+html[data-theme] #nexo-app :is(.sidebar,.topbar,.nexo-header,.sidebar-bottom) { background-color:var(--nexo-sidebar); color:var(--nexo-text-primary); border-color:var(--nexo-border); }
+html[data-theme] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.report-card,.planning-card,.settings-subsection,.settings-preview-live) { background-color:var(--nexo-surface); color:var(--nexo-text-primary); border-color:var(--nexo-border); box-shadow:var(--nexo-shadow-card); }
+html[data-theme] #nexo-app :is(h1,h2,h3,h4,.settings-panel h2,.settings-subsection-heading h3,.nexo-header-left strong,.metric-value,.finance-card strong) { color:var(--nexo-text-primary); }
+html[data-theme] #nexo-app :is(p,small,label,.muted,.description,.subtitle,.settings-subsection-heading p,.settings-note,.nexo-header-greeting,.daily-date) { color:var(--nexo-text-secondary); }
+html[data-theme] #nexo-app :is(input,select,textarea,.form-input) { color:var(--nexo-text-primary); background:var(--nexo-surface-elevated); border-color:var(--nexo-border-strong); color-scheme:inherit; }
+html[data-theme] #nexo-app :is(.primary-button,.hero-button,.settings-preview-live button,.settings-tabs button.active,.nav-item.active) { color:var(--nexo-accent-foreground); background:var(--nexo-accent-color); border-color:var(--nexo-accent-color); }
+html[data-theme] #nexo-app :is(a.text-link,.text-link,.nav-item.active .nav-icon,.date-icon) { color:var(--nexo-accent-text); }
+html[data-theme] #nexo-app :is(input[type="checkbox"],input[type="radio"],progress) { accent-color:var(--nexo-accent-color); }
+html[data-theme] #nexo-app :is(.nav-item:hover,.secondary-button:hover,.small-outline-button:hover) { border-color:var(--nexo-border-strong); }
+html[data-theme="light"] #nexo-app :is(.sidebar,.topbar,.nexo-header) { color:var(--nexo-text-primary); }
+html[data-theme="light"] #nexo-app :is(.nav-item,.nav-item.active,.sidebar .brand-name) { color:var(--nexo-text-primary); }
+html[data-theme="light"] #nexo-app :is(.settings-tabs button,.nav-item) { border-color:var(--nexo-border); }
+html[data-theme="light"] #nexo-app :is(.settings-field input,.settings-field select,.settings-field textarea) { background:var(--nexo-surface); color:var(--nexo-text-primary); }
+html[data-theme="midnight"] #nexo-app :is(.hero-panel,.featured-metric,.summary-panel) { background:linear-gradient(135deg,var(--nexo-surface-elevated),var(--nexo-surface)); border-color:var(--nexo-border-strong); }
+html[data-theme="warm"] #nexo-app :is(.hero-panel,.featured-metric,.summary-panel) { background:linear-gradient(135deg,var(--nexo-surface-elevated),var(--nexo-surface)); border-color:var(--nexo-border-strong); }
+
+html[data-corner-radius="sharp"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.settings-subsection,.settings-preview-live,.primary-button,.secondary-button,.settings-tabs button,input,select,textarea) { border-radius:3px !important; }
+html[data-corner-radius="medium"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.settings-subsection,.settings-preview-live,.primary-button,.secondary-button,.settings-tabs button,input,select,textarea) { border-radius:var(--nexo-radius) !important; }
+html[data-corner-radius="rounded"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel,.settings-subsection,.settings-preview-live,.primary-button,.secondary-button,.settings-tabs button,input,select,textarea) { border-radius:16px !important; }
+html[data-density="compact"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.finance-form,.finance-history,.accounts-panel,.settings-panel,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel) { padding:12px !important; }
+html[data-density="comfortable"] #nexo-app { --nexo-card-padding:18px; --nexo-section-gap:16px; }
+html[data-font-scale="small"] #nexo-app { font-size:12px; }
+html[data-font-scale="normal"] #nexo-app { font-size:14px; }
+html[data-font-scale="large"] #nexo-app { font-size:16px; }
+html[data-high-contrast="true"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.settings-panel,.form-card,.routine-panel,.settings-subsection) { border-width:2px; border-color:var(--nexo-text-secondary); }
+html[data-theme] #nexo-app :is(button,a,input,select,textarea):focus-visible { outline-color:var(--nexo-accent-text); }
