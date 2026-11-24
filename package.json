@@ -11,13 +11,15 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "typecheck": "tsc --noEmit",
-    "test": "playwright test tests/finance-calculations.spec.ts tests/persistence.spec.ts"
+    "test": "playwright test tests/finance-calculations.spec.ts tests/persistence.spec.ts tests/password-policy.spec.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "next": "16.4.6",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "@sentry/nextjs": "^11.17.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
