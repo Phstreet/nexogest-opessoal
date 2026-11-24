@@ -9,6 +9,7 @@ export const userProfileSchema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
   motto: optionalText(160),
   avatarUrl: z.string().max(240_000).regex(/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/).optional().or(z.literal("")),
+  avatarPath: z.string().max(80).regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/i).optional().or(z.literal("")),
   sex: optionalText(30),
   monthlyIncome: optionalText(40),
   profession: optionalText(80),
