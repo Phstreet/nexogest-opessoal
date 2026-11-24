@@ -119,7 +119,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id ?? "";
 
   const refresh = useCallback(async () => {
-    if (!userId || timer.current || saveState === "saving") return;
+    if (!userId || timer.current) return;
     const rows = await fetchRemoteCollections(["nexo_preferences"]);
     const row = rows.find((item) => item.data_key === "nexo_preferences");
     revision.current = Number(row?.revision) || 0;
@@ -129,7 +129,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     writeCache(userId, next);
     setSaveState("saved");
     setError("");
-  }, [userId, saveState]);
+  }, [userId]);
 
   const persist = useCallback(async () => {
     timer.current = null;
