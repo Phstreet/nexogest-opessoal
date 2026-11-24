@@ -3,7 +3,7 @@ import { z } from "zod";
 const optionalText = (max: number) => z.string().trim().max(max).optional();
 
 export const userProfileSchema = z.object({
-  displayName: z.string().trim().max(60).default(""),
+  displayName: z.string().trim().min(2, "O nome de exibição deve ter pelo menos 2 caracteres.").max(60, "O nome de exibição deve ter no máximo 60 caracteres.").refine((value) => !/[<>]/.test(value), "O nome de exibição não pode conter HTML.").default(""),
   fullName: optionalText(120),
   phone: optionalText(30),
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
