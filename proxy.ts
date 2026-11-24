@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = new Set([
   "/cadastro",
   "/recuperar-senha",
   "/redefinir-senha",
+  "/offline"
 ]);
 
 function createNonce(): string {
@@ -26,13 +27,15 @@ function createCsp(nonce: string): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vitals.vercel-insights.com https://va.vercel-scripts.com https://*.ingest.sentry.io https://*.sentry.io",
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "upgrade-insecure-requests",
     "report-uri /api/csp-report",
-    "report-to csp-endpoint",
+    "report-to csp-endpoint"
   ].join("; ");
 }
 
@@ -51,9 +54,7 @@ function secureResponse(response: NextResponse, csp: string): NextResponse {
 }
 
 function copyCookies(source: NextResponse, target: NextResponse) {
-  for (const cookie of source.cookies.getAll()) {
-    target.cookies.set(cookie);
-  }
+  for (const cookie of source.cookies.getAll()) target.cookies.set(cookie);
   return target;
 }
 
@@ -62,27 +63,18 @@ export async function proxy(request: NextRequest) {
   const csp = createCsp(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  // Next.js lê este cabeçalho durante o SSR e aplica o nonce aos scripts do framework.
   requestHeaders.set("Content-Security-Policy", csp);
 
-  const nextResponse = () =>
-    secureResponse(
-      NextResponse.next({ request: { headers: requestHeaders } }),
-      csp
-    );
+  const nextResponse = () => secureResponse(
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    csp
+  );
 
   const pathname = request.nextUrl.pathname;
-
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXO_E2E_TEST_MODE === "true"
-  ) {
+  if (process.env.NODE_ENV !== "production" && process.env.NEXO_E2E_TEST_MODE === "true") {
     return nextResponse();
   }
-
-  if (pathname.startsWith("/api/")) {
-    return nextResponse();
-  }
+  if (pathname.startsWith("/api/")) return nextResponse();
 
   const isPublicRoute = PUBLIC_ROUTES.has(pathname);
   const response = nextResponse();
@@ -93,11 +85,7 @@ export async function proxy(request: NextRequest) {
 
     if (user) {
       if (pathname === "/entrar" || pathname === "/cadastro") {
-        const redirect = secureResponse(
-          NextResponse.redirect(new URL("/", request.url)),
-          csp
-        );
-        return copyCookies(response, redirect);
+        return copyCookies(response, secureResponse(NextResponse.redirect(new URL("/", request.url)), csp));
       }
       return response;
     }
@@ -107,24 +95,17 @@ export async function proxy(request: NextRequest) {
 
     const loginUrl = new URL("/entrar", request.url);
     loginUrl.searchParams.set("next", pathname);
-    return copyCookies(
-      response,
-      secureResponse(NextResponse.redirect(loginUrl), csp)
-    );
+    return copyCookies(response, secureResponse(NextResponse.redirect(loginUrl), csp));
   } catch {
     if (isPublicRoute) return response;
-
     const loginUrl = new URL("/entrar", request.url);
     loginUrl.searchParams.set("next", pathname);
-    return copyCookies(
-      response,
-      secureResponse(NextResponse.redirect(loginUrl), csp)
-    );
+    return copyCookies(response, secureResponse(NextResponse.redirect(loginUrl), csp));
   }
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-  ],
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"
+  ]
 };
