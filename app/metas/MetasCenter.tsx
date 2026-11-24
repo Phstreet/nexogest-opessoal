@@ -1,6 +1,6 @@
-import { progressWidthClass } from "@/lib/ui/progress-class";
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
