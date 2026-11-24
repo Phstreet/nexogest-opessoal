@@ -360,3 +360,86 @@ test.describe("NEXO - Responsividade da Central do Dia", () => {
     }
   });
 });
+
+
+test.describe("NEXO - Isolamento entre sessões", () => {
+  test("descarta resposta atrasada da coleção de outro usuário após troca de conta", async ({ page }) => {
+    let activeSession = {
+      ...session,
+      user: { ...session.user, id: "user-nexo-A" },
+    };
+    let resolveFirstRequestStarted: () => void = () => undefined;
+    let releaseFirstResponse: () => void = () => undefined;
+    const firstRequestStarted = new Promise<void>((resolve) => {
+      resolveFirstRequestStarted = resolve;
+    });
+    const firstResponseGate = new Promise<void>((resolve) => {
+      releaseFirstResponse = resolve;
+    });
+    let habitRequests = 0;
+
+    await page.route("**/api/auth", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { session: activeSession } });
+        return;
+      }
+      await route.fulfill({ json: { session: activeSession } });
+    });
+
+    await page.route("**/api/sync**", async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.fulfill({
+          json: { result: { saved: true, current_revision: 1, current_updated_at: new Date().toISOString() } },
+        });
+        return;
+      }
+
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("keys") !== "nexo_habits") {
+        await route.fulfill({ json: { data: [] } });
+        return;
+      }
+
+      habitRequests += 1;
+      if (habitRequests === 1) {
+        resolveFirstRequestStarted();
+        await firstResponseGate;
+        await route.fulfill({
+          json: {
+            data: [{
+              data_key: "nexo_habits",
+              payload: [{ id: 101, name: "Hábito da conta antiga", category: "Pessoal", completedDates: [], active: true }],
+              revision: 1,
+              updated_at: new Date().toISOString(),
+            }],
+          },
+        });
+        return;
+      }
+
+      await route.fulfill({
+        json: {
+          data: [{
+            data_key: "nexo_habits",
+            payload: [{ id: 202, name: "Hábito da conta nova", category: "Pessoal", completedDates: [], active: true }],
+            revision: 1,
+            updated_at: new Date().toISOString(),
+          }],
+        },
+      });
+    });
+
+    await page.goto("/rotina/habitos");
+    await firstRequestStarted;
+
+    activeSession = {
+      ...session,
+      user: { ...session.user, id: "user-nexo-B" },
+    };
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+
+    await expect(page.getByText("Hábito da conta nova")).toBeVisible();
+    releaseFirstResponse();
+    await expect(page.getByText("Hábito da conta antiga")).toHaveCount(0);
+  });
+});
