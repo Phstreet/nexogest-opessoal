@@ -33,8 +33,10 @@ for (const [source, target, size] of iconJobs) {
 }
 
 const splashSizes = [
+  [1170, 2532],
   [1179, 2556],
   [1206, 2622],
+  [1242, 2688],
   [1290, 2796],
   [2048, 2732],
 ];
