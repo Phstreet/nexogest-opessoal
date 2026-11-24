@@ -8,7 +8,7 @@ import type { Transaction } from "@/lib/finance/types";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { getAccountBalanceFrom } from "@/lib/finance/accounts";
 import { calculateReserveBalance } from "@/lib/finance/reserves";
-import { sumMoney, subtractMoney } from "@/lib/finance/money";
+import { addMoney, averageMoney, sumMoney, subtractMoney } from "@/lib/finance/money";
 import { getSaoPauloCalendarDate } from "@/lib/date/sao-paulo";
 
 // =====================================================
@@ -529,10 +529,7 @@ export function useFinanceDashboard() {
     }
 
     return (
-      monthsWithRevenue.reduce(
-        (total, month) => total + month.revenue,
-        0
-      ) / monthsWithRevenue.length
+      averageMoney(monthsWithRevenue.map((month) => month.revenue))
     );
   }, [projectionHistory, currentRevenue]);
 
@@ -546,10 +543,7 @@ export function useFinanceDashboard() {
     }
 
     return (
-      monthsWithExpenses.reduce(
-        (total, month) => total + month.expenses,
-        0
-      ) / monthsWithExpenses.length
+      averageMoney(monthsWithExpenses.map((month) => month.expenses))
     );
   }, [projectionHistory, currentExpenses]);
 
@@ -606,7 +600,7 @@ export function useFinanceDashboard() {
         expenses,
         investments,
         reserves,
-        balance: revenue - expenses - investments - reserves,
+        balance: sumMoney([revenue, -expenses, -investments, -reserves]),
         projected: true,
         // Indica estimativa quando falta previsão de receita ou despesa.
         estimated: !hasRegisteredRevenue || !hasRegisteredExpenses,
@@ -630,25 +624,16 @@ export function useFinanceDashboard() {
     if (!visibleForecast.length) return 0;
 
     return (
-      visibleForecast.reduce(
-        (total, month) => total + month.balance,
-        0
-      ) / visibleForecast.length
+      averageMoney(visibleForecast.map((month) => month.balance))
     );
   }, [visibleForecast]);
 
   const totalFutureExpenses = useMemo(() => {
-    return visibleForecast.reduce(
-      (total, month) => total + month.expenses,
-      0
-    );
+    return sumMoney(visibleForecast.map((month) => month.expenses));
   }, [visibleForecast]);
 
   const totalFutureRevenue = useMemo(() => {
-    return visibleForecast.reduce(
-      (total, month) => total + month.revenue,
-      0
-    );
+    return sumMoney(visibleForecast.map((month) => month.revenue));
   }, [visibleForecast]);
 
   // =====================================================
@@ -666,9 +651,7 @@ export function useFinanceDashboard() {
         const category =
           transaction.category || "Sem categoria";
 
-        totals[category] =
-          (totals[category] || 0) +
-          parseAmount(transaction.amount);
+        totals[category] = addMoney(totals[category] || 0, parseAmount(transaction.amount));
       });
 
     return Object.entries(totals)
@@ -680,10 +663,7 @@ export function useFinanceDashboard() {
   }, [currentMonthTransactions]);
 
   const totalCategoryExpenses = useMemo(() => {
-    return categoryExpenses.reduce(
-      (total, item) => total + item.amount,
-      0
-    );
+    return sumMoney(categoryExpenses.map((item) => item.amount));
   }, [categoryExpenses]);
 
   const highestCategory = categoryExpenses[0];
@@ -724,7 +704,7 @@ export function useFinanceDashboard() {
 
     return Math.max(
       0,
-      projectedRevenue - monthlySavingsTarget
+      subtractMoney(projectedRevenue, monthlySavingsTarget)
     );
   }, [
     averageRevenue,
@@ -734,7 +714,7 @@ export function useFinanceDashboard() {
 
   const availableToSpend = Math.max(
     0,
-    recommendedSpendingLimit - currentExpenses
+    subtractMoney(recommendedSpendingLimit, currentExpenses)
   );
 
   // A taxa de economia usa somente entradas e saídas efetivadas,
@@ -742,10 +722,7 @@ export function useFinanceDashboard() {
   const savingsRate =
     currentConfirmedRevenue > 0
       ? (
-          (currentConfirmedRevenue -
-            currentConfirmedExpenses -
-            currentInvestments -
-            currentReserves) /
+          sumMoney([currentConfirmedRevenue, -currentConfirmedExpenses, -currentInvestments, -currentReserves]) /
           currentConfirmedRevenue
         ) * 100
       : 0;
