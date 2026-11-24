@@ -1,6 +1,8 @@
 
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
