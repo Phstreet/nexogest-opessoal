@@ -119,7 +119,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id ?? "";
 
   const refresh = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || timer.current || saveState === "saving") return;
     const rows = await fetchRemoteCollections(["nexo_preferences"]);
     const row = rows.find((item) => item.data_key === "nexo_preferences");
     revision.current = Number(row?.revision) || 0;
@@ -129,9 +129,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     writeCache(userId, next);
     setSaveState("saved");
     setError("");
-  }, [userId]);
+  }, [userId, saveState]);
 
   const persist = useCallback(async () => {
+    timer.current = null;
     if (!userId) {
       setSaveState("offline");
       setError("Entre na sua conta para sincronizar as configurações.");
@@ -142,7 +143,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       const currentRows = await fetchRemoteCollections(["nexo_preferences"]);
       const currentRow = currentRows.find((item) => item.data_key === "nexo_preferences");
-      const currentRevision = Number(currentRow?.revision) || revision.current;
+      const currentRevision = Number(currentRow?.revision) || 0;
+      if (currentRevision !== revision.current) {
+        revision.current = currentRevision;
+        throw new Error("As configurações foram alteradas em outro dispositivo. Os dados mais recentes foram preservados; atualize a tela antes de tentar novamente.");
+      }
       const currentPayload = currentRow?.payload && typeof currentRow.payload === "object" && !Array.isArray(currentRow.payload)
         ? currentRow.payload as Record<string, unknown>
         : {};
@@ -173,7 +178,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const scheduleSave = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => { void persist(); }, SAVE_DELAY);
+    timer.current = setTimeout(() => { timer.current = null; void persist(); }, SAVE_DELAY);
   }, [persist]);
 
   const updateSettings = useCallback((patch: SettingsPatch) => {
