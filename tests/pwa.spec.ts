@@ -84,7 +84,7 @@ test("página offline pública renderiza sem autenticação", async ({ page }) =
 });
 
 test("o service worker é registrado em produção", async ({ page }) => {
-  test.skip(process.env.NODE_ENV !== "production", "Execute esta validação com npm run build e npm start.");
+  test.skip(process.env.NEXO_PWA_E2E_PRODUCTION !== "true", "Execute com npm run build e NEXO_PWA_E2E_PRODUCTION=true.");
   await page.goto("/offline");
   await expect.poll(async () => page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return false;
@@ -93,7 +93,7 @@ test("o service worker é registrado em produção", async ({ page }) => {
 });
 
 test("o registro do service worker fica desativado em desenvolvimento", async ({ page }) => {
-  test.skip(process.env.NODE_ENV === "production", "Em produção, o worker é registrado para teste no preview HTTPS.");
+  test.skip(process.env.NEXO_PWA_E2E_PRODUCTION === "true", "No modo de produção, o worker deve ser registrado.");
   await page.goto("/offline");
   const registration = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return "unsupported";
