@@ -10,6 +10,14 @@ const PUBLIC_ROUTES = new Set([
   "/cadastro",
   "/recuperar-senha",
   "/redefinir-senha",
+  "/offline",
+]);
+
+const PUBLIC_PWA_PATHS = new Set([
+  "/sw.js",
+  "/manifest.webmanifest",
+  "/offline-shell.html",
+  "/offline.css",
 ]);
 
 function createNonce(): string {
@@ -26,6 +34,8 @@ function createCsp(nonce: string): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vitals.vercel-insights.com https://va.vercel-scripts.com https://*.ingest.sentry.io https://*.sentry.io",
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -62,7 +72,6 @@ export async function proxy(request: NextRequest) {
   const csp = createCsp(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  // Next.js lê este cabeçalho durante o SSR e aplica o nonce aos scripts do framework.
   requestHeaders.set("Content-Security-Policy", csp);
 
   const nextResponse = () =>
@@ -81,6 +90,12 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/")) {
+    return nextResponse();
+  }
+
+  // O manifesto, o worker e o fallback offline são recursos públicos.
+  // Não podem ser redirecionados para o login durante a instalação do PWA.
+  if (PUBLIC_PWA_PATHS.has(pathname)) {
     return nextResponse();
   }
 
@@ -125,6 +140,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|offline-shell\\.html|offline\\.css|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import MainNavigation from "../navigation/MainNavigation";
+import BottomNavigation from "@/components/pwa/BottomNavigation";
 import Header from "./Header";
 import { PageShell } from "@/components/ui/DashboardPrimitives";
 
@@ -15,11 +16,11 @@ export default function AppLayout({
   return (
     <main id="nexo-app" className="app-shell">
       <MainNavigation />
-
       <section className="main-area">
         {header ?? <Header />}
         <PageShell>{children}</PageShell>
       </section>
+      <BottomNavigation />
     </main>
   );
 }

@@ -71,8 +71,29 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
       return result.confirmationRequired;
     },
     async signOut() {
-      try { await signOutSession(); }
-      finally { setSession(null); }
+      try {
+        await signOutSession();
+      } finally {
+        setSession(null);
+        try {
+          const keys = Object.keys(localStorage);
+          for (const key of keys) {
+            if (key.startsWith("nexo_settings_cache_v1:") || key.startsWith("nexo_settings_cache_v2:")) {
+              localStorage.removeItem(key);
+            }
+          }
+          localStorage.removeItem("nexo_settings_bootstrap_v1");
+          localStorage.removeItem("nexo_settings_bootstrap_v2");
+        } catch {
+          // A limpeza local é defensiva; a sessão do servidor já foi encerrada.
+        }
+        if ("serviceWorker" in navigator) {
+          void navigator.serviceWorker.getRegistration().then((registration) => {
+            (registration?.active ?? navigator.serviceWorker.controller)?.postMessage({ type: "CLEAR_USER_DATA" });
+          }).catch(() => undefined);
+        }
+        window.dispatchEvent(new Event("nexo:logout"));
+      }
     },
     sendPasswordReset: requestPasswordReset,
     async changePassword(password) {

@@ -1,7 +1,8 @@
 import net from "node:net";
 import { defineConfig, devices } from "@playwright/test";
 
-// Em CI, os testes usam APIs mockadas e não dependem de uma sessão real do Supabase.
+const productionPwaTest = process.env.NEXO_PWA_E2E_PRODUCTION === "true";
+
 // Em CI, os testes usam APIs mockadas e não dependem de uma sessão real do Supabase.
 if (process.env.CI) process.env.NEXO_E2E_TEST_MODE = "true";
 
@@ -45,10 +46,12 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3001",
+    command: productionPwaTest
+      ? "npm run start -- --hostname 127.0.0.1 --port 3001"
+      : "npm run dev -- --hostname 127.0.0.1 --port 3001",
     url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
-    env: { NEXO_E2E_TEST_MODE: "true" }
+    env: productionPwaTest ? {} : { NEXO_E2E_TEST_MODE: "true" }
   }
 });
