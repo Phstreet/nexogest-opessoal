@@ -20,6 +20,17 @@ function downloadJson(fileName: string, value: unknown) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function formatAccountDate(value?: string) {
+  if (!value) return "Não disponibilizado pela autenticação.";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Não disponibilizado pela autenticação.";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+}
+
 function countRecords(collections: RemoteCollection[], key: string) {
   const payload = collections.find((item) => item.data_key === key)?.payload;
   return Array.isArray(payload) ? payload.length : 0;
@@ -202,7 +213,9 @@ export default function PerfilDadosPage() {
           <h2>Conta</h2>
           <div className="profile-data-grid">
             <div className="backup-note"><strong>E-mail de acesso</strong><span>{session?.user.email || "Não identificado"}</span></div>
-            <div className="backup-note"><strong>Provedor</strong><span>Supabase Auth · e-mail e senha</span></div>
+            <div className="backup-note"><strong>Provedor</strong><span>{String(session?.user.app_metadata?.provider || "email")}</span></div>
+            <div className="backup-note"><strong>Conta criada</strong><span>{formatAccountDate(session?.user.created_at)}</span></div>
+            <div className="backup-note"><strong>Último acesso</strong><span>{formatAccountDate(session?.user.last_sign_in_at)}</span></div>
           </div>
           <p className="settings-note">Alteração de e-mail com verificação, listagem/encerramento de sessões e histórico de acessos: Em breve. A API de autenticação integrada ao NEXO ainda não oferece essas operações na interface.</p>
           <Link className="secondary-button" href="/configuracoes?tab=seguranca">Ir para Segurança e senha</Link>
