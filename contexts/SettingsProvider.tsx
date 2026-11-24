@@ -146,7 +146,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         : {};
       const result = await saveRemoteCollection("nexo_preferences", {
         ...currentPayload,
-        schemaVersion: 1,
+        schemaVersion: latest.current.schemaVersion,
         settingsV1: latest.current,
         weekStartsOn: latest.current.general.weekStartsOn === 0 ? "sunday" : "monday",
         sidebarCollapsed: latest.current.navigation.sidebarCompact,
