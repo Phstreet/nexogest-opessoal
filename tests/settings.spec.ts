@@ -59,6 +59,12 @@ test.describe("NEXO profile validation", () => {
     expect(userProfileSchema.safeParse({ displayName: "NEXO User" }).success).toBe(true);
   });
 
+  test("requires a 2-60 character display name without HTML", () => {
+    expect(userProfileSchema.safeParse({ displayName: "A" }).success).toBe(false);
+    expect(userProfileSchema.safeParse({ displayName: "<b>NEXO</b>" }).success).toBe(false);
+    expect(userProfileSchema.safeParse({ displayName: "NEXO User" }).success).toBe(true);
+  });
+
   test("rejects an oversized avatar payload", () => {
     const result = userProfileSchema.safeParse({
       displayName: "NEXO User",
