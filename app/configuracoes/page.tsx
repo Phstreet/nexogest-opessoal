@@ -307,7 +307,7 @@ export default function ConfiguracoesPage() {
           .backup-note span,.settings-preview strong { color:#eee; font-size:13px; }
           .settings-warning { margin-top:18px !important; color:#c2a98b !important; }
           .settings-preview { max-width:440px; margin:15px 0; }
-          @media(max-width:650px) { .category-groups { grid-template-columns:1fr; } .settings-panel { padding:16px; } }
+          @media(max-width:650px) { .category-groups { grid-template-columns:1fr; } .settings-panel { padding:16px; } .settings-tabs { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; } .settings-tabs button { flex:0 0 auto; white-space:nowrap; } }
         `}</style>
       </div>
     </AppLayout>
