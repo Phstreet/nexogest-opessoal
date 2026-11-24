@@ -8,7 +8,6 @@ type InstallPromptEvent = Event & {
 };
 
 type InstallPromptProps = { mode?: "banner" | "settings" };
-
 const DISMISSED_KEY = "nexo_pwa_install_dismissed";
 
 function isStandalone(): boolean {
@@ -29,7 +28,9 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
   useEffect(() => {
     setInstalled(isStandalone());
     const ua = navigator.userAgent;
-    setIos(/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    setIos(isIOS);
     setAndroid(/Android/i.test(ua));
     setDismissed(localStorage.getItem(DISMISSED_KEY) === "1");
     setOffline(!navigator.onLine);
@@ -51,12 +52,12 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
 
-    let registration: ServiceWorkerRegistration | null = null;
     let disposed = false;
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      const nonce = document.querySelector<HTMLMetaElement>('meta[name="csp-nonce"]')?.content;
-      void nonce; // O registro é feito pelo bundle próprio; nenhum script inline é injetado.
-      navigator.serviceWorker.register("/sw.js", { scope: "/" })
+    let registration: ServiceWorkerRegistration | null = null;
+    const onControllerChange = () => window.location.reload();
+
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production" && window.isSecureContext) {
+      navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" })
         .then((value) => {
           if (disposed) return;
           registration = value;
@@ -64,7 +65,9 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
           value.addEventListener("updatefound", () => {
             const worker = value.installing;
             worker?.addEventListener("statechange", () => {
-              if (worker.state === "installed" && navigator.serviceWorker.controller) setUpdateReady(true);
+              if (!disposed && worker.state === "installed" && navigator.serviceWorker.controller) {
+                setUpdateReady(true);
+              }
             });
           });
           void value.update().catch(() => undefined);
@@ -73,17 +76,15 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
       navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
     }
 
-    function onControllerChange() {
-      window.location.reload();
-    }
-
     return () => {
       disposed = true;
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
-      navigator.serviceWorker?.removeEventListener("controllerchange", onControllerChange);
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      }
       void registration;
     };
   }, []);
@@ -95,6 +96,8 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
       await installEvent.prompt();
       const choice = await installEvent.userChoice;
       if (choice.outcome === "accepted") setInstalled(true);
+      setInstallEvent(null);
+    } catch {
       setInstallEvent(null);
     } finally {
       setInstalling(false);
@@ -117,12 +120,23 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
   if (mode === "banner") {
     return (
       <>
-        {offline && <div className="nexo-connection-status" role="status"><span /> Você está offline. Dados pessoais permanecem protegidos.</div>}
-        {updateReady && <div className="nexo-update-banner" role="status"><span>Nova versão disponível.</span><button type="button" onClick={updateNow}>Atualizar agora</button></div>}
+        {offline && (
+          <div className="nexo-connection-status" role="status" aria-live="polite">
+            <span aria-hidden="true" /> Você está offline. Seus dados pessoais permanecem protegidos.
+          </div>
+        )}
+        {updateReady && (
+          <div className="nexo-update-banner" role="status">
+            <span>Nova versão disponível.</span>
+            <button type="button" onClick={updateNow}>Nova versão disponível — atualizar</button>
+          </div>
+        )}
         {canOfferInstall && (installEvent || ios) && (
           <aside className="nexo-install-banner" aria-label="Instalar aplicativo NEXO">
-            <div><strong>Leve o NEXO com você</strong><span>Instale o aplicativo para abrir em tela cheia.</span></div>
-            {installEvent ? <button type="button" onClick={() => void install()} disabled={installing}>{installing ? "Abrindo..." : "Instalar"}</button> : <a href="/configuracoes?tab=aplicativo">Como instalar</a>}
+            <div><strong>Leve o NEXO com você</strong><span>Instale para abrir em tela cheia.</span></div>
+            {installEvent
+              ? <button type="button" onClick={() => void install()} disabled={installing}>{installing ? "Abrindo..." : "Instalar aplicativo"}</button>
+              : <a href="/configuracoes?tab=aplicativo">Como instalar</a>}
             <button className="nexo-install-dismiss" type="button" onClick={dismiss} aria-label="Dispensar aviso">×</button>
           </aside>
         )}
@@ -141,12 +155,33 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
       ) : (
         <>
           {installEvent && <button type="button" className="nexo-pwa-primary" onClick={() => void install()} disabled={installing}>{installing ? "Preparando instalação..." : "Instalar aplicativo"}</button>}
-          {ios && <div className="nexo-pwa-instructions"><h4>iPhone e iPad (Safari)</h4><ol><li><span aria-hidden="true">↥</span><div><strong>Toque em Compartilhar</strong><small>Ícone de compartilhar na barra do Safari.</small></div></li><li><span aria-hidden="true">＋</span><div><strong>Adicionar à Tela de Início</strong><small>Role o menu e escolha essa opção.</small></div></li><li><span aria-hidden="true">N</span><div><strong>Confirme em Adicionar</strong><small>O ícone NEXO aparecerá na tela inicial.</small></div></li></ol><p>Use o Safari. Outros navegadores no iPhone podem não oferecer a mesma instalação.</p></div>}
-          {android && !installEvent && <div className="nexo-pwa-instructions"><h4>Android (Chrome)</h4><ol><li><span aria-hidden="true">⋮</span><div><strong>Abra o menu do Chrome</strong><small>Toque nos três pontos no canto superior.</small></div></li><li><span aria-hidden="true">＋</span><div><strong>Instalar app ou Adicionar à tela inicial</strong><small>O texto varia conforme o aparelho e a versão do Chrome.</small></div></li><li><span aria-hidden="true">N</span><div><strong>Confirme a instalação</strong><small>O NEXO será adicionado aos aplicativos.</small></div></li></ol></div>}
-          {!ios && !android && !installEvent && <p>Abra esta tela no navegador do celular para ver as instruções de instalação disponíveis.</p>}
+          {ios && (
+            <div className="nexo-pwa-instructions">
+              <h4>iPhone e iPad (Safari)</h4>
+              <ol>
+                <li><span aria-hidden="true">↥</span><div><strong>Toque em Compartilhar</strong><small>Use o ícone de compartilhar na barra do Safari.</small></div></li>
+                <li><span aria-hidden="true">＋</span><div><strong>Adicionar à Tela de Início</strong><small>Role o menu e escolha essa opção.</small></div></li>
+                <li><span aria-hidden="true">N</span><div><strong>Confirme em Adicionar</strong><small>O ícone NEXO aparecerá na tela inicial.</small></div></li>
+              </ol>
+              <p>Faça a instalação pelo Safari. Em navegadores alternativos, o fluxo pode variar conforme a versão do iOS.</p>
+            </div>
+          )}
+          {android && !installEvent && (
+            <div className="nexo-pwa-instructions">
+              <h4>Android (Chrome)</h4>
+              <ol>
+                <li><span aria-hidden="true">⋮</span><div><strong>Abra o menu do Chrome</strong><small>Toque nos três pontos no canto superior.</small></div></li>
+                <li><span aria-hidden="true">＋</span><div><strong>Instalar app ou Adicionar à tela inicial</strong><small>O texto varia conforme o aparelho e a versão do Chrome.</small></div></li>
+                <li><span aria-hidden="true">N</span><div><strong>Confirme a instalação</strong><small>O NEXO será adicionado aos aplicativos.</small></div></li>
+              </ol>
+            </div>
+          )}
+          {!ios && !android && !installEvent && (
+            <p>Abra esta tela no navegador do celular para ver as instruções de instalação.</p>
+          )}
         </>
       )}
-      <p className="nexo-pwa-privacy">Privacidade offline: o NEXO não armazena páginas autenticadas, dados financeiros ou respostas do Supabase no cache do aplicativo.</p>
+      <p className="nexo-pwa-privacy">Privacidade offline: páginas autenticadas, dados financeiros e respostas do Supabase nunca são armazenados pelo service worker.</p>
       {updateReady && <button type="button" className="nexo-pwa-secondary" onClick={updateNow}>Nova versão disponível — atualizar</button>}
       {canOfferInstall && <button type="button" className="nexo-pwa-dismiss" onClick={dismiss}>Não mostrar o aviso de instalação</button>}
     </section>
