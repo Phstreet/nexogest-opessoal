@@ -32,7 +32,11 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     setIos(isIOS);
     setAndroid(/Android/i.test(ua));
-    setDismissed(localStorage.getItem(DISMISSED_KEY) === "1");
+    try {
+      setDismissed(localStorage.getItem(DISMISSED_KEY) === "1");
+    } catch {
+      setDismissed(false);
+    }
     setOffline(!navigator.onLine);
 
     const onBeforeInstall = (event: Event) => {
@@ -56,7 +60,7 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
     let registration: ServiceWorkerRegistration | null = null;
     const onControllerChange = () => window.location.reload();
 
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production" && window.isSecureContext) {
+    if (mode === "banner" && "serviceWorker" in navigator && process.env.NODE_ENV === "production" && window.isSecureContext) {
       navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" })
         .then((value) => {
           if (disposed) return;
@@ -105,7 +109,11 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
   }
 
   function dismiss() {
-    localStorage.setItem(DISMISSED_KEY, "1");
+    try {
+      localStorage.setItem(DISMISSED_KEY, "1");
+    } catch {
+      // O aviso continua dispensado durante esta sessão mesmo sem armazenamento local.
+    }
     setDismissed(true);
   }
 
