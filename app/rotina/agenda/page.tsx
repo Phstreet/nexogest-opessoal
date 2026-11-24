@@ -1,6 +1,7 @@
 
 "use client";
 
+import { getSaoPauloDateKey, getSaoPauloHour } from "@/lib/date/sao-paulo";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -12,11 +13,11 @@ import AgendaTimeline from "@/components/routine/agenda/AgendaTimeline";
 import { getOverdueRoutineTasks, getRoutineTasksForDate, getUpcomingRoutineTasks } from "@/lib/routine/task-queries";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
 
-function getLocalDate(date = new Date()) {
+function getLocalDate(date?: Date) {
+  if (!date) return getSaoPauloDateKey();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
@@ -70,7 +71,7 @@ export default function AgendaPage() {
   const upcomingTasks = useMemo(() => getUpcomingRoutineTasks(tasks, selectedDate), [tasks, selectedDate]);
 
   const greeting = useMemo(() => {
-    const hour = new Date().getHours();
+    const hour = getSaoPauloHour();
 
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";

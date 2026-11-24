@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import type { NexoSyncKey } from "@/lib/supabase/sync-keys";
@@ -20,6 +20,7 @@ export function useRoutineCollection<T>(
 ) {
   const persist = options.persist !== false;
   const { session, loading: authLoading } = useNexoAuth();
+  const userId = session?.user.id ?? null;
   const [items, setItemsState] = useState<T[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [safeToSave, setSafeToSave] = useState(false);
@@ -28,15 +29,28 @@ export function useRoutineCollection<T>(
   const itemsRef = useRef<T[]>([]);
   const mountedRef = useRef(true);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
+  const userIdRef = useRef<string | null>(userId);
 
   const applyItems = useCallback((next: T[]) => {
     itemsRef.current = next;
     setItemsState(next);
   }, []);
 
+  useLayoutEffect(() => {
+    if (userIdRef.current !== userId) {
+      userIdRef.current = userId;
+      revisionRef.current = 0;
+      applyItems([]);
+      setLoaded(false);
+      setSafeToSave(false);
+      setStorageError(null);
+    }
+  }, [userId, applyItems]);
+
   const loadData = useCallback(async () => {
     if (authLoading) return;
-    if (!session) {
+    const requestedUserId = userId;
+    if (!requestedUserId) {
       applyItems([]);
       revisionRef.current = 0;
       setSafeToSave(false);
@@ -55,19 +69,19 @@ export function useRoutineCollection<T>(
         throw new Error("A coleção recebida do Supabase possui dados inválidos. Nenhuma informação foi alterada.");
       }
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || userIdRef.current !== requestedUserId) return;
       revisionRef.current = Number(remote?.revision) || 0;
       applyItems(payload);
       setSafeToSave(true);
       setStorageError(null);
     } catch (error) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || userIdRef.current !== requestedUserId) return;
       setSafeToSave(false);
       setStorageError(error instanceof Error ? error.message : "Não foi possível carregar os dados da nuvem.");
     } finally {
-      if (mountedRef.current) setLoaded(true);
+      if (mountedRef.current && userIdRef.current === requestedUserId) setLoaded(true);
     }
-  }, [authLoading, session, key, isValidItem, applyItems]);
+  }, [authLoading, userId, key, isValidItem, applyItems]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -78,11 +92,12 @@ export function useRoutineCollection<T>(
   }, [loadData]);
 
   const persistItems = useCallback(async (next: T[]) => {
+    const requestedUserId = userId;
     if (!persist) {
       applyItems(next);
       return;
     }
-    if (!session || !loaded || !safeToSave) {
+    if (!requestedUserId || userIdRef.current !== requestedUserId || !loaded || !safeToSave) {
       throw new Error("Os dados ainda não foram carregados ou a sessão expirou. A alteração não foi salva.");
     }
     if (!Array.isArray(next) || !next.every(isValidItem)) {
@@ -91,12 +106,15 @@ export function useRoutineCollection<T>(
     // Mantém a edição na tela até o usuário decidir como resolver um conflito.
     applyItems(next);
     const result = await saveRemoteCollection(key, next, revisionRef.current);
+    if (userIdRef.current !== requestedUserId) {
+      throw new Error("A conta foi alterada durante a gravação. Recarregue os dados antes de continuar.");
+    }
     if (!result.saved) {
       throw new Error("Conflito de sincronização: sua edição continua preservada nesta tela, mas ainda não foi enviada. Recarregue somente depois de copiar ou resolver a alteração.");
     }
     revisionRef.current = result.current_revision ?? revisionRef.current + 1;
     if (mountedRef.current) setStorageError(null);
-  }, [persist, session, loaded, safeToSave, key, isValidItem, applyItems]);
+  }, [persist, userId, loaded, safeToSave, key, isValidItem, applyItems]);
 
   const saveNow = useCallback(async (next: T[]) => {
     const pending = queueRef.current.then(() => persistItems(next));

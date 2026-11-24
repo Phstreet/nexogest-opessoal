@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test tests/finance-calculations.spec.ts tests/persistence.spec.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

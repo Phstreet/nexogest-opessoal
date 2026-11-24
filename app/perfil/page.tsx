@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 import {
   fetchRemoteCollections,
   saveRemoteCollection,
@@ -102,7 +103,7 @@ export default function PerfilPage() {
       setError("Informe seu nome completo.");
       return;
     }
-    if (profile.birthDate && profile.birthDate > new Date().toISOString().slice(0, 10)) {
+    if (profile.birthDate && profile.birthDate > getSaoPauloDateKey()) {
       setError("A data de nascimento não pode estar no futuro.");
       return;
     }

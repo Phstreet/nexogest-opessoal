@@ -1,4 +1,5 @@
 import type { Account, Transaction } from "./types";
+import { fromCents, sumMoney, toCents } from "./money";
 
 export function normalizeTransactionStatus(transaction: Transaction): string {
   return (transaction.status ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -57,32 +58,32 @@ function isBeforeInitialBalanceDate(transaction: Transaction, account: Account):
 
 /** Calcula o saldo usando exclusivamente os lançamentos recebidos do Supabase. */
 export function getAccountBalanceFrom(account: Account, transactions: Transaction[]): number {
-  let balance = Number(account.initialBalance) || 0;
+  let balanceCents = toCents(Number(account.initialBalance) || 0);
   for (const transaction of transactions) {
     if (isCancelledTransaction(transaction) || isBeforeInitialBalanceDate(transaction, account)) continue;
     const isSourceAccount = transaction.account === account.name;
     const isDestinationAccount = transaction.destinationAccount === account.name;
 
     if (isSourceAccount && transaction.type === "Receita") {
-      balance += getSettledTransactionAmount(transaction);
+      balanceCents += toCents(getSettledTransactionAmount(transaction));
       continue;
     }
     if (isSourceAccount && transaction.type === "Despesa") {
-      balance -= getSettledTransactionAmount(transaction);
+      balanceCents -= toCents(getSettledTransactionAmount(transaction));
       continue;
     }
     if (isSourceAccount && (transaction.type === "Investimento" || transaction.type === "Aplicação")) {
-      balance -= getSettledTransactionAmount(transaction);
+      balanceCents -= toCents(getSettledTransactionAmount(transaction));
       continue;
     }
     if (isEffectiveTransfer(transaction)) {
       const amount = Number(transaction.amount);
       if (!Number.isFinite(amount) || amount <= 0) continue;
-      if (isSourceAccount) balance -= amount;
-      if (isDestinationAccount) balance += amount;
+      if (isSourceAccount) balanceCents -= toCents(amount);
+      if (isDestinationAccount) balanceCents += toCents(amount);
     }
   }
-  return balance;
+  return fromCents(balanceCents);
 }
 
 export function getAccountBalance(account: Account, transactions: Transaction[]): number {
@@ -90,6 +91,6 @@ export function getAccountBalance(account: Account, transactions: Transaction[])
 }
 
 export function getTotalAccountsBalance(accounts: Account[], transactions: Transaction[]): number {
-  return accounts.filter((account) => account.active)
-    .reduce((total, account) => total + getAccountBalanceFrom(account, transactions), 0);
+  return sumMoney(accounts.filter((account) => account.active)
+    .map((account) => getAccountBalanceFrom(account, transactions)));
 }

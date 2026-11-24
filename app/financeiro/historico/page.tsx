@@ -5,6 +5,8 @@ import { Fragment, useMemo, useState } from "react";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import type { Transaction as FinanceTransaction } from "@/lib/finance/types";
 import Link from "next/link";
+import { sumMoney, subtractMoney } from "@/lib/finance/money";
+import { getSaoPauloCalendarDate } from "@/lib/date/sao-paulo";
 
 type MovementType = FinanceTransaction["type"];
 type Transaction = FinanceTransaction & { destination?: string; method?: string };
@@ -88,21 +90,17 @@ export default function HistoricoFinanceiroPage() {
 
   const totalReceitas = useMemo(
     () =>
-      activeTransactions
-        .filter((item) => item.type === "Receita")
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+      sumMoney(activeTransactions.filter((item) => item.type === "Receita").map((item) => Number(item.amount || 0))),
     [activeTransactions]
   );
 
   const totalDespesas = useMemo(
     () =>
-      activeTransactions
-        .filter((item) => item.type === "Despesa")
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+      sumMoney(activeTransactions.filter((item) => item.type === "Despesa").map((item) => Number(item.amount || 0))),
     [activeTransactions]
   );
 
-  const resultado = totalReceitas - totalDespesas;
+  const resultado = subtractMoney(totalReceitas, totalDespesas);
 
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
@@ -146,7 +144,7 @@ export default function HistoricoFinanceiroPage() {
     }
 
     if (periodFilter !== "Todos") {
-      const now = new Date();
+      const now = getSaoPauloCalendarDate();
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
 

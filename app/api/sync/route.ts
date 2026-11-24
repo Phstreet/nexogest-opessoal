@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { copyResponseCookies, getSupabaseConfig, getValidAccessToken, hasValidOrigin } from "@/lib/supabase/server";
 import { isNexoSyncKey } from "@/lib/supabase/sync-keys";
+import { isValidBackupCollection } from "@/lib/supabase/backup";
 
 export const runtime = "nodejs";
 
-const ARRAY_KEYS = new Set([
-  "nexo_transactions", "nexo_accounts", "nexo_reserves", "nexo_reserve_movements",
-  "nexo_tasks", "nexo_habits", "nexo_planning_budgets", "nexo_planning_goals",
-  "nexo_personal_goals", "nexo_task_backups",
-]);
 const MAX_SYNC_BODY_BYTES = 1_048_576;
 
 async function authorized(request: NextRequest) {
@@ -73,11 +69,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dados de sincronização inválidos." }, { status: 400 });
     }
     const payload = body.payload;
-    const validShape = ARRAY_KEYS.has(dataKey)
-      ? Array.isArray(payload)
-      : Boolean(payload) && typeof payload === "object" && !Array.isArray(payload);
-    if (!validShape) {
-      return NextResponse.json({ error: "O formato da coleção não corresponde ao tipo esperado." }, { status: 400 });
+    if (!isValidBackupCollection(dataKey, payload)) {
+      return NextResponse.json({ error: "A coleção contém registros inválidos ou incompatíveis. Nenhum dado foi gravado." }, { status: 400 });
     }
 
     const { access, response } = await authorized(request);

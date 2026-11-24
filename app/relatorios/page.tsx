@@ -12,6 +12,8 @@ import {
   type RoutineHabit,
 } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
+import { addMoney, sumMoney } from "@/lib/finance/money";
+import { getSaoPauloCalendarDate, getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 
 type Period = "week" | "month" | "quarter" | "semester" | "year";
 
@@ -52,8 +54,8 @@ export default function RelatoriosPage() {
 
   const tasks = tasksCollection.items;
   const habits = habitsCollection.items;
-  const todayKey = dateKey(new Date());
-  const startDate = new Date();
+  const todayKey = getSaoPauloDateKey();
+  const startDate = getSaoPauloCalendarDate();
   if (period === "week") {
     const daysSinceMonday = (startDate.getDay() + 6) % 7;
     startDate.setDate(startDate.getDate() - daysSinceMonday);
@@ -76,24 +78,18 @@ export default function RelatoriosPage() {
   ), [finance.transactions, startKey, todayKey]);
 
   const totals = useMemo(() => {
-    let revenue = 0;
-    let expenses = 0;
-    let investments = 0;
-    let reserves = 0;
-    periodTransactions.forEach((item) => {
-      const value = settledAmount(item);
-      if (item.type === "Receita") revenue += value;
-      if (item.type === "Despesa") expenses += value;
-      if (item.type === "Investimento" || item.type === "Aplicação") investments += value;
-      if (item.type === "Reserva") reserves += value;
-    });
+    const revenue = sumMoney(periodTransactions.filter((item) => item.type === "Receita").map(settledAmount));
+    const expenses = sumMoney(periodTransactions.filter((item) => item.type === "Despesa").map(settledAmount));
+    const investments = sumMoney(periodTransactions.filter((item) => item.type === "Investimento" || item.type === "Aplicação").map(settledAmount));
+    const reserves = sumMoney(periodTransactions.filter((item) => item.type === "Reserva").map(settledAmount));
+    const result = sumMoney([revenue, -expenses, -investments, -reserves]);
     return {
       revenue,
       expenses,
       investments,
       reserves,
-      result: revenue - expenses - investments - reserves,
-      savingsRate: revenue > 0 ? ((revenue - expenses - investments - reserves) / revenue) * 100 : null,
+      result,
+      savingsRate: revenue > 0 ? (result / revenue) * 100 : null,
       commitmentRate: revenue > 0 ? (expenses / revenue) * 100 : null,
     };
   }, [periodTransactions]);
@@ -107,7 +103,7 @@ export default function RelatoriosPage() {
     const to = dateKey(previousEnd);
     return finance.transactions.filter((item) =>
       item.status !== "Cancelada" && Boolean(item.date) && item.date! >= from && item.date! <= to && item.type === "Despesa"
-    ).reduce((sum, item) => sum + settledAmount(item), 0);
+    ).reduce((sum, item) => addMoney(sum, settledAmount(item)), 0);
   }, [finance.transactions, startKey, periodLength]);
 
   const taskCompleted = tasks.filter((task) => task.done).length;
@@ -121,7 +117,7 @@ export default function RelatoriosPage() {
     const totalsByCategory = new Map<string, number>();
     periodTransactions.filter((item) => item.type === "Despesa").forEach((item) => {
       const category = item.category || "Sem categoria";
-      totalsByCategory.set(category, (totalsByCategory.get(category) || 0) + settledAmount(item));
+      totalsByCategory.set(category, addMoney(totalsByCategory.get(category) || 0, settledAmount(item)));
     });
     return Array.from(totalsByCategory.entries())
       .map(([category, amount]) => ({ category, amount }))
@@ -195,8 +191,8 @@ export default function RelatoriosPage() {
     periodTransactions.forEach((item) => {
       const bucket = buckets.find((entry) => Boolean(item.date) && item.date! >= entry.start && item.date! <= entry.end);
       if (!bucket) return;
-      if (item.type === "Receita") bucket.revenue += settledAmount(item);
-      if (item.type === "Despesa") bucket.expenses += settledAmount(item);
+      if (item.type === "Receita") bucket.revenue = addMoney(bucket.revenue, settledAmount(item));
+      if (item.type === "Despesa") bucket.expenses = addMoney(bucket.expenses, settledAmount(item));
     });
     return buckets;
   }, [periodTransactions, period, startKey, todayKey]);

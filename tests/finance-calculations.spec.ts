@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { getAccountBalanceFrom, getSettledTransactionAmount } from "../lib/finance/accounts";
-import { getFinancialSummary } from "../lib/finance/calculations";
+import { getFinancialSummary, getMonthlySummary } from "../lib/finance/calculations";
+import { addMoney, subtractMoney, sumMoney } from "../lib/finance/money";
+import { getSaoPauloDateKey } from "../lib/date/sao-paulo";
 import { calculateFinanceTotals, getSettledAmount, isInvestmentApplied } from "../lib/finance/finance-utils";
 import type { Account, Transaction } from "../lib/finance/types";
 
@@ -78,6 +80,36 @@ test.describe("NEXO - Regra central de liquidação financeira", () => {
     const cancelled = transaction({ type: "Investimento", status: "CANCELADO" });
     expect(isInvestmentApplied(cancelled)).toBe(false);
     expect(calculateFinanceTotals([cancelled]).investimentosAplicados).toBe(0);
+  });
+
+  test("soma valores monetários em centavos sem erro de ponto flutuante", () => {
+    expect(addMoney(0.1, 0.2)).toBe(0.3);
+    expect(sumMoney([0.1, 0.2, 0.3])).toBe(0.6);
+    expect(subtractMoney(0.3, 0.1)).toBe(0.2);
+  });
+
+  test("mantém totais, saldos e pendências em centavos", () => {
+    const entries = [
+      transaction({ id: 1, amount: 0.1, status: "Pago", date: "2026-11-24" }),
+      transaction({ id: 2, amount: 0.2, status: "Pago", date: "2026-11-24" }),
+      transaction({ id: 3, type: "Despesa", amount: 0.1, status: "Pago", date: "2026-11-24" }),
+      transaction({ id: 4, type: "Despesa", amount: 0.2, status: "Pendente", date: "2026-11-24" }),
+    ];
+    const summary = getFinancialSummary(entries, [account], [], []);
+    expect(summary.totalIncome).toBe(0.3);
+    expect(summary.totalExpenses).toBe(0.1);
+    expect(summary.realizedBalance).toBe(0.2);
+    expect(summary.payable).toBe(0.2);
+    expect(summary.accountsBalance).toBe(0.2);
+
+    const monthly = getMonthlySummary(entries, 2026, 10);
+    expect(monthly.income).toBe(0.3);
+    expect(monthly.expenses).toBe(0.3);
+    expect(monthly.balance).toBe(0);
+  });
+
+  test("calcula o dia civil no fuso de São Paulo", () => {
+    expect(getSaoPauloDateKey(new Date("2026-11-24T02:00:00.000Z"))).toBe("2026-11-23");
   });
 
 });

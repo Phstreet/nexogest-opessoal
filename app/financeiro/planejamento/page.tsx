@@ -6,6 +6,8 @@ import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
+import { addMoney, subtractMoney, sumMoney } from "@/lib/finance/money";
+import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 
 type TransactionType =
   | "Receita"
@@ -83,12 +85,7 @@ const emptyGoalForm: GoalForm = {
 };
 
 function getLocalDateString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return getSaoPauloDateKey();
 }
 
 function getCurrentMonth() {
@@ -252,36 +249,22 @@ export default function PlanejamentoFinanceiroPage() {
   }, [transactions, selectedMonth]);
 
   const monthlySummary = useMemo(() => {
-    let plannedIncome = 0;
-    let plannedExpenses = 0;
-    let realizedIncome = 0;
-    let realizedExpenses = 0;
-
-    monthTransactions.forEach((transaction) => {
-      const amount = Number(transaction.amount) || 0;
-
-      if (transaction.type === "Receita") {
-        plannedIncome += amount;
-
-        realizedIncome += getSettledAmount(transaction);
-      }
-
-      if (transaction.type === "Despesa") {
-        plannedExpenses += amount;
-
-        realizedExpenses += getSettledAmount(transaction);
-      }
-    });
+    const income = monthTransactions.filter((transaction) => transaction.type === "Receita");
+    const expenses = monthTransactions.filter((transaction) => transaction.type === "Despesa");
+    const plannedIncome = sumMoney(income.map((transaction) => Number(transaction.amount) || 0));
+    const plannedExpenses = sumMoney(expenses.map((transaction) => Number(transaction.amount) || 0));
+    const realizedIncome = sumMoney(income.map(getSettledAmount));
+    const realizedExpenses = sumMoney(expenses.map(getSettledAmount));
 
     return {
       plannedIncome,
       plannedExpenses,
       realizedIncome,
       realizedExpenses,
-      plannedBalance: plannedIncome - plannedExpenses,
-      realizedBalance: realizedIncome - realizedExpenses,
-      pendingIncome: plannedIncome - realizedIncome,
-      pendingExpenses: plannedExpenses - realizedExpenses,
+      plannedBalance: subtractMoney(plannedIncome, plannedExpenses),
+      realizedBalance: subtractMoney(realizedIncome, realizedExpenses),
+      pendingIncome: Math.max(0, subtractMoney(plannedIncome, realizedIncome)),
+      pendingExpenses: Math.max(0, subtractMoney(plannedExpenses, realizedExpenses)),
     };
   }, [monthTransactions]);
 
@@ -297,21 +280,18 @@ export default function PlanejamentoFinanceiroPage() {
 
       const category = transaction.category || "Sem categoria";
 
-      result[category] =
-        (result[category] || 0) + getSettledAmount(transaction);
+      result[category] = addMoney(result[category] || 0, getSettledAmount(transaction));
     });
 
     return result;
   }, [monthTransactions]);
 
   const totalBudget = useMemo(() => {
-    return monthlyBudgets.reduce((total, budget) => total + budget.limit, 0);
+    return sumMoney(monthlyBudgets.map((budget) => budget.limit));
   }, [monthlyBudgets]);
 
   const totalBudgetUsed = useMemo(() => {
-    return monthlyBudgets.reduce((total, budget) => {
-      return total + (categoryExpenses[budget.category] || 0);
-    }, 0);
+    return sumMoney(monthlyBudgets.map((budget) => categoryExpenses[budget.category] || 0));
   }, [monthlyBudgets, categoryExpenses]);
 
   const budgetUsage =
@@ -326,11 +306,11 @@ export default function PlanejamentoFinanceiroPage() {
   }, [goals]);
 
   const totalGoalsTarget = useMemo(() => {
-    return goals.reduce((total, goal) => total + goal.target, 0);
+    return sumMoney(goals.map((goal) => goal.target));
   }, [goals]);
 
   const totalGoalsCurrent = useMemo(() => {
-    return goals.reduce((total, goal) => total + goal.current, 0);
+    return sumMoney(goals.map((goal) => goal.current));
   }, [goals]);
 
   const goalProgress =
@@ -553,7 +533,7 @@ export default function PlanejamentoFinanceiroPage() {
   function getRemainingDays(deadline: string) {
     if (!deadline) return null;
 
-    const today = new Date(getLocalDateString() + "T00:00:00");
+    const today = new Date(getLocalDateString() + "T12:00:00");
     const targetDate = new Date(deadline + "T00:00:00");
 
     return Math.ceil(

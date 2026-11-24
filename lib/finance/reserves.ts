@@ -1,4 +1,5 @@
 import type { Reserve, ReserveMovement } from "./types";
+import { addMoney, subtractMoney, sumMoney } from "./money";
 
 /** Calcula o saldo da reserva a partir da coleção recebida da nuvem. */
 export function calculateReserveBalance(reserve: Reserve, movements: ReserveMovement[]): number {
@@ -9,9 +10,9 @@ export function calculateReserveBalance(reserve: Reserve, movements: ReserveMove
         case "Aporte":
         case "Rendimento":
         case "Ajuste":
-          return balance + movement.amount;
+          return addMoney(balance, movement.amount);
         case "Resgate":
-          return balance - movement.amount;
+          return subtractMoney(balance, movement.amount);
         default:
           return balance;
       }
@@ -19,10 +20,10 @@ export function calculateReserveBalance(reserve: Reserve, movements: ReserveMove
 }
 
 export function getTotalReserveBalance(reserves: Reserve[], movements: ReserveMovement[]): number {
-  return reserves.reduce((total, reserve) => total + calculateReserveBalance(reserve, movements), 0);
+  return sumMoney(reserves.map((reserve) => calculateReserveBalance(reserve, movements)));
 }
 
 export function getActiveReserveBalance(reserves: Reserve[], movements: ReserveMovement[]): number {
   return reserves.filter((reserve) => reserve.status === "Ativa")
-    .reduce((total, reserve) => total + calculateReserveBalance(reserve, movements), 0);
+    .reduce((total, reserve) => addMoney(total, calculateReserveBalance(reserve, movements)), 0);
 }

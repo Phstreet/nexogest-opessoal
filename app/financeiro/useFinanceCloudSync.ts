@@ -42,9 +42,17 @@ export function useFinanceCloudSync({
   const sessionUserIdRef = useRef<string | null>(sessionUserId);
 
   useLayoutEffect(() => {
+    if (sessionUserIdRef.current !== sessionUserId) {
+      setTransactions([]);
+      setRegisteredAccounts([]);
+      setSafeToSave(false);
+      setLoaded(false);
+      revisionRef.current = 0;
+      lastSavedPayloadRef.current = "";
+    }
     sessionUserIdRef.current = sessionUserId;
     remoteReadyRef.current = false;
-  }, [sessionUserId]);
+  }, [sessionUserId, setTransactions]);
 
   useEffect(() => {
     let active = true;

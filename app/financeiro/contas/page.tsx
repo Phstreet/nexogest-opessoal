@@ -11,6 +11,7 @@ import type { Transaction, Reserve } from "@/lib/finance/types";
 import {
   getAccountBalanceFrom,
 } from "@/lib/finance/accounts";
+import { sumMoney } from "@/lib/finance/money";
 
 type Account = {
   id: number;
@@ -141,7 +142,7 @@ export default function ContasFinanceirasPage() {
   }
 
   const activeAccounts = useMemo(() => accounts.filter((account) => account.active), [accounts]);
-  const totalCurrentBalance = activeAccounts.reduce((sum, account) => sum + getAccountBalanceFrom(account, transactions), 0);
+  const totalCurrentBalance = sumMoney(activeAccounts.map((account) => getAccountBalanceFrom(account, transactions)));
   const filteredAccounts = useMemo(() => accounts.filter((account) => {
     if (filter === "Todas") return true;
     if (filter === "Ativas") return account.active;

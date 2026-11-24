@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
+import { sumMoney } from "@/lib/finance/money";
 
 type InvestmentTransaction = {
   id: number | string;
@@ -92,19 +93,13 @@ export default function InvestimentosPage() {
 
   const totalInvested = useMemo(
     () =>
-      appliedInvestments.reduce(
-        (total, investment) => total + Number(investment.amount || 0),
-        0
-      ),
+      sumMoney(appliedInvestments.map((investment) => Number(investment.amount || 0))),
     [appliedInvestments]
   );
 
   const totalPending = useMemo(
     () =>
-      pendingInvestments.reduce(
-        (total, investment) => total + Number(investment.amount || 0),
-        0
-      ),
+      sumMoney(pendingInvestments.map((investment) => Number(investment.amount || 0))),
     [pendingInvestments]
   );
 
@@ -271,16 +266,7 @@ export default function InvestimentosPage() {
           ) : (
             <div className="distribution-list">
               {investmentTypes.map((type) => {
-                const typeTotal = appliedInvestments
-                  .filter(
-                    (investment) =>
-                      getInvestmentType(investment) === type
-                  )
-                  .reduce(
-                    (total, investment) =>
-                      total + Number(investment.amount || 0),
-                    0
-                  );
+                const typeTotal = sumMoney(appliedInvestments.filter((investment) => getInvestmentType(investment) === type).map((investment) => Number(investment.amount || 0)));
 
                 const percentage =
                   totalInvested > 0
@@ -334,11 +320,7 @@ export default function InvestimentosPage() {
                     getInstitution(investment) === institution
                 );
 
-                const institutionTotal = institutionInvestments.reduce(
-                  (total, investment) =>
-                    total + Number(investment.amount || 0),
-                  0
-                );
+                const institutionTotal = sumMoney(institutionInvestments.map((investment) => Number(investment.amount || 0)));
 
                 return (
                   <div className="institution-item" key={institution}>
