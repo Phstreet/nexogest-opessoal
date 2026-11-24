@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
+import { getSaoPauloDateKey, getSaoPauloHour } from "@/lib/date/sao-paulo";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -71,7 +71,7 @@ export default function AgendaPage() {
   const upcomingTasks = useMemo(() => getUpcomingRoutineTasks(tasks, selectedDate), [tasks, selectedDate]);
 
   const greeting = useMemo(() => {
-    const hour = new Date().getHours();
+    const hour = getSaoPauloHour();
 
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
