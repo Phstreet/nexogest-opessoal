@@ -1,6 +1,7 @@
 "use client";
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
+import { PreferencesControls, AppearanceControls } from "@/components/settings/SettingsControls";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -275,17 +276,10 @@ export default function ConfiguracoesPage() {
 
         {tab === "preferencias" && (
           <section className="settings-panel">
-            <h2>Preferências gerais</h2>
-            <p>Defina como deseja organizar sua experiência no NEXO.</p>
-            <label className="settings-field">
-              <span>Primeiro dia da semana</span>
-              <select value={preferences.weekStartsOn} onChange={(event) => void savePreferences({ ...preferences, weekStartsOn: event.target.value as Preferences["weekStartsOn"] })} disabled={saving || loading}>
-                <option value="monday">Segunda-feira</option>
-                <option value="sunday">Domingo</option>
-              </select>
-            </label>
-                    <label className="settings-toggle"><span><strong>Menu lateral compacto</strong><small>Recolher a navegação para liberar espaço na tela.</small></span><input type="checkbox" checked={preferences.sidebarCollapsed === true} disabled={saving || loading} onChange={(event) => void savePreferences({ ...preferences, sidebarCollapsed: event.target.checked })} /></label>
-            <small>As preferências são salvas na sua conta e sincronizadas entre dispositivos.</small>
+            <h2>Preferências</h2>
+            <p>Configurações com efeito imediato no comportamento do NEXO.</p>
+            <PreferencesControls />
+            <p className="settings-note">Primeiro dia da semana, formatos de data/hora e parâmetros avançados da agenda estão identificados para integração. Não são apresentados como controles ativos enquanto não forem consumidos pelos calendários e formulários correspondentes.</p>
           </section>
         )}
 
@@ -335,19 +329,9 @@ export default function ConfiguracoesPage() {
         {tab === "personalizacao" && (
           <section className="settings-panel">
             <h2>Personalização</h2>
-            <p>Defina seu nome de exibição ou complete suas informações pessoais na página de perfil.</p>
-            <form onSubmit={saveProfile}>
-              <label className="settings-field">
-                <span>Nome de exibição</span>
-                <input value={profile.displayName} maxLength={60} placeholder="Como deseja ser identificado?" onChange={(event) => setProfile({ ...profile, displayName: event.target.value })} />
-              </label>
-              <div className="settings-preview">
-                <span>Prévia do perfil</span>
-                <strong>{profile.displayName.trim() || "NEXO"}</strong>
-              </div>
-              <button className="primary-button" type="submit" disabled={saving || loading}>{saving ? "Salvando..." : "Salvar personalização"}</button>
-            </form>
-            <p className="settings-note">O padrão visual monocromático atual foi preservado. Novos temas só serão adicionados quando todas as telas compartilharem o mesmo sistema de estilos.</p>
+            <p>Altere o tema, o destaque visual, a densidade e a acessibilidade. A prévia acompanha suas escolhas.</p>
+            <AppearanceControls />
+            <div className="settings-profile-link"><strong>Dados do perfil</strong><span>Foto, nome, informações pessoais e resumo dos seus dados.</span><a href="/configuracoes/perfil">Abrir Perfil e Dados →</a></div>
           </section>
         )}
 
