@@ -94,7 +94,7 @@ const accents: Array<{ value: UserSettings["appearance"]["accent"]; label: strin
 ];
 
 export function AppearanceControls() {
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, loaded } = useSettings();
   return (
     <div className="settings-controls-stack">
       <section className="settings-subsection">
