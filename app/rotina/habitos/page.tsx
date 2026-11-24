@@ -1,3 +1,4 @@
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 "use client";
 
@@ -339,8 +340,7 @@ export default function HabitosPage() {
 
         <div className="progress-track">
           <div
-            className="progress-fill"
-            style={{ width: `${metrics.percentage}%` }}
+            className={progressWidthClass(metrics.percentage, "progress-fill")}
           />
         </div>
 
