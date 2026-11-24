@@ -241,7 +241,7 @@ export default function PerfilDadosPage() {
 
         <section className="settings-panel">
           <h2>Exportar e backup</h2>
-          <p>Baixe uma cópia JSON das coleções sincronizadas na sua conta.</p>
+          <p>Baixe uma cópia JSON das coleções sincronizadas na sua conta. Exportação individual por módulo e CSV: Em breve.</p>
           <div className="backup-actions"><button type="button" className="primary-button" onClick={() => void exportAll()}>Exportar todos os dados (JSON)</button><button type="button" className="secondary-button" onClick={() => void createBackup()}>Criar backup manual</button></div>
           <p className="settings-note">Backup automático agendado, histórico remoto, restauração com prévia e cópia automática antes de sobrescrever: Em breve. O NEXO ainda não possui serviço de armazenamento de arquivos/backups separado das coleções sincronizadas.</p>
         </section>
