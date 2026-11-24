@@ -8,6 +8,8 @@ import type { Transaction } from "@/lib/finance/types";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { getAccountBalanceFrom } from "@/lib/finance/accounts";
 import { calculateReserveBalance } from "@/lib/finance/reserves";
+import { sumMoney, subtractMoney } from "@/lib/finance/money";
+import { getSaoPauloCalendarDate } from "@/lib/date/sao-paulo";
 
 // =====================================================
 // TIPOS
@@ -183,21 +185,13 @@ function getSettledAmount(
 function sumTransactions(
   transactions: Transaction[]
 ): number {
-  return transactions.reduce(
-    (total, transaction) =>
-      total + parseAmount(transaction.amount),
-    0
-  );
+  return sumMoney(transactions.map((transaction) => parseAmount(transaction.amount)));
 }
 
 function sumSettledTransactions(
   transactions: Transaction[]
 ): number {
-  return transactions.reduce(
-    (total, transaction) =>
-      total + getSettledAmount(transaction),
-    0
-  );
+  return sumMoney(transactions.map((transaction) => getSettledAmount(transaction)));
 }
 
 // =====================================================
@@ -208,7 +202,7 @@ export function useFinanceDashboard() {
   const { transactions, accounts, reserves, reserveMovements, loaded, error } = useCloudFinanceCollections();
   const [period, setPeriod] = useState<"3" | "6">("6");
 
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => getSaoPauloCalendarDate(), []);
 
   const currentMonthKey = getMonthKey(today);
 
@@ -311,7 +305,7 @@ export function useFinanceDashboard() {
   const currentPendingExpenses = useMemo(() => {
     return Math.max(
       0,
-      currentExpenses - currentConfirmedExpenses
+      subtractMoney(currentExpenses, currentConfirmedExpenses)
     );
   }, [
     currentExpenses,
@@ -320,11 +314,12 @@ export function useFinanceDashboard() {
 
   // Resultado realizado: considera somente valores efetivamente
   // recebidos/pagos, sem tratar compromissos pendentes como caixa.
-  const currentBalance =
-    currentConfirmedRevenue -
-    currentConfirmedExpenses -
-    currentInvestments -
-    currentReserves;
+  const currentBalance = sumMoney([
+    currentConfirmedRevenue,
+    -currentConfirmedExpenses,
+    -currentInvestments,
+    -currentReserves,
+  ]);
 
   // =====================================================
   // COMPARAÇÃO COM O MÊS ANTERIOR
@@ -368,7 +363,7 @@ export function useFinanceDashboard() {
   const accountBalance = useMemo(() => {
     return accounts
       .filter((account) => account.active)
-      .reduce((total, account) => total + getAccountBalanceFrom(account, transactions), 0);
+      .reduce((total, account) => sumMoney([total, getAccountBalanceFrom(account, transactions)]), 0);
   }, [accounts, transactions]);
 
   const reserveBalance = useMemo(
@@ -377,7 +372,7 @@ export function useFinanceDashboard() {
         .filter((reserve) => reserve.status === "Ativa")
         .reduce(
           (total, reserve) =>
-            total + calculateReserveBalance(reserve, reserveMovements),
+            sumMoney([total, calculateReserveBalance(reserve, reserveMovements)]),
           0
         ),
     [reserves, reserveMovements]
@@ -448,7 +443,7 @@ export function useFinanceDashboard() {
 
       const pendingExpenses = Math.max(
         0,
-        expenses - confirmedExpenses
+        subtractMoney(expenses, confirmedExpenses)
       );
 
       result.push({
@@ -458,11 +453,7 @@ export function useFinanceDashboard() {
         expenses,
         investments,
         reserves,
-        balance:
-          confirmedRevenue -
-          confirmedExpenses -
-          investments -
-          reserves,
+        balance: sumMoney([confirmedRevenue, -confirmedExpenses, -investments, -reserves]),
         confirmedExpenses,
         pendingExpenses,
         projected: isFuture,
