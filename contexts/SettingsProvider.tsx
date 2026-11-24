@@ -69,10 +69,14 @@ function writeCache(userId: string, settings: UserSettings) {
   try {
     const envelope: CacheEnvelope = { userId, settings };
     localStorage.setItem(cacheKey(userId), JSON.stringify(envelope));
-    localStorage.setItem("nexo_settings_bootstrap_v2", JSON.stringify({
+    const bootstrap = {
       appearance: settings.appearance,
       finance: { hideValues: settings.finance.hideValues },
-    }));
+    };
+    localStorage.setItem("nexo_settings_bootstrap_v2", JSON.stringify(bootstrap));
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = "nexo_appearance_v2=" + encodeURIComponent(JSON.stringify(bootstrap)) +
+      "; Path=/; Max-Age=31536000; SameSite=Lax" + secure;
   } catch {
     // O cache é auxiliar; a persistência remota continua sendo a fonte oficial.
   }
