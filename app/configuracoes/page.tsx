@@ -16,22 +16,10 @@ import {
 } from "@/lib/finance/categories";
 
 type SettingsTab = "preferencias" | "categorias" | "dados" | "personalizacao" | "seguranca";
-type Preferences = {
-  weekStartsOn: "monday" | "sunday";
-  navigationFavorites?: string[];
-  sidebarCollapsed?: boolean;
-};
-type Profile = { displayName: string; fullName?: string; sex?: string; monthlyIncome?: string; birthDate?: string; profession?: string };
-
-const PREFERENCES_KEY = "nexo_preferences";
-const PROFILE_KEY = "nexo_profile";
-
 export default function ConfiguracoesPage() {
   const confirm = useNexoConfirm();
   const { session } = useNexoAuth();
   const [tab, setTab] = useState<SettingsTab>("preferencias");
-  const [preferences, setPreferences] = useState<Preferences>({ weekStartsOn: "monday" });
-  const [profile, setProfile] = useState<Profile>({ displayName: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [backupDate, setBackupDate] = useState("");
@@ -65,35 +53,6 @@ export default function ConfiguracoesPage() {
           const row = collections.find((item) => item.data_key === key);
           revisions.current.set(key, Number(row?.revision) || 0);
         }
-        const remotePreferences = collections.find((item) => item.data_key === PREFERENCES_KEY);
-        const remoteProfile = collections.find((item) => item.data_key === PROFILE_KEY);
-        const nextPreferences = remotePreferences?.payload;
-        if (nextPreferences && typeof nextPreferences === "object" && !Array.isArray(nextPreferences)) {
-          const data = nextPreferences as Record<string, unknown>;
-          setPreferences({
-            weekStartsOn: data.weekStartsOn === "sunday" ? "sunday" : "monday",
-            navigationFavorites: Array.isArray(data.navigationFavorites)
-              ? data.navigationFavorites.filter((item): item is string => typeof item === "string")
-              : [],
-            sidebarCollapsed: data.sidebarCollapsed === true,
-          });
-        } else {
-          setPreferences({ weekStartsOn: "monday" });
-        }
-        const nextProfile = remoteProfile?.payload;
-        if (nextProfile && typeof nextProfile === "object" && !Array.isArray(nextProfile)) {
-          const data = nextProfile as Record<string, unknown>;
-          setProfile({
-            displayName: typeof data.displayName === "string" ? data.displayName : "",
-            fullName: typeof data.fullName === "string" ? data.fullName : undefined,
-            sex: typeof data.sex === "string" ? data.sex : undefined,
-            monthlyIncome: typeof data.monthlyIncome === "string" ? data.monthlyIncome : undefined,
-            birthDate: typeof data.birthDate === "string" ? data.birthDate : undefined,
-            profession: typeof data.profession === "string" ? data.profession : undefined
-          });
-        } else {
-          setProfile({ displayName: "" });
-        }
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : "Não foi possível carregar as configurações da nuvem.");
       } finally {
@@ -112,54 +71,6 @@ export default function ConfiguracoesPage() {
     ],
     []
   );
-
-  async function persistSetting(key: NexoSyncKey, payload: unknown) {
-    if (!session) throw new Error("Entre na sua conta para salvar suas configurações.");
-    const revision = revisions.current.get(key) ?? 0;
-    const result = await saveRemoteCollection(key, payload, revision);
-    if (!result.saved) {
-      const latest = await fetchRemoteCollections();
-      const row = latest.find((item) => item.data_key === key);
-      revisions.current.set(key, Number(row?.revision) || 0);
-      throw new Error("Esta configuração foi alterada em outro dispositivo. Atualize a página e tente novamente.");
-    }
-    revisions.current.set(key, result.current_revision ?? revision + 1);
-  }
-
-  async function savePreferences(next: Preferences) {
-    setSaving(true);
-    setMessage("");
-    setError("");
-    try {
-      const merged = { ...preferences, ...next };
-      await persistSetting(PREFERENCES_KEY, merged);
-      setPreferences(merged);
-      window.dispatchEvent(new CustomEvent("nexo:preferences-updated", { detail: { sidebarCollapsed: merged.sidebarCollapsed === true } }));
-      setMessage("Preferências salvas no Supabase.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível salvar as preferências.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setMessage("");
-    setError("");
-    try {
-      const next = { ...profile, displayName: profile.displayName.trim() };
-      await persistSetting(PROFILE_KEY, next);
-      setProfile(next);
-      window.dispatchEvent(new Event("nexo:profile-updated"));
-      setMessage("Personalização salva no Supabase.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível salvar a personalização.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function saveNewPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
