@@ -32,3 +32,56 @@ html[data-theme="light"] #nexo-app :is(h1,h2,h3,strong,.nexo-header-left strong,
 html[data-theme="light"] #nexo-app :is(p,small,label,.eyebrow,.nexo-header-greeting,.daily-date) { color: #596273 !important; }
 html[data-theme="light"] #nexo-app :is(input,select,textarea) { color: #20242b !important; background: #fff !important; border-color: #cbd2dc !important; color-scheme: light; }
 html[data-theme="light"] #nexo-app .settings-tabs button.active { background: var(--nexo-accent-color) !important; color: #15191f !important; }
+
+
+/* Componentes da central de configurações e perfil */
+#nexo-app .settings-controls-stack { display:flex; flex-direction:column; gap:14px; }
+#nexo-app .settings-subsection { padding:16px; border:1px solid #303036; border-radius:10px; background:rgba(255,255,255,.015); }
+#nexo-app .settings-subsection-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+#nexo-app .settings-subsection-heading h3 { margin:0 0 4px; color:#e6e8ec; font-size:13px; }
+#nexo-app .settings-subsection-heading p { margin:0; color:#8e949e; font-size:11px; line-height:1.5; }
+#nexo-app .settings-reset-button { min-height:30px; padding:0 9px; border:1px solid #41434a; border-radius:7px; background:transparent; color:#aeb4be; font-size:10px; cursor:pointer; }
+#nexo-app .settings-reset-button:hover { border-color:#8b929d; color:#f2f3f5; }
+#nexo-app .settings-save-status { margin:0; color:#9ba4b0; font-size:11px; }
+#nexo-app .settings-save-error { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:11px; border:1px solid #704444; border-radius:8px; color:#efb1b1; background:#281c1c; font-size:11px; }
+#nexo-app .settings-save-error button { min-height:30px; padding:0 10px; border:1px solid #8c5c5c; border-radius:6px; background:transparent; color:#f4cccc; cursor:pointer; }
+#nexo-app .settings-accent-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:8px; }
+#nexo-app .settings-accent { display:flex; align-items:center; gap:8px; min-height:38px; padding:6px 9px; border:1px solid #373940; border-radius:7px; background:#17181b; color:#c2c7d0; font-size:11px; cursor:pointer; }
+#nexo-app .settings-accent i { width:12px; height:12px; border-radius:50%; background:#c5cbd4; }
+#nexo-app .settings-accent[data-accent="blue"] i { background:#78a9e8; }
+#nexo-app .settings-accent[data-accent="violet"] i { background:#a995e8; }
+#nexo-app .settings-accent[data-accent="emerald"] i { background:#78c4a2; }
+#nexo-app .settings-accent[data-accent="amber"] i { background:#d8b16c; }
+#nexo-app .settings-accent[data-accent="rose"] i { background:#d994a6; }
+#nexo-app .settings-accent.active { border-color:var(--nexo-accent-color); box-shadow:0 0 0 1px var(--nexo-accent-color); }
+#nexo-app .settings-preview-live { display:flex; flex-direction:column; align-items:flex-start; gap:7px; padding:17px; border:1px solid var(--nexo-accent-color); border-radius:10px; background:var(--surface,#19191c); }
+#nexo-app .settings-preview-live strong { color:var(--text-primary,#eee); font-size:15px; }
+#nexo-app .settings-preview-live p { margin:0; color:var(--text-secondary,#999); font-size:11px; }
+#nexo-app .settings-preview-live button { min-height:32px; padding:0 12px; border:1px solid var(--nexo-accent-color); border-radius:7px; background:var(--nexo-accent-color); color:#111318; font-size:11px; font-weight:700; }
+#nexo-app .settings-profile-link { display:flex; flex-direction:column; gap:6px; padding:15px; margin-top:18px; border:1px solid #34353b; border-radius:9px; background:rgba(255,255,255,.02); }
+#nexo-app .settings-profile-link strong { color:#e6e8ec; font-size:12px; }
+#nexo-app .settings-profile-link span { color:#969ca6; font-size:11px; }
+#nexo-app .settings-profile-link a { color:var(--nexo-accent-color); font-size:11px; text-decoration:underline; }
+#nexo-app .profile-editor { display:flex; align-items:center; gap:16px; margin:18px 0; }
+#nexo-app .profile-avatar-preview { width:84px; height:84px; flex:0 0 84px; display:grid; place-items:center; overflow:hidden; border:1px solid #444; border-radius:50%; background:#27282d; color:#e5e7eb; font-size:28px; font-weight:700; }
+#nexo-app .profile-avatar-preview img { width:100%; height:100%; object-fit:cover; }
+#nexo-app .profile-editor small { display:block; max-width:340px; margin-top:8px; color:#9298a2; font-size:11px; line-height:1.5; }
+#nexo-app .profile-form-grid,#nexo-app .profile-data-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px; margin:12px 0 18px; }
+#nexo-app .profile-wide { grid-column:1/-1; max-width:none; }
+#nexo-app .profile-wide textarea { width:100%; padding:10px; border:1px solid #393939; border-radius:7px; background:#222; color:#eee; resize:vertical; }
+#nexo-app .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+#nexo-app .danger-zone { border-color:#704444; }
+#nexo-app .danger-zone h2 { color:#e7aaaa; }
+html[data-theme="light"] #nexo-app .settings-subsection,
+html[data-theme="light"] #nexo-app .settings-preview-live,
+html[data-theme="light"] #nexo-app .settings-profile-link { background:#f7f8fa !important; border-color:#d7dce3 !important; }
+html[data-theme="light"] #nexo-app .settings-subsection-heading h3,
+html[data-theme="light"] #nexo-app .settings-profile-link strong { color:#20242b !important; }
+html[data-theme="light"] #nexo-app .settings-accent { background:#fff; color:#20242b; border-color:#d7dce3; }
+@media(max-width:650px) {
+  #nexo-app .profile-form-grid,#nexo-app .profile-data-grid { grid-template-columns:1fr; }
+  #nexo-app .profile-wide { grid-column:auto; }
+  #nexo-app .profile-editor { align-items:flex-start; }
+  #nexo-app .settings-accent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #nexo-app .settings-subsection-heading { flex-direction:column; }
+}
