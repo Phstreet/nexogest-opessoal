@@ -25,6 +25,17 @@ function countRecords(collections: RemoteCollection[], key: string) {
   return Array.isArray(payload) ? payload.length : 0;
 }
 
+function countTransactionsByType(collections: RemoteCollection[], type: "Receita" | "Despesa") {
+  const payload = collections.find((item) => item.data_key === "nexo_transactions")?.payload;
+  if (!Array.isArray(payload)) return 0;
+  return payload.filter((item) =>
+    Boolean(item) &&
+    typeof item === "object" &&
+    !Array.isArray(item) &&
+    (item as Record<string, unknown>).type === type
+  ).length;
+}
+
 export default function PerfilDadosPage() {
   const { session } = useNexoAuth();
   const confirm = useNexoConfirm();
@@ -66,6 +77,8 @@ export default function PerfilDadosPage() {
 
   const counts = useMemo(() => ({
     transactions: countRecords(collections, "nexo_transactions"),
+    payables: countTransactionsByType(collections, "Despesa"),
+    receivables: countTransactionsByType(collections, "Receita"),
     commitments: countRecords(collections, "nexo_tasks"),
     habits: countRecords(collections, "nexo_habits"),
     goals: countRecords(collections, "nexo_personal_goals") + countRecords(collections, "nexo_planning_goals"),
@@ -199,11 +212,18 @@ export default function PerfilDadosPage() {
           <h2>Resumo dos seus dados</h2>
           <div className="profile-data-grid">
             <div className="backup-note"><strong>Lançamentos</strong><span>{counts.transactions}</span></div>
+            <div className="backup-note"><strong>Contas a pagar</strong><span>{counts.payables}</span></div>
+            <div className="backup-note"><strong>Contas a receber</strong><span>{counts.receivables}</span></div>
             <div className="backup-note"><strong>Compromissos</strong><span>{counts.commitments}</span></div>
             <div className="backup-note"><strong>Hábitos</strong><span>{counts.habits}</span></div>
             <div className="backup-note"><strong>Metas</strong><span>{counts.goals}</span></div>
             <div className="backup-note"><strong>Tamanho estimado</strong><span>{(estimatedBytes / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} KB</span></div>
           </div>
+        </section>
+
+        <section className="settings-panel">
+          <h2>Importar planilhas</h2>
+          <p>Importação CSV/XLSX com mapeamento de colunas, prévia e detecção de duplicados: Em breve. A importação de planilhas ainda não possui um parser e um fluxo de validação/mapeamento integrado ao modelo de lançamentos.</p>
         </section>
 
         <section className="settings-panel">
