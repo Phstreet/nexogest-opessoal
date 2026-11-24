@@ -16,6 +16,7 @@ const routes = [
   "/recuperar-senha",
   "/redefinir-senha",
   "/configuracoes",
+  "/metas",
   "/configuracoes/conta",
   "/perfil",
   "/financeiro",
@@ -84,10 +85,18 @@ test.describe("CSP Report-Only — rotas do NEXO", () => {
         });
       });
 
+      const cspConsoleMessages: string[] = [];
+      page.on("console", (message) => {
+        if (/content security policy|violates the following/i.test(message.text())) {
+          cspConsoleMessages.push(message.text());
+        }
+      });
+
       const response = await page.goto(route);
       expect(response, `A rota ${route} não respondeu`).not.toBeNull();
       expect(response!.status(), `Status inesperado em ${route}`).toBeLessThan(400);
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
+      await page.waitForTimeout(300);
 
       const violations = await page.evaluate(() => {
         return (window as Window & {
@@ -99,6 +108,7 @@ test.describe("CSP Report-Only — rotas do NEXO", () => {
         }).__nexoCspViolations ?? [];
       });
       expect(violations, `Violações CSP em ${route}`).toEqual([]);
+      expect(cspConsoleMessages, `Avisos CSP no console em ${route}`).toEqual([]);
     });
   }
 });
