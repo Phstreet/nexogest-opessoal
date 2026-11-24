@@ -38,6 +38,9 @@ npm run test
 npm run test:e2e
 npm run build
 npm start
+
+# E2E do service worker em build de produção
+NEXO_PWA_E2E_PRODUCTION=true npm run test:pwa
 ```
 
 O comando `npm install` é necessário após atualizar o projeto para sincronizar o lockfile e instalar Sharp. Em seguida, use `npm ci` em CI somente quando `package.json` e `package-lock.json` estiverem sincronizados.
