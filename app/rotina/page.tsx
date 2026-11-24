@@ -1,6 +1,6 @@
-import { progressWidthClass } from "@/lib/ui/progress-class";
-
 "use client";
+
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
@@ -746,11 +746,9 @@ export default function RoutineDashboard() {
                   cy="80"
                   r="66"
                   className="progress-circle-value"
-                  style={{
-                    strokeDasharray: `${
+                  strokeDasharray={`
                       (progress / 100) * 414.69
-                    } 414.69`,
-                  }}
+                     414.69`}
                 />
               </svg>
 
