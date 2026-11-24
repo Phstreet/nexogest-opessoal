@@ -1,6 +1,7 @@
 "use client";
 
 import { progressWidthClass, progressHeightClass, progressRingClass } from "@/lib/ui/progress-class";
+
 import { useMemo } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineHabit as isValidHabit, isValidRoutineTask as isValidTask } from "@/lib/routine/types";
@@ -408,9 +409,7 @@ export default function ProdutividadePage() {
                       <span>{category.name}</span>
                       <div className="category-track">
                         <div
-                          className="category-fill"
-                          style={{
-                            width: `${
+                          className={progressWidthClass(
                               (category.total /
                                 Math.max(
                                   ...categorySummary.map(
@@ -418,8 +417,7 @@ export default function ProdutividadePage() {
                                   )
                                 )) *
                               100
-                            }%`,
-                          }}
+                            , "category-fill")}
                         />
                       </div>
                       <strong>{category.total}</strong>
