@@ -505,3 +505,35 @@ test.describe("NEXO - Personalização visual", () => {
     expect(cloud.get("nexo_preferences")).toBeUndefined();
   });
 });
+
+
+test.describe("NEXO - Privacidade financeira", () => {
+  test("oculta valores monetários em telas financeiras e permite restaurar a visualização", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    cloud.set("nexo_accounts", {
+      data_key: "nexo_accounts",
+      payload: [{
+        id: 1,
+        name: "Conta de privacidade",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1500,
+        createdAt: new Date().toISOString(),
+        active: true,
+        isPrimary: true,
+      }],
+      revision: 1,
+      updated_at: new Date().toISOString(),
+    });
+
+    await page.goto("/financeiro/contas");
+    await expect(page.getByText("Conta de privacidade")).toBeVisible();
+    await page.getByRole("button", { name: "Ocultar valores financeiros" }).click();
+    await expect.poll(() => page.locator('#nexo-app [data-sensitive="auto"]').count()).toBeGreaterThan(0);
+    await expect.poll(() => page.locator("html").getAttribute("data-privacy-mode")).toBe("true");
+
+    await page.getByRole("button", { name: "Mostrar valores financeiros" }).click();
+    await expect(page.locator('#nexo-app [data-sensitive="auto"]')).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute("data-privacy-mode", "false");
+  });
+});
