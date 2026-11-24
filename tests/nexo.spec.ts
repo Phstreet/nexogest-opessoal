@@ -86,13 +86,18 @@ test.describe("NEXO - Navegação e carregamento autenticado", () => {
     test(`deve carregar ${route} sem erro de execução`, async ({ page }) => {
       await mockAuthenticatedCloud(page);
       const pageErrors: string[] = [];
+      const consoleErrors: string[] = [];
       page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
 
       const response = await page.goto(route);
       expect(response, `A rota ${route} não retornou uma resposta`).not.toBeNull();
       expect(response!.status()).toBeLessThan(400);
       await expect(page.locator("h1, h2").first()).toBeVisible();
       expect(pageErrors).toEqual([]);
+      expect(consoleErrors).toEqual([]);
     });
   }
 });
@@ -442,4 +447,12 @@ test.describe("NEXO - Isolamento entre sessões", () => {
     releaseFirstResponse();
     await expect(page.getByText("Hábito da conta antiga")).toHaveCount(0);
   });
+});
+
+
+test("deve exibir a página 404 para uma rota inexistente", async ({ page }) => {
+  await mockAuthenticatedCloud(page);
+  const response = await page.goto("/rota-inexistente-para-teste");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
 });
