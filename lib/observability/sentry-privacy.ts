@@ -2,6 +2,8 @@ type SentryEventLike = {
   user?: unknown;
   request?: Record<string, unknown>;
   message?: string;
+  transaction?: string;
+  culprit?: string;
   logentry?: { message?: string; params?: unknown[] };
   exception?: { values?: Array<{ type?: string; value?: string; stacktrace?: unknown }> };
   breadcrumbs?: Array<{ timestamp?: number; category?: string; type?: string; level?: string; [key: string]: unknown }>;
@@ -25,14 +27,11 @@ export function scrubSentryEvent<T>(event: T): T {
   delete clean.extra;
   delete clean.contexts;
   delete clean.fingerprint;
+  delete clean.transaction;
+  delete clean.culprit;
 
   clean.request = clean.request
-    ? {
-        method: clean.request.method,
-        url: typeof clean.request.url === "string"
-          ? clean.request.url.split("?")[0]
-          : undefined,
-      }
+    ? { method: clean.request.method }
     : undefined;
 
   clean.message = clean.message ? "[mensagem removida por privacidade]" : undefined;
