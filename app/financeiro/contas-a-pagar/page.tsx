@@ -7,6 +7,8 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
 import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
+import { addMoney, subtractMoney, sumMoney } from "@/lib/finance/money";
+import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 
 type Transaction = {
   id: number;
@@ -53,12 +55,7 @@ function formatDate(value?: string) {
 }
 
 function getToday() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return getSaoPauloDateKey();
 }
 
 function parseCurrencyInput(value: string): number {
@@ -78,7 +75,7 @@ function getSettledAmount(transaction: Transaction) {
   if (transaction.settledAmount !== undefined) return Math.min(amount, Math.max(0, Number(transaction.settledAmount) || 0));
   return isPaid(transaction.status) ? amount : 0;
 }
-function getOpenAmount(transaction: Transaction) { return Math.max(0, Number(transaction.amount || 0) - getSettledAmount(transaction)); }
+function getOpenAmount(transaction: Transaction) { return Math.max(0, subtractMoney(Number(transaction.amount || 0), getSettledAmount(transaction))); }
 function isPartiallyPaid(transaction: Transaction) { return getSettledAmount(transaction) > 0 && getOpenAmount(transaction) > 0; }
 
 function isCancelled(status?: string) {
@@ -138,14 +135,14 @@ export default function ContasAPagarPage() {
   const totalOpen = useMemo(
     () =>
       activeExpenses
-        .reduce((total, item) => total + getOpenAmount(item), 0),
+        .reduce((total, item) => addMoney(total, getOpenAmount(item)), 0),
     [activeExpenses]
   );
 
   const totalPaid = useMemo(
     () =>
       activeExpenses
-        .reduce((total, item) => total + getSettledAmount(item), 0),
+        .reduce((total, item) => addMoney(total, getSettledAmount(item)), 0),
     [activeExpenses]
   );
 
@@ -161,7 +158,7 @@ export default function ContasAPagarPage() {
     () =>
       expenses
         .filter((item) => isCancelled(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+        .reduce((total, item) => addMoney(total, Number(item.amount || 0)), 0),
     [expenses]
   );
 
@@ -538,7 +535,7 @@ export default function ContasAPagarPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredExpenses.reduce((total, item) => total + getOpenAmount(item), 0)
+                sumMoney(filteredExpenses.map(getOpenAmount))
               )}
             </strong>
           </span>
