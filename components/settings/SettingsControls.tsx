@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 import { useSettings } from "@/contexts/SettingsProvider";
-import type { SettingsSection, UserSettings } from "@/lib/settings/schema";
+import { DEFAULT_USER_SETTINGS, type SettingsSection, type UserSettings } from "@/lib/settings/schema";
 
 const pageOptions: Array<{ value: UserSettings["general"]["homePage"]; label: string }> = [
   { value: "/", label: "Central do Dia" },
@@ -94,23 +95,169 @@ const accents: Array<{ value: UserSettings["appearance"]["accent"]; label: strin
 ];
 
 export function AppearanceControls() {
-  const { settings, updateSettings, loaded } = useSettings();
+  const confirm = useNexoConfirm();
+  const {
+    settings,
+    loaded,
+    saveState,
+    error,
+    retrySave,
+    previewAppearance,
+    saveAppearance,
+    discardAppearance,
+  } = useSettings();
+  const [draft, setDraft] = useState<UserSettings["appearance"]>(settings.appearance);
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(settings.appearance);
+
+  useEffect(() => {
+    if (loaded && !hasChanges) setDraft(settings.appearance);
+  }, [settings.appearance, loaded, hasChanges]);
+
+  useEffect(() => () => discardAppearance(), [discardAppearance]);
+
+  function updateDraft(patch: Partial<UserSettings["appearance"]>) {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    previewAppearance(next);
+  }
+
+  function discardDraft() {
+    setDraft(settings.appearance);
+    discardAppearance();
+  }
+
+  async function restoreDefaults() {
+    const accepted = await confirm({
+      title: "Restaurar aparência padrão",
+      message: "O tema Grafite, o destaque Prata, a densidade confortável, a fonte padrão e os cantos médios serão restaurados. Essa alteração ainda precisará ser salva.",
+      confirmLabel: "Restaurar prévia",
+      destructive: true,
+    });
+    if (accepted) {
+      const next = DEFAULT_USER_SETTINGS.appearance;
+      setDraft(next);
+      previewAppearance(next);
+    }
+  }
+
+  const saveLabel = saveState === "saving" || saveState === "loading"
+    ? "Salvando…"
+    : saveState === "error"
+      ? "Erro ao salvar"
+      : saveState === "offline"
+        ? "Offline — aguardando conexão"
+        : "Salvo na sua conta";
+
   return (
     <div className="settings-controls-stack">
       <section className="settings-subsection">
-        <div className="settings-subsection-heading"><div><h3>Identidade visual</h3><p>As alterações são aplicadas imediatamente nesta sessão.</p></div><RestoreButton section="appearance" /></div>
-        <label className="settings-field"><span>Tema</span><select value={settings.appearance.theme} disabled={!loaded} onChange={(event) => updateSettings({ appearance: { theme: event.target.value as UserSettings["appearance"]["theme"] } })}><option value="dark">Escuro</option><option value="light">Claro</option><option value="system">Automático (sistema)</option></select></label>
-        <div className="settings-field"><span>Cor de destaque</span><div className="settings-accent-grid">{accents.map((accent) => <button key={accent.value} type="button" className={"settings-accent " + (settings.appearance.accent === accent.value ? "active" : "")} data-accent={accent.value} aria-pressed={settings.appearance.accent === accent.value} disabled={!loaded} onClick={() => updateSettings({ appearance: { accent: accent.value } })}><i aria-hidden="true" />{accent.label}</button>)}</div></div>
-        <label className="settings-field"><span>Densidade</span><select value={settings.appearance.density} disabled={!loaded} onChange={(event) => updateSettings({ appearance: { density: event.target.value as UserSettings["appearance"]["density"] } })}><option value="comfortable">Confortável</option><option value="compact">Compacta</option></select></label>
-        <label className="settings-field"><span>Tamanho da fonte</span><select value={settings.appearance.fontScale} disabled={!loaded} onChange={(event) => updateSettings({ appearance: { fontScale: event.target.value as UserSettings["appearance"]["fontScale"] } })}><option value="small">Pequena</option><option value="normal">Padrão</option><option value="large">Grande</option></select></label>
-        <div className="settings-toggle"><span><strong>Reduzir animações</strong><small>Respeita também a preferência de movimento reduzido do sistema.</small></span><input aria-label="Reduzir animações" type="checkbox" disabled={!loaded} checked={settings.appearance.reduceMotion} onChange={(event) => updateSettings({ appearance: { reduceMotion: event.target.checked } })} /></div>
-        <div className="settings-toggle"><span><strong>Alto contraste</strong><small>Reforça bordas e contraste de textos.</small></span><input aria-label="Alto contraste" type="checkbox" disabled={!loaded} checked={settings.appearance.highContrast} onChange={(event) => updateSettings({ appearance: { highContrast: event.target.checked } })} /></div>
+        <div className="settings-subsection-heading">
+          <div>
+            <h3>Identidade visual</h3>
+            <p>Experimente as alterações em todo o aplicativo. Nada é gravado até você salvar.</p>
+          </div>
+          <button className="settings-reset-button" type="button" disabled={!loaded} onClick={() => void restoreDefaults()}>
+            Restaurar padrão
+          </button>
+        </div>
+
+        <label className="settings-field">
+          <span>Tema</span>
+          <select aria-label="Tema do NEXO" value={draft.theme} disabled={!loaded} onChange={(event) => updateDraft({ theme: event.target.value as UserSettings["appearance"]["theme"] })}>
+            <option value="graphite">Grafite — padrão NEXO</option>
+            <option value="light">Claro</option>
+            <option value="system">Automático (sistema)</option>
+            <option value="midnight">Meia-noite</option>
+            <option value="warm">Grafite quente</option>
+          </select>
+        </label>
+
+        <div className="settings-field">
+          <span>Cor de destaque</span>
+          <div className="settings-accent-grid">
+            {accents.map((accent) => (
+              <button
+                key={accent.value}
+                type="button"
+                className={"settings-accent " + (draft.accent === accent.value ? "active" : "")}
+                data-accent={accent.value}
+                aria-label={"Cor de destaque " + accent.label}
+                aria-pressed={draft.accent === accent.value}
+                disabled={!loaded}
+                onClick={() => updateDraft({ accent: accent.value })}
+              >
+                <i aria-hidden="true" />{accent.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="settings-field">
+          <span>Densidade</span>
+          <select aria-label="Densidade da interface" value={draft.density} disabled={!loaded} onChange={(event) => updateDraft({ density: event.target.value as UserSettings["appearance"]["density"] })}>
+            <option value="comfortable">Confortável</option>
+            <option value="compact">Compacta</option>
+          </select>
+        </label>
+
+        <label className="settings-field">
+          <span>Tamanho da fonte</span>
+          <select aria-label="Tamanho da fonte" value={draft.fontScale} disabled={!loaded} onChange={(event) => updateDraft({ fontScale: event.target.value as UserSettings["appearance"]["fontScale"] })}>
+            <option value="small">Pequena</option>
+            <option value="normal">Padrão</option>
+            <option value="large">Grande</option>
+          </select>
+        </label>
+
+        <label className="settings-field">
+          <span>Raio dos cantos</span>
+          <select aria-label="Raio dos cantos" value={draft.cornerRadius} disabled={!loaded} onChange={(event) => updateDraft({ cornerRadius: event.target.value as UserSettings["appearance"]["cornerRadius"] })}>
+            <option value="sharp">Reto</option>
+            <option value="medium">Médio</option>
+            <option value="rounded">Arredondado</option>
+          </select>
+        </label>
+
+        <div className="settings-toggle">
+          <span><strong>Reduzir animações</strong><small>Respeita também a preferência de movimento reduzido do sistema.</small></span>
+          <input aria-label="Reduzir animações" type="checkbox" disabled={!loaded} checked={draft.reduceMotion} onChange={(event) => updateDraft({ reduceMotion: event.target.checked })} />
+        </div>
+        <div className="settings-toggle">
+          <span><strong>Alto contraste</strong><small>Reforça bordas e contraste de textos.</small></span>
+          <input aria-label="Alto contraste" type="checkbox" disabled={!loaded} checked={draft.highContrast} onChange={(event) => updateDraft({ highContrast: event.target.checked })} />
+        </div>
       </section>
+
       <section className="settings-preview-live" aria-live="polite">
-        <span className="eyebrow">PRÉ-VISUALIZAÇÃO AO VIVO</span><strong>NEXO — Gestão Pessoal</strong><p>Seu espaço de organização, com a aparência selecionada.</p><button type="button">Ação de destaque</button>
+        <span className="eyebrow">PRÉ-VISUALIZAÇÃO AO VIVO</span>
+        <strong>NEXO — Gestão Pessoal</strong>
+        <p>Grafite, Claro e os temas escuros alternativos são aplicados à interface inteira.</p>
+        <div className="settings-preview-metrics">
+          <span><small>Saldo de exemplo</small><strong>R$ 8.450,00</strong></span>
+          <span><small>Prioridades</small><strong>03 pendentes</strong></span>
+        </div>
+        <button type="button" tabIndex={-1} aria-hidden="true">Ação de destaque</button>
       </section>
-      <p className="settings-note">Ativar, ocultar e reordenar os blocos da Central do Dia: Em breve. A tela inicial ainda precisa ser reorganizada em componentes configuráveis antes de oferecer essa personalização.</p>
-      <SaveStatus />
+
+      {hasChanges && (
+        <p className="settings-unsaved" role="status">Você tem alterações de aparência não salvas. A prévia está ativa apenas nesta sessão.</p>
+      )}
+
+      <div className="settings-appearance-actions">
+        <button className="settings-reset-button" type="button" disabled={!hasChanges} onClick={discardDraft}>Descartar</button>
+        <button className="primary-button" type="button" disabled={!loaded || !hasChanges || saveState === "saving"} onClick={() => saveAppearance(draft)}>
+          {saveState === "saving" ? "Salvando…" : "Salvar personalização"}
+        </button>
+      </div>
+
+      {saveState === "error" ? (
+        <div className="settings-save-error" role="alert">
+          <span>{error || "Não foi possível salvar a aparência."}</span>
+          <button type="button" onClick={retrySave}>Tentar novamente</button>
+        </div>
+      ) : (
+        <p className="settings-save-status" role="status">{hasChanges ? "Alterações não salvas" : saveLabel}</p>
+      )}
     </div>
   );
 }
