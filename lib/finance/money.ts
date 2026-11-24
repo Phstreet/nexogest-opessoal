@@ -19,3 +19,9 @@ export function addMoney(left: number, right: number): number {
 export function subtractMoney(left: number, right: number): number {
   return fromCents(toCents(left) - toCents(right));
 }
+
+export function averageMoney(values: readonly number[]): number {
+  if (!values.length) return 0;
+  const totalCents = values.reduce((total, value) => total + toCents(value), 0);
+  return fromCents(Math.round(totalCents / values.length));
+}
