@@ -17,15 +17,6 @@ async function authorized(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    if (dataKey === "nexo_preferences" && payload && typeof payload === "object" && !Array.isArray(payload)) {
-      const settingsPayload = (payload as Record<string, unknown>).settingsV1;
-      if (settingsPayload !== undefined && !userSettingsSchema.safeParse(settingsPayload).success) {
-        return NextResponse.json({ error: "As preferências possuem campos inválidos ou versão incompatível." }, { status: 400 });
-      }
-    }
-    if (dataKey === "nexo_profile" && !userProfileSchema.safeParse(payload).success) {
-      return NextResponse.json({ error: "Os dados do perfil são inválidos." }, { status: 400 });
-    }
     const { access, response } = await authorized(request);
     if (!access) return copyResponseCookies(response, NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers }));
 
@@ -84,6 +75,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A coleção contém registros inválidos ou incompatíveis. Nenhum dado foi gravado." }, { status: 400 });
     }
 
+    if (dataKey === "nexo_preferences" && payload && typeof payload === "object" && !Array.isArray(payload)) {
+      const settingsPayload = (payload as Record<string, unknown>).settingsV1;
+      if (settingsPayload !== undefined && !userSettingsSchema.safeParse(settingsPayload).success) {
+        return NextResponse.json({ error: "As preferências possuem campos inválidos ou versão incompatível." }, { status: 400 });
+      }
+    }
+    if (dataKey === "nexo_profile" && !userProfileSchema.safeParse(payload).success) {
+      return NextResponse.json({ error: "Os dados do perfil são inválidos." }, { status: 400 });
+    }
     const { access, response } = await authorized(request);
     if (!access) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers });
     const { url, key } = getSupabaseConfig();
