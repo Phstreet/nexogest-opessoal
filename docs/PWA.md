@@ -115,6 +115,16 @@ O proxy continua emitindo CSP Report-Only com nonce e mantém os domínios Supab
 
 Antes de promover a CSP de Report-Only para bloqueio, analisar os relatórios em todas as rotas e validar o app instalado.
 
+## Lighthouse e critérios de instalação
+
+O Lighthouse 12 removeu a categoria PWA e suas auditorias. Portanto, não use `--only-categories=pwa` nas versões atuais. Use Lighthouse para desempenho, acessibilidade, boas práticas e SEO, e valide manifesto, worker, instalação e modo offline com os testes Playwright do projeto e a interface de instalação do Chrome.
+
+```bash
+npx lighthouse https://URL-DO-PREVIEW --only-categories=performance,accessibility,best-practices,seo --view
+```
+
+A pontuação Lighthouse não certifica a instalação. A aprovação final depende do manifesto e ícones servidos, worker controlando a página em produção, HTTPS e instalação confirmada no navegador/dispositivo.
+
 ## Publicação e rollback
 
 1. Abrir PR da branch PWA para a branch-base correta da cadeia atual.
