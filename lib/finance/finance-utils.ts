@@ -2,6 +2,7 @@ import type { MovementType, Transaction } from "@/lib/finance/types";
 import { subcategories } from "@/lib/finance/categories";
 import { getSettledTransactionAmount, isCancelledTransaction } from "@/lib/finance/accounts";
 import { addMoney, sumMoney } from "@/lib/finance/money";
+import { getSaoPauloDateKey } from "@/lib/date/sao-paulo";
 
 export type FormMovementType = Extract<MovementType, "Receita" | "Despesa" | "Transferência" | "Investimento">;
 
@@ -25,11 +26,7 @@ export function parseAmount(value: string) {
 }
 
 export function localDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return getSaoPauloDateKey();
 }
 
 export function isValidDate(value: string) {
