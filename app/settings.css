@@ -279,3 +279,17 @@ html[data-font-scale="normal"] #nexo-app { font-size:14px; }
 html[data-font-scale="large"] #nexo-app { font-size:16px; }
 html[data-high-contrast="true"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.settings-panel,.form-card,.routine-panel,.settings-subsection) { border-width:2px; border-color:var(--nexo-text-secondary); }
 html[data-theme] #nexo-app :is(button,a,input,select,textarea):focus-visible { outline-color:var(--nexo-accent-text); }
+
+#nexo-app .settings-appearance-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap; }
+#nexo-app .settings-unsaved { margin:0; padding:10px 12px; color:var(--nexo-warning); background:color-mix(in srgb,var(--nexo-warning) 9%,transparent); border:1px solid color-mix(in srgb,var(--nexo-warning) 35%,transparent); border-radius:var(--nexo-radius); font-size:11px; }
+#nexo-app .settings-preview-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin:12px 0; }
+#nexo-app .settings-preview-metrics span { display:flex; flex-direction:column; gap:5px; padding:12px; background:var(--nexo-surface-elevated); border:1px solid var(--nexo-border); border-radius:var(--nexo-radius); }
+#nexo-app .settings-preview-metrics small { color:var(--nexo-text-secondary); font-size:10px; }
+#nexo-app .settings-preview-metrics strong { color:var(--nexo-text-primary); font-size:15px; }
+#nexo-app .settings-accent { border:1px solid var(--nexo-border); border-radius:var(--nexo-radius); color:var(--nexo-text-primary); background:var(--nexo-surface-elevated); }
+#nexo-app .settings-accent.active { border-color:var(--nexo-accent-color); box-shadow:0 0 0 2px color-mix(in srgb,var(--nexo-accent-color) 28%,transparent); }
+#nexo-app .settings-accent i { display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:middle; margin-right:6px; background:var(--nexo-accent-color); }
+@media(max-width:600px) {
+  #nexo-app .settings-appearance-actions { display:grid; grid-template-columns:1fr 1fr; }
+  #nexo-app .settings-appearance-actions button { width:100%; }
+}
