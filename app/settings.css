@@ -127,3 +127,11 @@ html[data-accent] #nexo-app :is(.primary-button,.routine-primary-button,.profile
 }
 html[data-font-scale="small"] #nexo-app :is(p,small,button,input,select,textarea,label) { font-size:calc(1em * .94); }
 html[data-font-scale="large"] #nexo-app :is(p,small,button,input,select,textarea,label) { font-size:calc(1em * 1.06); }
+
+
+html[data-accent="silver"] { --nexo-accent-color:#c5cbd4; }
+html[data-accent="blue"] { --nexo-accent-color:#78a9e8; }
+html[data-accent="violet"] { --nexo-accent-color:#a995e8; }
+html[data-accent="emerald"] { --nexo-accent-color:#78c4a2; }
+html[data-accent="amber"] { --nexo-accent-color:#d8b16c; }
+html[data-accent="rose"] { --nexo-accent-color:#d994a6; }
