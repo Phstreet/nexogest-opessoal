@@ -75,6 +75,10 @@ export function PreferencesControls() {
           </select>
         </label>
       </section>
+      <section className="settings-subsection">
+        <div className="settings-subsection-heading"><div><h3>Rotina e notificações</h3><p>Preferências de lembrete, horário da agenda, fins de semana e alertas.</p></div></div>
+        <p className="settings-note">Em breve. Os módulos de agenda, hábitos e notificações ainda não compartilham um serviço único de lembretes e regras de calendário. Nenhuma opção sem efeito é exibida como ativa.</p>
+      </section>
       <SaveStatus />
     </div>
   );
