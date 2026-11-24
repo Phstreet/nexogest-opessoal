@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
 
 export default function SidebarProfile() {
+  const { session } = useNexoAuth();
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
   useEffect(() => {
+    setName("");
+    setAvatar("");
+    if (!session) return;
     let active = true;
     async function load() {
       try {
@@ -28,7 +33,7 @@ export default function SidebarProfile() {
       active = false;
       window.removeEventListener("nexo:profile-updated", load);
     };
-  }, []);
+  }, [session]);
   if (!name && !avatar) return null;
   const initial = name.trim().charAt(0).toLocaleUpperCase("pt-BR") || "N";
   return (
