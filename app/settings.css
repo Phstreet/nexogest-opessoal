@@ -15,7 +15,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
   scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  html:not([data-reduce-motion="false"]) *, html:not([data-reduce-motion="false"]) *::before, html:not([data-reduce-motion="false"]) *::after {
+  html:not([data-reduce-motion="true"]) *, html:not([data-reduce-motion="true"]) *::before, html:not([data-reduce-motion="true"]) *::after {
     scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
   }
 }
@@ -293,3 +293,10 @@ html[data-theme] #nexo-app :is(button,a,input,select,textarea):focus-visible { o
   #nexo-app .settings-appearance-actions { display:grid; grid-template-columns:1fr 1fr; }
   #nexo-app .settings-appearance-actions button { width:100%; }
 }
+
+#nexo-app .settings-accent[data-accent="silver"] i { background:#c5cbd4; }
+#nexo-app .settings-accent[data-accent="blue"] i { background:#60a5fa; }
+#nexo-app .settings-accent[data-accent="violet"] i { background:#a78bfa; }
+#nexo-app .settings-accent[data-accent="emerald"] i { background:#34d399; }
+#nexo-app .settings-accent[data-accent="amber"] i { background:#fbbf24; }
+#nexo-app .settings-accent[data-accent="rose"] i { background:#fb7185; }
