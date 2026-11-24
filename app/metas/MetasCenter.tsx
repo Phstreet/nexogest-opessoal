@@ -1,3 +1,4 @@
+import { progressWidthClass } from "@/lib/ui/progress-class";
 "use client";
 
 import Link from "next/link";
@@ -554,7 +555,7 @@ export default function MetasCenter() {
                   {tracking === "steps" && <p className="objective-value">{(goal.steps || []).filter((step) => step.done).length} de {(goal.steps || []).length} etapas concluídas</p>}
                   {tracking === "frequency" && <p className="objective-value">{weekCount} de {goal.frequencyTarget || 3} vezes nesta semana</p>}
                   {tracking === "completion" && <p className="objective-value">Objetivo com acompanhamento por conclusão</p>}
-                  <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
+                  <div className="progress-track"><span className={progressWidthClass(progress)} /></div>
                   <div className="objective-meta"><span>{goal.deadline ? deadlineDays! < 0 && !reached ? `Atrasado há ${Math.abs(deadlineDays!)} dia(s)` : deadlineDays === 0 ? "Prazo hoje" : `Prazo: ${new Date(`${goal.deadline}T12:00:00`).toLocaleDateString("pt-BR")}` : "Sem prazo definido"}</span><span>Prioridade: {goal.priority || "Média"}</span></div>
 
                   {tracking === "numeric" && !reached && status !== "paused" && !goal.linkedReserveId && <div className="inline-actions"><input value={valueInputs[goal.id] || ""} onChange={(event) => setValueInputs((previous) => ({ ...previous, [goal.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") addNumericProgress(goal); }} inputMode="decimal" placeholder="Atualizar valor atual" aria-label={`Atualizar valor de ${goal.title}`} /><button type="button" onClick={() => addNumericProgress(goal)}>Atualizar</button></div>}
