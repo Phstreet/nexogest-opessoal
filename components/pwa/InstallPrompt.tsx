@@ -91,7 +91,7 @@ export default function InstallPrompt({ mode = "banner" }: InstallPromptProps) {
       }
       void registration;
     };
-  }, []);
+  }, [mode]);
 
   async function install() {
     if (!installEvent) return;
