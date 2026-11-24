@@ -461,7 +461,7 @@ export default function ContasAReceberPage() {
 
                       <td className="receivable-amount">
                         <span>{formatCurrency(Number(item.amount || 0))}</span>
-                        {isPartiallyReceived(item) && <small style={{ display: "block", color: "#a8c7b3", marginTop: 4 }}>Recebido: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
+                        {isPartiallyReceived(item) && <small className="partial-settlement-note">Recebido: {formatCurrency(getSettledAmount(item))} · Pendente: {formatCurrency(getOpenAmount(item))}</small>}
                       </td>
 
                       <td>
