@@ -1,6 +1,7 @@
 "use client";
 
 import { progressWidthClass, progressHeightClass } from "@/lib/ui/progress-class";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
