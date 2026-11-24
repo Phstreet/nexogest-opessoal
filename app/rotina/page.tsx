@@ -2,6 +2,7 @@
 
 import { progressWidthClass } from "@/lib/ui/progress-class";
 
+
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { useEffect, useState } from "react";
