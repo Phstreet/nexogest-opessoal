@@ -1,4 +1,3 @@
-import { progressWidthClass } from "@/lib/ui/progress-class";
 
 "use client";
 
@@ -694,8 +693,7 @@ export default function PlanejamentoFinanceiroPage() {
                                 100
                               )
                             : 0
-                        }%`,
-                      }}
+                        , "comparison-fill income-fill")}
                     />
                   </div>
 
@@ -718,9 +716,7 @@ export default function PlanejamentoFinanceiroPage() {
 
                   <div className="comparison-track">
                     <div
-                      className="comparison-fill expense-fill"
-                      style={{
-                        width: `${
+                      className={progressWidthClass(
                           monthlySummary.plannedExpenses > 0
                             ? Math.min(
                                 (monthlySummary.realizedExpenses /
@@ -729,8 +725,7 @@ export default function PlanejamentoFinanceiroPage() {
                                 100
                               )
                             : 0
-                        }%`,
-                      }}
+                        , "comparison-fill expense-fill")}
                     />
                   </div>
 
@@ -781,10 +776,7 @@ export default function PlanejamentoFinanceiroPage() {
 
               <div className="budget-main-track">
                 <div
-                  className={`budget-main-fill ${
-                    budgetUsage > 100 ? "danger-fill" : ""
-                  }`}
-                  style={{ width: `${Math.min(budgetUsage, 100), "comparison-fill income-fill")}
+                  className={progressWidthClass(Math.min(budgetUsage, 100), "budget-main-fill " + (budgetUsage > 100 ? "danger-fill" : ""))}
                 />
               </div>
 
@@ -997,8 +989,7 @@ export default function PlanejamentoFinanceiroPage() {
 
                       <div className="budget-row-track">
                         <div
-                          className={`budget-row-fill ${status}`}
-                          style={{ width: `${percentage}%` }}
+                          className={progressWidthClass(percentage, "budget-row-fill " + status)}
                         />
                       </div>
 
