@@ -80,8 +80,6 @@ function applySettings(settings: UserSettings) {
   const theme = settings.appearance.theme === "system"
     ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
     : settings.appearance.theme;
-  const scale = settings.appearance.fontScale === "small" ? "0.92"
-    : settings.appearance.fontScale === "large" ? "1.08" : "1";
   root.dataset.theme = theme;
   root.dataset.accent = settings.appearance.accent;
   root.dataset.density = settings.appearance.density;
@@ -89,21 +87,8 @@ function applySettings(settings: UserSettings) {
   root.dataset.reduceMotion = String(settings.appearance.reduceMotion);
   root.dataset.highContrast = String(settings.appearance.highContrast);
   root.dataset.privacyMode = String(settings.finance.hideValues);
-  root.style.setProperty("--nexo-font-scale", scale);
-  root.style.setProperty("--nexo-accent-color", accentColor(settings.appearance.accent));
 }
 
-function accentColor(accent: UserSettings["appearance"]["accent"]) {
-  const colors: Record<UserSettings["appearance"]["accent"], string> = {
-    silver: "#c5cbd4",
-    blue: "#78a9e8",
-    violet: "#a995e8",
-    emerald: "#78c4a2",
-    amber: "#d8b16c",
-    rose: "#d994a6",
-  };
-  return colors[accent];
-}
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { session, loading: authLoading, signOut } = useNexoAuth();
