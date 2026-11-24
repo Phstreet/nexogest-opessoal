@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import MainNavigation from "../navigation/MainNavigation";
-import MobileTabBar from "../navigation/MobileTabBar";
+import BottomNavigation from "@/components/pwa/BottomNavigation";
 import Header from "./Header";
 import { PageShell } from "@/components/ui/DashboardPrimitives";
 
@@ -20,7 +20,7 @@ export default function AppLayout({
         {header ?? <Header />}
         <PageShell>{children}</PageShell>
       </section>
-      <MobileTabBar />
+      <BottomNavigation />
     </main>
   );
 }
