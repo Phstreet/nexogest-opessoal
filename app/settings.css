@@ -1,0 +1,34 @@
+/* Preferências globais do NEXO — aplicadas pelo SettingsProvider */
+:root { --nexo-font-scale: 1; --nexo-accent-color: #c5cbd4; }
+html[data-density="compact"] #nexo-app {
+  --nexo-card-padding: 12px;
+  --nexo-section-gap: 10px;
+  --nexo-content-top: 12px;
+}
+html[data-font-scale="small"] #nexo-app { font-size: calc(13px * .92); }
+html[data-font-scale="large"] #nexo-app { font-size: calc(13px * 1.08); }
+html[data-accent] #nexo-app :is(a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible) {
+  outline: 2px solid var(--nexo-accent-color); outline-offset: 2px;
+}
+html[data-high-contrast="true"] #nexo-app :is(.nexo-card,.daily-card,.metric-card,.finance-card,.settings-panel,.form-card,.routine-panel) { border-color: currentColor; }
+html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, html[data-reduce-motion="true"] *::after {
+  scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-reduce-motion="false"]) *, html:not([data-reduce-motion="false"]) *::before, html:not([data-reduce-motion="false"]) *::after {
+    scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+  }
+}
+html[data-privacy-mode="true"] #nexo-app :is(.nexo-stat-value,.nexo-stat-copy strong,.daily-bill>b,.finance-card strong,.finance-item>strong,.metric-value,.account-balance,.balance-value,.summary-amount,.money-value,.kpi-value,.amount-value) {
+  filter: blur(7px); user-select: none;
+}
+html[data-theme="light"] body, html[data-theme="light"] #nexo-app, html[data-theme="light"] .main-area {
+  background: #f2f4f7 !important; color: #20242b !important;
+}
+html[data-theme="light"] #nexo-app :is(.nexo-header,.sidebar,.settings-tabs,.settings-panel,.daily-card,.metric-card,.finance-card,.form-card,.routine-panel,.agenda-date-panel,.side-panel,.summary-card,.panel,.profile-panel) {
+  background: #fff !important; color: #20242b !important; border-color: #d7dce3 !important; box-shadow: 0 5px 18px rgba(25,35,50,.05);
+}
+html[data-theme="light"] #nexo-app :is(h1,h2,h3,strong,.nexo-header-left strong,.daily-card h3,.settings-panel h2) { color: #20242b !important; }
+html[data-theme="light"] #nexo-app :is(p,small,label,.eyebrow,.nexo-header-greeting,.daily-date) { color: #596273 !important; }
+html[data-theme="light"] #nexo-app :is(input,select,textarea) { color: #20242b !important; background: #fff !important; border-color: #cbd2dc !important; color-scheme: light; }
+html[data-theme="light"] #nexo-app .settings-tabs button.active { background: var(--nexo-accent-color) !important; color: #15191f !important; }
