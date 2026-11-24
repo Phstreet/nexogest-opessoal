@@ -85,3 +85,5 @@ html[data-theme="light"] #nexo-app .settings-accent { background:#fff; color:#20
   #nexo-app .settings-accent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   #nexo-app .settings-subsection-heading { flex-direction:column; }
 }
+
+#nexo-app .nexo-account-avatar-image { display:block; object-fit:cover; border:1px solid #41444c; }
