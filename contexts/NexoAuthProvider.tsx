@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   getCurrentSession, signInWithPassword, signOutSession, signUpWithPassword,
   requestPasswordReset, updatePassword, setRecoverySession,
-  type NexoSession,
+  type NexoSession
 } from "@/lib/supabase/client";
 
 type AuthContextValue = {
@@ -18,6 +18,26 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function clearLocalNexoData() {
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith("nexo_")) localStorage.removeItem(key);
+    }
+  } catch {
+    // O logout do servidor já invalidou os cookies HttpOnly.
+  }
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.controller?.postMessage({ type: "PURGE_USER_DATA" });
+  }
+  if ("caches" in window) {
+    void caches.keys().then((names) =>
+      Promise.all(names.filter((name) => name.startsWith("nexo-user-")).map((name) => caches.delete(name)))
+    ).catch(() => undefined);
+  }
+}
 
 export function NexoAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<NexoSession | null>(null);
@@ -50,9 +70,14 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
       await loadSession();
     }
     void initialize();
-    const refreshOnFocus = () => { if (document.visibilityState === "visible") void loadSession(); };
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible") void loadSession();
+    };
     window.addEventListener("focus", refreshOnFocus);
-    return () => { active = false; window.removeEventListener("focus", refreshOnFocus); };
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, [loadSession]);
 
   useEffect(() => {
@@ -64,21 +89,27 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({
     session,
     loading,
-    async signIn(email, password) { setSession(await signInWithPassword(email, password)); },
+    async signIn(email, password) {
+      setSession(await signInWithPassword(email, password));
+    },
     async signUp(email, password, displayName) {
       const result = await signUpWithPassword(email, password, displayName);
       setSession(result.session);
       return result.confirmationRequired;
     },
     async signOut() {
-      try { await signOutSession(); }
-      finally { setSession(null); }
+      try {
+        await signOutSession();
+      } finally {
+        clearLocalNexoData();
+        setSession(null);
+      }
     },
     sendPasswordReset: requestPasswordReset,
     async changePassword(password) {
       if (!session) throw new Error("Entre na sua conta para alterar a senha.");
       await updatePassword(password);
-    },
+    }
   }), [session, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
