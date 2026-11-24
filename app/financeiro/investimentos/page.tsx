@@ -1,6 +1,8 @@
 
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
@@ -282,8 +284,7 @@ export default function InvestimentosPage() {
 
                     <div className="progress-track">
                       <div
-                        className="progress-fill"
-                        style={{ width: `${percentage}%` }}
+                        className={progressWidthClass(percentage, "progress-fill")}
                       />
                     </div>
 

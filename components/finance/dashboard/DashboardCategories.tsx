@@ -1,3 +1,4 @@
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 import type { ReactNode } from "react";
 
@@ -65,12 +66,9 @@ export default function DashboardCategories({
 
                   <div className="progress-track">
                     <div
-                      className="progress-fill"
-                      style={{
-                        width: `${
+                      className={progressWidthClass(
                           (item.amount / maxCategoryValue) * 100
-                        }%`,
-                      }}
+                        , "progress-fill")}
                     />
                   </div>
 

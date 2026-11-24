@@ -1,6 +1,8 @@
 
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 import { getSaoPauloDateKey, getSaoPauloHour } from "@/lib/date/sao-paulo";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
@@ -285,8 +287,7 @@ export default function AgendaPage() {
             </div>
             <div className="progress-track">
               <div
-                className="progress-fill"
-                style={{ width: `${progress}%` }}
+                className={progressWidthClass(progress, "progress-fill")}
               />
             </div>
           </div>

@@ -1,6 +1,8 @@
 
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -1067,8 +1069,7 @@ export default function ReservasFinanceirasPage() {
 
                       <div className="progress-track">
                         <div
-                          className="progress-fill"
-                          style={{ width: `${progress}%` }}
+                          className={progressWidthClass(progress, "progress-fill")}
                         />
                       </div>
 

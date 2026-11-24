@@ -1,5 +1,7 @@
 import "./globals.css";
+import "./progress-utilities.css";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NexoAuthProvider } from "@/contexts/NexoAuthProvider";
@@ -30,13 +32,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // A leitura dos headers torna o layout dinâmico e permite ao Next.js
+  // aplicar o nonce de proxy.ts aos scripts SSR do framework.
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? "";
+
   return (
     <html lang="pt-BR">
+      <head>
+        <meta name="csp-nonce" content={nonce} />
+      </head>
       <body className={inter.className}>
         <NexoConfirmProvider>
           <NexoAuthProvider>{children}</NexoAuthProvider>

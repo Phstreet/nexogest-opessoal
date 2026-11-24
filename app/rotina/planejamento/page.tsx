@@ -1,5 +1,7 @@
-
 "use client";
+
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
@@ -409,8 +411,7 @@ export default function WeeklyPlanningPage() {
 
           <div className="progress-track">
             <div
-              className="progress-fill"
-              style={{ width: `${weeklyProgress}%` }}
+              className={progressWidthClass(weeklyProgress, "progress-fill")}
             />
           </div>
         </section>
@@ -573,15 +574,7 @@ export default function WeeklyPlanningPage() {
                   </div>
 
                   <div className="day-mini-progress">
-                    <div
-                      style={{
-                        width: `${
-                          day.total
-                            ? (day.completed / day.total) * 100
-                            : 0
-                        }%`,
-                      }}
-                    />
+                    <div className={progressWidthClass(day.total ? (day.completed / day.total) * 100 : 0)} />
                   </div>
 
                   <div className="day-tasks">
@@ -663,14 +656,7 @@ export default function WeeklyPlanningPage() {
                   </span>
                   <div className="distribution-track">
                     <div
-                      className="distribution-fill"
-                      style={{
-                        width: `${
-                          totalTasks
-                            ? (day.total / totalTasks) * 100
-                            : 0
-                        }%`,
-                      }}
+                      className={progressWidthClass(totalTasks ? (day.total / totalTasks) * 100 : 0, "distribution-fill")}
                     />
                   </div>
                   <strong>{day.total}</strong>

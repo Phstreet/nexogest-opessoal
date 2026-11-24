@@ -1,6 +1,8 @@
 
 "use client";
 
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -684,19 +686,16 @@ export default function PlanejamentoFinanceiroPage() {
 
                   <div className="comparison-track">
                     <div
-                      className="comparison-fill income-fill"
-                      style={{
-                        width: `${
-                          monthlySummary.plannedIncome > 0
-                            ? Math.min(
-                                (monthlySummary.realizedIncome /
-                                  monthlySummary.plannedIncome) *
-                                  100,
-                                100
-                              )
-                            : 0
-                        }%`,
-                      }}
+                      className={progressWidthClass(
+                        monthlySummary.plannedIncome > 0
+                          ? Math.min(
+                              (monthlySummary.realizedIncome /
+                                monthlySummary.plannedIncome) * 100,
+                              100
+                            )
+                          : 0,
+                        "comparison-fill income-fill"
+                      )}
                     />
                   </div>
 
@@ -719,19 +718,16 @@ export default function PlanejamentoFinanceiroPage() {
 
                   <div className="comparison-track">
                     <div
-                      className="comparison-fill expense-fill"
-                      style={{
-                        width: `${
-                          monthlySummary.plannedExpenses > 0
-                            ? Math.min(
-                                (monthlySummary.realizedExpenses /
-                                  monthlySummary.plannedExpenses) *
-                                  100,
-                                100
-                              )
-                            : 0
-                        }%`,
-                      }}
+                      className={progressWidthClass(
+                        monthlySummary.plannedExpenses > 0
+                          ? Math.min(
+                              (monthlySummary.realizedExpenses /
+                                monthlySummary.plannedExpenses) * 100,
+                              100
+                            )
+                          : 0,
+                        "comparison-fill expense-fill"
+                      )}
                     />
                   </div>
 
@@ -782,10 +778,7 @@ export default function PlanejamentoFinanceiroPage() {
 
               <div className="budget-main-track">
                 <div
-                  className={`budget-main-fill ${
-                    budgetUsage > 100 ? "danger-fill" : ""
-                  }`}
-                  style={{ width: `${Math.min(budgetUsage, 100)}%` }}
+                  className={progressWidthClass(Math.min(budgetUsage, 100), "budget-main-fill " + (budgetUsage > 100 ? "danger-fill" : ""))}
                 />
               </div>
 
@@ -998,8 +991,7 @@ export default function PlanejamentoFinanceiroPage() {
 
                       <div className="budget-row-track">
                         <div
-                          className={`budget-row-fill ${status}`}
-                          style={{ width: `${percentage}%` }}
+                          className={progressWidthClass(percentage, "budget-row-fill " + status)}
                         />
                       </div>
 
@@ -1077,8 +1069,7 @@ export default function PlanejamentoFinanceiroPage() {
 
               <div className="goal-track">
                 <div
-                  className="goal-fill"
-                  style={{ width: `${goalProgress}%` }}
+                  className={progressWidthClass(goalProgress, "goal-fill")}
                 />
               </div>
             </div>
@@ -1265,8 +1256,7 @@ export default function PlanejamentoFinanceiroPage() {
 
                       <div className="goal-track">
                         <div
-                          className="goal-fill"
-                          style={{ width: `${percentage}%` }}
+                          className={progressWidthClass(percentage, "goal-fill")}
                         />
                       </div>
 

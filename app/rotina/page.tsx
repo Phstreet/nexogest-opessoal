@@ -1,5 +1,7 @@
-
 "use client";
+
+import { progressWidthClass } from "@/lib/ui/progress-class";
+
 
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
 
@@ -646,8 +648,7 @@ export default function RoutineDashboard() {
 
               <div className="today-progress-track">
                 <div
-                  className="today-progress-fill"
-                  style={{ width: `${todayProgress}%` }}
+                  className={progressWidthClass(todayProgress, "today-progress-fill")}
                 />
               </div>
             </div>
@@ -746,11 +747,7 @@ export default function RoutineDashboard() {
                   cy="80"
                   r="66"
                   className="progress-circle-value"
-                  style={{
-                    strokeDasharray: `${
-                      (progress / 100) * 414.69
-                    } 414.69`,
-                  }}
+                  strokeDasharray={`${(progress / 100) * 414.69} 414.69`}
                 />
               </svg>
 

@@ -1,5 +1,7 @@
-
 "use client";
+
+import { progressWidthClass, progressHeightClass, progressRingClass } from "@/lib/ui/progress-class";
+
 
 import { useMemo } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
@@ -205,8 +207,7 @@ export default function ProdutividadePage() {
               </div>
               <div className="metric-progress">
                 <div
-                  className="metric-progress-fill"
-                  style={{ width: `${overallRate}%` }}
+                  className={progressWidthClass(overallRate, "metric-progress-fill")}
                 />
               </div>
             </article>
@@ -291,13 +292,11 @@ export default function ProdutividadePage() {
                       <div className="bar-area">
                         <div className="bar-stack">
                           <div
-                            className="bar-task"
-                            style={{ height: `${taskHeight}%` }}
+                            className={progressHeightClass(taskHeight, "bar-task")}
                             title={`${day.tasks} tarefas`}
                           />
                           <div
-                            className="bar-habit"
-                            style={{ height: `${habitHeight}%` }}
+                            className={progressHeightClass(habitHeight, "bar-habit")}
                             title={`${day.habits} hábitos`}
                           />
                         </div>
@@ -336,10 +335,7 @@ export default function ProdutividadePage() {
 
               <div className="today-progress">
                 <div
-                  className="progress-ring"
-                  style={{
-                    background: `conic-gradient(#d6d9de ${overallRate}%, #292f37 ${overallRate}% 100%)`,
-                  }}
+                  className={progressRingClass(overallRate, "progress-ring")}
                 >
                   <div className="progress-ring-inner">
                     <strong>{overallRate}%</strong>
@@ -414,9 +410,7 @@ export default function ProdutividadePage() {
                       <span>{category.name}</span>
                       <div className="category-track">
                         <div
-                          className="category-fill"
-                          style={{
-                            width: `${
+                          className={progressWidthClass(
                               (category.total /
                                 Math.max(
                                   ...categorySummary.map(
@@ -424,8 +418,7 @@ export default function ProdutividadePage() {
                                   )
                                 )) *
                               100
-                            }%`,
-                          }}
+                            , "category-fill")}
                         />
                       </div>
                       <strong>{category.total}</strong>
