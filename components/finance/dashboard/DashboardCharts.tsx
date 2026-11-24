@@ -1,3 +1,4 @@
+import { progressHeightPxClass } from "@/lib/ui/progress-class";
 
 type MonthData = {
     key: string;
@@ -50,24 +51,18 @@ type MonthData = {
               <div className="bar-group" key={month.key}>
                 <div className="bars">
                   <div
-                    className="bar income-bar"
-                    style={{
-                      height: `${Math.max(
+                    className={progressHeightPxClass(Math.max(
                         3,
                         (month.revenue / maxChartValue) * 150
-                      )}px`,
-                    }}
+                      ), "bar income-bar")}
                     title={`Receitas: ${money(month.revenue)}`}
                   />
   
                   <div
-                    className="bar expense-bar"
-                    style={{
-                      height: `${Math.max(
+                    className={progressHeightPxClass(Math.max(
                         3,
                         (month.expenses / maxChartValue) * 150
-                      )}px`,
-                    }}
+                      ), "bar expense-bar")}
                     title={`Despesas: ${money(month.expenses)}`}
                   />
                 </div>
