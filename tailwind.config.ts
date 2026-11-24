@@ -27,6 +27,20 @@ const config: Config = {
         nexo: "var(--nexo-radius)",
         "nexo-card": "var(--nexo-radius-card)",
       },
+      spacing: {
+        nexo: "var(--nexo-space-unit)",
+      },
+      fontFamily: {
+        nexo: ["var(--font-body)"],
+        "nexo-heading": ["var(--font-heading)"],
+      },
+      fontSize: {
+        "nexo-xs": "var(--font-size-xs)",
+        "nexo-sm": "var(--font-size-sm)",
+        "nexo-base": "var(--font-size-base)",
+        "nexo-lg": "var(--font-size-lg)",
+        "nexo-xl": "var(--font-size-xl)",
+      },
       boxShadow: {
         nexo: "var(--nexo-shadow-card)",
       },
