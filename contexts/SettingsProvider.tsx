@@ -287,8 +287,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   useEffect(() => {
-    const root = document.getElementById("nexo-app");
-    if (!root) return;
+    const root = document.getElementById("nexo-app") || document.body;
     const moneyPattern = /(?:R\$|BRL)\s*[-+]?\d[\d.]*,\d{2}/i;
 
     function markMoneyValues() {
