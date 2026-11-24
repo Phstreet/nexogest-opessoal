@@ -34,7 +34,7 @@ function RestoreButton({ section }: { section: SettingsSection }) {
   return <button className="settings-reset-button" type="button" onClick={async () => {
     const accepted = await confirm({
       title: "Restaurar padrões",
-      message: \`As configurações de \${labels[section]} voltarão aos valores padrão. Deseja continuar?\`,
+      message: "As configurações de " + labels[section] + " voltarão aos valores padrão. Deseja continuar?",
       confirmLabel: "Restaurar",
       destructive: true,
     });
@@ -56,25 +56,15 @@ export function PreferencesControls() {
         <div className="settings-toggle"><span><strong>Menu lateral compacto</strong><small>Recolhe a navegação e libera espaço de trabalho.</small></span>
           <input aria-label="Menu lateral compacto" type="checkbox" checked={settings.navigation.sidebarCompact} onChange={(event) => updateSettings({ navigation: { sidebarCompact: event.target.checked } })} />
         </div>
-        <div className="settings-note">Idioma e moeda permanecem em pt-BR e R$. O fuso padrão do NEXO é America/Sao_Paulo.</div>
+        <p className="settings-note">Idioma e moeda são mantidos em pt-BR e R$. O fuso horário padrão é America/Sao_Paulo. Primeiro dia da semana e formatos alternativos: Em breve, até a integração dos calendários e formulários que os consomem.</p>
       </section>
 
       <section className="settings-subsection">
         <div className="settings-subsection-heading"><div><h3>Privacidade financeira</h3><p>Oculte valores nas telas que exibem indicadores e movimentações.</p></div><RestoreButton section="finance" /></div>
-        <div className="settings-toggle"><span><strong>Ocultar valores</strong><small>Aplica o modo de privacidade globalmente às áreas financeiras compatíveis.</small></span>
+        <div className="settings-toggle"><span><strong>Ocultar valores</strong><small>Aplica o modo de privacidade global às áreas financeiras compatíveis.</small></span>
           <input aria-label="Ocultar valores financeiros" type="checkbox" checked={settings.finance.hideValues} onChange={(event) => updateSettings({ finance: { hideValues: event.target.checked } })} />
         </div>
-        <label className="settings-field"><span>Início do mês financeiro</span>
-          <select value={settings.finance.monthStartDay} onChange={(event) => updateSettings({ finance: { monthStartDay: Number(event.target.value) } })}>
-            {[1, 5, 10, 15, 20, 25].map((day) => <option key={day} value={day}>Dia {day}</option>)}
-          </select>
-        </label>
-        <label className="settings-field"><span>Alertar sobre contas a vencer</span>
-          <select value={settings.finance.dueAlertDays} onChange={(event) => updateSettings({ finance: { dueAlertDays: Number(event.target.value) } })}>
-            {[0, 1, 3, 5, 7, 10, 15, 30].map((day) => <option key={day} value={day}>{day === 0 ? "Somente no vencimento" : \`\${day} dias antes\`}</option>)}
-          </select>
-        </label>
-        <p className="settings-note">O ciclo financeiro e o alerta são armazenados como preferências. A aplicação desses parâmetros aos relatórios e às notificações será liberada quando os módulos de relatórios e alertas compartilharem a mesma regra de período.</p>
+        <p className="settings-note">Ciclo financeiro personalizado e alertas de vencimento: Em breve. As telas de contas e relatórios ainda não compartilham um único serviço de cálculo de período e notificações.</p>
       </section>
 
       <section className="settings-subsection">
@@ -106,7 +96,7 @@ export function AppearanceControls() {
       <section className="settings-subsection">
         <div className="settings-subsection-heading"><div><h3>Identidade visual</h3><p>As alterações são aplicadas imediatamente nesta sessão.</p></div><RestoreButton section="appearance" /></div>
         <label className="settings-field"><span>Tema</span><select value={settings.appearance.theme} onChange={(event) => updateSettings({ appearance: { theme: event.target.value as UserSettings["appearance"]["theme"] } })}><option value="dark">Escuro</option><option value="light">Claro</option><option value="system">Automático (sistema)</option></select></label>
-        <div className="settings-field"><span>Cor de destaque</span><div className="settings-accent-grid">{accents.map((accent) => <button key={accent.value} type="button" className={\`settings-accent \${settings.appearance.accent === accent.value ? "active" : ""}\`} data-accent={accent.value} aria-pressed={settings.appearance.accent === accent.value} onClick={() => updateSettings({ appearance: { accent: accent.value } })}><i aria-hidden="true" />{accent.label}</button>)}</div></div>
+        <div className="settings-field"><span>Cor de destaque</span><div className="settings-accent-grid">{accents.map((accent) => <button key={accent.value} type="button" className={"settings-accent " + (settings.appearance.accent === accent.value ? "active" : "")} data-accent={accent.value} aria-pressed={settings.appearance.accent === accent.value} onClick={() => updateSettings({ appearance: { accent: accent.value } })}><i aria-hidden="true" />{accent.label}</button>)}</div></div>
         <label className="settings-field"><span>Densidade</span><select value={settings.appearance.density} onChange={(event) => updateSettings({ appearance: { density: event.target.value as UserSettings["appearance"]["density"] } })}><option value="comfortable">Confortável</option><option value="compact">Compacta</option></select></label>
         <label className="settings-field"><span>Tamanho da fonte</span><select value={settings.appearance.fontScale} onChange={(event) => updateSettings({ appearance: { fontScale: event.target.value as UserSettings["appearance"]["fontScale"] } })}><option value="small">Pequena</option><option value="normal">Padrão</option><option value="large">Grande</option></select></label>
         <div className="settings-toggle"><span><strong>Reduzir animações</strong><small>Respeita também a preferência de movimento reduzido do sistema.</small></span><input aria-label="Reduzir animações" type="checkbox" checked={settings.appearance.reduceMotion} onChange={(event) => updateSettings({ appearance: { reduceMotion: event.target.checked } })} /></div>
