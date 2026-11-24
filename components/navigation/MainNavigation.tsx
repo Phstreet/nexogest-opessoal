@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
+import { useSettings } from "@/contexts/SettingsProvider";
 import { fetchRemoteCollections, saveRemoteCollection } from "@/lib/supabase/client";
 
 import {
@@ -20,6 +21,7 @@ import {
 export default function MainNavigation() {
   const pathname = usePathname();
   const { session, loading: authLoading } = useNexoAuth();
+  const { updateSettings } = useSettings();
   const [activeSettingsTab, setActiveSettingsTab] = useState("");
 
   const isFinanceRoute = pathname.startsWith("/financeiro");
@@ -225,9 +227,8 @@ export default function MainNavigation() {
 
   function toggleCollapsed() {
     const nextCollapsed = !collapsed;
-    void persistNavigationPreferences(favorites, nextCollapsed)
-      .then(() => setCollapsed(nextCollapsed))
-      .catch((error) => setPreferencesError(error instanceof Error ? error.message : "Não foi possível salvar a preferência."));
+    setCollapsed(nextCollapsed);
+    updateSettings({ navigation: { sidebarCompact: nextCollapsed } });
   }
 
   // Fecha os submenus ao navegar, mantendo a largura escolhida pelo usuário.
