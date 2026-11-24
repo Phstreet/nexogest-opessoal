@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNexoAuth } from "@/contexts/NexoAuthProvider";
@@ -22,7 +21,7 @@ import {
 export default function MainNavigation() {
   const pathname = usePathname();
   const { session, loading: authLoading } = useNexoAuth();
-  const { updateSettings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const [activeSettingsTab, setActiveSettingsTab] = useState("");
 
   const isFinanceRoute = pathname.startsWith("/financeiro");
@@ -35,7 +34,7 @@ export default function MainNavigation() {
   const [reportsMenuOpen, setReportsMenuOpen] = useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = settings.navigation.sidebarCompact;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -45,7 +44,6 @@ export default function MainNavigation() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [floatingSubmenuStyle, setFloatingSubmenuStyle] = useState<CSSProperties>({});
 
   useEffect(() => {
     let active = true;
@@ -53,7 +51,6 @@ export default function MainNavigation() {
       if (authLoading) return;
       if (!session) {
         setFavorites([]);
-        setCollapsed(false);
         setPreferencesError("Entre na sua conta para carregar as preferências de navegação.");
         setPreferencesLoaded(true);
         return;
@@ -70,7 +67,6 @@ export default function MainNavigation() {
           ? savedFavorites.filter((href): href is string =>
               typeof href === "string" && mainMenuItems.some((item) => item.href === href))
           : []);
-        setCollapsed(payload.sidebarCollapsed === true);
         setPreferencesError("");
       } catch (error) {
         if (active) setPreferencesError(error instanceof Error ? error.message : "Não foi possível carregar as preferências da nuvem.");
@@ -82,7 +78,7 @@ export default function MainNavigation() {
     return () => { active = false; };
   }, [authLoading, session]);
 
-  async function persistNavigationPreferences(nextFavorites: string[], nextCollapsed: boolean) {
+  async function persistNavigationPreferences(nextFavorites: string[]) {
     if (!session || !preferencesLoaded) throw new Error("As preferências ainda não foram carregadas.");
     const collections = await fetchRemoteCollections(["nexo_preferences"]);
     const row = collections.find((item) => item.data_key === "nexo_preferences");
@@ -92,7 +88,6 @@ export default function MainNavigation() {
     const result = await saveRemoteCollection("nexo_preferences", {
       ...latest,
       navigationFavorites: nextFavorites,
-      sidebarCollapsed: nextCollapsed,
     }, Number(row?.revision) || 0);
     if (!result.saved) {
       const refreshed = await fetchRemoteCollections(["nexo_preferences"]);
@@ -104,7 +99,6 @@ export default function MainNavigation() {
         ? payload.navigationFavorites.filter((href): href is string =>
             typeof href === "string" && mainMenuItems.some((item) => item.href === href))
         : []);
-      setCollapsed(payload.sidebarCollapsed === true);
       throw new Error("As preferências foram alteradas em outro dispositivo. A versão mais recente foi carregada.");
     }
     setPreferencesError("");
@@ -112,8 +106,7 @@ export default function MainNavigation() {
 
   useEffect(() => {
     function handlePreferencesUpdated(event: Event) {
-      const detail = (event as CustomEvent<{ sidebarCollapsed?: boolean }>).detail;
-      if (typeof detail?.sidebarCollapsed === "boolean") setCollapsed(detail.sidebarCollapsed);
+      // A fonte da verdade é SettingsProvider; o evento serve apenas para compatibilidade.
     }
     window.addEventListener("nexo:preferences-updated", handlePreferencesUpdated);
     return () => window.removeEventListener("nexo:preferences-updated", handlePreferencesUpdated);
@@ -221,14 +214,13 @@ export default function MainNavigation() {
     const nextFavorites = favorites.includes(href)
       ? favorites.filter((item) => item !== href)
       : [...favorites, href];
-    void persistNavigationPreferences(nextFavorites, collapsed)
+    void persistNavigationPreferences(nextFavorites)
       .then(() => setFavorites(nextFavorites))
       .catch((error) => setPreferencesError(error instanceof Error ? error.message : "Não foi possível salvar a preferência."));
   }
 
   function toggleCollapsed() {
     const nextCollapsed = !collapsed;
-    setCollapsed(nextCollapsed);
     updateSettings({ navigation: { sidebarCompact: nextCollapsed } });
   }
 
@@ -251,26 +243,6 @@ export default function MainNavigation() {
     setRoutineMenuOpen(false);
     setReportsMenuOpen(false);
     setSettingsMenuOpen(false);
-  }
-
-  function prepareFloatingSubmenu(element: HTMLButtonElement) {
-    if (typeof window === "undefined" || window.innerWidth > 760) {
-      setFloatingSubmenuStyle({});
-      return;
-    }
-
-    const rect = element.getBoundingClientRect();
-    const panelWidth = Math.min(320, window.innerWidth - 24);
-    const left = Math.max(12, Math.min(rect.left, window.innerWidth - panelWidth - 12));
-
-    setFloatingSubmenuStyle({
-      position: "fixed",
-      top: Math.min(rect.bottom + 8, window.innerHeight - 180),
-      left,
-      width: panelWidth,
-      maxHeight: "min(65dvh, 460px)",
-      zIndex: 99999,
-    });
   }
 
   function renderFavoriteButton(item: MenuItem) {
@@ -419,9 +391,8 @@ export default function MainNavigation() {
                 isFinanceRoute ? "active" : ""
               }`}
               onClick={(event) => {
-                prepareFloatingSubmenu(event.currentTarget);
                 if (collapsed) {
-                  setCollapsed(false);
+                  updateSettings({ navigation: { sidebarCompact: false } });
                   setFinanceMenuOpen(true);
                   setRoutineMenuOpen(false);
                   setReportsMenuOpen(false);
