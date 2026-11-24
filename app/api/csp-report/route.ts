@@ -13,8 +13,9 @@ function safeResource(value: unknown): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const report = await request.json() as Record<string, unknown>;
-    const raw = (report["csp-report"] ?? report.body ?? report) as Record<string, unknown>;
+    const parsed = await request.json() as unknown;
+    const envelope = (Array.isArray(parsed) ? parsed[0] : parsed) as Record<string, unknown>;
+    const raw = (envelope?.body ?? envelope?.["csp-report"] ?? envelope) as Record<string, unknown>;
     const directive = String(raw["violated-directive"] ?? raw["effectiveDirective"] ?? "unknown").slice(0, 120);
     const blocked = safeResource(raw["blocked-uri"] ?? raw["blockedURL"]);
     const document = safeResource(raw["document-uri"] ?? raw["documentURL"]);
