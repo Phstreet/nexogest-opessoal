@@ -1,3 +1,4 @@
+import { progressWidthClass, progressHeightClass, progressRingClass } from "@/lib/ui/progress-class";
 import { progressWidthClass, progressHeightClass } from "@/lib/ui/progress-class";
 
 "use client";
@@ -334,10 +335,7 @@ export default function ProdutividadePage() {
 
               <div className="today-progress">
                 <div
-                  className="progress-ring"
-                  style={{
-                    background: `conic-gradient(#d6d9de ${overallRate}%, #292f37 ${overallRate}% 100%)`,
-                  }}
+                  className={progressRingClass(overallRate, "progress-ring")}
                 >
                   <div className="progress-ring-inner">
                     <strong>{overallRate}%</strong>
