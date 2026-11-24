@@ -687,15 +687,15 @@ export default function PlanejamentoFinanceiroPage() {
                   <div className="comparison-track">
                     <div
                       className={progressWidthClass(
-                          monthlySummary.plannedIncome > 0
-                            ? Math.min(
-                                (monthlySummary.realizedIncome /
-                                  monthlySummary.plannedIncome) *
-                                  100,
-                                100
-                              )
-                            : 0
-                        , "comparison-fill income-fill")}
+                        monthlySummary.plannedIncome > 0
+                          ? Math.min(
+                              (monthlySummary.realizedIncome /
+                                monthlySummary.plannedIncome) * 100,
+                              100
+                            )
+                          : 0,
+                        "comparison-fill income-fill"
+                      )}
                     />
                   </div>
 
@@ -719,15 +719,15 @@ export default function PlanejamentoFinanceiroPage() {
                   <div className="comparison-track">
                     <div
                       className={progressWidthClass(
-                          monthlySummary.plannedExpenses > 0
-                            ? Math.min(
-                                (monthlySummary.realizedExpenses /
-                                  monthlySummary.plannedExpenses) *
-                                  100,
-                                100
-                              )
-                            : 0
-                        , "comparison-fill expense-fill")}
+                        monthlySummary.plannedExpenses > 0
+                          ? Math.min(
+                              (monthlySummary.realizedExpenses /
+                                monthlySummary.plannedExpenses) * 100,
+                              100
+                            )
+                          : 0,
+                        "comparison-fill expense-fill"
+                      )}
                     />
                   </div>
 
