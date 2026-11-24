@@ -70,7 +70,7 @@ export default function UserMenu() {
       </button>
       {open && (
         <div className="nexo-account-dropdown" role="menu">
-          <Link href="/configuracoes/conta" role="menuitem" onClick={() => setOpen(false)}>Conta e segurança</Link>
+          <Link href="/configuracoes?tab=seguranca" role="menuitem" onClick={() => setOpen(false)}>Conta e segurança</Link>
           <Link href="/configuracoes/perfil" role="menuitem" onClick={() => setOpen(false)}>Meu perfil</Link>
           <button type="button" role="menuitem" onClick={() => void handleSignOut()}>Sair da conta</button>
         </div>
