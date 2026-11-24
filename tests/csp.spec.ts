@@ -95,6 +95,11 @@ test.describe("CSP Report-Only — rotas do NEXO", () => {
       const response = await page.goto(route);
       expect(response, `A rota ${route} não respondeu`).not.toBeNull();
       expect(response!.status(), `Status inesperado em ${route}`).toBeLessThan(400);
+      const policy = response!.headers()["content-security-policy-report-only"] ?? "";
+      expect(policy).toContain("strict-dynamic");
+      expect(policy).toContain("nonce-");
+      expect(policy).toContain("style-src-attr 'none'");
+      expect(policy).not.toContain("unsafe-inline");
       await page.waitForLoadState("load");
       await page.waitForTimeout(300);
 
