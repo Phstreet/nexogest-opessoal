@@ -15,9 +15,24 @@ test.describe("NEXO user settings schema", () => {
       navigationFavorites: ["/financeiro"],
     });
 
-    expect(migrated.schemaVersion).toBe(1);
+    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.appearance.theme).toBe("graphite");
+    expect(migrated.appearance.cornerRadius).toBe("medium");
     expect(migrated.general.weekStartsOn).toBe(0);
     expect(migrated.navigation.sidebarCompact).toBe(true);
+  });
+
+  test("migrates the previous dark theme to Grafite without losing user preferences", () => {
+    const migrated = migrateUserSettings({
+      settingsV1: {
+        ...DEFAULT_USER_SETTINGS,
+        schemaVersion: 1,
+        appearance: { ...DEFAULT_USER_SETTINGS.appearance, theme: "dark" },
+        general: { ...DEFAULT_USER_SETTINGS.general, homePage: "/financeiro" },
+      },
+    });
+    expect(migrated.appearance.theme).toBe("graphite");
+    expect(migrated.general.homePage).toBe("/financeiro");
   });
 
   test("validates appearance values and rejects unsupported themes", () => {
