@@ -37,6 +37,9 @@ type SettingsContextValue = {
   togglePrivacy: () => void;
   retrySave: () => void;
   refresh: () => Promise<void>;
+  previewAppearance: (appearance: UserSettings["appearance"]) => void;
+  saveAppearance: (appearance: UserSettings["appearance"]) => void;
+  discardAppearance: () => void;
 };
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -78,12 +81,13 @@ function writeCache(userId: string, settings: UserSettings) {
 function applySettings(settings: UserSettings) {
   const root = document.documentElement;
   const theme = settings.appearance.theme === "system"
-    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "graphite")
     : settings.appearance.theme;
   root.dataset.theme = theme;
   root.dataset.accent = settings.appearance.accent;
   root.dataset.density = settings.appearance.density;
   root.dataset.fontScale = settings.appearance.fontScale;
+  root.dataset.cornerRadius = settings.appearance.cornerRadius;
   root.dataset.reduceMotion = String(settings.appearance.reduceMotion);
   root.dataset.highContrast = String(settings.appearance.highContrast);
   root.dataset.privacyMode = String(settings.finance.hideValues);
@@ -177,6 +181,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }));
     scheduleSave();
   }, [scheduleSave, userId]);
+
+  const previewAppearance = useCallback((appearance: UserSettings["appearance"]) => {
+    applySettings({ ...latest.current, appearance });
+  }, []);
+
+  const saveAppearance = useCallback((appearance: UserSettings["appearance"]) => {
+    updateSettings({ appearance });
+  }, [updateSettings]);
+
+  const discardAppearance = useCallback(() => {
+    applySettings(latest.current);
+  }, []);
 
   const resetSection = useCallback((section: SettingsSection) => {
     const defaults = DEFAULT_USER_SETTINGS[section];
@@ -313,7 +329,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     togglePrivacy,
     retrySave,
     refresh,
-  }), [settings, loaded, saveState, error, updateSettings, resetSection, togglePrivacy, retrySave, refresh]);
+    previewAppearance,
+    saveAppearance,
+    discardAppearance,
+  }), [settings, loaded, saveState, error, updateSettings, resetSection, togglePrivacy, retrySave, refresh, previewAppearance, saveAppearance, discardAppearance]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
