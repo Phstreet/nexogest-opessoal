@@ -1,3 +1,4 @@
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 "use client";
 
@@ -409,8 +410,7 @@ export default function WeeklyPlanningPage() {
 
           <div className="progress-track">
             <div
-              className="progress-fill"
-              style={{ width: `${weeklyProgress}%` }}
+              className={progressWidthClass(weeklyProgress, "progress-fill")}
             />
           </div>
         </section>
