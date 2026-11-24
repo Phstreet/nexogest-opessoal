@@ -1,6 +1,7 @@
 "use client";
 
 import { progressWidthClass } from "@/lib/ui/progress-class";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
