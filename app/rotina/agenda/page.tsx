@@ -1,6 +1,7 @@
-import { progressWidthClass } from "@/lib/ui/progress-class";
 
 "use client";
+
+import { progressWidthClass } from "@/lib/ui/progress-class";
 
 import { getSaoPauloDateKey, getSaoPauloHour } from "@/lib/date/sao-paulo";
 import { useNexoConfirm } from "@/contexts/NexoConfirmProvider";
