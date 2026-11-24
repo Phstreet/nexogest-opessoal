@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { fetchRemoteCollections } from "@/lib/supabase/client";
 import UserMenu from "@/components/ui/UserMenu";
 import { useSettings } from "@/contexts/SettingsProvider";
+import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 import { SearchButton } from "@/components/ui/DashboardPrimitives";
 
 function getGreeting() {
@@ -18,11 +19,13 @@ function getGreeting() {
 
 export default function Header() {
   const { settings, togglePrivacy } = useSettings();
+  const { session } = useNexoAuth();
   const [greeting, setGreeting] = useState("Olá");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
+    setDisplayName("");
     setGreeting(getGreeting());
 
     let active = true;
@@ -53,7 +56,7 @@ export default function Header() {
       active = false;
       window.removeEventListener("nexo:profile-updated", loadProfile);
     };
-  }, []);
+  }, [session]);
 
   return (
     <header className="nexo-header">
