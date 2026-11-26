@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
 import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
+import { addDaysToDateKey, formatDateKey, getSaoPauloDateKey, getSaoPauloHour } from "@/lib/utils/date";
+import { getHabitsDueToday } from "@/lib/routine/habit-queries";
 
 type Props = {
   tasks: RoutineTask[];
@@ -47,9 +49,6 @@ function Icon({ name, size = 20 }: { name: keyof typeof icons; size?: number }) 
 }
 
 /* ---------- Utilitários ---------- */
-function localDateKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 function money(value: number) {
   return (Number.isFinite(value) ? value : 0).toLocaleString("pt-BR", {
@@ -71,8 +70,8 @@ function settledAmount(item: Transaction) {
 }
 
 function daysBetween(dateKey: string, fromKey: string) {
-  const a = new Date(`${dateKey}T12:00:00`).getTime();
-  const b = new Date(`${fromKey}T12:00:00`).getTime();
+  const a = new Date(`${dateKey}T12:00:00Z`).getTime();
+  const b = new Date(`${fromKey}T12:00:00Z`).getTime();
   return Math.round((a - b) / 86400000);
 }
 
@@ -100,20 +99,16 @@ const RING_RADIUS = 42;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
 export default function DailyCenter(props: Props) {
-  const today = new Date();
-  const todayKey = localDateKey(today);
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
-  const nextWeekKey = localDateKey(nextWeek);
-  const hour = today.getHours();
+  const todayKey = getSaoPauloDateKey();
+  const nextWeekKey = addDaysToDateKey(todayKey, 7);
+  const hour = getSaoPauloHour();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const rawDateLabel = today.toLocaleDateString("pt-BR", {
+  const dateLabel = formatDateKey(todayKey, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  });
-  const dateLabel = rawDateLabel.toLocaleLowerCase("pt-BR");
+  }).toLocaleLowerCase("pt-BR");
 
   /* Tarefas */
   const todaysTasks = props.tasks.filter((task) => task.date === todayKey);
@@ -135,8 +130,9 @@ export default function DailyCenter(props: Props) {
 
   /* Hábitos */
   const activeHabits = props.habits.filter((habit) => habit.active);
-  const completedHabits = activeHabits.filter((habit) => habit.completedDates.includes(todayKey));
-  const habitRate = activeHabits.length ? completedHabits.length / activeHabits.length : 0;
+  const dueHabits = getHabitsDueToday(activeHabits, todayKey);
+  const completedHabits = dueHabits.filter((habit) => habit.completedDates.includes(todayKey));
+  const habitRate = dueHabits.length ? completedHabits.length / dueHabits.length : 0;
 
   /* Contas próximas (despesas pendentes nos próximos 7 dias) */
   const upcomingBills = props.transactions.filter((item) =>
@@ -260,7 +256,7 @@ export default function DailyCenter(props: Props) {
         {/* Hábitos do dia */}
         <Card className="daily-card area-habits">
           <CardHeader icon={<Icon name="bars" size={20} />} title="Hábitos do dia" action={<Link href="/rotina/habitos">Ver todos <Icon name="arrow" size={13} /></Link>} />
-          {activeHabits.length ? (
+          {dueHabits.length ? (
             <div className="daily-habits">
               <div className="daily-ring">
                 <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -269,10 +265,10 @@ export default function DailyCenter(props: Props) {
                     strokeDasharray={RING_LENGTH}
                     strokeDashoffset={RING_LENGTH * (1 - habitRate)} />
                 </svg>
-                <div><strong>{completedHabits.length}/{activeHabits.length}</strong><small>Concluídos</small></div>
+                <div><strong>{completedHabits.length}/{dueHabits.length}</strong><small>Concluídos</small></div>
               </div>
               <ul>
-                {activeHabits.slice(0, 4).map((habit) => {
+                {dueHabits.slice(0, 4).map((habit) => {
                   const done = habit.completedDates.includes(todayKey);
                   return (
                     <li key={habit.id}>
@@ -286,10 +282,10 @@ export default function DailyCenter(props: Props) {
           ) : (
             <EmptyState
               icon={<Icon name="bars" size={25} />}
-              title="Nenhum hábito cadastrado"
-              description="Crie hábitos para acompanhar sua consistência diária."
+              title={activeHabits.length ? "Nenhum hábito previsto hoje" : "Nenhum hábito cadastrado"}
+              description={activeHabits.length ? "A frequência dos seus hábitos não exige novas conclusões hoje." : "Crie hábitos para acompanhar sua consistência diária."}
               actionHref="/rotina/habitos"
-              actionLabel="Criar hábito"
+              actionLabel="Ver hábitos"
             />
           )}
         </Card>
@@ -354,8 +350,8 @@ export default function DailyCenter(props: Props) {
           </article>
           <article>
             <span>Hábitos realizados</span>
-            <strong>{completedHabits.length}/{activeHabits.length}</strong>
-            <small>{activeHabits.length ? `${Math.round(habitRate * 100)}% dos hábitos ativos` : "Nenhum hábito ativo cadastrado"}</small>
+            <strong>{completedHabits.length}/{dueHabits.length}</strong>
+            <small>{dueHabits.length ? `${Math.round(habitRate * 100)}% dos hábitos previstos hoje` : activeHabits.length ? "Nenhum hábito previsto para hoje" : "Nenhum hábito ativo cadastrado"}</small>
           </article>
           <article>
             <span>Recebido hoje</span>

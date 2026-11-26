@@ -8,6 +8,7 @@ import type { Transaction } from "@/lib/finance/types";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { getAccountBalanceFrom } from "@/lib/finance/accounts";
 import { calculateReserveBalance } from "@/lib/finance/reserves";
+import { getSaoPauloDateKey } from "@/lib/utils/date";
 
 // =====================================================
 // TIPOS
@@ -61,8 +62,8 @@ function normalizeStatus(status?: string): string {
 }
 
 function getMonthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(
-    date.getMonth() + 1
+  return `${date.getUTCFullYear()}-${String(
+    date.getUTCMonth() + 1
   ).padStart(2, "0")}`;
 }
 
@@ -73,6 +74,7 @@ function getMonthLabel(
   return date.toLocaleDateString("pt-BR", {
     month: short ? "short" : "long",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -98,25 +100,26 @@ function getDateFromKey(key?: string): Date | null {
     return null;
   }
 
-  const date = new Date(year, month - 1, day);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
 
   if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
   ) {
     return null;
   }
 
-  return new Date(year, month - 1, 1);
+  return new Date(Date.UTC(year, month - 1, 1, 12));
 }
 
 function getMonthStart(date: Date): Date {
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    1
-  );
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    1,
+    12
+  ));
 }
 
 function isCancelled(
@@ -208,7 +211,7 @@ export function useFinanceDashboard() {
   const { transactions, accounts, reserves, reserveMovements, loaded, error } = useCloudFinanceCollections();
   const [period, setPeriod] = useState<"3" | "6">("6");
 
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => new Date(`${getSaoPauloDateKey()}T12:00:00Z`), []);
 
   const currentMonthKey = getMonthKey(today);
 
@@ -234,11 +237,12 @@ export function useFinanceDashboard() {
 
   const previousMonthKey = useMemo(() => {
     return getMonthKey(
-      new Date(
-        today.getFullYear(),
-        today.getMonth() - 1,
-        1
-      )
+      new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth() - 1,
+        15,
+        12
+      ))
     );
   }, [today]);
 
@@ -394,11 +398,12 @@ export function useFinanceDashboard() {
     // e seis meses futuros.
 
     for (let offset = -2; offset <= 6; offset++) {
-      const date = new Date(
-        today.getFullYear(),
-        today.getMonth() + offset,
-        1
-      );
+      const date = new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth() + offset,
+        15,
+        12
+      ));
 
       const key = getMonthKey(date);
       const isFuture = offset > 0;
@@ -503,11 +508,12 @@ export function useFinanceDashboard() {
   // evitando distorcer o histórico quando o cadastro começou há pouco.
   const projectionHistory = useMemo(() => {
     return [1, 2, 3].map((monthsAgo) => {
-      const date = new Date(
-        today.getFullYear(),
-        today.getMonth() - monthsAgo,
-        1
-      );
+      const date = new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth() - monthsAgo,
+        15,
+        12
+      ));
       const key = getMonthKey(date);
       const monthTransactions = validTransactions.filter(
         (transaction) => transaction.date?.slice(0, 7) === key
@@ -772,6 +778,7 @@ export function useFinanceDashboard() {
     {
       month: "long",
       year: "numeric",
+      timeZone: "UTC",
     }
   );
 

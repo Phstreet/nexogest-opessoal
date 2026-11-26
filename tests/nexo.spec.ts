@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { getSaoPauloDateKey } from "../lib/utils/date";
 
 const session = {
   user: { id: "user-nexo-e2e", email: "teste@nexo.local", user_metadata: { display_name: "Teste NEXO" } },
@@ -152,6 +153,35 @@ test.describe("NEXO - Persistência exclusiva na nuvem", () => {
     await expect.poll(() => cloud.get("nexo_tasks")?.revision).toBe(1);
     expect(cloud.get("nexo_tasks")?.payload).toEqual([
       expect.objectContaining({ description: "Tarefa automatizada NEXO" }),
+    ]);
+  });
+
+  test("deve respeitar a meta semanal de hábitos com frequência de três vezes", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/habitos");
+
+    await page.getByRole("button", { name: /Novo hábito/ }).click();
+    await page.getByLabel("Nome do hábito *").fill("Leitura de teste");
+    await page.getByLabel("Frequência").selectOption("3 vezes por semana");
+    await page.getByRole("button", { name: "Cadastrar hábito" }).click();
+
+    await expect(page.getByText("Semana: 0/3")).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_habits")?.revision).toBe(1);
+    expect(cloud.get("nexo_habits")?.payload).toEqual([
+      expect.objectContaining({
+        name: "Leitura de teste",
+        frequency: "3 vezes por semana",
+      }),
+    ]);
+
+    await page.getByRole("button", { name: "Marcar hábito como concluído" }).click();
+    await expect(page.getByRole("button", { name: "Desmarcar hábito" })).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_habits")?.revision).toBe(2);
+    expect(cloud.get("nexo_habits")?.payload).toEqual([
+      expect.objectContaining({
+        name: "Leitura de teste",
+        completedDates: [getSaoPauloDateKey()],
+      }),
     ]);
   });
 
@@ -387,6 +417,63 @@ test.describe("NEXO - Contas a pagar", () => {
         status: "Cancelada",
       }),
     ]);
+  });
+});
+
+test.describe("NEXO - Agenda", () => {
+  test("cadastra atividade e persiste a data no calendário compartilhado", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/agenda");
+
+    await page.getByRole("button", { name: /Nova atividade/ }).click();
+    await page.getByLabel("Nome da atividade *").fill("Consulta de teste NEXO");
+    await page.getByLabel("Data").fill(getSaoPauloDateKey());
+    await page.getByLabel("Horário").fill("10:30");
+    await page.getByRole("button", { name: "Cadastrar atividade" }).click();
+
+    await expect(page.getByText("Consulta de teste NEXO")).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_tasks")?.revision).toBe(1);
+    expect(cloud.get("nexo_tasks")?.payload).toEqual([
+      expect.objectContaining({
+        description: "Consulta de teste NEXO",
+        date: getSaoPauloDateKey(),
+        time: "10:30",
+      }),
+    ]);
+  });
+});
+
+test.describe("NEXO - Fuso horário da Central do Dia", () => {
+  test("mantém a data de São Paulo mesmo quando o navegador está em outro fuso", async ({ browser }) => {
+    const context = await browser.newContext({
+      baseURL: "http://127.0.0.1:3001",
+      timezoneId: "Pacific/Honolulu",
+    });
+    const page = await context.newPage();
+    const cloud = await mockAuthenticatedCloud(page);
+    const today = getSaoPauloDateKey();
+
+    cloud.set("nexo_tasks", {
+      data_key: "nexo_tasks",
+      payload: [{
+        id: 9901,
+        description: "Compromisso no fuso oficial",
+        done: false,
+        date: today,
+        time: "09:00",
+        priority: "Alta",
+        category: "Pessoal",
+        notes: "",
+        createdAt: new Date().toISOString(),
+      }],
+      revision: 1,
+      updated_at: new Date().toISOString(),
+    });
+
+    await page.goto("/");
+    await expect(page.locator(".daily-agenda-item")).toContainText("Compromisso no fuso oficial");
+    await expect(page.locator(".daily-kpis")).toContainText("01");
+    await context.close();
   });
 });
 

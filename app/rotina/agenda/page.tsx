@@ -11,14 +11,7 @@ import AgendaForm from "@/components/routine/agenda/AgendaForm";
 import AgendaTimeline from "@/components/routine/agenda/AgendaTimeline";
 import { getOverdueRoutineTasks, getRoutineTasksForDate, getUpcomingRoutineTasks } from "@/lib/routine/task-queries";
 import type { RoutinePriority as Priority, RoutineTask as Task } from "@/lib/routine/types";
-
-function getLocalDate(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
+import { addDaysToDateKey, formatDateKey, getSaoPauloDateKey, getSaoPauloHour } from "@/lib/utils/date";
 
 function formatDate(date: string) {
   if (!date) return "Sem data";
@@ -28,9 +21,7 @@ function formatDate(date: string) {
 }
 
 function formatLongDate(date: string) {
-  const parsed = new Date(`${date}T12:00:00`);
-
-  return parsed.toLocaleDateString("pt-BR", {
+  return formatDateKey(date, {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -42,13 +33,13 @@ export default function AgendaPage() {
   const confirm = useNexoConfirm();
   const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
-  const [selectedDate, setSelectedDate] = useState(getLocalDate());
+  const [selectedDate, setSelectedDate] = useState(getSaoPauloDateKey());
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(getLocalDate());
+  const [date, setDate] = useState(getSaoPauloDateKey());
   const [time, setTime] = useState("");
   const [priority, setPriority] = useState<Priority>("Média");
   const [category, setCategory] = useState("Pessoal");
@@ -63,14 +54,14 @@ export default function AgendaPage() {
     ? Math.round((completedTasks.length / selectedTasks.length) * 100)
     : 0;
 
-  const today = getLocalDate();
+  const today = getSaoPauloDateKey();
 
   const overdueTasks = useMemo(() => getOverdueRoutineTasks(tasks, today), [tasks, today]);
 
   const upcomingTasks = useMemo(() => getUpcomingRoutineTasks(tasks, selectedDate), [tasks, selectedDate]);
 
   const greeting = useMemo(() => {
-    const hour = new Date().getHours();
+    const hour = getSaoPauloHour();
 
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
@@ -176,13 +167,11 @@ export default function AgendaPage() {
   }
 
   function changeDay(amount: number) {
-    const current = new Date(`${selectedDate}T12:00:00`);
-    current.setDate(current.getDate() + amount);
-    setSelectedDate(getLocalDate(current));
+    setSelectedDate(addDaysToDateKey(selectedDate, amount));
   }
 
   function goToToday() {
-    setSelectedDate(getLocalDate());
+    setSelectedDate(getSaoPauloDateKey());
   }
 
   return (
@@ -338,11 +327,7 @@ export default function AgendaPage() {
                       </strong>
                       <span>
                         {task.date
-                          ? new Date(
-                              `${task.date}T12:00:00`
-                            ).toLocaleDateString("pt-BR", {
-                              month: "short",
-                            })
+                          ? formatDateKey(task.date, { month: "short" })
                           : ""}
                       </span>
                     </div>
