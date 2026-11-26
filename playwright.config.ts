@@ -45,7 +45,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3001",
+    command: process.env.CI
+      ? "npm run start -- --hostname 127.0.0.1 --port 3001"
+      : "npm run dev -- --hostname 127.0.0.1 --port 3001",
     url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 120000

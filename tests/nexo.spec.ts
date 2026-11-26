@@ -407,7 +407,7 @@ test.describe("NEXO - Contas a pagar", () => {
     await page.getByLabel("Status").selectOption("Cancelada");
     await page.getByRole("button", { name: "Salvar alterações" }).click();
 
-    await expect(page.getByText("Cancelada", { exact: true })).toBeVisible();
+    await expect(page.getByRole("table").getByText("Cancelada", { exact: true })).toBeVisible();
     await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(3);
     expect(cloud.get("nexo_transactions")?.payload).toEqual([
       expect.objectContaining({
