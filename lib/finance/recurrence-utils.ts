@@ -98,7 +98,6 @@ export function expandRecurringTransactions(
     (item) =>
       RECURRENCES.includes(item.recurrence as RecurrenceLabel) &&
       (item.type === "Receita" || item.type === "Despesa") &&
-      !isCancelledTransaction(item) &&
       Boolean(item.date) &&
       isValidISODate(item.date || "")
   );
@@ -126,6 +125,7 @@ export function expandRecurringTransactions(
   }
 
   for (const root of ungrouped) {
+    if (isCancelledTransaction(root)) continue;
     series.push({
       root,
       groupId: `recorrencia-${root.id}`,
@@ -137,7 +137,7 @@ export function expandRecurringTransactions(
 
   for (const itemSeries of series) {
     const { root, groupId } = itemSeries;
-    if (!root.date || !root.recurrence) continue;
+    if (!root.date || !root.recurrence || isCancelledTransaction(root)) continue;
 
     const rootIndex = result.findIndex((item) => item.id === root.id);
     if (rootIndex < 0) continue;
@@ -169,7 +169,6 @@ export function expandRecurringTransactions(
         (item) =>
           item.recurrenceGroupId === groupId &&
           item.date === nextDate &&
-          !isCancelledTransaction(item) &&
           sameSeries(root, item)
       );
 
