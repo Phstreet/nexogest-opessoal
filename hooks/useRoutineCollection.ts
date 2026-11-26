@@ -223,7 +223,10 @@ export function useRoutineCollection<T>(
     });
     queueRef.current = pending.then(() => undefined, (error) => {
       if (mountedRef.current) {
-        setStorageError(error instanceof Error ? error.message : "Falha inesperada ao salvar os dados.");
+        const message = error instanceof Error ? error.message : "Falha inesperada ao salvar os dados.";
+        setStorageError(pendingRef.current
+          ? `${message} A alteração está guardada neste dispositivo; tente sincronizar novamente.`
+          : message);
       }
     });
   }, [persist, applyItems, persistItems]);
