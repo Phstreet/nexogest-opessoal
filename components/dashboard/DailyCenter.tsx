@@ -350,8 +350,8 @@ export default function DailyCenter(props: Props) {
           </article>
           <article>
             <span>Hábitos realizados</span>
-            <strong>{completedHabits.length}/{activeHabits.length}</strong>
-            <small>{activeHabits.length ? `${Math.round(habitRate * 100)}% dos hábitos ativos` : "Nenhum hábito ativo cadastrado"}</small>
+            <strong>{completedHabits.length}/{dueHabits.length}</strong>
+            <small>{dueHabits.length ? `${Math.round(habitRate * 100)}% dos hábitos previstos hoje` : activeHabits.length ? "Nenhum hábito previsto para hoje" : "Nenhum hábito ativo cadastrado"}</small>
           </article>
           <article>
             <span>Recebido hoje</span>
