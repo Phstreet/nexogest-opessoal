@@ -6,13 +6,22 @@ import { localISODate, isValidISODate } from "@/lib/utils/dates";
 
 export type FormMovementType = Extract<MovementType, "Receita" | "Despesa" | "Transferência" | "Investimento">;
 
-export function money(value: number) {\n  return formatBRL(value);\n}
+export function money(value: number) {
+  return formatBRL(value);
+}
 
-export function parseAmount(value: string) {\n  const cents = parseCurrencyToCents(value);\n  return cents === null ? NaN : fromCents(cents);\n}
+export function parseAmount(value: string) {
+  const cents = parseCurrencyToCents(value);
+  return cents === null ? NaN : fromCents(cents);
+}
 
-export function localDate() {\n  return localISODate();\n}
+export function localDate() {
+  return localISODate();
+}
 
-export function isValidDate(value: string) {\n  return isValidISODate(value);\n}
+export function isValidDate(value: string) {
+  return isValidISODate(value);
+}
 
 export function getDefaultCategory(type: FormMovementType) {
   if (type === "Receita") return "Salário";
