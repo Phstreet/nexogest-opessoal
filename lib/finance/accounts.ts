@@ -1,4 +1,5 @@
 import type { Account, Transaction } from "./types";
+import { fromCents, toCents } from "@/lib/utils/currency";
 
 export function normalizeTransactionStatus(transaction: Transaction): string {
   return (transaction.status ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -11,11 +12,12 @@ export function isCancelledTransaction(transaction: Transaction): boolean {
 
 function toSafeCents(value: unknown): number {
   const amount = Number(value);
-  return Number.isFinite(amount) ? Math.round(amount * 100) : 0;
-}
-
-function fromCents(cents: number): number {
-  return cents / 100;
+  if (!Number.isFinite(amount)) return 0;
+  try {
+    return toCents(amount);
+  } catch {
+    return 0;
+  }
 }
 
 /** Regra única de liquidação para resumos e saldos de contas. */
