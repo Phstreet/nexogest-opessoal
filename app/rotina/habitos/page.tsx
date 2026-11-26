@@ -7,7 +7,8 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineHabit as isValidHabit } from "@/lib/routine/types";
 import type { RoutineHabitFrequency as Frequency, RoutineHabit as Habit } from "@/lib/routine/types";
-import { addDaysToDateKey, getSaoPauloDateKey, getWeekdayFromDateKey } from "@/lib/utils/date";
+import { addDaysToDateKey, getSaoPauloDateKey } from "@/lib/utils/date";
+import { getHabitWeekProgress, getHabitWeeklyTarget, isHabitDueToday } from "@/lib/routine/habit-queries";
 
 type HabitFilter = "Todos" | "Concluídos" | "Pendentes";
 
@@ -30,12 +31,6 @@ function addDays(dateString: string, amount: number) {
   return addDaysToDateKey(dateString, amount);
 }
 
-function getWeeklyTarget(frequency?: Frequency) {
-  if (frequency === "Dias úteis") return 5;
-  if (frequency === "3 vezes por semana") return 3;
-  return 7;
-}
-
 function getStreak(habit: Habit, today: string) {
   const completed = new Set(habit.completedDates);
 
@@ -48,22 +43,6 @@ function getStreak(habit: Habit, today: string) {
   }
 
   return streak;
-}
-
-function getWeekProgress(habit: Habit, today: string) {
-  const dayOfWeek = getWeekdayFromDateKey(today);
-  if (dayOfWeek < 0) return 0;
-
-  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const monday = addDays(today, -mondayOffset);
-  let completed = 0;
-
-  for (let index = 0; index < 7; index++) {
-    const date = addDays(monday, index);
-    if (habit.completedDates.includes(date)) completed++;
-  }
-
-  return completed;
 }
 
 export default function HabitosPage() {
@@ -90,25 +69,27 @@ export default function HabitosPage() {
     [habits]
   );
 
+  const dueHabits = useMemo(
+    () => activeHabits.filter((habit) => isHabitDueToday(habit, today)),
+    [activeHabits, today]
+  );
+
   const metrics = useMemo(() => {
-    const completed = activeHabits.filter((habit) =>
+    const completed = dueHabits.filter((habit) =>
       habit.completedDates.includes(today)
     ).length;
-
-    const pending = activeHabits.length - completed;
-
-    const percentage =
-      activeHabits.length > 0
-        ? Math.round((completed / activeHabits.length) * 100)
-        : 0;
+    const pending = dueHabits.length - completed;
+    const percentage = dueHabits.length
+      ? Math.round((completed / dueHabits.length) * 100)
+      : 0;
 
     return {
-      total: activeHabits.length,
+      total: dueHabits.length,
       completed,
       pending,
       percentage,
     };
-  }, [activeHabits, today]);
+  }, [dueHabits, today]);
 
   const filteredHabits = useMemo(() => {
     return activeHabits
@@ -116,7 +97,7 @@ export default function HabitosPage() {
         const completedToday = habit.completedDates.includes(today);
 
         if (filter === "Concluídos" && !completedToday) return false;
-        if (filter === "Pendentes" && completedToday) return false;
+        if (filter === "Pendentes" && (!isHabitDueToday(habit, today) || completedToday)) return false;
 
         if (
           categoryFilter !== "Todas" &&
@@ -276,11 +257,11 @@ export default function HabitosPage() {
       <section className="metrics-grid">
         <div className="metric-card">
           <div className="metric-top">
-            <span className="metric-label">Hábitos ativos</span>
+            <span className="metric-label">Hábitos previstos hoje</span>
             <span className="metric-icon">▤</span>
           </div>
           <div className="metric-value">{metrics.total}</div>
-          <div className="metric-description">Hábitos em acompanhamento</div>
+          <div className="metric-description">Hábitos que precisam de atenção hoje</div>
         </div>
 
         <div className="metric-card">
@@ -548,7 +529,7 @@ export default function HabitosPage() {
                 habit.completedDates.includes(today);
 
               const streak = getStreak(habit, today);
-              const weekProgress = getWeekProgress(habit, today);
+              const weekProgress = getHabitWeekProgress(habit, today);
 
               return (
                 <article
@@ -600,7 +581,7 @@ export default function HabitosPage() {
                         {streak === 1 ? "dia seguido" : "dias seguidos"}
                       </span>
                       <span className="week-indicator">
-                        Semana: {weekProgress}/{getWeeklyTarget(habit.frequency)}
+                        Semana: {weekProgress}/{getHabitWeeklyTarget(habit.frequency)}
                       </span>
                     </div>
 
