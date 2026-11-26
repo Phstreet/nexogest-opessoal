@@ -299,7 +299,7 @@ export default function HabitosPage() {
             <h2>Seu progresso de hoje</h2>
             <p>
               Você realizou {metrics.completed} de {metrics.total} hábitos
-              ativos.
+              previstos para hoje.
             </p>
           </div>
 
