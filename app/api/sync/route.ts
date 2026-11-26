@@ -32,6 +32,32 @@ export async function GET(request: NextRequest) {
     }
 
     const { url, key } = getSupabaseConfig();
+    const relationalEnabled = process.env.NEXO_RELATIONAL_STORAGE_ENABLED === "true";
+
+    if (relationalEnabled) {
+      const relationalResponse = await fetch(`${url}/rest/v1/rpc/get_nexo_user_data_compat`, {
+        method: "POST",
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${access}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ p_data_keys: keys }),
+        cache: "no-store",
+      });
+
+      if (relationalResponse.ok) {
+        const relationalData: unknown = await relationalResponse.json().catch(() => null);
+        if (Array.isArray(relationalData)) {
+          return copyResponseCookies(
+            response,
+            NextResponse.json({ data: relationalData }, { headers: response.headers }),
+          );
+        }
+      }
+      // Falha de leitura relacional volta ao JSONB legado sem interromper a rotina.
+    }
+
     const query = new URLSearchParams({ select: "data_key,payload,revision,updated_at", order: "data_key.asc" });
     if (keys) query.set("data_key", `in.(${keys.join(",")})`);
 
@@ -83,7 +109,11 @@ export async function POST(request: NextRequest) {
     const { access, response } = await authorized(request);
     if (!access) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401, headers: response.headers });
     const { url, key } = getSupabaseConfig();
-    const save = await fetch(`${url}/rest/v1/rpc/save_nexo_user_data`, {
+    // Feature flag server-side: false mantém o repositório JSONB; true usa dual-write atômico.
+    const saveRpc = process.env.NEXO_RELATIONAL_STORAGE_ENABLED === "true"
+      ? "save_nexo_user_data_relational"
+      : "save_nexo_user_data";
+    const save = await fetch(`${url}/rest/v1/rpc/${saveRpc}`, {
       method: "POST",
       headers: { apikey: key, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
       body: JSON.stringify({ p_data_key: dataKey, p_payload: payload, p_expected_revision: revision }),

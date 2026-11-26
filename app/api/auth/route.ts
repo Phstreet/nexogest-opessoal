@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseRequestClient } from "@/lib/supabase/ssr-request";
+import { createSupabaseServerClient } from "@/lib/supabase/ssr-server";
 import {
-  clearSessionCookies, copyResponseCookies, fetchSupabaseUser, getSupabaseConfig, EXPIRY_COOKIE,
+  clearSessionCookies, copyResponseCookies, fetchSupabaseUser, getSupabaseConfig,
   getValidAccessToken, setSessionCookies, hasValidOrigin,
 } from "@/lib/supabase/server";
 
@@ -14,22 +16,31 @@ async function readAuthError(response: Response) {
   return "Não foi possível concluir a solicitação. Tente novamente mais tarde.";
 }
 
-export async function GET(request: NextRequest) {
-  const response = NextResponse.json({ session: null });
+export async function GET() {
   try {
-    const access = await getValidAccessToken(request, response);
-    if (!access) return response;
-    const user = await fetchSupabaseUser(access);
-    if (!user) {
-      clearSessionCookies(response);
-      return response;
+    // O proxy renova a sessão e sincroniza cookies SSR/legados antes do Route Handler.
+    const supabase = await createSupabaseServerClient();
+    const [{ data: userData, error }, { data: sessionData }] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase.auth.getSession(),
+    ]);
+
+    if (error || !userData.user || !sessionData.session) {
+      return NextResponse.json({ session: null });
     }
-    return copyResponseCookies(response, NextResponse.json({
-      session: { user, expires_at: Number(response.cookies.get(EXPIRY_COOKIE)?.value || request.cookies.get(EXPIRY_COOKIE)?.value || Math.floor(Date.now() / 1000) + 300) },
-    }, { headers: response.headers }));
+
+    return NextResponse.json({
+      session: {
+        user: userData.user,
+        expires_at: sessionData.session.expires_at ??
+          Math.floor(Date.now() / 1000) + sessionData.session.expires_in,
+      },
+    });
   } catch {
-    clearSessionCookies(response);
-    return copyResponseCookies(response, NextResponse.json({ session: null, error: "Não foi possível validar a sessão. Entre novamente." }, { headers: response.headers }));
+    return NextResponse.json({
+      session: null,
+      error: "Não foi possível validar a sessão. Entre novamente.",
+    });
   }
 }
 
@@ -130,6 +141,9 @@ export async function POST(request: NextRequest) {
       if (access) {
         await fetch(`${url}/auth/v1/logout`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${access}` }, cache: "no-store" }).catch(() => undefined);
       }
+      // Revoga a sessão local do SDK SSR e remove os cookies legados.
+      const supabase = createSupabaseRequestClient(request, response);
+      await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
       clearSessionCookies(response);
       return response;
     }

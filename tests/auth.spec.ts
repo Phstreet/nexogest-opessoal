@@ -29,6 +29,9 @@ async function mockAuthApi(
     if ((result.status || 200) < 400 && result.body.session) {
       currentSession = result.body.session as typeof testSession;
     }
+    if ((result.status || 200) < 400 && payload.action === "logout") {
+      currentSession = null;
+    }
     await route.fulfill({
       status: result.status || 200,
       contentType: "application/json",
@@ -92,6 +95,54 @@ test.describe("NEXO - Autenticação e recuperação de acesso", () => {
 
     await expect(page).toHaveURL("http://127.0.0.1:3001/");
     await expect(page.locator("h1, h2").first()).toBeVisible();
+  });
+
+  test("deve encerrar a sessão e voltar para a tela de entrada", async ({ page }) => {
+    let logoutCalls = 0;
+
+    await mockAuthApi(page, async (action) => {
+      if (action === "login") return { body: { session: testSession } };
+      if (action === "logout") {
+        logoutCalls += 1;
+        return { body: { ok: true } };
+      }
+      throw new Error("Ação inesperada: " + action);
+    });
+
+    await page.goto("/entrar");
+    await page.getByLabel("E-mail").fill("teste@nexo.local");
+    await page.getByLabel("Senha").fill("SenhaSegura123");
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await expect(page).toHaveURL("http://127.0.0.1:3001/");
+
+    await page.getByRole("button", { name: "Abrir menu da conta" }).click();
+    await page.getByRole("menuitem", { name: "Sair da conta" }).click();
+
+    await expect(page).toHaveURL(/\/entrar$/);
+    await expect(page.getByLabel("E-mail")).toBeVisible();
+    expect(logoutCalls).toBe(1);
+  });
+
+  test("deve revalidar a sessão quando a aba volta a receber foco", async ({ page }) => {
+    let sessionReads = 0;
+
+    await page.route("**/api/auth", async (route) => {
+      if (route.request().method() === "GET") {
+        sessionReads += 1;
+        await route.fulfill({ json: { session: testSession } });
+        return;
+      }
+      await route.fulfill({ json: { ok: true } });
+    });
+    await page.route("**/api/sync**", async (route) => {
+      await route.fulfill({ json: { data: [] } });
+    });
+
+    await page.goto("/");
+    await expect.poll(() => sessionReads).toBeGreaterThan(0);
+    const initialReads = sessionReads;
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await expect.poll(() => sessionReads).toBeGreaterThan(initialReads);
   });
 
   test("deve solicitar recuperação de senha sem revelar se o e-mail existe", async ({ page }) => {

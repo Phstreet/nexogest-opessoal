@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   getCurrentSession, signInWithPassword, signOutSession, signUpWithPassword,
   requestPasswordReset, updatePassword, setRecoverySession,
@@ -31,6 +33,37 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    let unsubscribeAuth: (() => void) | undefined;
+
+    // O SDK acompanha INITIAL_SESSION e TOKEN_REFRESHED no cookie SSR.
+    // O fluxo HttpOnly legado continua como fallback durante a migração.
+    try {
+      const { data: { subscription } } = createSupabaseBrowserClient().auth.onAuthStateChange(
+        (event: AuthChangeEvent, authSession: Session | null) => {
+          if (event === "SIGNED_OUT") {
+            setSession(null);
+            setLoading(false);
+            return;
+          }
+
+          if (authSession?.user) {
+            setSession({
+              user: {
+                id: authSession.user.id,
+                email: authSession.user.email,
+                user_metadata: authSession.user.user_metadata,
+              },
+              expires_at: authSession.expires_at ??
+                Math.floor(Date.now() / 1000) + (authSession.expires_in ?? 3600),
+            });
+          }
+        },
+      );
+      unsubscribeAuth = () => subscription.unsubscribe();
+    } catch {
+      // Sem as variáveis públicas do SDK, o cliente HttpOnly antigo segue funcional.
+    }
+
     async function initialize() {
       const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hash.get("access_token");
@@ -52,7 +85,11 @@ export function NexoAuthProvider({ children }: { children: ReactNode }) {
     void initialize();
     const refreshOnFocus = () => { if (document.visibilityState === "visible") void loadSession(); };
     window.addEventListener("focus", refreshOnFocus);
-    return () => { active = false; window.removeEventListener("focus", refreshOnFocus); };
+    return () => {
+      active = false;
+      unsubscribeAuth?.();
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, [loadSession]);
 
   useEffect(() => {

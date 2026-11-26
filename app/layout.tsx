@@ -5,6 +5,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { NexoAuthProvider } from "@/contexts/NexoAuthProvider";
 import { NexoConfirmProvider } from "@/contexts/NexoConfirmProvider";
 
+// Nonces CSP são únicos por requisição; páginas com nonce não podem ser pré-renderizadas estaticamente.
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

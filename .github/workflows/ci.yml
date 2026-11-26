@@ -52,9 +52,11 @@ jobs:
           cache: npm
       - name: Instalar dependências
         run: npm ci
+      - name: Build de produção para E2E
+        run: npm run build
       - name: Instalar navegadores Playwright
         run: npx playwright install --with-deps chromium
-      - name: Executar testes E2E
+      - name: Executar testes E2E em produção
         run: npm run test:e2e
       - name: Publicar relatório em caso de falha
         if: failure()
@@ -88,3 +90,20 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  rls_isolation:
+    name: RLS (JWT A/B — DEV)
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/security/relational-auth-hardening') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'security/relational-auth-hardening') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Node LTS
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Testar isolamento RLS com JWT A/B no NEXO-DEV
+        run: node scripts/security/rls-isolation.mjs
+        env:
+          NEXO_DEV_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.NEXO_DEV_SUPABASE_SERVICE_ROLE_KEY }}\n          NEXO_DEV_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXO_DEV_SUPABASE_PUBLISHABLE_KEY }}
