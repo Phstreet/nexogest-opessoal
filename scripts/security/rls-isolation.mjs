@@ -4,7 +4,10 @@ const URL_BASE = "https://mmwkpwspyjvxsennvhic.supabase.co";
 const ANON_KEY = process.env.NEXO_DEV_SUPABASE_PUBLISHABLE_KEY;
 const SERVICE_KEY = process.env.NEXO_DEV_SUPABASE_SERVICE_ROLE_KEY;
 
-if (!ANON_KEY) {\n  throw new Error("Secret ausente: NEXO_DEV_SUPABASE_PUBLISHABLE_KEY (chave pública do NEXO-DEV).");\n}\nif (!SERVICE_KEY) {
+if (!ANON_KEY) {
+  throw new Error("Secret ausente: NEXO_DEV_SUPABASE_PUBLISHABLE_KEY (chave pública do NEXO-DEV).");
+}
+if (!SERVICE_KEY) {
   throw new Error("Secret ausente: NEXO_DEV_SUPABASE_SERVICE_ROLE_KEY (somente DEV).");
 }
 if (new URL(URL_BASE).hostname.split(".")[0] !== "mmwkpwspyjvxsennvhic") {
