@@ -55,6 +55,25 @@ async function mockAuthApi(
 }
 
 test.describe("NEXO - Autenticação e recuperação de acesso", () => {
+  test("mantém o cadastro público fechado na interface", async ({ page }) => {
+    await page.goto("/cadastro");
+    await expect(page.getByRole("heading", { name: "Cadastro temporariamente fechado" })).toBeVisible();
+    await expect(page.getByText(/concluindo as validações de segurança/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: /Já possui uma conta\? Entrar/i })).toBeVisible();
+    await expect(page.locator("form")).toHaveCount(0);
+  });
+
+  test("bloqueia cadastro direto na API quando a chave de abertura não está ativa", async ({ request }) => {
+    const response = await request.post("/api/auth", {
+      headers: { Origin: "http://127.0.0.1:3001" },
+      data: { action: "signup", email: "novo@nexo.local", password: "SenhaSegura123", displayName: "Novo usuário" },
+    });
+    expect(response.status()).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("cadastro público do NEXO está temporariamente fechado"),
+    });
+  });
+
   test("deve autenticar o usuário e encaminhá-lo para a página inicial", async ({ page }) => {
     await mockAuthApi(page, async (action, payload) => {
       expect(action).toBe("login");
@@ -70,24 +89,6 @@ test.describe("NEXO - Autenticação e recuperação de acesso", () => {
 
     await expect(page).toHaveURL("http://127.0.0.1:3001/");
     await expect(page.locator("h1, h2").first()).toBeVisible();
-  });
-
-  test("deve informar que o cadastro precisa de confirmação por e-mail", async ({ page }) => {
-    await mockAuthApi(page, async (action, payload) => {
-      expect(action).toBe("signup");
-      expect(payload.email).toBe("novo@nexo.local");
-      expect(payload.displayName).toBe("Novo usuário");
-      return { body: { session: null, confirmationRequired: true } };
-    });
-
-    await page.goto("/cadastro");
-    await page.getByLabel("Nome de exibição").fill("Novo usuário");
-    await page.getByLabel("E-mail").fill("novo@nexo.local");
-    await page.getByLabel("Senha").fill("SenhaSegura123");
-    await page.getByRole("button", { name: "Criar conta" }).click();
-
-    await expect(page.getByRole("status")).toContainText("Verifique seu e-mail");
-    await expect(page).toHaveURL(/\/cadastro$/);
   });
 
   test("deve solicitar recuperação de senha sem revelar se o e-mail existe", async ({ page }) => {

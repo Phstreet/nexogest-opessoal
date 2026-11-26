@@ -39,9 +39,18 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Requisição inválida." }, { status: 400 }); }
 
+  const action = String(body.action || "");
+  // Cadastro público permanece fechado até a aprovação integral do checklist de lançamento.
+  // A abertura exige configuração explícita no servidor; ausência da variável significa fechado.
+  if (action === "signup" && process.env.NEXO_SIGNUP_ENABLED !== "true") {
+    return NextResponse.json(
+      { error: "O cadastro público do NEXO está temporariamente fechado. O acesso será liberado após a conclusão da validação de segurança." },
+      { status: 403 }
+    );
+  }
+
   try {
     const { url, key } = getSupabaseConfig();
-    const action = String(body.action || "");
     if (action === "login" || action === "signup") {
       if (action === "signup" && (typeof body.password !== "string" || body.password.length < 8)) {
         return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
