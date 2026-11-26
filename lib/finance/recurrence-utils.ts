@@ -83,7 +83,6 @@ function sameSeries(root: Transaction, candidate: Transaction): boolean {
 type RecurrenceSeries = {
   root: Transaction;
   groupId: string;
-  members: Transaction[];
 };
 
 /**
@@ -121,7 +120,7 @@ export function expandRecurringTransactions(
     const ordered = [...members].sort((a, b) =>
       String(a.date).localeCompare(String(b.date))
     );
-    series.push({ root: ordered[0], groupId, members: ordered });
+    series.push({ root: ordered[0], groupId });
   }
 
   for (const root of ungrouped) {
@@ -129,7 +128,6 @@ export function expandRecurringTransactions(
     series.push({
       root,
       groupId: `recorrencia-${root.id}`,
-      members: [root],
     });
   }
 
@@ -155,11 +153,13 @@ export function expandRecurringTransactions(
       root.date
     );
 
+    const today = localISODate();
+    const lowerBound = latestExistingDate > today ? latestExistingDate : today;
     let occurrence = 1;
     let nextDate = getNextRecurrenceDate(root.date, root.recurrence, occurrence);
 
-    // Pula as ocorrências já persistidas; limite defensivo para dados antigos.
-    while (nextDate <= latestExistingDate && occurrence < 5000) {
+    // Não recria vencimentos históricos; também pula ocorrências já persistidas.
+    while (nextDate <= lowerBound && occurrence < 5000) {
       occurrence += 1;
       nextDate = getNextRecurrenceDate(root.date, root.recurrence, occurrence);
     }
