@@ -1,7 +1,18 @@
 /** Utilitários monetários para cálculos seguros em centavos. */
 export function toCents(value: number): number {
   if (!Number.isFinite(value)) throw new Error("Valor monetário inválido.");
-  return Math.round(value * 100);
+
+  const sign = value < 0 ? -1 : 1;
+  const [wholePart, fractionPart = ""] = Math.abs(value).toFixed(8).split(".");
+  const cents =
+    Number(wholePart) * 100 +
+    Number(fractionPart.slice(0, 2).padEnd(2, "0")) +
+    (Number(fractionPart[2] ?? "0") >= 5 ? 1 : 0);
+
+  if (!Number.isSafeInteger(cents)) {
+    throw new Error("Valor monetário excede o limite seguro de cálculo.");
+  }
+  return sign * cents;
 }
 export function fromCents(cents: number): number {
   if (!Number.isSafeInteger(cents)) throw new Error("Centavos inválidos.");
