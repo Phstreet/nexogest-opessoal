@@ -31,7 +31,15 @@ function formatLongDate(date: string) {
 
 export default function AgendaPage() {
   const confirm = useNexoConfirm();
-  const { items: tasks, setItems: setTasks, loaded, storageError } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
+  const {
+    items: tasks,
+    setItems: setTasks,
+    loaded,
+    storageError,
+    syncPending,
+    retrySync,
+    downloadPendingBackup,
+  } = useRoutineCollection<Task>("nexo_tasks", isValidTask);
 
   const [selectedDate, setSelectedDate] = useState(getSaoPauloDateKey());
 
@@ -177,9 +185,19 @@ export default function AgendaPage() {
   return (
     <div className="content agenda-content">
       {storageError && (
-        <div className="form-card" role="alert">
-          <strong>Armazenamento protegido</strong>
+        <div className="form-card routine-sync-warning" role="alert">
+          <strong>{syncPending ? "Alteração protegida neste dispositivo" : "Armazenamento protegido"}</strong>
           <p>{storageError}</p>
+          {syncPending && (
+            <div className="form-actions">
+              <button type="button" className="secondary-button" onClick={downloadPendingBackup}>
+                Baixar backup pendente
+              </button>
+              <button type="button" className="primary-button" onClick={() => void retrySync()}>
+                Tentar sincronizar
+              </button>
+            </div>
+          )}
         </div>
       )}
       <section className="agenda-welcome">
