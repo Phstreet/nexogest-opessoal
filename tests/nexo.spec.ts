@@ -155,6 +155,25 @@ test.describe("NEXO - Persistência exclusiva na nuvem", () => {
     ]);
   });
 
+  test("deve respeitar a meta semanal de hábitos com frequência de três vezes", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/habitos");
+
+    await page.getByRole("button", { name: /Novo hábito/ }).click();
+    await page.getByLabel("Nome do hábito *").fill("Leitura de teste");
+    await page.getByLabel("Frequência").selectOption("3 vezes por semana");
+    await page.getByRole("button", { name: "Cadastrar hábito" }).click();
+
+    await expect(page.getByText("Semana: 0/3")).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_habits")?.revision).toBe(1);
+    expect(cloud.get("nexo_habits")?.payload).toEqual([
+      expect.objectContaining({
+        name: "Leitura de teste",
+        frequency: "3 vezes por semana",
+      }),
+    ]);
+  });
+
   test("deve bloquear a gravação quando o endpoint remoto falhar", async ({ page }) => {
     await mockAuthenticatedCloud(page);
     await page.route("**/api/sync**", async (route) => {
