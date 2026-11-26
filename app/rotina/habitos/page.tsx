@@ -63,7 +63,15 @@ function getStreak(habit: Habit, today: string) {
 
 export default function HabitosPage() {
   const confirm = useNexoConfirm();
-  const { items: habits, setItems: setHabits, loaded, storageError } = useRoutineCollection<Habit>("nexo_habits", isValidHabit);
+  const {
+    items: habits,
+    setItems: setHabits,
+    loaded,
+    storageError,
+    syncPending,
+    retrySync,
+    downloadPendingBackup,
+  } = useRoutineCollection<Habit>("nexo_habits", isValidHabit);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -250,9 +258,19 @@ export default function HabitosPage() {
   return (
     <div className="content">
       {storageError && (
-        <div className="form-card" role="alert">
-          <strong>Armazenamento protegido</strong>
+        <div className="form-card routine-sync-warning" role="alert">
+          <strong>{syncPending ? "Alteração protegida neste dispositivo" : "Armazenamento protegido"}</strong>
           <p>{storageError}</p>
+          {syncPending && (
+            <div className="form-actions">
+              <button type="button" className="secondary-button" onClick={downloadPendingBackup}>
+                Baixar backup pendente
+              </button>
+              <button type="button" className="primary-button" onClick={() => void retrySync()}>
+                Tentar sincronizar
+              </button>
+            </div>
+          )}
         </div>
       )}
       <section className="page-heading">
