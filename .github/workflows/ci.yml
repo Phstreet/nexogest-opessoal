@@ -95,7 +95,10 @@ jobs:
     name: RLS (JWT A/B — DEV)
     if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/security/relational-auth-hardening') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'security/relational-auth-hardening') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://mmwkpwspyjvxsennvhic.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXO_DEV_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -108,3 +111,11 @@ jobs:
         env:
           NEXO_DEV_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.NEXO_DEV_SUPABASE_SERVICE_ROLE_KEY }}
           NEXO_DEV_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXO_DEV_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Instalar dependências do NEXO
+        run: npm ci
+      - name: Build para autenticação real
+        run: npm run build
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Validar login, refresh e logout com Supabase DEV
+        run: npx playwright test tests/auth-real.spec.ts
