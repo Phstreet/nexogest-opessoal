@@ -43,6 +43,11 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function sumMoney(values: number[]) {
+  const totalCents = values.reduce((total, value) => total + toCents(value), 0);
+  return fromCents(totalCents);
+}
+
 function formatDate(value?: string) {
   if (!value) return "Sem data";
 
@@ -152,31 +157,25 @@ export default function ContasAPagarPage() {
 
   const totalOpen = useMemo(
     () =>
-      activeExpenses
-        .reduce((total, item) => total + getOpenAmount(item), 0),
+      sumMoney(activeExpenses.map(getOpenAmount)),
     [activeExpenses]
   );
 
   const totalPaid = useMemo(
     () =>
-      activeExpenses
-        .reduce((total, item) => total + getSettledAmount(item), 0),
+      sumMoney(activeExpenses.map(getSettledAmount)),
     [activeExpenses]
   );
 
   const totalOverdue = useMemo(
     () =>
-      activeExpenses
-        .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + getOpenAmount(item), 0),
+      sumMoney(activeExpenses.filter(isOverdue).map(getOpenAmount)),
     [activeExpenses]
   );
 
   const totalCancelled = useMemo(
     () =>
-      expenses
-        .filter((item) => isCancelled(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+      sumMoney(expenses.filter((item) => isCancelled(item.status)).map((item) => Number(item.amount || 0))),
     [expenses]
   );
 
@@ -577,7 +576,7 @@ export default function ContasAPagarPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredExpenses.reduce((total, item) => total + getOpenAmount(item), 0)
+                sumMoney(filteredExpenses.map(getOpenAmount))
               )}
             </strong>
           </span>
