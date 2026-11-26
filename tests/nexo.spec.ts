@@ -502,6 +502,53 @@ test.describe("NEXO - Recuperação offline da rotina", () => {
     ]);
   });
 
+  test("preserva backup local e não sobrescreve uma versão remota conflitante", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.route("**/api/sync**", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { data: [...cloud.values()] } });
+        return;
+      }
+      await route.fulfill({ status: 503, json: { error: "Conexão indisponível para teste." } });
+    });
+
+    await page.goto("/rotina/habitos");
+    await page.getByRole("button", { name: /Novo hábito/ }).click();
+    await page.getByLabel("Nome do hábito *").fill("Minha versão local");
+    await page.getByRole("button", { name: "Cadastrar hábito" }).click();
+    await expect(page.locator(".routine-sync-warning")).toContainText("guardada neste dispositivo");
+
+    cloud.set("nexo_habits", {
+      data_key: "nexo_habits",
+      payload: [{
+        id: 9902,
+        name: "Versão remota de outro dispositivo",
+        category: "Pessoal",
+        frequency: "Diário",
+        completedDates: [],
+        active: true,
+      }],
+      revision: 1,
+      updated_at: new Date().toISOString(),
+    });
+
+    await page.reload();
+    await expect(page.getByText("Minha versão local")).toBeVisible();
+    await expect(page.locator(".routine-sync-warning")).toContainText("Conflito de sincronização");
+
+    await page.getByRole("button", { name: "Tentar sincronizar" }).click();
+    await expect(page.locator(".routine-sync-warning")).toContainText("Conflito de sincronização");
+    expect(cloud.get("nexo_habits")?.revision).toBe(1);
+    expect(cloud.get("nexo_habits")?.payload).toEqual([
+      expect.objectContaining({ name: "Versão remota de outro dispositivo" }),
+    ]);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Baixar backup pendente" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("nexo-backup-nexo_habits-pendente.json");
+  });
+
   test("preserva conclusão de hábito após falha de rede e sincroniza ao reconectar", async ({ page }) => {
     const cloud = await mockAuthenticatedCloud(page);
     let online = false;
