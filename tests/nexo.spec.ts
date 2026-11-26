@@ -324,12 +324,12 @@ test.describe("NEXO - Operações financeiras", () => {
     await expect.poll(() => {
       const payload = cloud.get("nexo_transactions")?.payload as unknown[] | undefined;
       return payload?.length;
-    }).toBe(4);
+    }).toBe(13);
     await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(1);
 
     await page.reload();
-    await expect(page.locator(".finance-item")).toHaveCount(4);
-    expect((cloud.get("nexo_transactions")?.payload as unknown[]).length).toBe(4);
+    await expect(page.locator(".finance-item")).toHaveCount(13);
+    expect((cloud.get("nexo_transactions")?.payload as unknown[]).length).toBe(13);
     expect(cloud.get("nexo_transactions")?.revision).toBe(1);
   });
 });

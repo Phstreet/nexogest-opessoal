@@ -1,43 +1,26 @@
 import type { MovementType, Transaction } from "@/lib/finance/types";
 import { subcategories } from "@/lib/finance/categories";
 import { getSettledTransactionAmount, isCancelledTransaction } from "@/lib/finance/accounts";
+import { formatBRL, parseCurrencyToCents, fromCents } from "@/lib/utils/currency";
+import { localISODate, isValidISODate } from "@/lib/utils/dates";
 
 export type FormMovementType = Extract<MovementType, "Receita" | "Despesa" | "Transferência" | "Investimento">;
 
 export function money(value: number) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  return formatBRL(value);
 }
 
 export function parseAmount(value: string) {
-  const normalized = value.trim().replace(/\s/g, "");
-  if (!normalized) return NaN;
-  if (normalized.includes(",")) {
-    return Number(normalized.replace(/\./g, "").replace(",", "."));
-  }
-  if (/^-?\d{1,3}(\.\d{3})+$/.test(normalized)) {
-    return Number(normalized.replace(/\./g, ""));
-  }
-  return Number(normalized);
+  const cents = parseCurrencyToCents(value);
+  return cents === null ? NaN : fromCents(cents);
 }
 
 export function localDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return localISODate();
 }
 
 export function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day;
+  return isValidISODate(value);
 }
 
 export function getDefaultCategory(type: FormMovementType) {
@@ -135,23 +118,30 @@ export type FinanceTotals = {
   resultado: number;
 };
 
+function sumAmountsInCents(items: Transaction[], amountOf: (item: Transaction) => number): number {
+  const cents = items.reduce((sum, item) => {
+    const value = amountOf(item);
+    return sum + (Number.isFinite(value) ? Math.round(value * 100) : 0);
+  }, 0);
+  return fromCents(cents);
+}
+
 export function calculateFinanceTotals(transactions: Transaction[]): FinanceTotals {
   const active = transactions.filter((item) => !isCancelledTransaction(item));
-  const receitas = active
-    .filter((item) => item.type === "Receita")
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const despesas = active
-    .filter((item) => item.type === "Despesa")
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const receitasRealizadas = active
-    .filter((item) => item.type === "Receita")
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
-  const despesasRealizadas = active
-    .filter((item) => item.type === "Despesa")
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
-  const investimentosAplicados = active
-    .filter(isInvestmentApplied)
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
+  const receitasItems = active.filter((item) => item.type === "Receita");
+  const despesasItems = active.filter((item) => item.type === "Despesa");
+  const investmentItems = active.filter(isInvestmentApplied);
+
+  const receitas = sumAmountsInCents(receitasItems, (item) => item.amount);
+  const despesas = sumAmountsInCents(despesasItems, (item) => item.amount);
+  const receitasRealizadas = sumAmountsInCents(receitasItems, getSettledAmount);
+  const despesasRealizadas = sumAmountsInCents(despesasItems, getSettledAmount);
+  const investimentosAplicados = sumAmountsInCents(investmentItems, getSettledAmount);
+
+  const resultadoCents =
+    Math.round(receitasRealizadas * 100) -
+    Math.round(despesasRealizadas * 100) -
+    Math.round(investimentosAplicados * 100);
 
   return {
     receitas,
@@ -159,7 +149,7 @@ export function calculateFinanceTotals(transactions: Transaction[]): FinanceTota
     receitasRealizadas,
     despesasRealizadas,
     investimentosAplicados,
-    resultado: receitasRealizadas - despesasRealizadas - investimentosAplicados,
+    resultado: fromCents(resultadoCents),
   };
 }
 
