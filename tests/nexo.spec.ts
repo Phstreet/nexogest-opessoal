@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { getSaoPauloDateKey } from "@/lib/utils/date";
 
 const session = {
   user: { id: "user-nexo-e2e", email: "teste@nexo.local", user_metadata: { display_name: "Teste NEXO" } },
@@ -406,6 +407,35 @@ test.describe("NEXO - Contas a pagar", () => {
         status: "Cancelada",
       }),
     ]);
+  });
+});
+
+test.describe("NEXO - Fuso horário da Central do Dia", () => {
+  test("mantém a data de São Paulo mesmo quando o navegador está em outro fuso", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    const today = getSaoPauloDateKey();
+
+    cloud.set("nexo_tasks", {
+      data_key: "nexo_tasks",
+      payload: [{
+        id: 9901,
+        description: "Compromisso no fuso oficial",
+        done: false,
+        date: today,
+        time: "09:00",
+        priority: "Alta",
+        category: "Pessoal",
+        notes: "",
+        createdAt: new Date().toISOString(),
+      }],
+      revision: 1,
+      updated_at: new Date().toISOString(),
+    });
+
+    await page.emulateTimezone("Pacific/Honolulu");
+    await page.goto("/");
+    await expect(page.locator(".daily-agenda-item")).toContainText("Compromisso no fuso oficial");
+    await expect(page.locator(".daily-kpis")).toContainText("01");
   });
 });
 
