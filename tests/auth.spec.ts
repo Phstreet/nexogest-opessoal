@@ -63,15 +63,18 @@ test.describe("NEXO - Autenticação e recuperação de acesso", () => {
     await expect(page.locator("form")).toHaveCount(0);
   });
 
-  test("bloqueia cadastro direto na API quando a chave de abertura não está ativa", async ({ request }) => {
-    const response = await request.post("/api/auth", {
-      headers: { Origin: "http://127.0.0.1:3001" },
-      data: { action: "signup", email: "novo@nexo.local", password: "SenhaSegura123", displayName: "Novo usuário" },
+  test("bloqueia cadastro direto na API quando a chave de abertura não está ativa", async ({ page }) => {
+    await page.goto("/cadastro");
+    const result = await page.evaluate(async () => {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "signup", email: "novo@nexo.local", password: "SenhaSegura123", displayName: "Novo usuário" }),
+      });
+      return { status: response.status, body: await response.json() as { error?: string } };
     });
-    expect(response.status()).toBe(403);
-    await expect(response.json()).resolves.toMatchObject({
-      error: expect.stringContaining("cadastro público do NEXO está temporariamente fechado"),
-    });
+    expect(result.status).toBe(403);
+    expect(result.body.error).toContain("cadastro público do NEXO está temporariamente fechado");
   });
 
   test("deve autenticar o usuário e encaminhá-lo para a página inicial", async ({ page }) => {
