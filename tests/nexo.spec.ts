@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { getSaoPauloDateKey } from "@/lib/utils/date";
+import { getSaoPauloDateKey } from "../lib/utils/date";
 
 const session = {
   user: { id: "user-nexo-e2e", email: "teste@nexo.local", user_metadata: { display_name: "Teste NEXO" } },
