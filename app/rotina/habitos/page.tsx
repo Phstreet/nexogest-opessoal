@@ -7,6 +7,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineHabit as isValidHabit } from "@/lib/routine/types";
 import type { RoutineHabitFrequency as Frequency, RoutineHabit as Habit } from "@/lib/routine/types";
+import { addDaysToDateKey, getSaoPauloDateKey, getWeekdayFromDateKey } from "@/lib/utils/date";
 
 type HabitFilter = "Todos" | "Concluídos" | "Pendentes";
 
@@ -25,20 +26,14 @@ const FREQUENCIES: Frequency[] = [
   "3 vezes por semana",
 ];
 
-function getLocalDate(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+function addDays(dateString: string, amount: number) {
+  return addDaysToDateKey(dateString, amount);
 }
 
-function addDays(dateString: string, amount: number) {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + amount);
-
-  return getLocalDate(date);
+function getWeeklyTarget(frequency?: Frequency) {
+  if (frequency === "Dias úteis") return 5;
+  if (frequency === "3 vezes por semana") return 3;
+  return 7;
 }
 
 function getStreak(habit: Habit, today: string) {
@@ -56,20 +51,16 @@ function getStreak(habit: Habit, today: string) {
 }
 
 function getWeekProgress(habit: Habit, today: string) {
-  const [year, month, day] = today.split("-").map(Number);
-  const current = new Date(year, month - 1, day);
-  const dayOfWeek = current.getDay();
-  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const dayOfWeek = getWeekdayFromDateKey(today);
+  if (dayOfWeek < 0) return 0;
 
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const monday = addDays(today, -mondayOffset);
   let completed = 0;
 
   for (let index = 0; index < 7; index++) {
     const date = addDays(monday, index);
-
-    if (habit.completedDates.includes(date)) {
-      completed++;
-    }
+    if (habit.completedDates.includes(date)) completed++;
   }
 
   return completed;
@@ -92,7 +83,7 @@ export default function HabitosPage() {
   const [categoryFilter, setCategoryFilter] = useState("Todas");
   const [search, setSearch] = useState("");
 
-  const today = getLocalDate();
+  const today = getSaoPauloDateKey();
 
   const activeHabits = useMemo(
     () => habits.filter((habit) => habit.active),
@@ -609,7 +600,7 @@ export default function HabitosPage() {
                         {streak === 1 ? "dia seguido" : "dias seguidos"}
                       </span>
                       <span className="week-indicator">
-                        Semana: {weekProgress}/7
+                        Semana: {weekProgress}/{getWeeklyTarget(habit.frequency)}
                       </span>
                     </div>
 
