@@ -7,6 +7,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useCloudFinanceCollections } from "@/hooks/useCloudFinanceCollections";
 import { categoriesByType, subcategories } from "@/lib/finance/categories";
 import { expandRecurringTransactions } from "@/lib/finance/recurrence-utils";
+import { fromCents, parseCurrencyToCents, toCents } from "@/lib/utils/currency";
 
 type Transaction = {
   id: number;
@@ -42,31 +43,43 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function sumMoney(values: number[]) {
+  const totalCents = values.reduce((total, value) => total + toCents(value), 0);
+  return fromCents(totalCents);
+}
+
 function formatDate(value?: string) {
   if (!value) return "Sem data";
 
-  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+  const normalized = value.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return "Sem data";
 
+  const date = new Date(`${normalized}T12:00:00Z`);
   if (Number.isNaN(date.getTime())) return "Sem data";
 
-  return date.toLocaleDateString("pt-BR");
+  return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
 function getToday() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
 
-  return `${year}-${month}-${day}`;
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 function parseCurrencyInput(value: string): number {
-  const normalized = value.trim().replace(/\s/g, "");
-  if (!normalized) return NaN;
-  return Number(normalized.includes(",")
-    ? normalized.replace(/\./g, "").replace(",", ".")
-    : normalized);
+  try {
+    const cents = parseCurrencyToCents(value);
+    return cents === null ? NaN : fromCents(cents);
+  } catch {
+    return NaN;
+  }
 }
 
 function isPaid(status?: string) {
@@ -74,11 +87,18 @@ function isPaid(status?: string) {
 }
 
 function getSettledAmount(transaction: Transaction) {
-  const amount = Math.max(0, Number(transaction.amount) || 0);
-  if (transaction.settledAmount !== undefined) return Math.min(amount, Math.max(0, Number(transaction.settledAmount) || 0));
-  return isPaid(transaction.status) ? amount : 0;
+  const amountCents = Math.max(0, toCents(Number(transaction.amount) || 0));
+  if (transaction.settledAmount !== undefined) {
+    const settledCents = Math.max(0, toCents(Number(transaction.settledAmount) || 0));
+    return fromCents(Math.min(amountCents, settledCents));
+  }
+  return isPaid(transaction.status) ? fromCents(amountCents) : 0;
 }
-function getOpenAmount(transaction: Transaction) { return Math.max(0, Number(transaction.amount || 0) - getSettledAmount(transaction)); }
+function getOpenAmount(transaction: Transaction) {
+  const amountCents = Math.max(0, toCents(Number(transaction.amount) || 0));
+  const settledCents = toCents(getSettledAmount(transaction));
+  return fromCents(Math.max(0, amountCents - settledCents));
+}
 function isPartiallyPaid(transaction: Transaction) { return getSettledAmount(transaction) > 0 && getOpenAmount(transaction) > 0; }
 
 function isCancelled(status?: string) {
@@ -99,7 +119,7 @@ function isOverdue(transaction: Transaction) {
 
 function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
-  if (isPaid(transaction.status)) return "Pago";
+  if (getOpenAmount(transaction) <= 0) return "Pago";
   if (isOverdue(transaction)) return "Atrasada";
   if (isPartiallyPaid(transaction)) return "Paga parcialmente";
 
@@ -137,31 +157,25 @@ export default function ContasAPagarPage() {
 
   const totalOpen = useMemo(
     () =>
-      activeExpenses
-        .reduce((total, item) => total + getOpenAmount(item), 0),
+      sumMoney(activeExpenses.map(getOpenAmount)),
     [activeExpenses]
   );
 
   const totalPaid = useMemo(
     () =>
-      activeExpenses
-        .reduce((total, item) => total + getSettledAmount(item), 0),
+      sumMoney(activeExpenses.map(getSettledAmount)),
     [activeExpenses]
   );
 
   const totalOverdue = useMemo(
     () =>
-      activeExpenses
-        .filter((item) => isOverdue(item))
-        .reduce((total, item) => total + getOpenAmount(item), 0),
+      sumMoney(activeExpenses.filter(isOverdue).map(getOpenAmount)),
     [activeExpenses]
   );
 
   const totalCancelled = useMemo(
     () =>
-      expenses
-        .filter((item) => isCancelled(item.status))
-        .reduce((total, item) => total + Number(item.amount || 0), 0),
+      sumMoney(expenses.filter((item) => isCancelled(item.status)).map((item) => Number(item.amount || 0))),
     [expenses]
   );
 
@@ -184,7 +198,7 @@ export default function ContasAPagarPage() {
         }
 
         if (filter === "Pagas") {
-          matchesFilter = isPaid(item.status);
+          matchesFilter = status === "Pago";
         }
 
         if (filter === "Atrasadas") {
@@ -238,10 +252,32 @@ export default function ContasAPagarPage() {
     const amount = parseCurrencyInput(draft.amount);
     const settledAmount = draft.settledAmount.trim() ? parseCurrencyInput(draft.settledAmount) : 0;
     if (!draft.description.trim() || !Number.isFinite(amount) || amount <= 0) { alert("Informe uma descrição e um valor válido."); return; }
-    if (!draft.account || !registeredAccounts.some((account) => account.name === draft.account)) { alert("Selecione uma conta ativa cadastrada em Financeiro > Contas."); return; }
-    if (!Number.isFinite(settledAmount) || settledAmount < 0 || settledAmount > amount) { alert("O valor pago não pode ser negativo nem ultrapassar o valor total."); return; }
-    const effectiveSettledAmount = draft.status === "Pago" ? amount : settledAmount;
-    const status = effectiveSettledAmount >= amount ? "Pago" : effectiveSettledAmount > 0 ? "Paga parcialmente" : draft.status === "Paga parcialmente" ? "Pendente" : draft.status;
+    const existingExpense = editingId === null
+      ? undefined
+      : transactions.find((item) => item.id === editingId);
+    const accountIsActive = registeredAccounts.some((account) => account.name === draft.account);
+    const keepsExistingInactiveAccount =
+      Boolean(existingExpense) && existingExpense?.account === draft.account;
+    if (!draft.account || (!accountIsActive && !keepsExistingInactiveAccount)) {
+      alert("Selecione uma conta ativa cadastrada em Financeiro > Contas.");
+      return;
+    }
+    const amountCents = Number.isFinite(amount) ? toCents(amount) : 0;
+    const settledCents = Number.isFinite(settledAmount) ? toCents(settledAmount) : -1;
+    if (settledCents < 0 || settledCents > amountCents) {
+      alert("O valor pago não pode ser negativo nem ultrapassar o valor total.");
+      return;
+    }
+    const effectiveSettledAmount = draft.status === "Pago"
+      ? fromCents(amountCents)
+      : fromCents(settledCents);
+    const status = draft.status === "Cancelada"
+      ? "Cancelada"
+      : settledCents >= amountCents
+        ? "Pago"
+        : settledCents > 0
+          ? "Paga parcialmente"
+          : "Pendente";
     const entry: Transaction = { id: editingId ?? Math.max(Date.now(), ...transactions.map((item) => item.id + 1), 1), description: draft.description.trim(), type: "Despesa", amount, settledAmount: effectiveSettledAmount, date: draft.date, category: draft.category.trim(), subcategory: draft.subcategory.trim(), account: draft.account.trim(), paymentMethod: draft.paymentMethod, status, recurrence: draft.recurrence };
     const updated = editingId === null
       ? expandRecurringTransactions([...transactions, entry])
@@ -261,8 +297,10 @@ export default function ContasAPagarPage() {
       alert("Informe um valor maior que zero e menor ou igual ao saldo pendente.");
       return;
     }
-    const settledAmount = getSettledAmount(item) + payment;
-    const nextStatus = settledAmount >= Number(item.amount || 0) ? "Pago" : "Paga parcialmente";
+    const settledCents = toCents(getSettledAmount(item)) + toCents(payment);
+    const amountCents = toCents(Number(item.amount || 0));
+    const settledAmount = fromCents(Math.min(settledCents, amountCents));
+    const nextStatus = settledCents >= amountCents ? "Pago" : "Paga parcialmente";
     const updatedTransactions = transactions.map((transaction) =>
       transaction.id === item.id ? { ...transaction, settledAmount, status: nextStatus } : transaction
     );
@@ -538,7 +576,7 @@ export default function ContasAPagarPage() {
             Total listado:{" "}
             <strong>
               {formatCurrency(
-                filteredExpenses.reduce((total, item) => total + getOpenAmount(item), 0)
+                sumMoney(filteredExpenses.map(getOpenAmount))
               )}
             </strong>
           </span>

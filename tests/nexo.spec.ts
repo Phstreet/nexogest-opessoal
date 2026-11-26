@@ -334,6 +334,62 @@ test.describe("NEXO - Operações financeiras", () => {
   });
 });
 
+test.describe("NEXO - Contas a pagar", () => {
+  test("preserva pagamentos em centavos e mantém o status de conta cancelada", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    cloud.set("nexo_accounts", {
+      data_key: "nexo_accounts",
+      payload: [{
+        id: 1,
+        name: "Conta principal de teste",
+        institution: "Nubank",
+        type: "Conta corrente",
+        initialBalance: 1000,
+        createdAt: new Date().toISOString(),
+        active: true,
+        isPrimary: true,
+      }],
+      revision: 1,
+      updated_at: new Date().toISOString(),
+    });
+
+    await page.goto("/financeiro/contas-a-pagar");
+    await page.getByRole("button", { name: "Nova despesa" }).click();
+    await page.getByLabel("Descrição").fill("Fatura de teste");
+    await page.getByLabel("Valor total").fill("0,30");
+    await page.getByLabel("Valor já pago").fill("0,10");
+    await page.getByLabel("Conta de pagamento").selectOption("Conta principal de teste");
+    await page.getByRole("button", { name: "Cadastrar despesa" }).click();
+
+    await expect(page.getByText("Paga parcialmente")).toBeVisible();
+    await expect(page.getByText(/Pendente: R\$\s*0,20/)).toBeVisible();
+    await expect(page.locator(".payable-summary-card").nth(0)).toContainText("R$ 0,20");
+    await expect(page.locator(".payable-summary-card").nth(1)).toContainText("R$ 0,10");
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(1);
+
+    page.once("dialog", (dialog) => dialog.accept("0,20"));
+    await page.getByRole("button", { name: "Registrar pagamento parcial" }).click();
+    await expect(page.getByText("Pago", { exact: true })).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(2);
+
+    const expense = page.locator("tr").filter({ hasText: "Fatura de teste" });
+    await expense.getByRole("button", { name: "Editar" }).click();
+    await page.getByLabel("Status").selectOption("Cancelada");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    await expect(page.getByText("Cancelada", { exact: true })).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(3);
+    expect(cloud.get("nexo_transactions")?.payload).toEqual([
+      expect.objectContaining({
+        description: "Fatura de teste",
+        amount: 0.3,
+        settledAmount: 0.3,
+        status: "Cancelada",
+      }),
+    ]);
+  });
+});
+
 test.describe("NEXO - Responsividade da Central do Dia", () => {
   test("mantém os cards alinhados e não cria rolagem horizontal nos breakpoints principais", async ({ page }) => {
     await mockAuthenticatedCloud(page);
