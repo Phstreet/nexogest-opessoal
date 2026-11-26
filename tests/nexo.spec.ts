@@ -173,6 +173,16 @@ test.describe("NEXO - Persistência exclusiva na nuvem", () => {
         frequency: "3 vezes por semana",
       }),
     ]);
+
+    await page.getByRole("button", { name: "Marcar hábito como concluído" }).click();
+    await expect(page.getByRole("button", { name: "Desmarcar hábito" })).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_habits")?.revision).toBe(2);
+    expect(cloud.get("nexo_habits")?.payload).toEqual([
+      expect.objectContaining({
+        name: "Leitura de teste",
+        completedDates: [getSaoPauloDateKey()],
+      }),
+    ]);
   });
 
   test("deve bloquear a gravação quando o endpoint remoto falhar", async ({ page }) => {
@@ -405,6 +415,29 @@ test.describe("NEXO - Contas a pagar", () => {
         amount: 0.3,
         settledAmount: 0.3,
         status: "Cancelada",
+      }),
+    ]);
+  });
+});
+
+test.describe("NEXO - Agenda", () => {
+  test("cadastra atividade e persiste a data no calendário compartilhado", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    await page.goto("/rotina/agenda");
+
+    await page.getByRole("button", { name: /Nova atividade/ }).click();
+    await page.getByLabel("Nome da atividade *").fill("Consulta de teste NEXO");
+    await page.getByLabel("Data").fill(getSaoPauloDateKey());
+    await page.getByLabel("Horário").fill("10:30");
+    await page.getByRole("button", { name: "Cadastrar atividade" }).click();
+
+    await expect(page.getByText("Consulta de teste NEXO")).toBeVisible();
+    await expect.poll(() => cloud.get("nexo_tasks")?.revision).toBe(1);
+    expect(cloud.get("nexo_tasks")?.payload).toEqual([
+      expect.objectContaining({
+        description: "Consulta de teste NEXO",
+        date: getSaoPauloDateKey(),
+        time: "10:30",
       }),
     ]);
   });
