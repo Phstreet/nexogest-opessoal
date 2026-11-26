@@ -7,7 +7,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRoutineCollection } from "@/hooks/useRoutineCollection";
 import { isValidRoutineHabit as isValidHabit } from "@/lib/routine/types";
 import type { RoutineHabitFrequency as Frequency, RoutineHabit as Habit } from "@/lib/routine/types";
-import { addDaysToDateKey, getSaoPauloDateKey } from "@/lib/utils/date";
+import { addDaysToDateKey, getSaoPauloDateKey, getWeekdayFromDateKey } from "@/lib/utils/date";
 import { getHabitWeekProgress, getHabitWeeklyTarget, isHabitDueToday } from "@/lib/routine/habit-queries";
 
 type HabitFilter = "Todos" | "Concluídos" | "Pendentes";
@@ -31,15 +31,31 @@ function addDays(dateString: string, amount: number) {
   return addDaysToDateKey(dateString, amount);
 }
 
+function getPreviousHabitDay(date: string, frequency: Frequency) {
+  let previous = addDays(date, -1);
+
+  if (frequency === "Dias úteis") {
+    let weekday = getWeekdayFromDateKey(previous);
+    while (weekday === 0 || weekday === 6) {
+      previous = addDays(previous, -1);
+      weekday = getWeekdayFromDateKey(previous);
+    }
+  }
+
+  return previous;
+}
+
 function getStreak(habit: Habit, today: string) {
   const completed = new Set(habit.completedDates);
 
-  let currentDate = completed.has(today) ? today : addDays(today, -1);
+  let currentDate = completed.has(today)
+    ? today
+    : getPreviousHabitDay(today, habit.frequency || "Diário");
   let streak = 0;
 
   while (completed.has(currentDate)) {
     streak++;
-    currentDate = addDays(currentDate, -1);
+    currentDate = getPreviousHabitDay(currentDate, habit.frequency || "Diário");
   }
 
   return streak;
@@ -576,10 +592,12 @@ export default function HabitosPage() {
                     </div>
 
                     <div className="habit-stats">
-                      <span className="streak-indicator">
-                        <span>↗</span> {streak}{" "}
-                        {streak === 1 ? "dia seguido" : "dias seguidos"}
-                      </span>
+                      {habit.frequency !== "3 vezes por semana" && (
+                        <span className="streak-indicator">
+                          <span>↗</span> {streak}{" "}
+                          {streak === 1 ? "dia seguido" : "dias seguidos"}
+                        </span>
+                      )}
                       <span className="week-indicator">
                         Semana: {weekProgress}/{getHabitWeeklyTarget(habit.frequency)}
                       </span>
