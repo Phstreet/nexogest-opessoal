@@ -69,8 +69,12 @@ function getToday() {
 }
 
 function parseCurrencyInput(value: string): number {
-  const cents = parseCurrencyToCents(value);
-  return cents === null ? NaN : fromCents(cents);
+  try {
+    const cents = parseCurrencyToCents(value);
+    return cents === null ? NaN : fromCents(cents);
+  } catch {
+    return NaN;
+  }
 }
 
 function isPaid(status?: string) {
@@ -110,7 +114,7 @@ function isOverdue(transaction: Transaction) {
 
 function getStatus(transaction: Transaction) {
   if (isCancelled(transaction.status)) return "Cancelada";
-  if (isPaid(transaction.status)) return "Pago";
+  if (getOpenAmount(transaction) <= 0) return "Pago";
   if (isOverdue(transaction)) return "Atrasada";
   if (isPartiallyPaid(transaction)) return "Paga parcialmente";
 
@@ -195,7 +199,7 @@ export default function ContasAPagarPage() {
         }
 
         if (filter === "Pagas") {
-          matchesFilter = isPaid(item.status);
+          matchesFilter = status === "Pago";
         }
 
         if (filter === "Atrasadas") {
