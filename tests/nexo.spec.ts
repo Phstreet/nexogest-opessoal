@@ -487,16 +487,16 @@ test.describe("NEXO - Recuperação offline da rotina", () => {
     await page.getByRole("button", { name: "Cadastrar atividade" }).click();
 
     await expect(page.getByText("Atividade offline preservada")).toBeVisible();
-    await expect(page.getByRole("alert")).toContainText("guardada neste dispositivo");
+    await expect(page.locator(".routine-sync-warning")).toContainText("guardada neste dispositivo");
 
     await page.reload();
     await expect(page.getByText("Atividade offline preservada")).toBeVisible();
-    await expect(page.getByRole("alert")).toContainText("guardadas neste dispositivo");
+    await expect(page.locator(".routine-sync-warning")).toContainText("guardadas neste dispositivo");
 
     online = true;
     await page.getByRole("button", { name: "Tentar sincronizar" }).click();
     await expect.poll(() => cloud.get("nexo_tasks")?.revision).toBe(1);
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.locator(".routine-sync-warning")).toHaveCount(0);
     expect(cloud.get("nexo_tasks")?.payload).toEqual([
       expect.objectContaining({ description: "Atividade offline preservada" }),
     ]);
@@ -544,16 +544,16 @@ test.describe("NEXO - Recuperação offline da rotina", () => {
     await page.getByRole("button", { name: "Cadastrar hábito" }).click();
     await page.getByRole("button", { name: "Marcar hábito como concluído" }).click();
 
-    await expect(page.getByRole("alert")).toContainText("guardada neste dispositivo");
+    await expect(page.locator(".routine-sync-warning")).toContainText("guardada neste dispositivo");
     await page.reload();
     await expect(page.getByText("Hábito offline preservado")).toBeVisible();
     await expect(page.getByRole("button", { name: "Desmarcar hábito" })).toBeVisible();
-    await expect(page.getByRole("alert")).toContainText("guardadas neste dispositivo");
+    await expect(page.locator(".routine-sync-warning")).toContainText("guardadas neste dispositivo");
 
     online = true;
     await page.getByRole("button", { name: "Tentar sincronizar" }).click();
     await expect.poll(() => cloud.get("nexo_habits")?.revision).toBe(1);
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.locator(".routine-sync-warning")).toHaveCount(0);
     expect(cloud.get("nexo_habits")?.payload).toEqual([
       expect.objectContaining({
         name: "Hábito offline preservado",
