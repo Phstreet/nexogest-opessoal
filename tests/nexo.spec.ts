@@ -445,7 +445,10 @@ test.describe("NEXO - Agenda", () => {
 
 test.describe("NEXO - Fuso horário da Central do Dia", () => {
   test("mantém a data de São Paulo mesmo quando o navegador está em outro fuso", async ({ browser }) => {
-    const context = await browser.newContext({ timezoneId: "Pacific/Honolulu" });
+    const context = await browser.newContext({
+      baseURL: "http://127.0.0.1:3001",
+      timezoneId: "Pacific/Honolulu",
+    });
     const page = await context.newPage();
     const cloud = await mockAuthenticatedCloud(page);
     const today = getSaoPauloDateKey();
