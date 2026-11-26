@@ -118,23 +118,30 @@ export type FinanceTotals = {
   resultado: number;
 };
 
+function sumAmountsInCents(items: Transaction[], amountOf: (item: Transaction) => number): number {
+  const cents = items.reduce((sum, item) => {
+    const value = amountOf(item);
+    return sum + (Number.isFinite(value) ? Math.round(value * 100) : 0);
+  }, 0);
+  return fromCents(cents);
+}
+
 export function calculateFinanceTotals(transactions: Transaction[]): FinanceTotals {
   const active = transactions.filter((item) => !isCancelledTransaction(item));
-  const receitas = active
-    .filter((item) => item.type === "Receita")
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const despesas = active
-    .filter((item) => item.type === "Despesa")
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const receitasRealizadas = active
-    .filter((item) => item.type === "Receita")
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
-  const despesasRealizadas = active
-    .filter((item) => item.type === "Despesa")
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
-  const investimentosAplicados = active
-    .filter(isInvestmentApplied)
-    .reduce((sum, item) => sum + getSettledAmount(item), 0);
+  const receitasItems = active.filter((item) => item.type === "Receita");
+  const despesasItems = active.filter((item) => item.type === "Despesa");
+  const investmentItems = active.filter(isInvestmentApplied);
+
+  const receitas = sumAmountsInCents(receitasItems, (item) => item.amount);
+  const despesas = sumAmountsInCents(despesasItems, (item) => item.amount);
+  const receitasRealizadas = sumAmountsInCents(receitasItems, getSettledAmount);
+  const despesasRealizadas = sumAmountsInCents(despesasItems, getSettledAmount);
+  const investimentosAplicados = sumAmountsInCents(investmentItems, getSettledAmount);
+
+  const resultadoCents =
+    Math.round(receitasRealizadas * 100) -
+    Math.round(despesasRealizadas * 100) -
+    Math.round(investimentosAplicados * 100);
 
   return {
     receitas,
@@ -142,7 +149,7 @@ export function calculateFinanceTotals(transactions: Transaction[]): FinanceTota
     receitasRealizadas,
     despesasRealizadas,
     investimentosAplicados,
-    resultado: receitasRealizadas - despesasRealizadas - investimentosAplicados,
+    resultado: fromCents(resultadoCents),
   };
 }
 
