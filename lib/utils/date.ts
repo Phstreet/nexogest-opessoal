@@ -33,7 +33,7 @@ export function addDaysToDateKey(dateKey: string, amount: number): string {
 
 /** Converte uma data civil em Date UTC ao meio-dia para evitar mudança de dia. */
 function parseDateKey(dateKey: string): Date | null {
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(dateKey);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
   if (!match) return null;
 
   const year = Number(match[1]);
