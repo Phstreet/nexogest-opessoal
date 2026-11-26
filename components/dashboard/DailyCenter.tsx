@@ -6,6 +6,7 @@ import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
 import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
 import { addDaysToDateKey, formatDateKey, getSaoPauloDateKey, getSaoPauloHour } from "@/lib/utils/date";
+import { getHabitsDueToday } from "@/lib/routine/habit-queries";
 
 type Props = {
   tasks: RoutineTask[];
@@ -129,8 +130,9 @@ export default function DailyCenter(props: Props) {
 
   /* Hábitos */
   const activeHabits = props.habits.filter((habit) => habit.active);
-  const completedHabits = activeHabits.filter((habit) => habit.completedDates.includes(todayKey));
-  const habitRate = activeHabits.length ? completedHabits.length / activeHabits.length : 0;
+  const dueHabits = getHabitsDueToday(activeHabits, todayKey);
+  const completedHabits = dueHabits.filter((habit) => habit.completedDates.includes(todayKey));
+  const habitRate = dueHabits.length ? completedHabits.length / dueHabits.length : 0;
 
   /* Contas próximas (despesas pendentes nos próximos 7 dias) */
   const upcomingBills = props.transactions.filter((item) =>
@@ -254,7 +256,7 @@ export default function DailyCenter(props: Props) {
         {/* Hábitos do dia */}
         <Card className="daily-card area-habits">
           <CardHeader icon={<Icon name="bars" size={20} />} title="Hábitos do dia" action={<Link href="/rotina/habitos">Ver todos <Icon name="arrow" size={13} /></Link>} />
-          {activeHabits.length ? (
+          {dueHabits.length ? (
             <div className="daily-habits">
               <div className="daily-ring">
                 <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -263,10 +265,10 @@ export default function DailyCenter(props: Props) {
                     strokeDasharray={RING_LENGTH}
                     strokeDashoffset={RING_LENGTH * (1 - habitRate)} />
                 </svg>
-                <div><strong>{completedHabits.length}/{activeHabits.length}</strong><small>Concluídos</small></div>
+                <div><strong>{completedHabits.length}/{dueHabits.length}</strong><small>Concluídos</small></div>
               </div>
               <ul>
-                {activeHabits.slice(0, 4).map((habit) => {
+                {dueHabits.slice(0, 4).map((habit) => {
                   const done = habit.completedDates.includes(todayKey);
                   return (
                     <li key={habit.id}>
@@ -280,10 +282,10 @@ export default function DailyCenter(props: Props) {
           ) : (
             <EmptyState
               icon={<Icon name="bars" size={25} />}
-              title="Nenhum hábito cadastrado"
-              description="Crie hábitos para acompanhar sua consistência diária."
+              title={activeHabits.length ? "Nenhum hábito previsto hoje" : "Nenhum hábito cadastrado"}
+              description={activeHabits.length ? "A frequência dos seus hábitos não exige novas conclusões hoje." : "Crie hábitos para acompanhar sua consistência diária."}
               actionHref="/rotina/habitos"
-              actionLabel="Criar hábito"
+              actionLabel="Ver hábitos"
             />
           )}
         </Card>
