@@ -18,7 +18,13 @@ export function getHabitWeekProgress(habit: RoutineHabit, today: string): number
   );
   const completedDates = new Set(habit.completedDates);
 
-  return [...weekDates].filter((date) => completedDates.has(date)).length;
+  return [...weekDates].filter((date) => {
+    if (!completedDates.has(date)) return false;
+    if (habit.frequency !== "Dias úteis") return true;
+
+    const completedWeekday = getWeekdayFromDateKey(date);
+    return completedWeekday >= 1 && completedWeekday <= 5;
+  }).length;
 }
 
 /** Indica se o hábito deve ser cobrado hoje, respeitando sua frequência semanal. */
