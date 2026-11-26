@@ -377,8 +377,9 @@ export default function HabitosPage() {
 
             <div className="form-grid">
               <div className="form-field">
-                <label>Categoria</label>
+                <label htmlFor="habit-category">Categoria</label>
                 <select
+                  id="habit-category"
                   value={category}
                   onChange={(event) => setCategory(event.target.value)}
                 >
@@ -391,8 +392,9 @@ export default function HabitosPage() {
               </div>
 
               <div className="form-field">
-                <label>Frequência</label>
+                <label htmlFor="habit-frequency">Frequência</label>
                 <select
+                  id="habit-frequency"
                   value={frequency}
                   onChange={(event) =>
                     setFrequency(event.target.value as Frequency)
@@ -407,8 +409,9 @@ export default function HabitosPage() {
               </div>
 
               <div className="form-field">
-                <label>Horário previsto</label>
+                <label htmlFor="habit-time">Horário previsto</label>
                 <input
+                  id="habit-time"
                   type="time"
                   value={time}
                   onChange={(event) => setTime(event.target.value)}
@@ -417,8 +420,9 @@ export default function HabitosPage() {
             </div>
 
             <div className="form-field full-field">
-              <label>Observações</label>
+              <label htmlFor="habit-notes">Observações</label>
               <textarea
+                id="habit-notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Adicione detalhes ou metas para este hábito..."
