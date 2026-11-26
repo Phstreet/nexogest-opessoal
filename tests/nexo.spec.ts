@@ -363,6 +363,8 @@ test.describe("NEXO - Contas a pagar", () => {
 
     await expect(page.getByText("Paga parcialmente")).toBeVisible();
     await expect(page.getByText(/Pendente: R\$\s*0,20/)).toBeVisible();
+    await expect(page.locator(".payable-summary-card").nth(0)).toContainText("R$ 0,20");
+    await expect(page.locator(".payable-summary-card").nth(1)).toContainText("R$ 0,10");
     await expect.poll(() => cloud.get("nexo_transactions")?.revision).toBe(1);
 
     page.once("dialog", (dialog) => dialog.accept("0,20"));
