@@ -271,7 +271,7 @@ export function useRoutineCollection<T>(
   }, [session, persist, key, isValidItem, applyItems]);
 
   useEffect(() => {
-    if (!syncPending || typeof window === "undefined" || !navigator.onLine) return;
+    if (!loaded || !syncPending || typeof window === "undefined" || !navigator.onLine) return;
 
     const handleOnline = () => {
       void retrySync();
@@ -280,7 +280,7 @@ export function useRoutineCollection<T>(
     void retrySync();
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [syncPending, retrySync]);
+  }, [loaded, syncPending, retrySync]);
 
   const downloadPendingBackup = useCallback(() => {
     const pending = pendingRef.current;
