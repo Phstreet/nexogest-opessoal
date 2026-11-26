@@ -1,44 +1,18 @@
 import type { MovementType, Transaction } from "@/lib/finance/types";
 import { subcategories } from "@/lib/finance/categories";
 import { getSettledTransactionAmount, isCancelledTransaction } from "@/lib/finance/accounts";
+import { formatBRL, parseCurrencyToCents, fromCents } from "@/lib/utils/currency";
+import { localISODate, isValidISODate } from "@/lib/utils/dates";
 
 export type FormMovementType = Extract<MovementType, "Receita" | "Despesa" | "Transferência" | "Investimento">;
 
-export function money(value: number) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
+export function money(value: number) {\n  return formatBRL(value);\n}
 
-export function parseAmount(value: string) {
-  const normalized = value.trim().replace(/\s/g, "");
-  if (!normalized) return NaN;
-  if (normalized.includes(",")) {
-    return Number(normalized.replace(/\./g, "").replace(",", "."));
-  }
-  if (/^-?\d{1,3}(\.\d{3})+$/.test(normalized)) {
-    return Number(normalized.replace(/\./g, ""));
-  }
-  return Number(normalized);
-}
+export function parseAmount(value: string) {\n  const cents = parseCurrencyToCents(value);\n  return cents === null ? NaN : fromCents(cents);\n}
 
-export function localDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+export function localDate() {\n  return localISODate();\n}
 
-export function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day;
-}
+export function isValidDate(value: string) {\n  return isValidISODate(value);\n}
 
 export function getDefaultCategory(type: FormMovementType) {
   if (type === "Receita") return "Salário";
