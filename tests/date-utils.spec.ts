@@ -4,7 +4,7 @@ import {
   formatDateKey,
   getSaoPauloDateKey,
   getWeekdayFromDateKey,
-} from "@/lib/utils/date";
+} from "../lib/utils/date";
 
 test.describe("NEXO - Datas no fuso de São Paulo", () => {
   test("resolve corretamente a virada de dia no fuso oficial", () => {
