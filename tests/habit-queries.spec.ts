@@ -4,7 +4,7 @@ import {
   getHabitWeeklyTarget,
   isHabitDueToday,
 } from "../lib/routine/habit-queries";
-import type { RoutineHabit } from "@/lib/routine/types";
+import type { RoutineHabit } from "../lib/routine/types";
 
 function habit(overrides: Partial<RoutineHabit> = {}): RoutineHabit {
   return {
