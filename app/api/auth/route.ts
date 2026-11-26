@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!hasValidOrigin(request)) return NextResponse.json({ error: "Origem da solicitação não autorizada." }, { status: 403 });
   let body: Record<string, unknown>;
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Requisição inválida." }, { status: 400 }); }
@@ -42,11 +41,17 @@ export async function POST(request: NextRequest) {
   const action = String(body.action || "");
   // Cadastro público permanece fechado até a aprovação integral do checklist de lançamento.
   // A abertura exige configuração explícita no servidor; ausência da variável significa fechado.
+  // Esta rejeição antecipada não executa operações nem depende de uma origem confiável.
   if (action === "signup" && process.env.NEXO_SIGNUP_ENABLED !== "true") {
     return NextResponse.json(
       { error: "O cadastro público do NEXO está temporariamente fechado. O acesso será liberado após a conclusão da validação de segurança." },
       { status: 403 }
     );
+  }
+
+  // Todas as demais ações, inclusive signup quando habilitado, exigem origem same-origin.
+  if (!hasValidOrigin(request)) {
+    return NextResponse.json({ error: "Origem da solicitação não autorizada." }, { status: 403 });
   }
 
   try {
