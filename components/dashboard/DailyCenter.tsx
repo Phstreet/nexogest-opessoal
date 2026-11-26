@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { RoutineHabit, RoutineTask } from "@/lib/routine/types";
 import type { Transaction } from "@/lib/finance/types";
 import { Card, CardHeader, EmptyState, QuickAction, StatCard } from "@/components/ui/DashboardPrimitives";
+import { addDaysToDateKey, formatDateKey, getSaoPauloDateKey, getSaoPauloHour } from "@/lib/utils/date";
 
 type Props = {
   tasks: RoutineTask[];
@@ -47,9 +48,6 @@ function Icon({ name, size = 20 }: { name: keyof typeof icons; size?: number }) 
 }
 
 /* ---------- Utilitários ---------- */
-function localDateKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 function money(value: number) {
   return (Number.isFinite(value) ? value : 0).toLocaleString("pt-BR", {
@@ -71,8 +69,8 @@ function settledAmount(item: Transaction) {
 }
 
 function daysBetween(dateKey: string, fromKey: string) {
-  const a = new Date(`${dateKey}T12:00:00`).getTime();
-  const b = new Date(`${fromKey}T12:00:00`).getTime();
+  const a = new Date(`${dateKey}T12:00:00Z`).getTime();
+  const b = new Date(`${fromKey}T12:00:00Z`).getTime();
   return Math.round((a - b) / 86400000);
 }
 
@@ -100,20 +98,16 @@ const RING_RADIUS = 42;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
 export default function DailyCenter(props: Props) {
-  const today = new Date();
-  const todayKey = localDateKey(today);
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
-  const nextWeekKey = localDateKey(nextWeek);
-  const hour = today.getHours();
+  const todayKey = getSaoPauloDateKey();
+  const nextWeekKey = addDaysToDateKey(todayKey, 7);
+  const hour = getSaoPauloHour();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const rawDateLabel = today.toLocaleDateString("pt-BR", {
+  const dateLabel = formatDateKey(todayKey, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  });
-  const dateLabel = rawDateLabel.toLocaleLowerCase("pt-BR");
+  }).toLocaleLowerCase("pt-BR");
 
   /* Tarefas */
   const todaysTasks = props.tasks.filter((task) => task.date === todayKey);
