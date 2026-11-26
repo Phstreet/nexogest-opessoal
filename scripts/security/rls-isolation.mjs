@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { appendFileSync } from "node:fs";
 
 const URL_BASE = "https://mmwkpwspyjvxsennvhic.supabase.co";
 const ANON_KEY = process.env.NEXO_DEV_SUPABASE_PUBLISHABLE_KEY;
@@ -53,7 +54,7 @@ async function user(slot) {
   if (!login.ok || !login.data?.access_token || !id) {
     throw new Error(`Não foi possível autenticar usuário ${slot}: HTTP ${login.status}`);
   }
-  return { id, jwt: login.data.access_token };
+  return { id, email, password, jwt: login.data.access_token };
 }
 
 const tables = [
@@ -102,5 +103,14 @@ async function verify(test, a, b) {
 const [a, b] = await Promise.all([user("a"), user("b")]);
 if (a.id === b.id) throw new Error("Usuários A e B não são distintos.");
 console.log(`Usuários de teste DEV preparados: A=${a.id}; B=${b.id}`);
+if (process.env.GITHUB_ENV) {
+  for (const [slot, testUser] of [["A", a], ["B", b]]) {
+    process.stdout.write(`::add-mask::${testUser.password}\n`);
+    appendFileSync(
+      process.env.GITHUB_ENV,
+      `NEXO_DEV_TEST_USER_${slot}_EMAIL=${testUser.email}\nNEXO_DEV_TEST_USER_${slot}_PASSWORD=${testUser.password}\n`,
+    );
+  }
+}
 for (const test of tables) await verify(test, a, b);
 console.log("RLS ISOLATION PASS: 6/6 tabelas verificadas com JWT de usuário; service role usado somente para provisionamento.");
