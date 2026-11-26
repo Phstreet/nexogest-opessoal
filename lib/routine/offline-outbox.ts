@@ -33,19 +33,12 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-export function getPendingRoutineChange(
+export async function getPendingRoutineChange(
   userId: string,
   dataKey: NexoSyncKey
 ): Promise<PendingRoutineChange | null> {
-  return new Promise(async (resolve, reject) => {
-    let database: IDBDatabase;
-    try {
-      database = await openDatabase();
-    } catch (error) {
-      reject(error);
-      return;
-    }
-
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readonly");
     const request = transaction.objectStore(STORE_NAME).get(`${userId}:${dataKey}`);
     request.onsuccess = () => resolve((request.result as PendingRoutineChange | undefined) ?? null);
