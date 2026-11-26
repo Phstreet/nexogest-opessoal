@@ -7,7 +7,13 @@ import { useNexoAuth } from "@/contexts/NexoAuthProvider";
 
 type Mode = "login" | "signup" | "recovery" | "reset";
 
-export default function AuthForm({ mode }: { mode: Mode }) {
+export default function AuthForm({
+  mode,
+  signupEnabled = false,
+}: {
+  mode: Mode;
+  signupEnabled?: boolean;
+}) {
   const { signIn, signUp, sendPasswordReset, changePassword, session, loading } = useNexoAuth();
   const router = useRouter();
   const [name, setName] = useState("");
@@ -50,10 +56,9 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     try {
       if (mode === "login") {
         await signIn(email.trim(), password);
-        // Navegacao completa evita reutilizar o estado/cache da tela de login
-        // antes de o servidor reconhecer os cookies HttpOnly recem-gravados.
         window.location.assign(getPostLoginDestination());
       } else if (mode === "signup") {
+        if (!signupEnabled) throw new Error("O cadastro público está temporariamente fechado.");
         if (password.length < 8) throw new Error("A senha precisa ter pelo menos 8 caracteres.");
         const confirmationRequired = await signUp(email.trim(), password, name.trim());
         if (confirmationRequired) setMessage("Conta criada. Verifique seu e-mail para confirmar o cadastro e depois entre no NEXO.");
@@ -74,6 +79,26 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     } finally { setBusy(false); }
   }
 
+  if (mode === "signup" && !signupEnabled) {
+    return (
+      <main className="nexo-auth-page">
+        <section className="nexo-auth-card" aria-labelledby="signup-closed-title">
+          <Link href="/" className="nexo-auth-brand"><span>N</span><strong>NEXO</strong></Link>
+          <div className="nexo-auth-kicker">GESTÃO PESSOAL</div>
+          <h1 id="signup-closed-title">Cadastro temporariamente fechado</h1>
+          <p className="nexo-auth-description">
+            Estamos concluindo as validações de segurança, privacidade e proteção dos dados.
+            O cadastro será liberado quando os requisitos de lançamento estiverem atendidos.
+          </p>
+          <div className="nexo-auth-links">
+            <Link href="/entrar">Já possui uma conta? Entrar</Link>
+          </div>
+          <Link href="/" className="nexo-auth-back">← Voltar ao NEXO</Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="nexo-auth-page">
       <section className="nexo-auth-card">
@@ -91,7 +116,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
           <button type="submit" disabled={busy || (mode === "reset" && loading)}>{busy ? "Aguarde..." : mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : mode === "recovery" ? "Enviar link de recuperação" : "Salvar nova senha"}</button>
         </form>
         <div className="nexo-auth-links">
-          {mode === "login" && <><Link href="/recuperar-senha">Esqueci minha senha</Link><span>Não tem uma conta? <Link href="/cadastro">Criar conta</Link></span></>}
+          {mode === "login" && <><Link href="/recuperar-senha">Esqueci minha senha</Link><span>{signupEnabled ? <>Não tem uma conta? <Link href="/cadastro">Criar conta</Link></> : "Cadastro público temporariamente fechado."}</span></>}
           {mode === "signup" && <span>Já possui uma conta? <Link href="/entrar">Entrar</Link></span>}
           {mode === "recovery" && <span>Lembrou a senha? <Link href="/entrar">Voltar ao login</Link></span>}
           {mode === "reset" && <Link href="/entrar">Voltar ao login</Link>}
