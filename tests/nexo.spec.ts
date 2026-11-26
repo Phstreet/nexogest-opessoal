@@ -443,6 +443,126 @@ test.describe("NEXO - Agenda", () => {
   });
 });
 
+test.describe("NEXO - Recuperação offline da rotina", () => {
+  test("preserva uma atividade da Agenda após falha de rede e sincroniza ao reconectar", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    let online = false;
+
+    await page.route("**/api/sync**", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { data: [...cloud.values()] } });
+        return;
+      }
+
+      if (!online) {
+        await route.fulfill({ status: 503, json: { error: "Conexão indisponível para teste." } });
+        return;
+      }
+
+      const body = route.request().postDataJSON() as {
+        data_key: string;
+        payload: unknown;
+        expected_revision: number;
+      };
+      const current = cloud.get(body.data_key);
+      const revision = current?.revision ?? 0;
+      if (revision !== body.expected_revision) {
+        await route.fulfill({ json: { result: { saved: false, current_revision: revision, current_updated_at: current?.updated_at ?? null } } });
+        return;
+      }
+      const saved: StoredCollection = {
+        data_key: body.data_key,
+        payload: body.payload,
+        revision: revision + 1,
+        updated_at: new Date().toISOString(),
+      };
+      cloud.set(body.data_key, saved);
+      await route.fulfill({ json: { result: { saved: true, current_revision: saved.revision, current_updated_at: saved.updated_at } } });
+    });
+
+    await page.goto("/rotina/agenda");
+    await page.getByRole("button", { name: /Nova atividade/ }).click();
+    await page.getByLabel("Nome da atividade *").fill("Atividade offline preservada");
+    await page.getByLabel("Data").fill(getSaoPauloDateKey());
+    await page.getByRole("button", { name: "Cadastrar atividade" }).click();
+
+    await expect(page.getByText("Atividade offline preservada")).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText("guardada neste dispositivo");
+
+    await page.reload();
+    await expect(page.getByText("Atividade offline preservada")).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText("guardadas neste dispositivo");
+
+    online = true;
+    await page.getByRole("button", { name: "Tentar sincronizar" }).click();
+    await expect.poll(() => cloud.get("nexo_tasks")?.revision).toBe(1);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    expect(cloud.get("nexo_tasks")?.payload).toEqual([
+      expect.objectContaining({ description: "Atividade offline preservada" }),
+    ]);
+  });
+
+  test("preserva conclusão de hábito após falha de rede e sincroniza ao reconectar", async ({ page }) => {
+    const cloud = await mockAuthenticatedCloud(page);
+    let online = false;
+
+    await page.route("**/api/sync**", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { data: [...cloud.values()] } });
+        return;
+      }
+
+      if (!online) {
+        await route.fulfill({ status: 503, json: { error: "Conexão indisponível para teste." } });
+        return;
+      }
+
+      const body = route.request().postDataJSON() as {
+        data_key: string;
+        payload: unknown;
+        expected_revision: number;
+      };
+      const current = cloud.get(body.data_key);
+      const revision = current?.revision ?? 0;
+      if (revision !== body.expected_revision) {
+        await route.fulfill({ json: { result: { saved: false, current_revision: revision, current_updated_at: current?.updated_at ?? null } } });
+        return;
+      }
+      const saved: StoredCollection = {
+        data_key: body.data_key,
+        payload: body.payload,
+        revision: revision + 1,
+        updated_at: new Date().toISOString(),
+      };
+      cloud.set(body.data_key, saved);
+      await route.fulfill({ json: { result: { saved: true, current_revision: saved.revision, current_updated_at: saved.updated_at } } });
+    });
+
+    await page.goto("/rotina/habitos");
+    await page.getByRole("button", { name: /Novo hábito/ }).click();
+    await page.getByLabel("Nome do hábito *").fill("Hábito offline preservado");
+    await page.getByRole("button", { name: "Cadastrar hábito" }).click();
+    await page.getByRole("button", { name: "Marcar hábito como concluído" }).click();
+
+    await expect(page.getByRole("alert")).toContainText("guardada neste dispositivo");
+    await page.reload();
+    await expect(page.getByText("Hábito offline preservado")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Desmarcar hábito" })).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText("guardadas neste dispositivo");
+
+    online = true;
+    await page.getByRole("button", { name: "Tentar sincronizar" }).click();
+    await expect.poll(() => cloud.get("nexo_habits")?.revision).toBe(1);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    expect(cloud.get("nexo_habits")?.payload).toEqual([
+      expect.objectContaining({
+        name: "Hábito offline preservado",
+        completedDates: [getSaoPauloDateKey()],
+      }),
+    ]);
+  });
+});
+
 test.describe("NEXO - Fuso horário da Central do Dia", () => {
   test("mantém a data de São Paulo mesmo quando o navegador está em outro fuso", async ({ browser }) => {
     const context = await browser.newContext({
