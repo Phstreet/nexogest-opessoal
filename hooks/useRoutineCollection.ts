@@ -269,18 +269,20 @@ export function useRoutineCollection<T>(
       setSyncPending(false);
       setStorageError(null);
     } catch (error) {
-      setStorageError(error instanceof Error ? error.message : "Não foi possível sincronizar a alteração pendente.");
+      const message = error instanceof Error ? error.message : "Não foi possível sincronizar a alteração pendente.";
+      setStorageError(pendingRef.current
+        ? `${message} Sua alteração continua guardada neste dispositivo.`
+        : message);
     }
   }, [session, persist, key, isValidItem, applyItems]);
 
   useEffect(() => {
-    if (!loaded || !syncPending || typeof window === "undefined" || !navigator.onLine) return;
+    if (!loaded || !syncPending || typeof window === "undefined") return;
 
     const handleOnline = () => {
       void retrySync();
     };
 
-    void retrySync();
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
   }, [loaded, syncPending, retrySync]);
