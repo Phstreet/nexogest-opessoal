@@ -2,7 +2,7 @@
 export * from "./types";
 export * from "./constants";
 export * from "./accounts";
-export * from "./calculations";
+export { getFinancialSummary, getMonthlySummary, getExpensesByCategory, getIncomeByCategory, getAccountsInitialBalance } from "./calculations";
 export * from "./transactions";
 export * from "./categories";
 export * from "./finance-utils";
