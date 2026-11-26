@@ -20,14 +20,15 @@ function habit(overrides: Partial<RoutineHabit> = {}): RoutineHabit {
 
 test.describe("NEXO - Frequência semanal dos hábitos", () => {
   test("considera somente dias úteis para a frequência correspondente", () => {
-    const weekdayHabit = habit({
+    const weekdayHabit = habit({ frequency: "Dias úteis" });
+    const habitWithWeekendCompletions = habit({
       frequency: "Dias úteis",
       completedDates: ["2026-11-23", "2026-11-24", "2026-11-28", "2026-11-29"],
     });
 
     expect(isHabitDueToday(weekdayHabit, "2026-11-26")).toBe(true);
     expect(isHabitDueToday(weekdayHabit, "2026-11-28")).toBe(false);
-    expect(getHabitWeekProgress(weekdayHabit, "2026-11-26")).toBe(2);
+    expect(getHabitWeekProgress(habitWithWeekendCompletions, "2026-11-26")).toBe(2);
   });
 
   test("encerra a meta de três vezes após três conclusões na mesma semana", () => {
