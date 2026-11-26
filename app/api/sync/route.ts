@@ -35,27 +35,30 @@ export async function GET(request: NextRequest) {
     const relationalEnabled = process.env.NEXO_RELATIONAL_STORAGE_ENABLED === "true";
 
     if (relationalEnabled) {
-      const relationalResponse = await fetch(`${url}/rest/v1/rpc/get_nexo_user_data_compat`, {
-        method: "POST",
-        headers: {
-          apikey: key,
-          Authorization: `Bearer ${access}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ p_data_keys: keys }),
-        cache: "no-store",
-      });
+      try {
+        const relationalResponse = await fetch(`${url}/rest/v1/rpc/get_nexo_user_data_compat`, {
+          method: "POST",
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${access}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ p_data_keys: keys }),
+          cache: "no-store",
+        });
 
-      if (relationalResponse.ok) {
-        const relationalData: unknown = await relationalResponse.json().catch(() => null);
-        if (Array.isArray(relationalData)) {
-          return copyResponseCookies(
-            response,
-            NextResponse.json({ data: relationalData }, { headers: response.headers }),
-          );
+        if (relationalResponse.ok) {
+          const relationalData: unknown = await relationalResponse.json().catch(() => null);
+          if (Array.isArray(relationalData)) {
+            return copyResponseCookies(
+              response,
+              NextResponse.json({ data: relationalData }, { headers: response.headers }),
+            );
+          }
         }
+      } catch {
+        // Falha de rede também volta ao JSONB legado sem interromper a rotina.
       }
-      // Falha de leitura relacional volta ao JSONB legado sem interromper a rotina.
     }
 
     const query = new URLSearchParams({ select: "data_key,payload,revision,updated_at", order: "data_key.asc" });
